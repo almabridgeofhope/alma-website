@@ -17,20 +17,17 @@ const Navigation = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <a href="#about" className="text-muted-foreground hover:text-primary transition-colors">
-              About
+            <a href="/" className="text-muted-foreground hover:text-primary transition-colors">
+              Home
             </a>
-            <a href="#work" className="text-muted-foreground hover:text-primary transition-colors">
-              Our Work
-            </a>
-            <a href="#team" className="text-muted-foreground hover:text-primary transition-colors">
+            <a href="/team" className="text-muted-foreground hover:text-primary transition-colors">
               Team
             </a>
-            <a href="#updates" className="text-muted-foreground hover:text-primary transition-colors">
-              Updates
+            <a href="/projects" className="text-muted-foreground hover:text-primary transition-colors">
+              Projekte
             </a>
-            <a href="#contact" className="text-muted-foreground hover:text-primary transition-colors">
-              Contact
+            <a href="/contact" className="text-muted-foreground hover:text-primary transition-colors">
+              Kontakt
             </a>
           </div>
 
@@ -47,39 +44,32 @@ const Navigation = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 space-y-4">
             <a 
-              href="#about" 
+              href="/" 
               className="block text-muted-foreground hover:text-primary transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
-              About
+              Home
             </a>
             <a 
-              href="#work" 
-              className="block text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Our Work
-            </a>
-            <a 
-              href="#team" 
+              href="/team" 
               className="block text-muted-foreground hover:text-primary transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Team
             </a>
             <a 
-              href="#updates" 
+              href="/projects" 
               className="block text-muted-foreground hover:text-primary transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
-              Updates
+              Projekte
             </a>
             <a 
-              href="#contact" 
+              href="/contact" 
               className="block text-muted-foreground hover:text-primary transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
-              Contact
+              Kontakt
             </a>
           </div>
         )}
