@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-uganda-community.jpg";
 
 const HeroSection = () => {
@@ -21,12 +22,34 @@ const HeroSection = () => {
         <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-3xl mx-auto">
           An international initiative supporting community development in rural Uganda
         </p>
-        <Button 
-          size="lg" 
-          className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button text-lg px-8 py-6"
-        >
-          Explore Our Work
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link to="/projects">
+            <Button 
+              size="lg" 
+              className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button text-lg px-8 py-6"
+            >
+              Unsere Projekte
+            </Button>
+          </Link>
+          <Link to="/team">
+            <Button 
+              size="lg" 
+              variant="outline"
+              className="bg-white/10 hover:bg-white/20 text-white border-white/30 shadow-button text-lg px-8 py-6"
+            >
+              Unser Team
+            </Button>
+          </Link>
+          <Link to="/contact">
+            <Button 
+              size="lg" 
+              variant="outline"
+              className="bg-white/10 hover:bg-white/20 text-white border-white/30 shadow-button text-lg px-8 py-6"
+            >
+              Kontakt
+            </Button>
+          </Link>
+        </div>
       </div>
     </section>
   );

@@ -8,6 +8,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Mail, MapPin, Instagram } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import heroImage from "@/assets/uganda-landscape.jpg";
 
 const Contact = () => {
   const { toast } = useToast();
@@ -69,14 +70,20 @@ const Contact = () => {
       <Navigation />
       
       <main className="pt-16">
-        {/* Hero Section */}
-        <section className="py-section bg-primary-light">
-          <div className="max-w-content mx-auto px-6">
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 text-center">
+        {/* Hero Section with Background Image */}
+        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{ backgroundImage: `url(${heroImage})` }}
+          />
+          <div className="absolute inset-0 bg-gradient-hero" />
+          
+          <div className="relative z-10 text-center text-white max-w-4xl px-6">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
               Kontakt
             </h1>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto text-center leading-relaxed">
-              Hast du Fragen oder möchtest du unsere Arbeit unterstützen? Wir freuen uns über jede Nachricht!
+            <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
+              Wir freuen uns auf Ihre Nachricht
             </p>
           </div>
         </section>
