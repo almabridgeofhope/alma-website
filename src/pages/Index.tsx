@@ -1,0 +1,29 @@
+import Navigation from "@/components/Navigation";
+import HeroSection from "@/components/HeroSection";
+import MissionSection from "@/components/MissionSection";
+import WhatWeDoSection from "@/components/WhatWeDoSection";
+import TeamSection from "@/components/TeamSection";
+import VisualHighlightSection from "@/components/VisualHighlightSection";
+import NewsletterSection from "@/components/NewsletterSection";
+import ContactSection from "@/components/ContactSection";
+import Footer from "@/components/Footer";
+
+const Index = () => {
+  return (
+    <div className="min-h-screen">
+      <Navigation />
+      <main>
+        <HeroSection />
+        <MissionSection />
+        <WhatWeDoSection />
+        <TeamSection />
+        <VisualHighlightSection />
+        <NewsletterSection />
+        <ContactSection />
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
+export default Index;
