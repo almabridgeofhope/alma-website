@@ -10,20 +10,14 @@ const Team = () => {
   const teamUganda = [
     {
       name: t("team.peter.name"),
-      role: t("team.peter.role"),
-      description: t("team.peter.description"),
       image: "/alma-website/placeholder.svg",
     },
     {
-      name: t("team.fiona.name"),
-      role: t("team.fiona.role"),
-      description: t("team.fiona.description"),
+      name: t("team.phionah.name"),
       image: "/alma-website/placeholder.svg",
     },
     {
-      name: t("team.member.name"),
-      role: t("team.member.agriculture.role"),
-      description: t("team.member.agriculture.description"),
+      name: t("team.tony.name"),
       image: "/alma-website/placeholder.svg",
     },
   ];
@@ -31,44 +25,30 @@ const Team = () => {
   const teamGermany = [
     {
       name: t("team.aaron.name"),
-      role: t("team.aaron.role"),
-      description: t("team.aaron.description"),
       image: "/alma-website/placeholder.svg",
     },
     {
       name: t("team.clara.name"),
-      role: t("team.clara.role"),
-      description: t("team.clara.description"),
       image: "/alma-website/placeholder.svg",
     },
     {
       name: t("team.member.name"),
-      role: t("team.member.communication.role"),
-      description: t("team.member.communication.description"),
       image: "/alma-website/placeholder.svg",
     },
     {
       name: t("team.member.name"),
-      role: t("team.member.fundraising.role"),
-      description: t("team.member.fundraising.description"),
       image: "/alma-website/placeholder.svg",
     },
     {
       name: t("team.member.name"),
-      role: t("team.member.project.role"),
-      description: t("team.member.project.description"),
       image: "/alma-website/placeholder.svg",
     },
     {
       name: t("team.member.name"),
-      role: t("team.member.accounting.role"),
-      description: t("team.member.accounting.description"),
       image: "/alma-website/placeholder.svg",
     },
     {
       name: t("team.member.name"),
-      role: t("team.member.volunteer.role"),
-      description: t("team.member.volunteer.description"),
       image: "/alma-website/placeholder.svg",
     },
   ];
@@ -152,7 +132,7 @@ const Team = () => {
                   <div className="aspect-square overflow-hidden bg-background">
                     <img 
                       src={member.image} 
-                      alt={`${member.name} - ${member.role}`}
+                      alt={`${member.name}`}
                       className="w-full h-full object-cover"
                     />
                   </div>
