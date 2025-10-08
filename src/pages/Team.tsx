@@ -30,15 +30,15 @@ const Team = () => {
 
   const teamGermany = [
     {
-      name: t("team.clara.name"),
-      role: t("team.clara.role"),
-      description: t("team.clara.description"),
-      image: "/placeholder.svg",
-    },
-    {
       name: t("team.aaron.name"),
       role: t("team.aaron.role"),
       description: t("team.aaron.description"),
+      image: "/placeholder.svg",
+    },
+    {
+      name: t("team.clara.name"),
+      role: t("team.clara.role"),
+      description: t("team.clara.description"),
       image: "/placeholder.svg",
     },
     {
@@ -130,15 +130,9 @@ const Team = () => {
                     />
                   </div>
                   <div className="p-6">
-                    <h3 className="text-xl font-semibold text-foreground mb-1">
+                    <h3 className="text-xl font-semibold text-foreground">
                       {member.name}
                     </h3>
-                    <p className="text-primary font-medium mb-4">
-                      {member.role}
-                    </p>
-                    <p className="text-muted-foreground leading-relaxed">
-                      {member.description}
-                    </p>
                   </div>
                 </Card>
               ))}
@@ -163,15 +157,9 @@ const Team = () => {
                     />
                   </div>
                   <div className="p-6">
-                    <h3 className="text-xl font-semibold text-foreground mb-1">
+                    <h3 className="text-xl font-semibold text-foreground">
                       {member.name}
                     </h3>
-                    <p className="text-primary font-medium mb-4">
-                      {member.role}
-                    </p>
-                    <p className="text-muted-foreground leading-relaxed">
-                      {member.description}
-                    </p>
                   </div>
                 </Card>
               ))}
