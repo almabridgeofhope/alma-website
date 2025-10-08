@@ -45,7 +45,7 @@ const Team = () => {
       name: t("team.member.name"),
       role: t("team.member.communication.role"),
       description: t("team.member.communication.description"),
-      image: "/public/placeholder.svg",
+      image: "/placeholder.svg",
     },
     {
       name: t("team.member.name"),
