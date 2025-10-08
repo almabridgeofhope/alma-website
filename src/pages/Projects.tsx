@@ -163,12 +163,12 @@ const Projects = () => {
         })}
       </div>
       
-      {/* Timeline Labels */}
+      {/* Timeline Labels - Match exact positioning of icons */}
       <div className="flex justify-between mt-2">
         {timelinePhases.map((phase, index) => {
           const isActive = phase.id === currentPhase;
           return (
-            <div key={`label-${phase.id}`} className="flex-1 text-center">
+            <div key={`label-${phase.id}`} className="flex justify-center">
               <span 
                 className={`text-sm font-medium ${
                   isActive ? "text-primary" : "text-muted-foreground"
