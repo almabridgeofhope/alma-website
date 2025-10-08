@@ -179,6 +179,17 @@ const translations = {
     "contact.error.email": "Please enter a valid email address.",
     "contact.success.title": "Message Sent",
     "contact.success.description": "Thank you for your message. We will get back to you soon!",
+    
+    // Community Section
+    "community.title": "The Community",
+    "community.description1": "Our work is centered in Namaliri village, Njeru town council, Mukono District, Uganda. We partner with local communities to create sustainable development solutions that address the specific needs of this vibrant agricultural region.",
+    "community.description2": "All projects are carefully consulted with community leaders and focus on supporting the most vulnerable members of the community. We believe that lasting change comes from within the community itself, guided by those who understand local needs best.",
+    "community.description3": "Through close collaboration with village leaders, families, and local organizations, we ensure that every initiative addresses real needs and creates genuine impact for the people who call Namaliri village home.",
+    "community.stats.people": "Community Members",
+    "community.stats.projects": "Active Projects",
+    "community.location.title": "Community Location",
+    "community.location.coordinates": "Coordinates: 0°36'08.9\"N 32°51'03.0\"E",
+    "community.location.region": "Namaliri Village, Njeru Town Council, Mukono District, Uganda",
   },
   de: {
     // Navigation
@@ -350,6 +361,17 @@ const translations = {
     "contact.error.email": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
     "contact.success.title": "Nachricht gesendet",
     "contact.success.description": "Vielen Dank für Ihre Nachricht. Wir melden uns bald bei Ihnen!",
+    
+    // Community Section
+    "community.title": "Die Gemeinde",
+    "community.description1": "Unsere Arbeit konzentriert sich auf das Dorf Namaliri, Njeru Stadtgemeinde, Mukono-Distrikt, Uganda. Wir arbeiten mit lokalen Gemeinschaften zusammen, um nachhaltige Entwicklungslösungen zu schaffen, die die spezifischen Bedürfnisse dieser lebendigen landwirtschaftlichen Region ansprechen.",
+    "community.description2": "Alle Projekte werden sorgfältig mit Gemeindevorstehern beraten und konzentrieren sich auf die Unterstützung der am stärksten gefährdeten Mitglieder der Gemeinschaft. Wir glauben, dass dauerhafter Wandel aus der Gemeinschaft selbst kommt, geleitet von denen, die die lokalen Bedürfnisse am besten verstehen.",
+    "community.description3": "Durch enge Zusammenarbeit mit Dorfvorstehern, Familien und lokalen Organisationen stellen wir sicher, dass jede Initiative echte Bedürfnisse anspricht und echte Wirkung für die Menschen schafft, die das Dorf Namaliri ihr Zuhause nennen.",
+    "community.stats.people": "Gemeindemitglieder",
+    "community.stats.projects": "Aktive Projekte",
+    "community.location.title": "Standort der Gemeinde",
+    "community.location.coordinates": "Koordinaten: 0°36'08,9\"N 32°51'03,0\"E",
+    "community.location.region": "Namaliri Dorf, Njeru Stadtgemeinde, Mukono-Distrikt, Uganda",
   },
 };
 
