@@ -12,7 +12,6 @@ const CommunitySection = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             {t("community.title")}
           </h2>
-          <div className="w-24 h-1 bg-primary mx-auto rounded-full" />
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-center">
