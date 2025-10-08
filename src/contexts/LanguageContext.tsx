@@ -358,14 +358,29 @@ const translations = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguage] = useState<Language>("en");
+  // Initialize language from localStorage or default to "en"
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window !== "undefined") {
+      const savedLanguage = localStorage.getItem("alma-language") as Language;
+      return savedLanguage || "en";
+    }
+    return "en";
+  });
+
+  // Update localStorage when language changes
+  const handleSetLanguage = (newLanguage: Language) => {
+    setLanguage(newLanguage);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("alma-language", newLanguage);
+    }
+  };
 
   const t = (key: string): string => {
     return translations[language][key as keyof typeof translations.en] || key;
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );
