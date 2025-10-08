@@ -45,7 +45,7 @@ const Team = () => {
       name: t("team.member.name"),
       role: t("team.member.communication.role"),
       description: t("team.member.communication.description"),
-      image: "alma-website/placeholder.svg",
+      image: "/alma-website/placeholder.svg",
     },
     {
       name: t("team.member.name"),
