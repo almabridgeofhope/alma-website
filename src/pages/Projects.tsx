@@ -122,43 +122,64 @@ const Projects = () => {
   ];
 
   const renderTimeline = (currentPhase: TimelinePhase) => (
-    <div className="flex items-center justify-between mb-6 relative">
-      {timelinePhases.map((phase, index) => {
-        const isActive = phase.id === currentPhase;
-        const isPast = timelinePhases.findIndex(p => p.id === currentPhase) > index;
-        
-        return (
-          <div key={phase.id} className="flex items-center flex-1">
-            <div className="flex flex-col items-center relative z-10">
+    <div className="mb-6">
+      {/* Timeline Icons and Connecting Lines */}
+      <div className="flex justify-between items-center relative">
+        {/* Absolute connecting lines */}
+        <div className="absolute inset-y-0 left-0 right-0 flex items-center">
+          {timelinePhases.slice(0, -1).map((_, index) => {
+            const isPast = timelinePhases.findIndex(p => p.id === currentPhase) > index;
+            return (
+              <div 
+                key={`line-${index}`} 
+                className={`h-1 flex-1 mx-6 transition-all duration-300 ${
+                  isPast ? "bg-blue-200" : "bg-gray-200"
+                }`}
+              />
+            );
+          })}
+        </div>
+
+        {/* Icons */}
+        {timelinePhases.map((phase, index) => {
+          const isActive = phase.id === currentPhase;
+          const isPast = timelinePhases.findIndex(p => p.id === currentPhase) > index;
+          
+          return (
+            <div key={phase.id} className="flex flex-col items-center relative z-10">
               <div 
                 className={`w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all duration-300 ${
                   isActive 
-                    ? "bg-primary text-primary-foreground shadow-lg scale-110" 
+                    ? "bg-red-200 text-red-700 shadow-lg scale-110" 
                     : isPast
-                    ? "bg-primary/60 text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
+                    ? "bg-blue-200 text-blue-700"
+                    : "bg-gray-200 text-gray-500"
                 }`}
               >
                 {phase.icon}
               </div>
+            </div>
+          );
+        })}
+      </div>
+      
+      {/* Timeline Labels */}
+      <div className="flex justify-between mt-2">
+        {timelinePhases.map((phase, index) => {
+          const isActive = phase.id === currentPhase;
+          return (
+            <div key={`label-${phase.id}`} className="flex-1 text-center">
               <span 
-                className={`text-sm mt-2 font-medium ${
+                className={`text-sm font-medium ${
                   isActive ? "text-primary" : "text-muted-foreground"
                 }`}
               >
                 {phase.label}
               </span>
             </div>
-            {index < timelinePhases.length - 1 && (
-              <div 
-                className={`h-1 flex-1 mx-2 transition-all duration-300 ${
-                  isPast ? "bg-primary" : "bg-muted"
-                }`}
-              />
-            )}
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 
@@ -177,7 +198,7 @@ const Projects = () => {
         }`}>
           <div className={`grid md:grid-cols-2 gap-0 ${!isEven ? 'md:grid-flow-dense' : ''}`}>
             {/* Image Section */}
-            <div className={`relative aspect-[4/3] overflow-hidden ${!isEven ? 'md:col-start-2' : ''}`}>
+            <div className={`relative overflow-hidden ${!isEven ? 'md:col-start-2' : ''}`}>
               <img 
                 src={project.image} 
                 alt={project.title}
@@ -189,22 +210,19 @@ const Projects = () => {
             {/* Content Section */}
             <div className="p-8 md:p-10 flex flex-col justify-between">
               <div>
-                {/* Header with Icon and Status */}
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors duration-300">
-                      <Icon className="w-8 h-8 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="text-3xl font-bold text-foreground">
-                        {project.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground italic">
-                        {project.teaser}
-                      </p>
-                    </div>
+                {/* Header with Icon */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-3 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors duration-300">
+                    <Icon className="w-8 h-8 text-primary" />
                   </div>
-                  <span className="text-2xl">{project.statusIcon}</span>
+                  <div>
+                    <h3 className="text-3xl font-bold text-foreground">
+                      {project.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground italic">
+                      {project.teaser}
+                    </p>
+                  </div>
                 </div>
                 
                 {/* Description */}
