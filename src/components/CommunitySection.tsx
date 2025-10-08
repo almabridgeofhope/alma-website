@@ -32,7 +32,7 @@ const CommunitySection = () => {
               </Card>
               <Card className="p-6 text-center bg-primary-light/30">
                 <Heart className="w-8 h-8 text-primary mx-auto mb-3" />
-                <div className="text-2xl font-bold text-primary mb-1">4</div>
+                <div className="text-2xl font-bold text-primary mb-1">2</div>
                 <div className="text-sm text-muted-foreground">{t("community.stats.projects")}</div>
               </Card>
             </div>

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { Home, Droplets, Sprout, BookOpen } from "lucide-react";
+import { Home, Droplets, Sprout, BookOpen, Car } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import heroImage from "@/assets/community.jpg";
 import communityHouseImage from "@/assets/community_house.jpg";
@@ -101,24 +101,62 @@ const Projects = () => {
       priority: "planned",
     },
     {
-      title: t("projects.education.title"),
-      icon: BookOpen,
-      teaser: t("projects.education.teaser"),
-      description: t("projects.education.description"),
+      title: t("projects.mobility.title"),
+      icon: Car,
+      teaser: t("projects.mobility.teaser"),
+      description: t("projects.mobility.description"),
       goals: [
-        t("projects.education.goal1"),
-        t("projects.education.goal2"),
-        t("projects.education.goal3"),
+        t("projects.mobility.goal1"),
+        t("projects.mobility.goal2"),
+        t("projects.mobility.goal3"),
       ],
-      impact: t("projects.education.impact"),
-      statusText: t("projects.education.status"),
+      impact: t("projects.mobility.impact"),
+      statusText: t("projects.mobility.status"),
+      statusIcon: "⚪",
+      progress: 5,
+      currentPhase: "planning",
+      image: educationImage, // Using education image as placeholder
+      buttonText: t("projects.mobility.button"),
+      priority: "planned",
+    },
+    {
+      title: t("projects.sponsorship.title"),
+      icon: BookOpen,
+      teaser: t("projects.sponsorship.teaser"),
+      description: t("projects.sponsorship.description"),
+      goals: [
+        t("projects.sponsorship.goal1"),
+        t("projects.sponsorship.goal2"),
+        t("projects.sponsorship.goal3"),
+      ],
+      impact: t("projects.sponsorship.impact"),
+      statusText: t("projects.sponsorship.status"),
       statusIcon: "⚪",
       progress: 5,
       currentPhase: "planning",
       image: educationImage,
-      buttonText: t("projects.education.button"),
+      buttonText: t("projects.sponsorship.button"),
       priority: "planned",
     },
+    {
+      title: t("projects.financial.title"),
+      icon: BookOpen,
+      teaser: t("projects.financial.teaser"),
+      description: t("projects.financial.description"),
+      goals: [
+        t("projects.financial.goal1"),
+        t("projects.financial.goal2"),
+        t("projects.financial.goal3"),
+      ],
+      impact: t("projects.financial.impact"),
+      statusText: t("projects.financial.status"),
+      statusIcon: "⚪",
+      progress: 5,
+      currentPhase: "planning",
+      image: educationImage,
+      buttonText: t("projects.financial.button"),
+      priority: "planned",
+    }
   ];
 
   const renderTimeline = (currentPhase: TimelinePhase) => (
