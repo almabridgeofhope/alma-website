@@ -54,7 +54,7 @@ const translations = {
     // Contact
     "contact.title": "Get In Touch",
     "contact.subtitle": "We'd love to hear from you. Reach out to learn more about our work or explore potential partnerships.",
-    "contact.email": "info@almabridge.org",
+    "contact.email": "info@almabridgeofhope.org",
     "contact.button": "Contact Us",
     "contact.note": "Currently, we're focused on establishing our projects. Donation and volunteering opportunities will be available soon. Thank you for your patience and interest.",
     
@@ -216,7 +216,7 @@ const translations = {
     // Contact
     "contact.title": "Kontakt aufnehmen",
     "contact.subtitle": "Wir freuen uns auf Ihre Nachricht. Kontaktieren Sie uns, um mehr über unsere Arbeit zu erfahren oder potenzielle Partnerschaften zu erkunden.",
-    "contact.email": "info@almabridge.org",
+    "contact.email": "info@almabridgeofhope.org",
     "contact.button": "Kontaktieren Sie uns",
     "contact.note": "Derzeit konzentrieren wir uns auf die Einrichtung unserer Projekte. Spenden- und Freiwilligenmöglichkeiten werden bald verfügbar sein. Vielen Dank für Ihre Geduld und Ihr Interesse.",
     
