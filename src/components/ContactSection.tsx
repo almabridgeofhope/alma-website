@@ -19,21 +19,10 @@ const ContactSection = () => {
               {t("contact.subtitle")}
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
-                asChild
-              >
-                <a href={`mailto:${t("contact.email")}`} className="flex items-center gap-2">
-                  <Mail size={20} />
-                  {t("contact.email")}
-                </a>
-              </Button>
-
+            <div className="flex justify-center">
               <Link to="/contact">
                 <Button 
-                  variant="outline"
-                  className="shadow-button"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
                 >
                   {t("contact.button")}
                 </Button>
