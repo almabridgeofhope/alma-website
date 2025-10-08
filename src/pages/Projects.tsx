@@ -240,8 +240,8 @@ const Projects = () => {
                     </h4>
                     <ul className="space-y-2">
                       {project.goals.map((goal, i) => (
-                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <span className="text-primary mt-1 text-lg">•</span>
+                        <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span className="text-primary text-lg">•</span>
                           <span className="leading-relaxed">{goal}</span>
                         </li>
                       ))}
