@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Menu, X, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import logo from "@/assets/alma-logo.svg";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -14,25 +15,25 @@ const Navigation = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <a href="/" className="flex items-center">
+            <Link to="/" className="flex items-center">
               <img src={logo} alt="Alma Bridge of Hope" className="h-12 w-12 object-contain" />
-            </a>
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <a href="/" className="text-muted-foreground hover:text-primary transition-colors">
+            <Link to="/" className="text-muted-foreground hover:text-primary transition-colors">
               {t("nav.home")}
-            </a>
-            <a href="/projects" className="text-muted-foreground hover:text-primary transition-colors">
+            </Link>
+            <Link to="/projects" className="text-muted-foreground hover:text-primary transition-colors">
               {t("nav.projects")}
-            </a>
-            <a href="/team" className="text-muted-foreground hover:text-primary transition-colors">
+            </Link>
+            <Link to="/team" className="text-muted-foreground hover:text-primary transition-colors">
               {t("nav.team")}
-            </a>
-            <a href="/contact" className="text-muted-foreground hover:text-primary transition-colors">
+            </Link>
+            <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">
               {t("nav.contact")}
-            </a>
+            </Link>
             
             {/* Language Switcher */}
             <Button
@@ -58,34 +59,34 @@ const Navigation = () => {
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden py-4 space-y-4">
-            <a 
-              href="/" 
+            <Link 
+              to="/" 
               className="block text-muted-foreground hover:text-primary transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               {t("nav.home")}
-            </a>
-            <a 
-              href="/projects" 
+            </Link>
+            <Link 
+              to="/projects" 
               className="block text-muted-foreground hover:text-primary transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               {t("nav.projects")}
-            </a>
-            <a 
-              href="/team" 
+            </Link>
+            <Link 
+              to="/team" 
               className="block text-muted-foreground hover:text-primary transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               {t("nav.team")}
-            </a>
-            <a 
-              href="/contact" 
+            </Link>
+            <Link 
+              to="/contact" 
               className="block text-muted-foreground hover:text-primary transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               {t("nav.contact")}
-            </a>
+            </Link>
             
             <Button
               variant="ghost"

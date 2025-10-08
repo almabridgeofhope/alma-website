@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/alma-logo.svg";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -46,18 +47,18 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold text-foreground mb-4">{t("footer.nav.title")}</h4>
             <nav className="space-y-2">
-              <a href="/" className="block text-muted-foreground hover:text-primary transition-colors">
+              <Link to="/" className="block text-muted-foreground hover:text-primary transition-colors">
                 {t("nav.home")}
-              </a>
-              <a href="/projects" className="block text-muted-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link to="/projects" className="block text-muted-foreground hover:text-primary transition-colors">
                 {t("nav.projects")}
-              </a>
-              <a href="/team" className="block text-muted-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link to="/team" className="block text-muted-foreground hover:text-primary transition-colors">
                 {t("nav.team")}
-              </a>
-              <a href="/contact" className="block text-muted-foreground hover:text-primary transition-colors">
+              </Link>
+              <Link to="/contact" className="block text-muted-foreground hover:text-primary transition-colors">
                 {t("nav.contact")}
-              </a>
+              </Link>
             </nav>
           </div>
 
