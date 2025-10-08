@@ -6,14 +6,16 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { Mail, MapPin, Instagram } from "lucide-react";
+import { Mail, MapPin, Instagram, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import heroImage from "@/assets/uganda-landscape.jpg";
+import emailjs from '@emailjs/browser';
 
 const Contact = () => {
   const { toast } = useToast();
   const { t } = useLanguage();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -21,7 +23,7 @@ const Contact = () => {
     message: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -45,19 +47,60 @@ const Contact = () => {
       return;
     }
 
-    // Here you would typically send the form data to a backend
-    toast({
-      title: t("contact.success.title"),
-      description: t("contact.success.description"),
-    });
+    setIsLoading(true);
 
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      subject: "",
-      message: "",
-    });
+    try {
+      // EmailJS configuration
+      const serviceId = 'service_zdc12l3'; // Your EmailJS service ID
+      const templateId = 'template_eqc74jo'; // Your EmailJS template ID
+      const publicKey = 'zxPupF44hCueD6u4K'; // Replace with your actual EmailJS public key
+
+      const templateParams = {
+        from_name: formData.name,
+        from_email: formData.email,
+        subject: formData.subject || 'Contact Form Message',
+        message: formData.message,
+        to_email: 'info@almabridgeofhope.org',
+      };
+
+      await emailjs.send(serviceId, templateId, templateParams, publicKey);
+
+      toast({
+        title: t("contact.success.title"),
+        description: t("contact.success.description"),
+      });
+
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+      });
+    } catch (error) {
+      console.error('EmailJS error:', error);
+      
+      // More detailed error handling
+      let errorMessage = t("contact.error.send");
+      if (error instanceof Error) {
+        console.error('Error details:', error.message);
+        if (error.message.includes('Invalid email')) {
+          errorMessage = "Invalid email configuration";
+        } else if (error.message.includes('Template not found')) {
+          errorMessage = "Email template not found";
+        } else if (error.message.includes('Service not found')) {
+          errorMessage = "Email service not configured";
+        }
+      }
+      
+      toast({
+        title: t("contact.error.title"),
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -154,9 +197,17 @@ const Contact = () => {
 
                   <Button 
                     type="submit"
+                    disabled={isLoading}
                     className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button w-full"
                   >
-                    {t("contact.form.submit")}
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t("contact.form.sending")}
+                      </>
+                    ) : (
+                      t("contact.form.submit")
+                    )}
                   </Button>
                 </form>
               </Card>
