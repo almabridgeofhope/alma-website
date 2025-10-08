@@ -1,65 +1,44 @@
-import { Card } from "@/components/ui/card";
-import member1 from "@/assets/team-member-1.jpg";
-import member2 from "@/assets/team-member-2.jpg";
-import member3 from "@/assets/team-member-3.jpg";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import heroImage from "@/assets/hero-uganda-community.jpg";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const TeamSection = () => {
-  const teamMembers = [
-    {
-      name: "Amara Nakato",
-      role: "Uganda Operations Director",
-      image: member1,
-      quote: "Every well we dig, every solar panel we install, brings hope to our community.",
-    },
-    {
-      name: "Marcus Weber",
-      role: "Germany Partnership Coordinator", 
-      image: member2,
-      quote: "Building bridges between cultures through sustainable development.",
-    },
-    {
-      name: "Samuel Okello",
-      role: "Community Engagement Lead",
-      image: member3,
-      quote: "True change comes from within the community, we just facilitate the journey.",
-    },
-  ];
+  const { t } = useLanguage();
 
   return (
     <section id="team" className="py-section bg-primary-light">
       <div className="max-w-content mx-auto px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            Meet Our Team
+            {t("team.title")}
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Our international team brings together diverse perspectives united by a common vision
-          </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {teamMembers.map((member, index) => (
-            <Card key={index} className="text-center overflow-hidden shadow-card hover:shadow-soft transition-shadow duration-300">
-              <div className="aspect-square overflow-hidden">
-                <img 
-                  src={member.image} 
-                  alt={member.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-semibold text-foreground mb-1">
-                  {member.name}
-                </h3>
-                <p className="text-primary font-medium mb-4">
-                  {member.role}
-                </p>
-                <blockquote className="text-muted-foreground italic leading-relaxed">
-                  "{member.quote}"
-                </blockquote>
-              </div>
-            </Card>
-          ))}
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8 text-lg text-muted-foreground leading-relaxed space-y-4">
+            <p>{t("team.subtitle")}</p>
+            <p className="font-medium text-foreground">{t("team.cta")}</p>
+          </div>
+
+          <div className="mb-8 rounded-lg overflow-hidden shadow-card">
+            <img 
+              src={heroImage} 
+              alt="Alma Bridge of Hope Team"
+              className="w-full h-auto"
+            />
+          </div>
+
+          <div className="text-center">
+            <Link to="/team">
+              <Button 
+                size="lg" 
+                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
+              >
+                {t("team.button")}
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </section>

@@ -1,56 +1,100 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import logo from "@/assets/alma-logo.jpeg";
+import { useLanguage } from "@/contexts/LanguageContext";
+
 const Footer = () => {
+  const [email, setEmail] = useState("");
+  const { toast } = useToast();
+  const { t } = useLanguage();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast({
+        title: "Please enter your email",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    toast({
+      title: "Thank you for subscribing!",
+      description: "You'll receive monthly updates from our team.",
+    });
+    
+    setEmail("");
+  };
+
   return (
     <footer className="bg-muted py-12">
       <div className="max-w-content mx-auto px-6">
         <div className="grid md:grid-cols-3 gap-8">
           {/* Brand */}
           <div>
-            <h3 className="text-xl font-semibold text-foreground mb-4">
-              Alma Bridge of Hope
-            </h3>
+            <div className="flex items-center mb-4">
+              <img src={logo} alt="Alma Bridge of Hope" className="h-12 w-12 object-contain" />
+            </div>
             <p className="text-muted-foreground">
-              Bridging hope across continents through sustainable community development.
+              {t("footer.tagline")}
             </p>
           </div>
 
           {/* Navigation */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Navigation</h4>
+            <h4 className="font-semibold text-foreground mb-4">{t("footer.nav.title")}</h4>
             <nav className="space-y-2">
-              <a href="#about" className="block text-muted-foreground hover:text-primary transition-colors">
-                About
+              <a href="/" className="block text-muted-foreground hover:text-primary transition-colors">
+                {t("nav.home")}
               </a>
-              <a href="#work" className="block text-muted-foreground hover:text-primary transition-colors">
-                Our Work
+              <a href="/projects" className="block text-muted-foreground hover:text-primary transition-colors">
+                {t("nav.projects")}
               </a>
-              <a href="#team" className="block text-muted-foreground hover:text-primary transition-colors">
-                Team
+              <a href="/team" className="block text-muted-foreground hover:text-primary transition-colors">
+                {t("nav.team")}
               </a>
-              <a href="#updates" className="block text-muted-foreground hover:text-primary transition-colors">
-                Updates
-              </a>
-              <a href="#contact" className="block text-muted-foreground hover:text-primary transition-colors">
-                Contact
+              <a href="/contact" className="block text-muted-foreground hover:text-primary transition-colors">
+                {t("nav.contact")}
               </a>
             </nav>
           </div>
 
-          {/* Legal */}
+          {/* Newsletter */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Legal</h4>
-            <nav className="space-y-2">
-              <a href="#impressum" className="block text-muted-foreground hover:text-primary transition-colors">
-                Impressum
-              </a>
-              <a href="#privacy" className="block text-muted-foreground hover:text-primary transition-colors">
-                Privacy Policy
-              </a>
-            </nav>
+            <h4 className="font-semibold text-foreground mb-4">{t("newsletter.title")}</h4>
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <Input
+                type="email"
+                placeholder={t("newsletter.placeholder")}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full"
+              />
+              <Button 
+                type="submit" 
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                size="sm"
+              >
+                {t("newsletter.button")}
+              </Button>
+            </form>
           </div>
         </div>
 
-        <div className="mt-8 pt-8 border-t border-border text-center text-muted-foreground">
-          <p>&copy; 2024 Alma Bridge of Hope. All rights reserved.</p>
+        <div className="mt-8 pt-8 border-t border-border">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-muted-foreground text-sm">{t("footer.copyright")}</p>
+            <nav className="flex gap-6 text-sm">
+              <a href="#impressum" className="text-muted-foreground hover:text-primary transition-colors">
+                {t("footer.legal.impressum")}
+              </a>
+              <a href="#privacy" className="text-muted-foreground hover:text-primary transition-colors">
+                {t("footer.legal.privacy")}
+              </a>
+            </nav>
+          </div>
         </div>
       </div>
     </footer>

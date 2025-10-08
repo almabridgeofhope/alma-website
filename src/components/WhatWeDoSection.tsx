@@ -1,36 +1,41 @@
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import utilitiesImage from "@/assets/utilities-solar.jpg";
 import educationImage from "@/assets/education-classroom.jpg";
 import infrastructureImage from "@/assets/infrastructure-well.jpg";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const WhatWeDoSection = () => {
+  const { t } = useLanguage();
+  
   const initiatives = [
     {
-      title: "Basic Utilities",
-      description: "Bringing clean water and renewable energy solutions to remote communities.",
+      title: t("whatwedo.utilities.title"),
+      description: t("whatwedo.utilities.desc"),
       image: utilitiesImage,
     },
     {
-      title: "Education & Training",
-      description: "Supporting local education initiatives and skill-building programs.",
-      image: educationImage,
+      title: t("whatwedo.infrastructure.title"),
+      description: t("whatwedo.infrastructure.desc"),
+      image: infrastructureImage,
     },
     {
-      title: "Infrastructure & Local Empowerment",
-      description: "Building sustainable infrastructure while empowering local leadership.",
-      image: infrastructureImage,
+      title: t("whatwedo.education.title"),
+      description: t("whatwedo.education.desc"),
+      image: educationImage,
     },
   ];
 
   return (
     <section id="work" className="py-section bg-background">
       <div className="max-w-content mx-auto px-6">
-        <div className="text-center mb-12">
+      <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-            What We Do
+            {t("whatwedo.title")}
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Our work focuses on three key areas that create lasting impact in rural Uganda
+            {t("whatwedo.subtitle")}
           </p>
         </div>
 
@@ -54,6 +59,17 @@ const WhatWeDoSection = () => {
               </div>
             </Card>
           ))}
+        </div>
+        
+        <div className="text-center mt-12">
+          <Link to="/projects">
+            <Button 
+              size="lg" 
+              className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
+            >
+              {t("whatwedo.button")}
+            </Button>
+          </Link>
         </div>
       </div>
     </section>
