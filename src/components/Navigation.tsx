@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Menu, X, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logo from "@/assets/alma-logo.jpeg";
+import logo from "@/assets/alma-logo.svg";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const Navigation = () => {
