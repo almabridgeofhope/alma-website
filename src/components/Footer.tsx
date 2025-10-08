@@ -47,16 +47,32 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold text-foreground mb-4">{t("footer.nav.title")}</h4>
             <nav className="space-y-2">
-              <Link to="/" className="block text-muted-foreground hover:text-primary transition-colors">
+              <Link 
+                to="/" 
+                className="block text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
                 {t("nav.home")}
               </Link>
-              <Link to="/projects" className="block text-muted-foreground hover:text-primary transition-colors">
+              <Link 
+                to="/projects" 
+                className="block text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
                 {t("nav.projects")}
               </Link>
-              <Link to="/team" className="block text-muted-foreground hover:text-primary transition-colors">
+              <Link 
+                to="/team" 
+                className="block text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
                 {t("nav.team")}
               </Link>
-              <Link to="/contact" className="block text-muted-foreground hover:text-primary transition-colors">
+              <Link 
+                to="/contact" 
+                className="block text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
                 {t("nav.contact")}
               </Link>
             </nav>

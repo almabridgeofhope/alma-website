@@ -15,23 +15,43 @@ const Navigation = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <Link to="/" className="flex items-center">
+            <Link 
+              to="/" 
+              className="flex items-center"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
               <img src={logo} alt="Alma Bridge of Hope" className="h-12 w-12 object-contain" />
             </Link>
           </div>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="text-muted-foreground hover:text-primary transition-colors">
+            <Link 
+              to="/" 
+              className="text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
               {t("nav.home")}
             </Link>
-            <Link to="/projects" className="text-muted-foreground hover:text-primary transition-colors">
+            <Link 
+              to="/projects" 
+              className="text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
               {t("nav.projects")}
             </Link>
-            <Link to="/team" className="text-muted-foreground hover:text-primary transition-colors">
+            <Link 
+              to="/team" 
+              className="text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
               {t("nav.team")}
             </Link>
-            <Link to="/contact" className="text-muted-foreground hover:text-primary transition-colors">
+            <Link 
+              to="/contact" 
+              className="text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
               {t("nav.contact")}
             </Link>
             
@@ -62,28 +82,40 @@ const Navigation = () => {
             <Link 
               to="/" 
               className="block text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => {
+                setIsMenuOpen(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             >
               {t("nav.home")}
             </Link>
             <Link 
               to="/projects" 
               className="block text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => {
+                setIsMenuOpen(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             >
               {t("nav.projects")}
             </Link>
             <Link 
               to="/team" 
               className="block text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => {
+                setIsMenuOpen(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             >
               {t("nav.team")}
             </Link>
             <Link 
               to="/contact" 
               className="block text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setIsMenuOpen(false)}
+              onClick={() => {
+                setIsMenuOpen(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             >
               {t("nav.contact")}
             </Link>

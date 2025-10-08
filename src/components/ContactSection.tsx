@@ -20,7 +20,10 @@ const ContactSection = () => {
             </p>
 
             <div className="flex justify-center">
-              <Link to="/contact">
+              <Link 
+                to="/contact"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
                 <Button 
                   className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
                 >

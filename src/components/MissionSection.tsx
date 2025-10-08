@@ -21,7 +21,10 @@ const MissionSection = () => {
           
           <div className="mt-8">
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/contact">
+              <Link 
+                to="/contact"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
                 <Button 
                   size="lg" 
                   className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
@@ -29,7 +32,10 @@ const MissionSection = () => {
                   {t("mission.contact")}
                 </Button>
               </Link>
-              <Link to="/projects">
+              <Link 
+                to="/projects"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
                 <Button 
                   size="lg" 
                   variant="outline"

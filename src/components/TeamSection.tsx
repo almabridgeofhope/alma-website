@@ -30,14 +30,17 @@ const TeamSection = () => {
 
 
           <div className="text-center">
-            <Link to="/team">
+            <Link 
+              to="/team"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
               <Button 
                 size="lg" 
                 className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
               >
                 {t("team.button")}
               </Button>
-            </Link>
+              </Link>
           </div>
         </div>
       </div>

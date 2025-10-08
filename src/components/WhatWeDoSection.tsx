@@ -62,14 +62,17 @@ const WhatWeDoSection = () => {
         </div>
         
         <div className="text-center mt-12">
-          <Link to="/projects">
+          <Link 
+            to="/projects"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          >
             <Button 
               size="lg" 
               className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
             >
               {t("whatwedo.button")}
             </Button>
-          </Link>
+            </Link>
         </div>
       </div>
     </section>
