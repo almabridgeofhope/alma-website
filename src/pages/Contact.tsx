@@ -173,10 +173,10 @@ const Contact = () => {
                         {t("contact.info.email")}
                       </h3>
                       <a 
-                        href="mailto:info@alma-bridge.org"
+                        href="mailto:info@almabridgeofhope.org"
                         className="text-muted-foreground hover:text-primary transition-colors"
                       >
-                        info@alma-bridge.org
+                        info@almabridgeofhope.org
                       </a>
                     </div>
                   </div>
