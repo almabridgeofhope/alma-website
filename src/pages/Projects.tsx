@@ -4,6 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Home, Droplets, Sprout, BookOpen } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import heroImage from "@/assets/infrastructure-well.jpg";
 import communityHouseImage from "@/assets/hero-uganda-community.jpg";
 import waterImage from "@/assets/infrastructure-well.jpg";
@@ -29,91 +30,93 @@ interface Project {
 }
 
 const Projects = () => {
+  const { t } = useLanguage();
+  
   const timelinePhases = [
-    { id: "planning", icon: "🌱", label: "Planung" },
-    { id: "building", icon: "🔧", label: "Aufbau" },
-    { id: "implementation", icon: "💧", label: "Umsetzung" },
-    { id: "impact", icon: "🌾", label: "Wirkung" },
+    { id: "planning", icon: "🌱", label: t("projects.timeline.planning") },
+    { id: "building", icon: "🔧", label: t("projects.timeline.building") },
+    { id: "implementation", icon: "💧", label: t("projects.timeline.implementation") },
+    { id: "impact", icon: "🌾", label: t("projects.timeline.impact") },
   ];
 
   const activeProjects: Project[] = [
     {
-      title: "Community House",
+      title: t("projects.community.title"),
       icon: Home,
-      teaser: "Das Herzstück unserer Initiative",
-      description: "Das Community House ist das Herzstück unserer Initiative. Es dient als Treffpunkt, Schulungszentrum und Ausgangspunkt für alle Programme – hier entsteht Raum für Bildung, Zusammenarbeit und nachhaltige Entwicklung.",
+      teaser: t("projects.community.teaser"),
+      description: t("projects.community.description"),
       goals: [
-        "Bau eines zentralen Hauses mit Lern- und Gemeinschaftsräumen",
-        "Standort für Brunnen & Viehzuchtprojekt",
-        "Einrichtung von Lager- und Büroräumen",
+        t("projects.community.goal1"),
+        t("projects.community.goal2"),
+        t("projects.community.goal3"),
       ],
-      impact: "Ein sicherer Ort für Austausch, Bildung und lokale Eigenständigkeit.",
-      statusText: "Aufbauphase",
+      impact: t("projects.community.impact"),
+      statusText: t("projects.community.status"),
       statusIcon: "🟢",
       progress: 65,
       currentPhase: "building",
       image: communityHouseImage,
-      buttonText: "Mehr erfahren",
+      buttonText: t("projects.community.button"),
       priority: "active",
     },
     {
-      title: "Brunnenprojekt",
+      title: t("projects.well.title"),
       icon: Droplets,
-      teaser: "Zugang zu sauberem Wasser",
-      description: "Sauberes Wasser ist die Grundlage für Gesundheit und Bildung. Wir errichten einen Brunnen in der Nähe des Community House, um die Grundversorgung der Dorfgemeinschaft sicherzustellen.",
+      teaser: t("projects.well.teaser"),
+      description: t("projects.well.description"),
       goals: [
-        "Versorgung mit sauberem Trinkwasser",
-        "Verringerung wasserbedingter Krankheiten",
-        "Aufbau lokaler Wartungsstrukturen",
+        t("projects.well.goal1"),
+        t("projects.well.goal2"),
+        t("projects.well.goal3"),
       ],
-      impact: "Verbesserte Lebensqualität für über 150 Menschen in der Region Wakiso.",
-      statusText: "Vorbereitungsphase – Standortprüfung abgeschlossen",
+      impact: t("projects.well.impact"),
+      statusText: t("projects.well.status"),
       statusIcon: "🟢",
       progress: 35,
       currentPhase: "planning",
       image: waterImage,
-      buttonText: "Projekt unterstützen 💧",
+      buttonText: t("projects.well.button"),
       priority: "active",
     },
   ];
 
   const plannedProjects: Project[] = [
     {
-      title: "Viehversorgung & Landwirtschaft",
+      title: t("projects.livestock.title"),
       icon: Sprout,
-      teaser: "Nachhaltige Ernährungssicherheit",
-      description: "Gemeinschaftliche Viehhaltung und nachhaltige Landwirtschaft sichern Ernährung und Einkommen für viele Familien.",
+      teaser: t("projects.livestock.teaser"),
+      description: t("projects.livestock.description"),
       goals: [
-        "Aufbau gemeinsamer Futterlager",
-        "Tierärztliche Versorgung verbessern",
-        "Schulungen für nachhaltige Tierhaltung",
+        t("projects.livestock.goal1"),
+        t("projects.livestock.goal2"),
+        t("projects.livestock.goal3"),
       ],
-      impact: "Langfristige Ernährungssicherheit & wirtschaftliche Unabhängigkeit.",
-      statusText: "In Vorbereitung – Kooperativen bilden sich",
+      impact: t("projects.livestock.impact"),
+      statusText: t("projects.livestock.status"),
       statusIcon: "🟡",
       progress: 20,
       currentPhase: "planning",
       image: agricultureImage,
-      buttonText: "Mehr erfahren 🐄",
+      buttonText: t("projects.livestock.button"),
       priority: "planned",
     },
     {
-      title: "Financial Literacy & Bildung",
+      title: t("projects.education.title"),
       icon: BookOpen,
-      teaser: "Der Schlüssel zu Selbstständigkeit",
-      description: "Finanzielle Bildung ist der Schlüssel zu Selbstständigkeit. Wir entwickeln Trainings und Lernzentren, um Jugendliche und Erwachsene zu stärken.",
+      teaser: t("projects.education.teaser"),
+      description: t("projects.education.description"),
       goals: [
-        "Trainings zu Finanzen & Budgetplanung",
-        "Aufbau lokaler Lernräume",
-        "Partnerschaften mit Schulen",
+        t("projects.education.goal1"),
+        t("projects.education.goal2"),
+        t("projects.education.goal3"),
       ],
-      impact: "Mehr als 100 Jugendliche sollen Zugang zu praxisnaher Finanzbildung erhalten.",
-      statusText: "In Vorbereitung – Lehrmaterialien erstellt",
+      impact: t("projects.education.impact"),
+      statusText: t("projects.education.status"),
       statusIcon: "⚪",
       progress: 15,
       currentPhase: "planning",
       image: educationImage,
-      buttonText: "Unterstütze Bildung 📚",
+      buttonText: t("projects.education.button"),
       priority: "planned",
     },
   ];
@@ -215,7 +218,7 @@ const Projects = () => {
                   <div>
                     <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
                       <span className="w-1 h-6 bg-primary rounded-full" />
-                      Ziele
+                      {t("projects.goals")}
                     </h4>
                     <ul className="space-y-2">
                       {project.goals.map((goal, i) => (
@@ -231,7 +234,7 @@ const Projects = () => {
                   <div>
                     <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
                       <span className="w-1 h-6 bg-primary rounded-full" />
-                      Impact
+                      {t("projects.impact_label")}
                     </h4>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       {project.impact}
@@ -246,7 +249,7 @@ const Projects = () => {
                 <div className="p-4 bg-background rounded-lg border border-border mb-6">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-sm font-semibold text-foreground">
-                      Status: {project.statusText}
+                      {t("projects.status")}: {project.statusText}
                     </h4>
                     <span className="text-sm font-bold text-primary">
                       {project.progress}%
@@ -284,10 +287,10 @@ const Projects = () => {
           
           <div className="relative z-10 text-center text-white max-w-4xl px-6">
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              Unsere Projekte
+              {t("projects.hero.title")}
             </h1>
             <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
-              Jedes Projekt ist ein Schritt zu einer selbstbestimmten Zukunft. Gemeinsam schaffen wir Strukturen, die Bestand haben – von Wasser über Bildung bis Gemeinschaft.
+              {t("projects.hero.subtitle")}
             </p>
           </div>
         </section>
@@ -297,7 +300,7 @@ const Projects = () => {
           <div className="max-w-content mx-auto px-6">
             <div className="mb-12 text-center">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Aktuelle Projekte
+                {t("projects.active.title")}
               </h2>
               <div className="w-24 h-1 bg-primary mx-auto rounded-full" />
             </div>
@@ -313,7 +316,7 @@ const Projects = () => {
           <div className="max-w-content mx-auto px-6">
             <div className="mb-12 text-center">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Weitere geplante Initiativen
+                {t("projects.planned.title")}
               </h2>
               <div className="w-24 h-1 bg-primary mx-auto rounded-full" />
             </div>
@@ -329,7 +332,7 @@ const Projects = () => {
           <div className="max-w-content mx-auto px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-                Unsere Wirkung
+                {t("projects.impact.title")}
               </h2>
               <div className="w-24 h-1 bg-primary mx-auto rounded-full mb-8" />
             </div>
@@ -337,31 +340,31 @@ const Projects = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
               <div className="text-center p-6 bg-primary-light rounded-lg">
                 <div className="text-4xl md:text-5xl font-bold text-primary mb-2">4</div>
-                <div className="text-sm md:text-base text-muted-foreground">Projekte</div>
+                <div className="text-sm md:text-base text-muted-foreground">{t("projects.stats.projects")}</div>
               </div>
               <div className="text-center p-6 bg-primary-light rounded-lg">
                 <div className="text-4xl md:text-5xl font-bold text-primary mb-2">2</div>
-                <div className="text-sm md:text-base text-muted-foreground">Aktiv im Bau</div>
+                <div className="text-sm md:text-base text-muted-foreground">{t("projects.stats.active")}</div>
               </div>
               <div className="text-center p-6 bg-primary-light rounded-lg">
                 <div className="text-4xl md:text-5xl font-bold text-primary mb-2">150+</div>
-                <div className="text-sm md:text-base text-muted-foreground">Menschen erreicht</div>
+                <div className="text-sm md:text-base text-muted-foreground">{t("projects.stats.people")}</div>
               </div>
               <div className="text-center p-6 bg-primary-light rounded-lg">
                 <div className="text-4xl md:text-5xl font-bold text-primary mb-2">40+</div>
-                <div className="text-sm md:text-base text-muted-foreground">Engagierte & Freiwillige</div>
+                <div className="text-sm md:text-base text-muted-foreground">{t("projects.stats.volunteers")}</div>
               </div>
             </div>
 
             <div className="text-center">
               <p className="text-xl text-foreground mb-6">
-                Hilf uns, noch mehr Wirkung zu entfalten.
+                {t("projects.impact.subtitle")}
               </p>
               <Button 
                 size="lg"
                 className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button text-lg px-8 py-6"
               >
-                Jetzt spenden
+                {t("projects.impact.donate")}
               </Button>
             </div>
           </div>

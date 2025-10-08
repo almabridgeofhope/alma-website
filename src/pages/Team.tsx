@@ -1,71 +1,74 @@
 import { Card } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { useLanguage } from "@/contexts/LanguageContext";
 import heroImage from "@/assets/hero-uganda-community.jpg";
 
 const Team = () => {
+  const { t } = useLanguage();
+  
   const teamUganda = [
     {
-      name: "Peter Ssenga",
-      role: "Community Lead Uganda",
-      description: "Peter koordiniert alle Projekte vor Ort und arbeitet eng mit lokalen Partnern zusammen, um nachhaltige Entwicklung zu ermöglichen.",
+      name: t("team.peter.name"),
+      role: t("team.peter.role"),
+      description: t("team.peter.description"),
       image: "/placeholder.svg",
     },
     {
-      name: "Fiona Nakazibwe",
-      role: "Education & Community Programs",
-      description: "Fiona entwickelt und leitet Bildungsprogramme, die der lokalen Gemeinschaft zu mehr Eigenständigkeit verhelfen.",
+      name: t("team.fiona.name"),
+      role: t("team.fiona.role"),
+      description: t("team.fiona.description"),
       image: "/placeholder.svg",
     },
     {
-      name: "Teammitglied",
-      role: "Agriculture & Infrastructure Support",
-      description: "Unterstützung bei landwirtschaftlichen Projekten und nachhaltiger Infrastrukturentwicklung in den Gemeinden.",
+      name: t("team.member.name"),
+      role: t("team.member.agriculture.role"),
+      description: t("team.member.agriculture.description"),
       image: "/placeholder.svg",
     },
   ];
 
   const teamGermany = [
     {
-      name: "Clara Thümecke",
-      role: "Vorstand & Projektentwicklung",
-      description: "Clara leitet die strategische Entwicklung und koordiniert die Zusammenarbeit zwischen Deutschland und Uganda.",
+      name: t("team.clara.name"),
+      role: t("team.clara.role"),
+      description: t("team.clara.description"),
       image: "/placeholder.svg",
     },
     {
-      name: "Aaron",
-      role: "Finanzkoordination & Partnerschaften",
-      description: "Aaron verwaltet die finanziellen Ressourcen und baut Partnerschaften mit Unterstützern und Organisationen auf.",
+      name: t("team.aaron.name"),
+      role: t("team.aaron.role"),
+      description: t("team.aaron.description"),
       image: "/placeholder.svg",
     },
     {
-      name: "Teammitglied",
-      role: "Öffentlichkeitsarbeit & Kommunikation",
-      description: "Verantwortlich für die externe Kommunikation und das Aufbauen von Aufmerksamkeit für unsere Projekte.",
+      name: t("team.member.name"),
+      role: t("team.member.communication.role"),
+      description: t("team.member.communication.description"),
       image: "/placeholder.svg",
     },
     {
-      name: "Teammitglied",
-      role: "Fundraising & Spendenakquise",
-      description: "Entwickelt Strategien zur Mittelbeschaffung und pflegt Beziehungen zu Förderern.",
+      name: t("team.member.name"),
+      role: t("team.member.fundraising.role"),
+      description: t("team.member.fundraising.description"),
       image: "/placeholder.svg",
     },
     {
-      name: "Teammitglied",
-      role: "Projektmanagement",
-      description: "Koordiniert die Umsetzung der Projekte und sorgt für reibungslose Abläufe.",
+      name: t("team.member.name"),
+      role: t("team.member.project.role"),
+      description: t("team.member.project.description"),
       image: "/placeholder.svg",
     },
     {
-      name: "Teammitglied",
-      role: "Buchhaltung & Verwaltung",
-      description: "Kümmert sich um die ordnungsgemäße Verwaltung und Dokumentation aller Finanzen.",
+      name: t("team.member.name"),
+      role: t("team.member.accounting.role"),
+      description: t("team.member.accounting.description"),
       image: "/placeholder.svg",
     },
     {
-      name: "Teammitglied",
-      role: "Ehrenamtliche Koordination",
-      description: "Bindet Freiwillige ein und organisiert ehrenamtliche Unterstützung für Veranstaltungen.",
+      name: t("team.member.name"),
+      role: t("team.member.volunteer.role"),
+      description: t("team.member.volunteer.description"),
       image: "/placeholder.svg",
     },
   ];
@@ -85,10 +88,10 @@ const Team = () => {
           
           <div className="relative z-10 text-center text-white max-w-4xl px-6">
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              Unser Team
+              {t("team.hero.title")}
             </h1>
             <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
-              Gemeinsam Brücken bauen zwischen Uganda und Deutschland
+              {t("team.hero.subtitle")}
             </p>
           </div>
         </section>
@@ -98,17 +101,13 @@ const Team = () => {
           <div className="max-w-content mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center mb-16">
               <h2 className="text-3xl font-bold text-foreground mb-6">
-                Internationale Zusammenarbeit
+                {t("team.intro.title")}
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed mb-4">
-                Alma Bridge of Hope ist ein gemeinsames Projekt von engagierten Menschen aus Uganda und Deutschland. 
-                Unsere Stärke liegt in der engen Zusammenarbeit zwischen beiden Ländern: Während unser Team in Uganda 
-                die Projekte vor Ort umsetzt und die lokalen Gemeinschaften direkt unterstützt, koordiniert unser 
-                deutsches Team die strategische Entwicklung, Mittelbeschaffung und internationale Partnerschaften.
+                {t("team.intro.p1")}
               </p>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                Diese interkontinentale Kooperation ermöglicht es uns, nachhaltige Entwicklung zu fördern, 
-                die wirklich von und mit den Menschen vor Ort gestaltet wird.
+                {t("team.intro.p2")}
               </p>
             </div>
           </div>
@@ -118,7 +117,7 @@ const Team = () => {
         <section className="py-section bg-background">
           <div className="max-w-content mx-auto px-6">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12 text-center">
-              Team Uganda
+              {t("team.uganda.title")}
             </h2>
             <div className="grid md:grid-cols-3 gap-8">
               {teamUganda.map((member, index) => (
@@ -151,7 +150,7 @@ const Team = () => {
         <section className="py-section bg-primary-light">
           <div className="max-w-content mx-auto px-6">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12 text-center">
-              Team Deutschland
+              {t("team.germany.title")}
             </h2>
             <div className="grid md:grid-cols-3 gap-8">
               {teamGermany.map((member, index) => (

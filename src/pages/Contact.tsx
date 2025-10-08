@@ -8,10 +8,12 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Mail, MapPin, Instagram } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import heroImage from "@/assets/uganda-landscape.jpg";
 
 const Contact = () => {
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -25,8 +27,8 @@ const Contact = () => {
     // Basic validation
     if (!formData.name || !formData.email || !formData.message) {
       toast({
-        title: "Fehler",
-        description: "Bitte füllen Sie alle Pflichtfelder aus.",
+        title: t("contact.error.title"),
+        description: t("contact.error.required"),
         variant: "destructive",
       });
       return;
@@ -36,8 +38,8 @@ const Contact = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       toast({
-        title: "Fehler",
-        description: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+        title: t("contact.error.title"),
+        description: t("contact.error.email"),
         variant: "destructive",
       });
       return;
@@ -45,8 +47,8 @@ const Contact = () => {
 
     // Here you would typically send the form data to a backend
     toast({
-      title: "Nachricht gesendet",
-      description: "Vielen Dank für Ihre Nachricht. Wir melden uns bald bei Ihnen!",
+      title: t("contact.success.title"),
+      description: t("contact.success.description"),
     });
 
     // Reset form
@@ -80,10 +82,10 @@ const Contact = () => {
           
           <div className="relative z-10 text-center text-white max-w-4xl px-6">
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              Kontakt
+              {t("contact.hero.title")}
             </h1>
             <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
-              Wir freuen uns auf Ihre Nachricht
+              {t("contact.hero.subtitle")}
             </p>
           </div>
         </section>
@@ -95,56 +97,56 @@ const Contact = () => {
               {/* Contact Form */}
               <Card className="p-8 shadow-card">
                 <h2 className="text-2xl font-bold text-foreground mb-6">
-                  Nachricht senden
+                  {t("contact.form.title")}
                 </h2>
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
-                    <Label htmlFor="name">Name *</Label>
+                    <Label htmlFor="name">{t("contact.form.name")}</Label>
                     <Input
                       id="name"
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      placeholder="Ihr Name"
+                      placeholder={t("contact.form.name_placeholder")}
                       required
                       className="mt-2"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="email">E-Mail *</Label>
+                    <Label htmlFor="email">{t("contact.form.email")}</Label>
                     <Input
                       id="email"
                       name="email"
                       type="email"
                       value={formData.email}
                       onChange={handleChange}
-                      placeholder="ihre.email@beispiel.de"
+                      placeholder={t("contact.form.email_placeholder")}
                       required
                       className="mt-2"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="subject">Betreff</Label>
+                    <Label htmlFor="subject">{t("contact.form.subject")}</Label>
                     <Input
                       id="subject"
                       name="subject"
                       value={formData.subject}
                       onChange={handleChange}
-                      placeholder="Worum geht es?"
+                      placeholder={t("contact.form.subject_placeholder")}
                       className="mt-2"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="message">Nachricht *</Label>
+                    <Label htmlFor="message">{t("contact.form.message")}</Label>
                     <Textarea
                       id="message"
                       name="message"
                       value={formData.message}
                       onChange={handleChange}
-                      placeholder="Ihre Nachricht..."
+                      placeholder={t("contact.form.message_placeholder")}
                       required
                       className="mt-2 min-h-[150px]"
                     />
@@ -154,7 +156,7 @@ const Contact = () => {
                     type="submit"
                     className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button w-full"
                   >
-                    Nachricht senden
+                    {t("contact.form.submit")}
                   </Button>
                 </form>
               </Card>
@@ -168,7 +170,7 @@ const Contact = () => {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-foreground mb-2">
-                        E-Mail
+                        {t("contact.info.email")}
                       </h3>
                       <a 
                         href="mailto:info@alma-bridge.org"
@@ -187,7 +189,7 @@ const Contact = () => {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-foreground mb-2">
-                        Adresse
+                        {t("contact.info.address")}
                       </h3>
                       <p className="text-muted-foreground">
                         Alma Bridge of Hope e. V.<br />
@@ -206,7 +208,7 @@ const Contact = () => {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-foreground mb-2">
-                        Social Media
+                        {t("contact.info.social")}
                       </h3>
                       <a 
                         href="https://instagram.com/almabridgeofhope"
@@ -222,9 +224,7 @@ const Contact = () => {
 
                 <Card className="p-6 shadow-card bg-primary-light border-primary/20">
                   <p className="text-muted-foreground leading-relaxed">
-                    <strong className="text-foreground">Hinweis:</strong> Wir befinden uns derzeit in der Aufbauphase. 
-                    Spenden- und Freiwilligenmöglichkeiten werden in Kürze verfügbar sein. 
-                    Vielen Dank für Ihr Interesse und Ihre Geduld!
+                    <strong className="text-foreground">{t("contact.note.title")}</strong> {t("contact.note.text")}
                   </p>
                 </Card>
               </div>
