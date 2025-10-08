@@ -276,13 +276,6 @@ const Projects = () => {
                   <Progress value={project.progress} className="h-2" />
                 </div>
               </div>
-
-              {/* CTA Button */}
-              <Button 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button w-full text-lg py-6 group-hover:scale-[1.02] transition-transform"
-              >
-                {project.buttonText}
-              </Button>
             </div>
           </div>
         </Card>
@@ -320,7 +313,6 @@ const Projects = () => {
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
                 {t("projects.active.title")}
               </h2>
-              <div className="w-24 h-1 bg-primary mx-auto rounded-full" />
             </div>
             
             <div className="space-y-16">
@@ -336,7 +328,6 @@ const Projects = () => {
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
                 {t("projects.planned.title")}
               </h2>
-              <div className="w-24 h-1 bg-primary mx-auto rounded-full" />
             </div>
             
             <div className="space-y-16">
@@ -352,7 +343,6 @@ const Projects = () => {
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
                 {t("projects.impact.title")}
               </h2>
-              <div className="w-24 h-1 bg-primary mx-auto rounded-full mb-8" />
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
