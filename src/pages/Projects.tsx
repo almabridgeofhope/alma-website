@@ -5,11 +5,11 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Home, Droplets, Sprout, BookOpen } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import heroImage from "@/assets/infrastructure-well.jpg";
-import communityHouseImage from "@/assets/hero-uganda-community.jpg";
-import waterImage from "@/assets/infrastructure-well.jpg";
-import agricultureImage from "@/assets/utilities-solar.jpg";
-import educationImage from "@/assets/education-classroom.jpg";
+import heroImage from "@/assets/community.jpg";
+import communityHouseImage from "@/assets/community_house.jpg";
+import waterImage from "@/assets/water.webp";
+import agricultureImage from "@/assets/goat_farm.webp";
+import educationImage from "@/assets/education.webp";
 
 type TimelinePhase = "planning" | "building" | "implementation" | "impact";
 
