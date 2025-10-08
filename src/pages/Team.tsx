@@ -12,19 +12,19 @@ const Team = () => {
       name: t("team.peter.name"),
       role: t("team.peter.role"),
       description: t("team.peter.description"),
-      image: "/public/placeholder.svg",
+      image: "/alma-website/placeholder.svg",
     },
     {
       name: t("team.fiona.name"),
       role: t("team.fiona.role"),
       description: t("team.fiona.description"),
-      image: "/public/placeholder.svg",
+      image: "/alma-website/placeholder.svg",
     },
     {
       name: t("team.member.name"),
       role: t("team.member.agriculture.role"),
       description: t("team.member.agriculture.description"),
-      image: "/public/placeholder.svg",
+      image: "/alma-website/placeholder.svg",
     },
   ];
 
@@ -33,19 +33,19 @@ const Team = () => {
       name: t("team.aaron.name"),
       role: t("team.aaron.role"),
       description: t("team.aaron.description"),
-      image: "/public/placeholder.svg",
+      image: "/alma-website/placeholder.svg",
     },
     {
       name: t("team.clara.name"),
       role: t("team.clara.role"),
       description: t("team.clara.description"),
-      image: "/public/placeholder.svg",
+      image: "/alma-website/placeholder.svg",
     },
     {
       name: t("team.member.name"),
       role: t("team.member.communication.role"),
       description: t("team.member.communication.description"),
-      image: "/placeholder.svg",
+      image: "alma-website/placeholder.svg",
     },
     {
       name: t("team.member.name"),
@@ -57,19 +57,19 @@ const Team = () => {
       name: t("team.member.name"),
       role: t("team.member.project.role"),
       description: t("team.member.project.description"),
-      image: "/public/placeholder.svg",
+      image: "/alma-website/placeholder.svg",
     },
     {
       name: t("team.member.name"),
       role: t("team.member.accounting.role"),
       description: t("team.member.accounting.description"),
-      image: "/public/placeholder.svg",
+      image: "/alma-website/placeholder.svg",
     },
     {
       name: t("team.member.name"),
       role: t("team.member.volunteer.role"),
       description: t("team.member.volunteer.description"),
-      image: "/public/placeholder.svg",
+      image: "/alma-website/placeholder.svg",
     },
   ];
 
