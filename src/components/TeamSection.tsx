@@ -14,13 +14,7 @@ const TeamSection = () => {
             {t("team.title")}
           </h2>
         </div>
-
         <div className="max-w-4xl mx-auto">
-          <div className="mb-8 text-lg text-muted-foreground leading-relaxed space-y-4">
-            <p>{t("team.subtitle")}</p>
-            <p className="font-medium text-foreground">{t("team.cta")}</p>
-          </div>
-
           <div className="mb-8 rounded-lg overflow-hidden shadow-card">
             <img 
               src={heroImage} 
@@ -28,6 +22,12 @@ const TeamSection = () => {
               className="w-full h-auto"
             />
           </div>
+
+          <div className="mb-8 text-lg text-muted-foreground leading-relaxed space-y-4">
+            <p>{t("team.subtitle")}</p>
+            <p className="font-medium text-foreground">{t("team.cta")}</p>
+          </div>
+
 
           <div className="text-center">
             <Link to="/team">
