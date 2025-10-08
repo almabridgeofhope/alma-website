@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, ReactNode } from "react";
 
 type Language = "en" | "de";
 
@@ -357,30 +357,80 @@ const translations = {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+// Constants for better maintainability
+const LANGUAGE_STORAGE_KEY = "alma-language";
+const DEFAULT_LANGUAGE: Language = "en";
+
+// Helper function to safely get language from localStorage
+const getStoredLanguage = (): Language => {
+  if (typeof window === "undefined") return DEFAULT_LANGUAGE;
+  
+  try {
+    const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (stored === "en" || stored === "de") {
+      return stored as Language;
+    }
+  } catch (error) {
+    console.warn("Failed to read language from localStorage:", error);
+  }
+  
+  return DEFAULT_LANGUAGE;
+};
+
+// Helper function to safely set language in localStorage
+const setStoredLanguage = (language: Language): void => {
+  if (typeof window === "undefined") return;
+  
+  try {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+  } catch (error) {
+    console.warn("Failed to save language to localStorage:", error);
+  }
+};
+
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  // Initialize language from localStorage or default to "en"
-  const [language, setLanguage] = useState<Language>(() => {
-    if (typeof window !== "undefined") {
-      const savedLanguage = localStorage.getItem("alma-language") as Language;
-      return savedLanguage || "en";
-    }
-    return "en";
-  });
+  const [language, setLanguage] = useState<Language>(getStoredLanguage);
 
-  // Update localStorage when language changes
-  const handleSetLanguage = (newLanguage: Language) => {
+  // Memoized function to update language and persist to localStorage
+  const handleSetLanguage = useCallback((newLanguage: Language) => {
     setLanguage(newLanguage);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("alma-language", newLanguage);
-    }
-  };
+    setStoredLanguage(newLanguage);
+  }, []);
 
-  const t = (key: string): string => {
-    return translations[language][key as keyof typeof translations.en] || key;
-  };
+  // Memoized translation function
+  const t = useCallback((key: string): string => {
+    const translation = translations[language][key as keyof typeof translations.en];
+    if (!translation) {
+      console.warn(`Translation missing for key: ${key} in language: ${language}`);
+      return key;
+    }
+    return translation;
+  }, [language]);
+
+  // Sync with localStorage changes from other tabs/windows
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === LANGUAGE_STORAGE_KEY && e.newValue) {
+        const newLanguage = e.newValue as Language;
+        if (newLanguage === "en" || newLanguage === "de") {
+          setLanguage(newLanguage);
+        }
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  // Memoized context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    language,
+    setLanguage: handleSetLanguage,
+    t,
+  }), [language, handleSetLanguage, t]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t }}>
+    <LanguageContext.Provider value={contextValue}>
       {children}
     </LanguageContext.Provider>
   );
