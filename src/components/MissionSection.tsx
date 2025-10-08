@@ -19,10 +19,7 @@ const MissionSection = () => {
             <p>{t("mission.p3")}</p>
           </div>
           
-          <div className="mt-12 pt-8 border-t border-border">
-            <p className="text-xl font-semibold text-foreground mb-6">
-              {t("mission.cta")}
-            </p>
+          <div className="mt-8">
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/contact">
                 <Button 
