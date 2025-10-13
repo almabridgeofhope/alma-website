@@ -387,7 +387,7 @@ const Projects = () => {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
               <div className="text-center p-6 bg-primary-light rounded-lg">
-                <div className="text-4xl md:text-5xl font-bold text-primary mb-2">4</div>
+                <div className="text-4xl md:text-5xl font-bold text-primary mb-2">6</div>
                 <div className="text-sm md:text-base text-muted-foreground">{t("projects.stats.projects")}</div>
               </div>
               <div className="text-center p-6 bg-primary-light rounded-lg">
@@ -399,7 +399,7 @@ const Projects = () => {
                 <div className="text-sm md:text-base text-muted-foreground">{t("projects.stats.people")}</div>
               </div>
               <div className="text-center p-6 bg-primary-light rounded-lg">
-                <div className="text-4xl md:text-5xl font-bold text-primary mb-2">40+</div>
+                <div className="text-4xl md:text-5xl font-bold text-primary mb-2">30+</div>
                 <div className="text-sm md:text-base text-muted-foreground">{t("projects.stats.volunteers")}</div>
               </div>
             </div>
