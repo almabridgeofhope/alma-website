@@ -14,6 +14,7 @@ import community2 from "@/assets/community_2.png";
 import community3 from "@/assets/house_2.png";
 import communityHouse from "@/assets/construction_house.png";
 import children from "@/assets/children.png";
+import community4 from "@/assets/community_4.jpg";
 
 const CommunitySection = () => {
   const { t } = useLanguage();
@@ -57,7 +58,7 @@ const CommunitySection = () => {
                       <img
                         src={community1}
                         alt="Community members"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover object-top"
                       />
                     </div>
                   </Card>
@@ -110,6 +111,19 @@ const CommunitySection = () => {
                         src={children}
                         alt="Children"
                         className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </Card>
+                </div>
+              </CarouselItem>
+              <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
+                <div className="p-1">
+                  <Card className="overflow-hidden">
+                    <div className="aspect-[4/3] relative">
+                      <img
+                        src={community4}
+                        alt="Community activities"
+                        className="w-full h-full object-cover object-top"
                       />
                     </div>
                   </Card>
