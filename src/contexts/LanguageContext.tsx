@@ -158,6 +158,11 @@ const translations = {
     "team.member.name": "Team Member",
     "team.clara.name": "Clara Thümecke",
     "team.aaron.name": "Aaron Hesser",
+    "team.eileen.name": "Eileen Kadivar",
+    "team.yuan.name": "Yuan Yi Darneil",
+    "team.max.name": "Max Loth",
+    "team.tanja.name": "Tanja Rothenanger",
+    "team.hansen.name": "Hansen Ilomo",
     
     // Contact Page
     "contact.hero.title": "Contact",
@@ -345,6 +350,11 @@ const translations = {
     "team.member.name": "Teammitglied",
     "team.clara.name": "Clara Thümecke",
     "team.aaron.name": "Aaron Hesser",
+    "team.eileen.name": "Eileen Kadivar",
+    "team.yuan.name": "Yuan Yi Darneil",
+    "team.max.name": "Max Loth",
+    "team.tanja.name": "Tanja Rothenanger",
+    "team.hansen.name": "Hansen Ilomo",
     
     // Contact Page
     "contact.hero.title": "Kontakt",

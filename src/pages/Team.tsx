@@ -8,6 +8,11 @@ import tonyImage from "@/assets/tony.png";
 import peterImage from "@/assets/peter.png";
 import claraImage from "@/assets/clara.png";
 import aaronImage from "@/assets/community_2.png";
+import tanjaImage from "@/assets/tanja.jpeg";
+import hansenImage from "@/assets/hansen.jpeg";
+import maxImage from "@/assets/max.jpeg";
+import yuanImage from "/placeholder.svg";
+import eileenImage from "@/assets/eileen.jpeg";
 
 const Team = () => {
   const { t } = useLanguage();
@@ -25,7 +30,7 @@ const Team = () => {
       name: t("team.tony.name"),
       image: tonyImage,
     },
-  ];
+  ].sort((a, b) => a.name.localeCompare(b.name));
 
   const teamGermany = [
     {
@@ -37,26 +42,26 @@ const Team = () => {
       image: claraImage,
     },
     {
-      name: t("team.member.name"),
-      image: "/alma-website/placeholder.svg",
+      name: t("team.eileen.name"),
+      image: eileenImage,
     },
     {
-      name: t("team.member.name"),
-      image: "/alma-website/placeholder.svg",
+      name: t("team.hansen.name"),
+      image: hansenImage,
     },
     {
-      name: t("team.member.name"),
-      image: "/alma-website/placeholder.svg",
+      name: t("team.max.name"),
+      image: maxImage,
     },
     {
-      name: t("team.member.name"),
-      image: "/alma-website/placeholder.svg",
+      name: t("team.tanja.name"),
+      image: tanjaImage,
     },
     {
-      name: t("team.member.name"),
-      image: "/alma-website/placeholder.svg",
+      name: t("team.yuan.name"),
+      image: yuanImage,
     },
-  ];
+  ].sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <div className="min-h-screen">
@@ -110,7 +115,7 @@ const Team = () => {
                   <div className="aspect-square overflow-hidden bg-primary-light">
                     <img 
                       src={member.image} 
-                      alt={`${member.name} - ${member.role}`}
+                      alt={`${member.name}`}
                       className="w-full h-full object-cover"
                     />
                   </div>
