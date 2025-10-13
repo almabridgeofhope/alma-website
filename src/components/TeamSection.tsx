@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import heroImage from "@/assets/land_constructions.png";
+import heroImage from "@/assets/construction_house.png";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const TeamSection = () => {
