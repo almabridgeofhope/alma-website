@@ -5,11 +5,13 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Home, Droplets, Sprout, BookOpen, Car } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import heroImage from "@/assets/community.jpg";
-import communityHouseImage from "@/assets/community_house.jpg";
-import waterImage from "@/assets/water.webp";
+import heroImage from "@/assets/header_construction.jpeg";
+import communityHouseImage from "@/assets/house_2.png";
+import waterImage from "@/assets/water.png";
 import agricultureImage from "@/assets/goat_farm.webp";
-import educationImage from "@/assets/education.webp";
+import educationImage from "@/assets/education.png";
+import busImage from "@/assets/bus.png";
+import financialImage from "@/assets/education.webp";
 
 type TimelinePhase = "planning" | "building" | "implementation" | "impact";
 
@@ -115,7 +117,7 @@ const Projects = () => {
       statusIcon: "⚪",
       progress: 5,
       currentPhase: "planning",
-      image: educationImage, // Using education image as placeholder
+      image: busImage,
       buttonText: t("projects.mobility.button"),
       priority: "planned",
     },
@@ -153,7 +155,7 @@ const Projects = () => {
       statusIcon: "⚪",
       progress: 5,
       currentPhase: "planning",
-      image: educationImage,
+      image: financialImage,
       buttonText: t("projects.financial.button"),
       priority: "planned",
     }

@@ -1,9 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import utilitiesImage from "@/assets/water.webp";
-import educationImage from "@/assets/education.webp";
-import infrastructureImage from "@/assets/community_house.jpg";
+import utilitiesImage from "@/assets/water.png";
+import educationImage from "@/assets/education.png";
+import infrastructureImage from "@/assets/house.png";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const WhatWeDoSection = () => {
@@ -42,11 +42,16 @@ const WhatWeDoSection = () => {
         <div className="grid md:grid-cols-3 gap-8">
           {initiatives.map((initiative, index) => (
             <Card key={index} className="overflow-hidden shadow-card hover:shadow-soft transition-shadow duration-300">
-              <div className="aspect-[4/3] overflow-hidden">
+              <div className="aspect-[4/3] overflow-hidden relative">
                 <img 
                   src={initiative.image} 
                   alt={initiative.title}
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
+                  style={{
+                    imageRendering: 'auto',
+                    objectPosition: 'center center',
+                    filter: 'contrast(1.1) brightness(1.05)'
+                  }}
                 />
               </div>
               <div className="p-6">

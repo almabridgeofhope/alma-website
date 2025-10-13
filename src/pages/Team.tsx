@@ -3,6 +3,11 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import heroImage from "@/assets/hero-uganda-community.jpg";
+import phionaImage from "@/assets/phiona.png";
+import tonyImage from "@/assets/tony.png";
+import peterImage from "@/assets/peter.png";
+import claraImage from "@/assets/clara.png";
+import aaronImage from "@/assets/community_2.png";
 
 const Team = () => {
   const { t } = useLanguage();
@@ -10,26 +15,26 @@ const Team = () => {
   const teamUganda = [
     {
       name: t("team.peter.name"),
-      image: "/alma-website/placeholder.svg",
+      image: peterImage,
     },
     {
       name: t("team.phionah.name"),
-      image: "/alma-website/placeholder.svg",
+      image: phionaImage,
     },
     {
       name: t("team.tony.name"),
-      image: "/alma-website/placeholder.svg",
+      image: tonyImage,
     },
   ];
 
   const teamGermany = [
     {
       name: t("team.aaron.name"),
-      image: "/alma-website/placeholder.svg",
+      image: aaronImage,
     },
     {
       name: t("team.clara.name"),
-      image: "/alma-website/placeholder.svg",
+      image: claraImage,
     },
     {
       name: t("team.member.name"),
