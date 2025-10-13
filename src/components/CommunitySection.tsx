@@ -1,6 +1,19 @@
 import { Card } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { MapPin, Users, Heart } from "lucide-react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import community from "@/assets/community_3.png";
+import community1 from "@/assets/community.png";
+import community2 from "@/assets/community_2.png";
+import community3 from "@/assets/house_2.png";
+import communityHouse from "@/assets/construction_house.png";
+import children from "@/assets/children.png";
 
 const CommunitySection = () => {
   const { t } = useLanguage();
@@ -12,6 +25,100 @@ const CommunitySection = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
             {t("community.title")}
           </h2>
+        </div>
+
+        {/* Community Images Carousel - Full Width */}
+        <div className="mb-16 -mx-6">
+          <Carousel
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-2 md:-ml-4">
+              <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
+                <div className="p-1">
+                  <Card className="overflow-hidden">
+                    <div className="aspect-[4/3] relative">
+                      <img
+                        src={community}
+                        alt="Community"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </Card>
+                </div>
+              </CarouselItem>
+              <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
+                <div className="p-1">
+                  <Card className="overflow-hidden">
+                    <div className="aspect-[4/3] relative">
+                      <img
+                        src={community1}
+                        alt="Community members"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </Card>
+                </div>
+              </CarouselItem>
+              <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
+                <div className="p-1">
+                  <Card className="overflow-hidden">
+                    <div className="aspect-[4/3] relative">
+                      <img
+                        src={community2}
+                        alt="Community activities"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </Card>
+                </div>
+              </CarouselItem>
+              <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
+                <div className="p-1">
+                  <Card className="overflow-hidden">
+                    <div className="aspect-[4/3] relative">
+                      <img
+                        src={community3}
+                        alt="Community gathering"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </Card>
+                </div>
+              </CarouselItem>
+              <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
+                <div className="p-1">
+                  <Card className="overflow-hidden">
+                    <div className="aspect-[4/3] relative">
+                      <img
+                        src={communityHouse}
+                        alt="Community house"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </Card>
+                </div>
+              </CarouselItem>
+              <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
+                <div className="p-1">
+                  <Card className="overflow-hidden">
+                    <div className="aspect-[4/3] relative">
+                      <img
+                        src={children}
+                        alt="Children"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </Card>
+                </div>
+              </CarouselItem>
+            </CarouselContent>
+            <CarouselPrevious className="left-4" />
+            <CarouselNext className="right-4" />
+          </Carousel>
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-center">
