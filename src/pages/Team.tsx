@@ -11,7 +11,7 @@ import aaronImage from "@/assets/community_2.png";
 import tanjaImage from "@/assets/tanja.jpeg";
 import hansenImage from "@/assets/hansen.jpeg";
 import maxImage from "@/assets/max.jpeg";
-import yuanImage from "/placeholder.svg";
+import yuanImage from "@/assets/yuan.jpeg";
 import eileenImage from "@/assets/eileen.jpeg";
 
 const Team = () => {
