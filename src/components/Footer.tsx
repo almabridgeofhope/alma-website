@@ -111,9 +111,13 @@ const Footer = () => {
               >
                 {t("footer.legal.impressum")}
               </Link>
-              <a href="#privacy" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link 
+                to="/privacy" 
+                className="text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
                 {t("footer.legal.privacy")}
-              </a>
+              </Link>
             </nav>
           </div>
         </div>
