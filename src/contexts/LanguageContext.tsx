@@ -64,7 +64,7 @@ const translations = {
     "footer.legal.title": "Legal",
     "footer.legal.impressum": "Impressum",
     "footer.legal.privacy": "Privacy Policy",
-    "footer.copyright": "© 2024 Alma Bridge of Hope. All rights reserved.",
+    "footer.copyright": "© 2025 Alma Bridge of Hope. All rights reserved.",
     
     // Projects Page
     "projects.hero.title": "Our Projects",
@@ -302,7 +302,7 @@ const translations = {
     "privacy.contact.organization": "Alma Bridge of Hope e.V.",
     "privacy.contact.email": "E-Mail",
     "privacy.contact.email_value": "info@almabridgeofhope.org",
-    "privacy.last_updated": "Last updated: October 2025",
+    "privacy.last_updated": "Last updated: November 2025",
   },
   de: {
     // Navigation
@@ -359,7 +359,7 @@ const translations = {
     "footer.legal.title": "Rechtliches",
     "footer.legal.impressum": "Impressum",
     "footer.legal.privacy": "Datenschutz",
-    "footer.copyright": "© 2024 Alma Bridge of Hope. Alle Rechte vorbehalten.",
+    "footer.copyright": "© 2025 Alma Bridge of Hope. Alle Rechte vorbehalten.",
     
     // Projects Page
     "projects.hero.title": "Unsere Projekte",
@@ -597,7 +597,7 @@ const translations = {
     "privacy.contact.organization": "Alma Bridge of Hope e.V.",
     "privacy.contact.email": "E-Mail",
     "privacy.contact.email_value": "info@almabridgeofhope.org",
-    "privacy.last_updated": "Stand: Oktober 2025",
+    "privacy.last_updated": "Stand: November 2025",
   },
 };
 
