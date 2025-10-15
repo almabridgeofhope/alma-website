@@ -6,12 +6,12 @@ import Footer from "@/components/Footer";
 import { Home, Droplets, Sprout, BookOpen, Car } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import heroImage from "@/assets/project/header_construction.jpeg";
-import communityHouseImage from "@/assets/project/house_2.png";
-import waterImage from "@/assets/project/water.png";
+import communityHouseImage from "@/assets/project/construction_house.png";
+import waterImage from "@/assets/project/well.jpg";
 import agricultureImage from "@/assets/project/goat_farm.webp";
-import educationImage from "@/assets/project/education.png";
+import educationImage from "@/assets/project/pupils_2.jpg";
 import busImage from "@/assets/project/bus.png";
-import financialImage from "@/assets/project/education.webp";
+import financialImage from "@/assets/project/education_5.jpg";
 
 type TimelinePhase = "planning" | "building" | "implementation" | "impact";
 

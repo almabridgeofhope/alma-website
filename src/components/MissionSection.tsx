@@ -8,10 +8,13 @@ import {
 } from "@/components/ui/carousel";
 import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
-import land from "@/assets/nature/land.png";
+import land from "@/assets/nature/land.jpeg";
 import water from "@/assets/project/water.png";
 import education from "@/assets/project/education.png";
-import goatFarm from "@/assets/project/goat_farm.webp";
+import pupils from "@/assets/project/pupils.jpg";
+import nature from "@/assets/nature/nature.jpg";
+import education_2 from "@/assets/project/education_2.jpg";
+import street from "@/assets/project/street.jpg";
 
 const MissionSection = () => {
   const { t } = useLanguage();
@@ -85,20 +88,11 @@ const MissionSection = () => {
                 className="w-full h-full relative z-10"
               >
                 <CarouselContent className="-ml-0">
-                  <CarouselItem className="pl-0">
+                <CarouselItem className="pl-0">
                     <Card className="overflow-hidden h-96 shadow-lg">
                       <img
-                        src={land}
-                        alt="Land and agriculture"
-                        className="w-full h-full object-cover"
-                      />
-                    </Card>
-                  </CarouselItem>
-                  <CarouselItem className="pl-0">
-                    <Card className="overflow-hidden h-96 shadow-lg">
-                      <img
-                        src={water}
-                        alt="Water projects"
+                        src={street}
+                        alt="Street project"
                         className="w-full h-full object-cover"
                       />
                     </Card>
@@ -115,15 +109,52 @@ const MissionSection = () => {
                   <CarouselItem className="pl-0">
                     <Card className="overflow-hidden h-96 shadow-lg">
                       <img
-                        src={goatFarm}
+                        src={land}
+                        alt="Land and agriculture"
+                        className="w-full h-full object-cover"
+                      />
+                    </Card>
+                  </CarouselItem>
+
+                  <CarouselItem className="pl-0">
+                    <Card className="overflow-hidden h-96 shadow-lg">
+                      <img
+                        src={water}
+                        alt="Water projects"
+                        className="w-full h-full object-cover"
+                      />
+                    </Card>
+                  </CarouselItem>
+                  <CarouselItem className="pl-0">
+                    <Card className="overflow-hidden h-96 shadow-lg">
+                      <img
+                        src={pupils}
                         alt="Goat farm project"
+                        className="w-full h-full object-cover"
+                      />
+                    </Card>
+                  </CarouselItem>
+                  <CarouselItem className="pl-0">
+                    <Card className="overflow-hidden h-96 shadow-lg">
+                      <img
+                        src={nature}
+                        alt="Nature"
+                        className="w-full h-full object-cover"
+                      />
+                    </Card>
+                  </CarouselItem>
+                  <CarouselItem className="pl-0">
+                    <Card className="overflow-hidden h-96 shadow-lg">
+                      <img
+                        src={education_2}
+                        alt="Education programs"
                         className="w-full h-full object-cover"
                       />
                     </Card>
                   </CarouselItem>
                 </CarouselContent>
               </Carousel>
-              
+
               {/* Carousel Indicators */}
               <div className="flex justify-center mt-4 space-x-2 relative z-20">
                 {Array.from({ length: count }).map((_, index) => (
