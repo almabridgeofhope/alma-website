@@ -210,7 +210,7 @@ const Projects = () => {
           return (
             <div key={`label-${phase.id}`} className="flex justify-center">
               <span 
-                className={`text-sm font-medium ${
+                className={`text-xs sm:text-sm font-medium ${
                   isActive ? "text-primary" : "text-muted-foreground"
                 }`}
               >
@@ -248,7 +248,7 @@ const Projects = () => {
             </div>
 
             {/* Content Section */}
-            <div className="p-8 md:p-10 flex flex-col justify-between">
+            <div className="p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col justify-between">
               <div>
                 {/* Header with Icon */}
                 <div className="flex items-center gap-3 mb-4">
@@ -256,32 +256,32 @@ const Projects = () => {
                     <Icon className="w-8 h-8 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-3xl font-bold text-foreground">
+                    <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-foreground">
                       {project.title}
                     </h3>
-                    <p className="text-sm text-muted-foreground italic">
+                    <p className="text-xs sm:text-sm text-muted-foreground italic">
                       {project.teaser}
                     </p>
                   </div>
                 </div>
                 
                 {/* Description */}
-                <p className="text-base text-muted-foreground mb-6 leading-relaxed">
+                <p className="text-sm sm:text-base text-muted-foreground mb-6 leading-relaxed">
                   {project.description}
                 </p>
 
                 {/* Two Column Layout: Goals & Impact */}
-                <div className="grid md:grid-cols-2 gap-6 mb-6">
+                <div className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6">
                   {/* Goals */}
                   <div>
-                    <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <h4 className="text-base sm:text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
                       <span className="w-1 h-6 bg-primary rounded-full" />
                       {t("projects.goals")}
                     </h4>
                     <ul className="space-y-2">
                       {project.goals.map((goal, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span className="text-primary text-lg">•</span>
+                        <li key={i} className="flex items-start gap-2 text-xs sm:text-sm text-muted-foreground">
+                          <span className="text-primary text-sm sm:text-lg mt-0.5 flex-shrink-0">•</span>
                           <span className="leading-relaxed">{goal}</span>
                         </li>
                       ))}
@@ -290,11 +290,11 @@ const Projects = () => {
 
                   {/* Impact */}
                   <div>
-                    <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <h4 className="text-base sm:text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
                       <span className="w-1 h-6 bg-primary rounded-full" />
                       {t("projects.impact_label")}
                     </h4>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                       {project.impact}
                     </p>
                   </div>
@@ -304,12 +304,12 @@ const Projects = () => {
                 {renderTimeline(project.currentPhase)}
 
                 {/* Status Card with Progress */}
-                <div className="p-4 bg-background rounded-lg border border-border mb-6">
+                <div className="p-3 sm:p-4 bg-background rounded-lg border border-border mb-6">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-semibold text-foreground">
+                    <h4 className="text-xs sm:text-sm font-semibold text-foreground">
                       {t("projects.status")}: {project.statusText}
                     </h4>
-                    <span className="text-sm font-bold text-primary">
+                    <span className="text-xs sm:text-sm font-bold text-primary">
                       {project.progress}%
                     </span>
                   </div>
