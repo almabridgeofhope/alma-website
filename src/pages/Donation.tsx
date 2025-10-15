@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -18,6 +20,18 @@ const Donation = () => {
   const [amount, setAmount] = useState<string>("");
   const [customAmount, setCustomAmount] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<"paypal" | "sepa" | "card">("paypal");
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    street: "",
+    postalCode: "",
+    city: "",
+    country: "",
+    comment: "",
+    wantsReceipt: false,
+    privacyConsent: false,
+  });
 
   const predefinedAmounts = [10, 25, 50];
 
@@ -31,22 +45,77 @@ const Donation = () => {
     setAmount("");
   };
 
-  const handleDonate = () => {
+  const handleInputChange = (field: string, value: string | boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const validateForm = () => {
     const finalAmount = amount || customAmount;
+    
+    // Required fields validation
     if (!finalAmount || parseFloat(finalAmount) <= 0) {
-      alert("Please select or enter a valid donation amount.");
+      alert(t("donation.form.error.amount"));
+      return false;
+    }
+    
+    if (!formData.firstName.trim()) {
+      alert(t("donation.form.error.firstName"));
+      return false;
+    }
+    
+    if (!formData.lastName.trim()) {
+      alert(t("donation.form.error.lastName"));
+      return false;
+    }
+    
+    if (!formData.email.trim()) {
+      alert(t("donation.form.error.email"));
+      return false;
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      alert(t("donation.form.error.emailInvalid"));
+      return false;
+    }
+    
+    // Address validation if receipt is requested
+    if (formData.wantsReceipt) {
+      if (!formData.street.trim() || !formData.postalCode.trim() || !formData.city.trim() || !formData.country.trim()) {
+        alert(t("donation.form.error.address"));
+        return false;
+      }
+    }
+    
+    if (!formData.privacyConsent) {
+      alert(t("donation.form.error.privacy"));
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleDonate = () => {
+    if (!validateForm()) {
       return;
     }
 
+    const finalAmount = amount || customAmount;
+    
     // Here you would integrate with your payment processor
     console.log("Donation details:", {
       type: donationType,
       amount: finalAmount,
       paymentMethod,
+      formData,
     });
 
     // For now, show a success message
-    alert(`Thank you for your ${donationType} donation of €${finalAmount}!`);
+    alert(t("donation.form.success"));
   };
 
   return (
@@ -188,6 +257,140 @@ const Donation = () => {
                         </Label>
                       </div>
                     </RadioGroup>
+                  </div>
+
+                  {/* Personal Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-foreground">{t("donation.form.personalInfo")}</h3>
+                    
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="firstName">{t("donation.form.firstName")}</Label>
+                        <Input
+                          id="firstName"
+                          value={formData.firstName}
+                          onChange={(e) => handleInputChange("firstName", e.target.value)}
+                          className="mt-2"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="lastName">{t("donation.form.lastName")}</Label>
+                        <Input
+                          id="lastName"
+                          value={formData.lastName}
+                          onChange={(e) => handleInputChange("lastName", e.target.value)}
+                          className="mt-2"
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="email">{t("donation.form.email")}</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange("email", e.target.value)}
+                        className="mt-2"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Receipt Checkbox */}
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="wantsReceipt"
+                        checked={formData.wantsReceipt}
+                        onCheckedChange={(checked) => handleInputChange("wantsReceipt", checked as boolean)}
+                      />
+                      <Label htmlFor="wantsReceipt" className="text-sm">
+                        {t("donation.form.wantsReceipt")}
+                      </Label>
+                    </div>
+                  </div>
+
+                  {/* Address Fields - Only show if receipt is requested */}
+                  {formData.wantsReceipt && (
+                    <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+                      <h3 className="text-lg font-semibold text-foreground">{t("donation.form.addressInfo")}</h3>
+                      <p className="text-sm text-muted-foreground">{t("donation.form.addressNote")}</p>
+                      
+                      <div>
+                        <Label htmlFor="street">{t("donation.form.street")} *</Label>
+                        <Input
+                          id="street"
+                          value={formData.street}
+                          onChange={(e) => handleInputChange("street", e.target.value)}
+                          className="mt-2"
+                          required={formData.wantsReceipt}
+                        />
+                      </div>
+                      
+                      <div className="grid md:grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor="postalCode">{t("donation.form.postalCode")} *</Label>
+                          <Input
+                            id="postalCode"
+                            value={formData.postalCode}
+                            onChange={(e) => handleInputChange("postalCode", e.target.value)}
+                            className="mt-2"
+                            required={formData.wantsReceipt}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="city">{t("donation.form.city")} *</Label>
+                          <Input
+                            id="city"
+                            value={formData.city}
+                            onChange={(e) => handleInputChange("city", e.target.value)}
+                            className="mt-2"
+                            required={formData.wantsReceipt}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="country">{t("donation.form.country")} *</Label>
+                          <Input
+                            id="country"
+                            value={formData.country}
+                            onChange={(e) => handleInputChange("country", e.target.value)}
+                            className="mt-2"
+                            required={formData.wantsReceipt}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Comment */}
+                  <div>
+                    <Label htmlFor="comment">{t("donation.form.comment")}</Label>
+                    <Textarea
+                      id="comment"
+                      value={formData.comment}
+                      onChange={(e) => handleInputChange("comment", e.target.value)}
+                      placeholder={t("donation.form.comment_placeholder")}
+                      className="mt-2"
+                      rows={3}
+                    />
+                  </div>
+
+                  {/* Privacy Consent */}
+                  <div className="space-y-4">
+                    <div className="flex items-start space-x-2">
+                      <Checkbox
+                        id="privacyConsent"
+                        checked={formData.privacyConsent}
+                        onCheckedChange={(checked) => handleInputChange("privacyConsent", checked as boolean)}
+                        className="mt-1"
+                      />
+                      <Label htmlFor="privacyConsent" className="text-sm leading-relaxed">
+                        {t("donation.form.privacyConsent")}
+                      </Label>
+                    </div>
                   </div>
 
                   {/* Donate Button */}
