@@ -347,7 +347,7 @@ const Projects = () => {
         </section>
 
         {/* Active Projects Section */}
-        <section className="py-section bg-background">
+        <section className="pt-section pb-8 bg-background">
           <div className="max-w-content mx-auto px-6">
             <div className="mb-12 text-center">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -362,7 +362,7 @@ const Projects = () => {
         </section>
 
         {/* Planned Projects Section */}
-        <section className="py-section bg-muted/30">
+        <section className="pt-8 pb-8 bg-muted/30">
           <div className="max-w-content mx-auto px-6">
             <div className="mb-12 text-center">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -377,7 +377,7 @@ const Projects = () => {
         </section>
 
         {/* Impact Section */}
-        <section className="py-section bg-background">
+        <section className="pt-8 pb-section bg-background">
           <div className="max-w-content mx-auto px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">

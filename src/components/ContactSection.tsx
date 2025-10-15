@@ -7,7 +7,7 @@ const ContactSection = () => {
   const { t } = useLanguage();
   
   return (
-    <section id="contact" className="py-section bg-background">
+    <section id="contact" className="pt-section pb-section bg-background">
       <div className="max-w-content mx-auto px-6">
         <div className="text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-8">

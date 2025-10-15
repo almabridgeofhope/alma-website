@@ -22,7 +22,7 @@ const CommunitySection = () => {
   const { t } = useLanguage();
   
   return (
-    <section id="community" className="py-section bg-muted/30">
+    <section id="community" className="pt-section pb-section bg-muted/30">
       <div className="max-w-content mx-auto px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">

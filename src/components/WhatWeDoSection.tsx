@@ -28,7 +28,7 @@ const WhatWeDoSection = () => {
   ];
 
   return (
-    <section id="work" className="py-section bg-background">
+    <section id="work" className="pt-section pb-section bg-background">
       <div className="max-w-content mx-auto px-6">
       <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">

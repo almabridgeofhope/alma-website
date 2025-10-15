@@ -7,7 +7,7 @@ const TeamSection = () => {
   const { t } = useLanguage();
 
   return (
-    <section id="team" className="py-section bg-primary-light">
+    <section id="team" className="pt-section pb-section bg-primary-light">
       <div className="max-w-content mx-auto px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">

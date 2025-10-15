@@ -134,7 +134,7 @@ const Contact = () => {
         </section>
 
         {/* Contact Section */}
-        <section className="py-section bg-background">
+        <section className="pt-section pb-section bg-background">
           <div className="max-w-content mx-auto px-6">
             <div className="grid md:grid-cols-2 gap-12">
               {/* Contact Form */}

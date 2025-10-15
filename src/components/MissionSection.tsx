@@ -46,7 +46,7 @@ const MissionSection = () => {
   }, [api]);
   
   return (
-    <section id="about" className="py-section bg-muted">
+    <section id="about" className="pt-section pb-section bg-muted">
       <div className="max-w-content mx-auto px-6">
         <div className="grid lg:grid-cols-3 gap-12 items-center">
           {/* Auto-rotating Carousel - Overlapping Phone Size (1/3) */}

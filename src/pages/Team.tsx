@@ -87,9 +87,9 @@ const Team = () => {
         </section>
 
         {/* Introduction Section */}
-        <section className="py-section bg-background">
+        <section className="pt-section pb-8 bg-background">
           <div className="max-w-content mx-auto px-6">
-            <div className="max-w-3xl mx-auto text-center mb-16">
+            <div className="max-w-3xl mx-auto text-center mb-12">
               <h2 className="text-3xl font-bold text-foreground mb-6">
                 {t("team.intro.title")}
               </h2>
@@ -104,7 +104,7 @@ const Team = () => {
         </section>
 
         {/* Team Uganda */}
-        <section className="py-section bg-background">
+        <section className="pt-8 pb-section bg-background">
           <div className="max-w-content mx-auto px-6">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12 text-center">
               {t("team.uganda.title")}
@@ -131,7 +131,7 @@ const Team = () => {
         </section>
 
         {/* Team Germany */}
-        <section className="py-section bg-primary-light">
+        <section className="pt-section pb-section bg-primary-light">
           <div className="max-w-content mx-auto px-6">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12 text-center">
               {t("team.germany.title")}
