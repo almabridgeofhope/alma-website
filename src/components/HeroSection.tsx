@@ -1,4 +1,4 @@
-import heroImage from "@/assets/hero-uganda-community.jpg";
+import heroImage from "@/assets/nature/land_3.jpg";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const HeroSection = () => {

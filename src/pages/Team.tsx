@@ -2,17 +2,17 @@ import { Card } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
-import heroImage from "@/assets/hero-uganda-community.jpg";
-import phionaImage from "@/assets/phiona.png";
-import tonyImage from "@/assets/tony.png";
-import peterImage from "@/assets/peter.png";
-import claraImage from "@/assets/clara.png";
-import aaronImage from "@/assets/community_2.png";
-import tanjaImage from "@/assets/tanja.jpeg";
-import hansenImage from "@/assets/hansen.jpeg";
-import maxImage from "@/assets/max.jpeg";
-import yuanImage from "@/assets/yuan.jpeg";
-import eileenImage from "@/assets/eileen.jpeg";
+import heroImage from "@/assets/community/community_5.jpg";
+import phionaImage from "@/assets/team/phiona.png";
+import tonyImage from "@/assets/team/tony.png";
+import peterImage from "@/assets/team/peter.png";
+import claraImage from "@/assets/team/clara.png";
+import aaronImage from "@/assets/team/aaron.jpeg";
+import tanjaImage from "@/assets/team/tanja.jpeg";
+import hansenImage from "@/assets/team/hansen.jpeg";
+import maxImage from "@/assets/team/max.jpeg";
+import yuanImage from "@/assets/team/yuan.jpeg";
+import eileenImage from "@/assets/team/eileen.jpeg";
 
 const Team = () => {
   const { t } = useLanguage();

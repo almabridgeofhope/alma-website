@@ -8,10 +8,10 @@ import {
 } from "@/components/ui/carousel";
 import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
-import land from "@/assets/land.png";
-import water from "@/assets/water.png";
-import education from "@/assets/education.png";
-import goatFarm from "@/assets/goat_farm.webp";
+import land from "@/assets/nature/land.png";
+import water from "@/assets/project/water.png";
+import education from "@/assets/project/education.png";
+import goatFarm from "@/assets/project/goat_farm.webp";
 
 const MissionSection = () => {
   const { t } = useLanguage();

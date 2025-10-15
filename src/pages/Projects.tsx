@@ -5,13 +5,13 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Home, Droplets, Sprout, BookOpen, Car } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import heroImage from "@/assets/header_construction.jpeg";
-import communityHouseImage from "@/assets/house_2.png";
-import waterImage from "@/assets/water.png";
-import agricultureImage from "@/assets/goat_farm.webp";
-import educationImage from "@/assets/education.png";
-import busImage from "@/assets/bus.png";
-import financialImage from "@/assets/education.webp";
+import heroImage from "@/assets/project/header_construction.jpeg";
+import communityHouseImage from "@/assets/project/house_2.png";
+import waterImage from "@/assets/project/water.png";
+import agricultureImage from "@/assets/project/goat_farm.webp";
+import educationImage from "@/assets/project/education.png";
+import busImage from "@/assets/project/bus.png";
+import financialImage from "@/assets/project/education.webp";
 
 type TimelinePhase = "planning" | "building" | "implementation" | "impact";
 

@@ -1,9 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import utilitiesImage from "@/assets/water.png";
-import educationImage from "@/assets/education.png";
-import infrastructureImage from "@/assets/house.png";
+import utilitiesImage from "@/assets/project/well.jpg";
+import educationImage from "@/assets/project/education_3.jpg";
+import infrastructureImage from "@/assets/project/street.jpg";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const WhatWeDoSection = () => {

@@ -1,4 +1,4 @@
-import landscapeImage from "@/assets/uganda-landscape.jpg";
+import landscapeImage from "@/assets/nature/land_2.jpg";
 
 const VisualHighlightSection = () => {
   return (
