@@ -9,8 +9,8 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import heroImage from "@/assets/community/community_4.jpg";
-import communityImage from "@/assets/community/community_2.png";
+import heroImage from "@/assets/nature/nature_2.jpg";
+import communityImage from "@/assets/community/community_3.png";
 
 const Donation = () => {
   const { t } = useLanguage();
@@ -64,10 +64,10 @@ const Donation = () => {
           
           <div className="relative z-10 text-center text-white max-w-4xl px-6">
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              Your support brings hope.
+              {t("donation.hero.title")}
             </h1>
             <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed mb-8">
-              Every donation helps us empower communities in Uganda with access to water, education and sustainable livelihoods.
+              {t("donation.hero.subtitle")}
             </p>
             <Button 
               size="lg" 
@@ -75,7 +75,7 @@ const Donation = () => {
               onClick={() => document.getElementById('donation-form')?.scrollIntoView({ behavior: 'smooth' })}
             >
               <Heart className="mr-2 h-5 w-5" />
-              Donate now
+              {t("donation.hero.button")}
             </Button>
           </div>
         </section>
@@ -85,11 +85,11 @@ const Donation = () => {
           <div className="max-w-content mx-auto px-6">
             <div className="max-w-4xl mx-auto text-center">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-                Our Mission
+                {t("donation.mission.title")}
               </h2>
               <div className="space-y-4 text-lg text-muted-foreground leading-relaxed">
-                <p>Alma Bridge of Hope e.V. is a non-profit organization based in Germany supporting community-led initiatives in Uganda.</p>
-                <p>Our goal is to create self-sustaining communities through access to clean water, energy, education, and financial literacy.</p>
+                <p>{t("donation.mission.p1")}</p>
+                <p>{t("donation.mission.p2")}</p>
               </div>
             </div>
           </div>
@@ -102,14 +102,14 @@ const Donation = () => {
               <Card className="p-8 shadow-card">
                 <div className="text-center mb-8">
                   <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                    Make a Donation
+                    {t("donation.form.title")}
                   </h2>
                 </div>
                 
                 <div className="space-y-6">
                   {/* Donation Type */}
                   <div>
-                    <Label className="text-base font-semibold">Donation Type</Label>
+                    <Label className="text-base font-semibold">{t("donation.form.type")}</Label>
                     <RadioGroup 
                       value={donationType} 
                       onValueChange={(value: "one-time" | "monthly") => setDonationType(value)}
@@ -117,18 +117,18 @@ const Donation = () => {
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="one-time" id="one-time" />
-                        <Label htmlFor="one-time">One-time</Label>
+                        <Label htmlFor="one-time">{t("donation.form.onetime")}</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="monthly" id="monthly" />
-                        <Label htmlFor="monthly">Monthly</Label>
+                        <Label htmlFor="monthly">{t("donation.form.monthly")}</Label>
                       </div>
                     </RadioGroup>
                   </div>
 
                   {/* Amount Selection */}
                   <div>
-                    <Label className="text-base font-semibold">Amount (€)</Label>
+                    <Label className="text-base font-semibold">{t("donation.form.amount")}</Label>
                     <div className="grid grid-cols-3 gap-3 mt-3 mb-4">
                       {predefinedAmounts.map((amountValue) => (
                         <Button
@@ -143,7 +143,7 @@ const Donation = () => {
                     </div>
                     <div>
                       <Label htmlFor="custom-amount" className="text-sm text-muted-foreground">
-                        Or enter custom amount
+                        {t("donation.form.custom")}
                       </Label>
                       <Input
                         id="custom-amount"
@@ -160,7 +160,7 @@ const Donation = () => {
 
                   {/* Payment Method */}
                   <div>
-                    <Label className="text-base font-semibold">Payment Method</Label>
+                    <Label className="text-base font-semibold">{t("donation.form.payment")}</Label>
                     <RadioGroup 
                       value={paymentMethod} 
                       onValueChange={(value: "paypal" | "sepa" | "card") => setPaymentMethod(value)}
@@ -170,21 +170,21 @@ const Donation = () => {
                         <RadioGroupItem value="paypal" id="paypal" />
                         <Label htmlFor="paypal" className="flex items-center gap-2 cursor-pointer">
                           <CreditCard className="h-4 w-4" />
-                          PayPal
+                          {t("donation.form.paypal")}
                         </Label>
                       </div>
                       <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
                         <RadioGroupItem value="sepa" id="sepa" />
                         <Label htmlFor="sepa" className="flex items-center gap-2 cursor-pointer">
                           <Banknote className="h-4 w-4" />
-                          SEPA Bank Transfer
+                          {t("donation.form.sepa")}
                         </Label>
                       </div>
                       <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
                         <RadioGroupItem value="card" id="card" />
                         <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer">
                           <CreditCard className="h-4 w-4" />
-                          Credit Card
+                          {t("donation.form.card")}
                         </Label>
                       </div>
                     </RadioGroup>
@@ -196,7 +196,7 @@ const Donation = () => {
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-button h-12 text-lg"
                   >
                     <Heart className="mr-2 h-5 w-5" />
-                    {donationType === "one-time" ? "Donate Now" : "Start Monthly Donation"}
+                    {donationType === "one-time" ? t("donation.form.donate") : t("donation.form.donate_monthly")}
                   </Button>
                 </div>
               </Card>
@@ -210,7 +210,7 @@ const Donation = () => {
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
                 <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                  Trust & Transparency
+                  {t("donation.trust.title")}
                 </h2>
               </div>
               <div className="grid md:grid-cols-3 gap-6">
@@ -219,10 +219,10 @@ const Donation = () => {
                     <Shield className="w-8 h-8 text-primary" />
                   </div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    Registered Non-Profit
+                    {t("donation.trust.registered")}
                   </h3>
                   <p className="text-muted-foreground">
-                    Registered non-profit in Germany (gemeinnützig anerkannt)
+                    {t("donation.trust.registered.desc")}
                   </p>
                 </Card>
                 <Card className="p-6 text-center shadow-card">
@@ -230,10 +230,10 @@ const Donation = () => {
                     <CheckCircle className="w-8 h-8 text-primary" />
                   </div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    Tax Deductible
+                    {t("donation.trust.tax")}
                   </h3>
                   <p className="text-muted-foreground">
-                    Donations are tax deductible
+                    {t("donation.trust.tax.desc")}
                   </p>
                 </Card>
                 <Card className="p-6 text-center shadow-card">
@@ -241,10 +241,10 @@ const Donation = () => {
                     <Mail className="w-8 h-8 text-primary" />
                   </div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">
-                    Full Transparency
+                    {t("donation.trust.transparency")}
                   </h3>
                   <p className="text-muted-foreground">
-                    Regular reporting ensures full transparency
+                    {t("donation.trust.transparency.desc")}
                   </p>
                 </Card>
               </div>
@@ -266,10 +266,10 @@ const Donation = () => {
                 </div>
                 <div className="text-center md:text-left">
                   <blockquote className="text-2xl font-medium text-foreground mb-4 italic">
-                    "We believe in empowerment, not dependence."
+                    "{t("donation.quote.text")}"
                   </blockquote>
                   <p className="text-lg text-muted-foreground">
-                    – Fiona, Alma CBO Uganda
+                    {t("donation.quote.author")}
                   </p>
                 </div>
               </div>
@@ -283,40 +283,40 @@ const Donation = () => {
             <div className="max-w-3xl mx-auto">
               <div className="text-center mb-12">
                 <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                  Frequently Asked Questions
+                  {t("donation.faq.title")}
                 </h2>
               </div>
               <Accordion type="single" collapsible className="space-y-4">
                 <AccordionItem value="item-1" className="border rounded-lg px-6">
                   <AccordionTrigger className="text-left">
-                    How can I donate?
+                    {t("donation.faq.q1")}
                   </AccordionTrigger>
                   <AccordionContent className="text-muted-foreground">
-                    You can donate easily via PayPal, SEPA bank transfer, or credit card using our secure donation form above.
+                    {t("donation.faq.a1")}
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="item-2" className="border rounded-lg px-6">
                   <AccordionTrigger className="text-left">
-                    Will I receive a donation receipt?
+                    {t("donation.faq.q2")}
                   </AccordionTrigger>
                   <AccordionContent className="text-muted-foreground">
-                    Yes, you will receive a donation receipt at the end of the year for tax purposes. For immediate receipts, please contact us at info@almabridgeofhope.org.
+                    {t("donation.faq.a2")}
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="item-3" className="border rounded-lg px-6">
                   <AccordionTrigger className="text-left">
-                    How is my donation used?
+                    {t("donation.faq.q3")}
                   </AccordionTrigger>
                   <AccordionContent className="text-muted-foreground">
-                    Your donation directly supports our projects in Uganda, including water access, education, and sustainable livelihood programs. We maintain full transparency in our financial reporting.
+                    {t("donation.faq.a3")}
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="item-4" className="border rounded-lg px-6">
                   <AccordionTrigger className="text-left">
-                    Can I cancel my monthly donation?
+                    {t("donation.faq.q4")}
                   </AccordionTrigger>
                   <AccordionContent className="text-muted-foreground">
-                    Yes, you can cancel your monthly donation at any time by contacting us at info@almabridgeofhope.org or through your payment provider.
+                    {t("donation.faq.a4")}
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
@@ -329,21 +329,21 @@ const Donation = () => {
           <div className="max-w-content mx-auto px-6">
             <div className="max-w-4xl mx-auto text-center">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-                Questions about donating?
+                {t("donation.contact.title")}
               </h2>
               <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                Contact us for any questions about donations, tax receipts, or our work.
+                {t("donation.contact.subtitle")}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button asChild variant="outline" size="lg" className="shadow-button">
-                  <a href="mailto:info@almabridgeofhope.org">
+                  <a href={`mailto:${t("donation.contact.email")}`}>
                     <Mail className="mr-2 h-4 w-4" />
-                    info@almabridgeofhope.org
+                    {t("donation.contact.email")}
                   </a>
                 </Button>
                 <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button">
                   <a href="/contact">
-                    Contact Us
+                    {t("donation.contact.button")}
                   </a>
                 </Button>
               </div>
