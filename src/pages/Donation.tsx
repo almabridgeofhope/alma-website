@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+// import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote } from "lucide-react";
@@ -14,12 +15,19 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import heroImage from "@/assets/nature/nature_2.jpg";
 import communityImage from "@/assets/community/community_3.png";
 
+// PayPal Configuration
+const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+
 const Donation = () => {
   const { t } = useLanguage();
+  
+  // Debug: Check if component is rendering
+  console.log("Donation component is rendering");
   const [donationType, setDonationType] = useState<"one-time" | "monthly">("one-time");
   const [amount, setAmount] = useState<string>("");
   const [customAmount, setCustomAmount] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<"paypal" | "sepa" | "card">("paypal");
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -54,24 +62,31 @@ const Donation = () => {
 
   const validateForm = () => {
     const finalAmount = amount || customAmount;
+    console.log("Validating form...");
+    console.log("Final amount:", finalAmount);
+    console.log("Form data:", formData);
     
     // Required fields validation
     if (!finalAmount || parseFloat(finalAmount) <= 0) {
+      console.log("Amount validation failed");
       alert(t("donation.form.error.amount"));
       return false;
     }
     
     if (!formData.firstName.trim()) {
+      console.log("First name validation failed");
       alert(t("donation.form.error.firstName"));
       return false;
     }
     
     if (!formData.lastName.trim()) {
+      console.log("Last name validation failed");
       alert(t("donation.form.error.lastName"));
       return false;
     }
     
     if (!formData.email.trim()) {
+      console.log("Email validation failed");
       alert(t("donation.form.error.email"));
       return false;
     }
@@ -79,6 +94,7 @@ const Donation = () => {
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
+      console.log("Email format validation failed");
       alert(t("donation.form.error.emailInvalid"));
       return false;
     }
@@ -86,36 +102,116 @@ const Donation = () => {
     // Address validation if receipt is requested
     if (formData.wantsReceipt) {
       if (!formData.street.trim() || !formData.postalCode.trim() || !formData.city.trim() || !formData.country.trim()) {
+        console.log("Address validation failed");
         alert(t("donation.form.error.address"));
         return false;
       }
     }
     
     if (!formData.privacyConsent) {
+      console.log("Privacy consent validation failed");
       alert(t("donation.form.error.privacy"));
       return false;
     }
     
+    console.log("Form validation passed!");
     return true;
   };
 
   const handleDonate = () => {
+    console.log("Donate button clicked!");
+    console.log("Form data:", formData);
+    console.log("Amount:", amount);
+    console.log("Custom amount:", customAmount);
+    console.log("Payment method:", paymentMethod);
+    
     if (!validateForm()) {
+      console.log("Form validation failed");
       return;
     }
 
     const finalAmount = amount || customAmount;
+    console.log("Final amount:", finalAmount);
     
-    // Here you would integrate with your payment processor
-    console.log("Donation details:", {
+    if (paymentMethod === "paypal") {
+      console.log("PayPal payment selected - this should show PayPal buttons");
+      // PayPal payment will be handled by PayPal buttons
+      setIsProcessingPayment(true);
+      return;
+    }
+    
+    // Handle other payment methods (SEPA, Credit Card)
+    console.log("Processing non-PayPal payment:", {
       type: donationType,
       amount: finalAmount,
       paymentMethod,
       formData,
     });
 
-    // For now, show a success message
+    // For now, show a success message for non-PayPal payments
     alert(t("donation.form.success"));
+  };
+
+  // PayPal payment handlers
+  const createPayPalOrder = (data: any, actions: any) => {
+    const finalAmount = amount || customAmount;
+    
+    return actions.order.create({
+      purchase_units: [{
+        amount: {
+          currency_code: "EUR",
+          value: finalAmount,
+        },
+        description: `${donationType === "one-time" ? "One-time" : "Monthly"} donation to Alma Bridge of Hope`,
+        custom_id: `${donationType}-${Date.now()}`,
+      }],
+      application_context: {
+        brand_name: "Alma Bridge of Hope",
+        landing_page: "NO_PREFERENCE",
+        user_action: "PAY_NOW",
+        return_url: `${window.location.origin}/donation?success=true`,
+        cancel_url: `${window.location.origin}/donation?cancelled=true`,
+      },
+    });
+  };
+
+  const onPayPalApprove = (data: any, actions: any) => {
+    return actions.order.capture().then((details: any) => {
+      console.log("PayPal payment completed:", details);
+      
+      // Here you would send the payment details to your backend
+      // to verify the payment and process the donation
+      
+      alert(t("donation.form.success"));
+      setIsProcessingPayment(false);
+      
+      // Reset form
+      setAmount("");
+      setCustomAmount("");
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        street: "",
+        postalCode: "",
+        city: "",
+        country: "",
+        comment: "",
+        wantsReceipt: false,
+        privacyConsent: false,
+      });
+    });
+  };
+
+  const onPayPalError = (err: any) => {
+    console.error("PayPal error:", err);
+    alert(t("donation.form.error.payment"));
+    setIsProcessingPayment(false);
+  };
+
+  const onPayPalCancel = () => {
+    console.log("PayPal payment cancelled");
+    setIsProcessingPayment(false);
   };
 
   return (
@@ -393,13 +489,17 @@ const Donation = () => {
                     </div>
                   </div>
 
-                  {/* Donate Button */}
+                  {/* Payment Section */}
                   <Button 
-                    onClick={handleDonate}
+                    onClick={() => {
+                      console.log("Button clicked!");
+                      handleDonate();
+                    }}
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-button h-12 text-lg"
+                    disabled={isProcessingPayment}
                   >
                     <Heart className="mr-2 h-5 w-5" />
-                    {donationType === "one-time" ? t("donation.form.donate") : t("donation.form.donate_monthly")}
+                    {paymentMethod === "paypal" ? "PayPal - " : ""}{donationType === "one-time" ? t("donation.form.donate") : t("donation.form.donate_monthly")}
                   </Button>
                 </div>
               </Card>
