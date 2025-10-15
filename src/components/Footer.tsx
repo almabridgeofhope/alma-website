@@ -104,9 +104,13 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-muted-foreground text-sm">{t("footer.copyright")}</p>
             <nav className="flex gap-6 text-sm">
-              <a href="#impressum" className="text-muted-foreground hover:text-primary transition-colors">
+              <Link 
+                to="/impressum" 
+                className="text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              >
                 {t("footer.legal.impressum")}
-              </a>
+              </Link>
               <a href="#privacy" className="text-muted-foreground hover:text-primary transition-colors">
                 {t("footer.legal.privacy")}
               </a>
