@@ -18,7 +18,7 @@ Hopeful, professional, trustworthy design with soft blues and warm yellows
     --popover-foreground: 220 15% 15%;
 
     /* Soft blue primary - trustworthy and calming */
-    --primary: 210 60% 45%;
+    --primary: 217 64% 34%;
     --primary-foreground: 0 0% 100%;
     --primary-light: 210 55% 95%;
 
@@ -34,12 +34,12 @@ Hopeful, professional, trustworthy design with soft blues and warm yellows
     --accent: 210 25% 92%;
     --accent-foreground: 220 15% 25%;
 
-    --destructive: 0 75% 55%;
+    --destructive: 3 84% 57%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 210 20% 90%;
     --input: 210 20% 95%;
-    --ring: 210 60% 45%;
+    --ring: 217 64% 34%;
 
     /* Custom design tokens */
     --hero-overlay: 220 25% 10% / 0.4;
@@ -47,7 +47,7 @@ Hopeful, professional, trustworthy design with soft blues and warm yellows
     --content-max-width: 1200px;
     
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(210 65% 55%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(217 65% 55%) 100%);
     --gradient-secondary: linear-gradient(135deg, hsl(var(--secondary)) 0%, hsl(50 85% 75%) 100%);
     --gradient-hero: linear-gradient(to bottom, transparent 0%, hsl(var(--hero-overlay)) 100%);
     
