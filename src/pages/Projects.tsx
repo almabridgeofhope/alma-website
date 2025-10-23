@@ -5,6 +5,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Home, Droplets, Sprout, BookOpen, Car } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Link } from "react-router-dom";
 import heroImage from "@/assets/project/header_construction.jpeg";
 import communityHouseImage from "@/assets/project/construction_house.png";
 import waterImage from "@/assets/project/well.jpg";
@@ -408,12 +409,17 @@ const Projects = () => {
               <p className="text-xl text-foreground mb-6">
                 {t("projects.impact.subtitle")}
               </p>
-              <Button 
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button text-lg px-8 py-6"
+              <Link 
+                to="/dev/donation"
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
-                {t("projects.impact.donate")}
-              </Button>
+                <Button 
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button text-lg px-8 py-6"
+                >
+                  {t("projects.impact.donate")}
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
