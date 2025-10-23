@@ -35,15 +35,6 @@ const TeaserIndex = () => {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
-                size="lg" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button text-lg px-8 py-6"
-                onClick={() => window.open('/dev', '_blank')}
-              >
-                Vollständige Website ansehen
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-              
-              <Button 
                 variant="outline" 
                 size="lg" 
                 className="text-lg px-8 py-6"
@@ -105,48 +96,14 @@ const TeaserIndex = () => {
 
         {/* Coming Soon Section */}
         <section className="py-16 bg-background">
-          <div className="max-w-6xl mx-auto px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                Vollständige Website in Kürze
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Wir arbeiten an einer umfassenden Website mit detaillierten Informationen 
-                zu unseren Projekten, dem Team und aktuellen Neuigkeiten.
-              </p>
-            </div>
-            
-            <div className="bg-primary/5 rounded-lg p-8 text-center">
-              <h3 className="text-2xl font-bold text-foreground mb-4">
-                Was Sie erwarten können:
-              </h3>
-              <div className="grid md:grid-cols-2 gap-6 text-left max-w-4xl mx-auto">
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">📰 Aktuelle News</h4>
-                  <p className="text-muted-foreground text-sm">
-                    Regelmäßige Updates über unsere Projekte und die Gemeinschaft
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">🏗️ Projekt-Details</h4>
-                  <p className="text-muted-foreground text-sm">
-                    Detaillierte Einblicke in unsere Entwicklungsprojekte
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">👥 Team-Vorstellung</h4>
-                  <p className="text-muted-foreground text-sm">
-                    Lernen Sie unser engagiertes Team kennen
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-foreground mb-2">💝 Spenden</h4>
-                  <p className="text-muted-foreground text-sm">
-                    Sichere Möglichkeiten, unsere Arbeit zu unterstützen
-                  </p>
-                </div>
-              </div>
-            </div>
+          <div className="max-w-4xl mx-auto px-6 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Coming Soon
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Wir arbeiten an einer vollständigen Website mit detaillierten Informationen 
+              zu unseren Projekten und aktuellen Neuigkeiten.
+            </p>
           </div>
         </section>
 
@@ -168,15 +125,6 @@ const TeaserIndex = () => {
                 onClick={() => window.open('mailto:info@almabridgeofhope.org', '_blank')}
               >
                 E-Mail senden
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="text-lg px-8 py-6"
-                onClick={() => window.open('/dev/#contact', '_blank')}
-              >
-                Vollständige Kontaktseite
               </Button>
             </div>
           </div>
