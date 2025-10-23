@@ -305,7 +305,7 @@ const translations = {
     "privacy.last_updated": "Last updated: November 2025",
     
     // Donation Page
-    "donation.hero.title": "Your support brings hope.",
+    "donation.hero.title": "Your support brings hope",
     "donation.hero.subtitle": "Every donation helps us empower communities in Uganda with access to water, education and sustainable livelihoods.",
     "donation.hero.button": "Donate now",
     "donation.mission.title": "Our Mission",
@@ -666,7 +666,7 @@ const translations = {
     "privacy.last_updated": "Stand: November 2025",
     
     // Donation Page
-    "donation.hero.title": "Ihre Unterstützung bringt Hoffnung.",
+    "donation.hero.title": "Ihre Unterstützung bringt Hoffnung",
     "donation.hero.subtitle": "Jede Spende hilft uns, Gemeinschaften in Uganda mit Zugang zu Wasser, Bildung und nachhaltigen Lebensgrundlagen zu stärken.",
     "donation.hero.button": "Jetzt spenden",
     "donation.mission.title": "Unsere Mission",
