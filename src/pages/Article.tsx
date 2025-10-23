@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Calendar, User, ArrowLeft, Tag, Quote } from "lucide-react";
+import { Calendar, User, ArrowLeft, Tag, Quote, ArrowRight } from "lucide-react";
 import constructionHouseImage from "@/assets/project/construction_house.png";
 import communityImage from "@/assets/community/community_2.png";
 import headerConstructionImage from "@/assets/project/header_construction.jpeg";
@@ -117,7 +117,7 @@ const Article = () => {
               {t("news.article_not_found.subtitle")}
             </p>
             <Link 
-              to="/news"
+              to="/dev/news"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               <Button>
@@ -141,7 +141,7 @@ const Article = () => {
         <section className="pt-8 pb-4 bg-background">
           <div className="max-w-content mx-auto px-6">
             <Link 
-              to="/news"
+              to="/dev/news"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               <Button variant="ghost" className="mb-6">
@@ -349,11 +349,65 @@ const Article = () => {
           </div>
         </section>
 
+        {/* Related Articles */}
+        <section className="pt-8 pb-section bg-muted/30">
+          <div className="max-w-4xl mx-auto px-6">
+            <h2 className="text-3xl font-bold text-foreground mb-8 text-center">
+              {t("news.related_articles.title")}
+            </h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              {newsArticles
+                .filter(relatedArticle => relatedArticle.id !== article.id)
+                .map((relatedArticle) => (
+                  <div key={relatedArticle.id} className="overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 group animate-fade-in bg-card rounded-lg border cursor-pointer">
+                    <div className="relative aspect-video">
+                      <img 
+                        src={relatedArticle.image} 
+                        alt={relatedArticle.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-6">
+                      <div className="mb-3">
+                        <Badge className={getCategoryColor(relatedArticle.category)}>
+                          <Tag className="w-3 h-3 mr-1" />
+                          {relatedArticle.category}
+                        </Badge>
+                      </div>
+                      <h3 className="text-lg font-bold text-foreground mb-3 line-clamp-2">
+                        {relatedArticle.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
+                        {relatedArticle.excerpt}
+                      </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                        <User className="w-3 h-3" />
+                        <span>{relatedArticle.author}</span>
+                        <span>•</span>
+                        <Calendar className="w-3 h-3" />
+                        <span>{formatDate(relatedArticle.date)}</span>
+                      </div>
+                      <Link 
+                        to={`/dev/news/${relatedArticle.date}`}
+                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                      >
+                        <div className="flex items-center text-primary hover:text-primary/80 group">
+                          <span className="text-sm font-medium">{t("news.read_more")}</span>
+                          <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </section>
+
         {/* Back to News Button */}
         <section className="pt-8 pb-section bg-muted/30">
           <div className="max-w-4xl mx-auto px-6 text-center">
             <Link 
-              to="/news"
+              to="/dev/news"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">

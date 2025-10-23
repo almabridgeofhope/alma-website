@@ -21,7 +21,7 @@ const Navigation = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link 
-              to="/" 
+              to={basePath + "/"} 
               className="flex items-center"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >

@@ -93,7 +93,7 @@ const NotFound = () => {
 
   const handleReadMore = (article: NewsArticle) => {
     const dateSlug = article.date;
-    navigate(`/news/${dateSlug}`);
+    navigate(`/dev/news/${dateSlug}`);
     // Scroll to top after navigation
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -136,7 +136,7 @@ const NotFound = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
               <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
                 <Link 
-                  to="/" 
+                  to="/dev" 
                   className="flex items-center gap-2"
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 >
@@ -146,7 +146,7 @@ const NotFound = () => {
               </Button>
               <Button asChild variant="outline" size="lg">
                 <Link 
-                  to="/projects" 
+                  to="/dev/projects" 
                   className="flex items-center gap-2"
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 >
@@ -156,7 +156,7 @@ const NotFound = () => {
               </Button>
               <Button asChild variant="outline" size="lg">
                 <Link 
-                  to="/contact" 
+                  to="/dev/contact" 
                   className="flex items-center gap-2"
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 >

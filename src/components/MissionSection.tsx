@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Carousel,
@@ -18,9 +18,14 @@ import street from "@/assets/project/street.jpg";
 
 const MissionSection = () => {
   const { t } = useLanguage();
+  const location = useLocation();
   const [api, setApi] = useState<any>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
+  
+  // Check if we're on the /dev routes
+  const isDevRoute = location.pathname.startsWith('/dev');
+  const basePath = isDevRoute ? '/dev' : '';
 
   useEffect(() => {
     if (!api) {
@@ -184,7 +189,7 @@ const MissionSection = () => {
             
             <div className="flex flex-col sm:flex-row gap-4">
               <Link 
-                to="/contact"
+                to={basePath + "/contact"}
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
                 <Button 
@@ -195,7 +200,7 @@ const MissionSection = () => {
                 </Button>
               </Link>
               <Link 
-                to="/projects"
+                to={basePath + "/projects"}
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
                 <Button 

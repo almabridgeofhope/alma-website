@@ -1,10 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import teamImage from "@/assets/team/team_2.jpg";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const TeamSection = () => {
   const { t } = useLanguage();
+  const location = useLocation();
+  
+  // Check if we're on the /dev routes
+  const isDevRoute = location.pathname.startsWith('/dev');
+  const basePath = isDevRoute ? '/dev' : '';
 
   return (
     <section id="team" className="pt-section pb-section bg-primary-light">
@@ -25,7 +30,7 @@ const TeamSection = () => {
               
               <div>
                 <Link 
-                  to="/about"
+                  to={basePath + "/about"}
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 >
                   <Button 

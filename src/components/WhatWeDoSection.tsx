@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import utilitiesImage from "@/assets/project/well.jpg";
 import educationImage from "@/assets/project/education_3.jpg";
 import infrastructureImage from "@/assets/project/street.jpg";
@@ -8,6 +8,11 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 const WhatWeDoSection = () => {
   const { t } = useLanguage();
+  const location = useLocation();
+  
+  // Check if we're on the /dev routes
+  const isDevRoute = location.pathname.startsWith('/dev');
+  const basePath = isDevRoute ? '/dev' : '';
   
   const initiatives = [
     {
@@ -68,7 +73,7 @@ const WhatWeDoSection = () => {
         
         <div className="text-center mt-12">
           <Link 
-            to="/projects"
+            to={basePath + "/projects"}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
             <Button 
