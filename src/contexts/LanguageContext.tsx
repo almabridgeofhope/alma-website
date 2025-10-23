@@ -376,6 +376,16 @@ const translations = {
     "donation.warning.continue": "I understand, continue",
     "donation.warning.cancel": "Cancel",
     
+    
+    // 404 Page
+    "404.title": "Page Not Found",
+    "404.subtitle": "The page you're looking for doesn't exist or has been moved.",
+    "404.description": "Don't worry, it happens to the best of us. Let's get you back on track.",
+    "404.button_home": "Go Home",
+    "404.button_projects": "View Projects",
+    "404.button_contact": "Contact Us",
+    "404.helpful_links": "News",
+    "404.suggestions": "Here are some recent articles you might find interesting:",
   },
   de: {
     // Navigation
@@ -743,6 +753,16 @@ const translations = {
     "donation.warning.message": "Dieses Spendensystem befindet sich derzeit im Testmodus und ist noch nicht vollständig eingerichtet. Es werden keine tatsächlichen Zahlungen verarbeitet. Dies dient nur zu Demonstrationszwecken.",
     "donation.warning.continue": "Ich verstehe, fortfahren",
     "donation.warning.cancel": "Abbrechen",
+    
+    // 404 Page
+    "404.title": "Seite nicht gefunden",
+    "404.subtitle": "Die gesuchte Seite existiert nicht oder wurde verschoben.",
+    "404.description": "Keine Sorge, das passiert den Besten. Lassen Sie uns Sie wieder auf den richtigen Weg bringen.",
+    "404.button_home": "Zur Startseite",
+    "404.button_projects": "Projekte ansehen",
+    "404.button_contact": "Kontakt aufnehmen",
+    "404.helpful_links": "Nachrichten",
+    "404.suggestions": "Hier sind einige aktuelle Artikel, die Sie interessieren könnten:",
   },
 };
 
