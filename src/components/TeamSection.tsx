@@ -25,7 +25,7 @@ const TeamSection = () => {
               
               <div>
                 <Link 
-                  to="/team"
+                  to="/about"
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 >
                   <Button 

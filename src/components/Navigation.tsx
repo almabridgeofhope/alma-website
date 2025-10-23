@@ -41,11 +41,11 @@ const Navigation = () => {
               {t("nav.projects")}
             </Link>
             <Link 
-              to="/team" 
+              to="/about" 
               className="text-muted-foreground hover:text-primary transition-colors"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
-              {t("nav.team")}
+              {t("nav.about")}
             </Link>
             <Link 
               to="/contact" 
@@ -107,14 +107,14 @@ const Navigation = () => {
               {t("nav.projects")}
             </Link>
             <Link 
-              to="/team" 
+              to="/about" 
               className="block text-muted-foreground hover:text-primary transition-colors"
               onClick={() => {
                 setIsMenuOpen(false);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             >
-              {t("nav.team")}
+              {t("nav.about")}
             </Link>
             <Link 
               to="/contact" 

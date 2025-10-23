@@ -13,7 +13,7 @@ const translations = {
     // Navigation
     "nav.home": "Home",
     "nav.projects": "Projects",
-    "nav.team": "Team",
+    "nav.about": "About Us",
     "nav.contact": "Contact",
     
     // Hero
@@ -145,7 +145,7 @@ const translations = {
     "projects.stats.volunteers": "Engaged & Volunteers",
     
     // Team Page
-    "team.hero.title": "Our Team",
+    "team.title": "About Us",
     "team.hero.subtitle": "Building bridges together between Uganda and Germany",
     "team.intro.title": "International Cooperation",
     "team.intro.p1": "Alma Bridge of Hope is a joint project of dedicated people from Uganda and Germany. Our strength lies in the close cooperation between both countries: While our team in Uganda implements the projects on site and directly supports the local communities, our German team coordinates strategic development, fundraising and international partnerships.",
@@ -374,7 +374,7 @@ const translations = {
     // Navigation
     "nav.home": "Startseite",
     "nav.projects": "Projekte",
-    "nav.team": "Team",
+    "nav.about": "Über uns",
     "nav.contact": "Kontakt",
     
     // Hero
@@ -401,7 +401,7 @@ const translations = {
     "whatwedo.button": "Alle Projekte ansehen",
     
     // Team
-    "team.title": "Unser Team",
+    "team.title": "Über uns",
     "team.subtitle": "Alma Bridge of Hope ist ein gemeinsames Projekt von engagierten Menschen aus Uganda und Deutschland. Unsere Stärke liegt in der engen Zusammenarbeit zwischen beiden Ländern: Während unser Team in Uganda die Projekte vor Ort umsetzt und die lokalen Gemeinschaften direkt unterstützt, koordiniert unser deutsches Team die strategische Entwicklung, Mittelbeschaffung und internationale Partnerschaften.",
     "team.cta": "Diese interkontinentale Kooperation ermöglicht es uns, nachhaltige Entwicklung zu fördern, die wirklich von und mit den Menschen vor Ort gestaltet wird.",
     "team.button": "Das gesamte Team kennenlernen",

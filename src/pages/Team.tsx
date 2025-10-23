@@ -78,7 +78,7 @@ const Team = () => {
           
           <div className="relative z-10 text-center text-white max-w-4xl px-6">
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              {t("team.hero.title")}
+              {t("team.title")}
             </h1>
             <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed">
               {t("team.hero.subtitle")}
