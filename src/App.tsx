@@ -13,6 +13,7 @@ import Contact from "./pages/Contact";
 import Impressum from "./pages/Impressum";
 import Privacy from "./pages/Privacy";
 import Donation from "./pages/Donation";
+import TeaserIndex from "./pages/TeaserIndex";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,15 +26,16 @@ const App = () => (
         <Sonner />
         <HashRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/about" element={<Team />} />
-            <Route path="/projects" element={<Projects />} />
-            <Route path="/news" element={<News />} />
-            <Route path="/news/:date" element={<Article />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/impressum" element={<Impressum />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/donation" element={<Donation />} />
+            <Route path="/" element={<TeaserIndex />} />
+            <Route path="/dev" element={<Index />} />
+            <Route path="/dev/about" element={<Team />} />
+            <Route path="/dev/projects" element={<Projects />} />
+            <Route path="/dev/news" element={<News />} />
+            <Route path="/dev/news/:date" element={<Article />} />
+            <Route path="/dev/contact" element={<Contact />} />
+            <Route path="/dev/impressum" element={<Impressum />} />
+            <Route path="/dev/privacy" element={<Privacy />} />
+            <Route path="/dev/donation" element={<Donation />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
