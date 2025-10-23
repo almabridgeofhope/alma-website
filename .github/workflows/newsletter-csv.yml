@@ -1,0 +1,41 @@
+name: Update Newsletter CSV
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+
+jobs:
+  update-csv:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'newsletter')
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Extract email from issue
+      id: extract
+      run: |
+        # Extract email from issue title
+        EMAIL=$(echo "${{ github.event.issue.title }}" | sed 's/Newsletter Signup: //')
+        echo "email=$EMAIL" >> $GITHUB_OUTPUT
+        echo "date=${{ github.event.issue.created_at }}" >> $GITHUB_OUTPUT
+        
+    - name: Update CSV file
+      run: |
+        # Create CSV file if it doesn't exist
+        if [ ! -f newsletter-subscribers.csv ]; then
+          echo "email,date,source" > newsletter-subscribers.csv
+        fi
+        
+        # Add new subscription
+        echo "${{ steps.extract.outputs.email }},${{ steps.extract.outputs.date }},github-issue" >> newsletter-subscribers.csv
+        
+    - name: Commit and push
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add newsletter-subscribers.csv
+        git commit -m "Add newsletter subscription: ${{ steps.extract.outputs.email }}" || exit 0
+        git push

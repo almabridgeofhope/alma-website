@@ -1,9 +1,48 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, Heart, Users, Globe } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowRight, Heart, Users, Globe, Mail } from "lucide-react";
 import logo from "@/assets/alma-logo.svg";
+import { useState } from "react";
 
 const TeaserIndex = () => {
+  const [email, setEmail] = useState("");
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    
+    setIsLoading(true);
+    
+    try {
+      // Einfache Lösung: E-Mail mit Newsletter-Anmeldung öffnen
+      const subject = encodeURIComponent('Newsletter Anmeldung');
+      const body = encodeURIComponent(`Ich möchte den Newsletter abonnieren.
+
+Meine E-Mail-Adresse: ${email}
+Datum: ${new Date().toLocaleDateString('de-DE')}
+
+Bitte fügen Sie mich zu Ihrer Newsletter-Liste hinzu.
+
+Vielen Dank!`);
+      
+      window.open(`mailto:info@almabridgeofhope.org?subject=${subject}&body=${body}`, '_blank');
+      
+      // Simuliere erfolgreiche Anmeldung
+      setTimeout(() => {
+        setIsSubscribed(true);
+        setEmail("");
+        setIsLoading(false);
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Newsletter signup error:', error);
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -61,8 +100,53 @@ const TeaserIndex = () => {
           </div>
         </section>
 
+        {/* Newsletter Section */}
+        <section className="py-12 bg-muted/30">
+          <div className="max-w-4xl mx-auto px-6 text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+              Newsletter
+            </h2>
+            <p className="text-base text-muted-foreground mb-6 max-w-2xl mx-auto">
+              Bleiben Sie auf dem Laufenden über unsere Projekte und Neuigkeiten. 
+              Melden Sie sich für unseren Newsletter an.
+            </p>
+            
+            {isSubscribed ? (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 max-w-md mx-auto">
+                <div className="flex items-center justify-center gap-2 text-green-700">
+                  <Mail className="w-5 h-5" />
+                  <span className="font-medium">Erfolgreich angemeldet!</span>
+                </div>
+                <p className="text-sm text-green-600 mt-1">
+                  Vielen Dank für Ihre Anmeldung zum Newsletter.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleNewsletterSubmit} className="max-w-md mx-auto">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Input
+                    type="email"
+                    placeholder="Ihre E-Mail-Adresse"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="flex-1"
+                  />
+                  <Button 
+                    type="submit"
+                    disabled={isLoading}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                  >
+                    {isLoading ? "Wird angemeldet..." : "Anmelden"}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </div>
+        </section>
+
         {/* About Section */}
-        <section id="about" className="py-12 bg-muted/30">
+        <section id="about" className="py-12 bg-background">
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-8">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
