@@ -1,13 +1,18 @@
 import { useState } from "react";
 import { Menu, X, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import logo from "@/assets/alma-logo.svg";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
+  const location = useLocation();
+  
+  // Check if we're on the /dev routes
+  const isDevRoute = location.pathname.startsWith('/dev');
+  const basePath = isDevRoute ? '/dev' : '';
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -27,42 +32,42 @@ const Navigation = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <Link 
-              to="/" 
+              to={basePath + "/"} 
               className="text-muted-foreground hover:text-primary transition-colors"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               {t("nav.home")}
             </Link>
             <Link 
-              to="/projects" 
+              to={basePath + "/projects"} 
               className="text-muted-foreground hover:text-primary transition-colors"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               {t("nav.projects")}
             </Link>
             <Link 
-              to="/news" 
+              to={basePath + "/news"} 
               className="text-muted-foreground hover:text-primary transition-colors"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               {t("nav.news")}
             </Link>
             <Link 
-              to="/about" 
+              to={basePath + "/about"} 
               className="text-muted-foreground hover:text-primary transition-colors"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               {t("nav.about")}
             </Link>
             <Link 
-              to="/contact" 
+              to={basePath + "/contact"} 
               className="text-muted-foreground hover:text-primary transition-colors"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               {t("nav.contact")}
             </Link>
             <Link 
-              to="/donation" 
+              to={basePath + "/donation"} 
               className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md transition-colors"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
@@ -94,7 +99,7 @@ const Navigation = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 space-y-4">
             <Link 
-              to="/" 
+              to={basePath + "/"} 
               className="block text-muted-foreground hover:text-primary transition-colors"
               onClick={() => {
                 setIsMenuOpen(false);
@@ -104,7 +109,7 @@ const Navigation = () => {
               {t("nav.home")}
             </Link>
             <Link 
-              to="/projects" 
+              to={basePath + "/projects"} 
               className="block text-muted-foreground hover:text-primary transition-colors"
               onClick={() => {
                 setIsMenuOpen(false);
@@ -114,7 +119,7 @@ const Navigation = () => {
               {t("nav.projects")}
             </Link>
             <Link 
-              to="/news" 
+              to={basePath + "/news"} 
               className="block text-muted-foreground hover:text-primary transition-colors"
               onClick={() => {
                 setIsMenuOpen(false);
@@ -124,7 +129,7 @@ const Navigation = () => {
               {t("nav.news")}
             </Link>
             <Link 
-              to="/about" 
+              to={basePath + "/about"} 
               className="block text-muted-foreground hover:text-primary transition-colors"
               onClick={() => {
                 setIsMenuOpen(false);
@@ -134,7 +139,7 @@ const Navigation = () => {
               {t("nav.about")}
             </Link>
             <Link 
-              to="/contact" 
+              to={basePath + "/contact"} 
               className="block text-muted-foreground hover:text-primary transition-colors"
               onClick={() => {
                 setIsMenuOpen(false);
@@ -144,7 +149,7 @@ const Navigation = () => {
               {t("nav.contact")}
             </Link>
             <Link 
-              to="/donation" 
+              to={basePath + "/donation"} 
               className="block bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md transition-colors text-center"
               onClick={() => {
                 setIsMenuOpen(false);
