@@ -4,7 +4,7 @@ import Footer from "@/components/Footer";
 import NewsList from "@/components/NewsList";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
-import heroImage from "@/assets/community/community_6.jpg";
+import heroImage from "@/assets/project/water.jpg";
 
 interface NewsArticle {
   id: string;
