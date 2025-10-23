@@ -415,7 +415,7 @@ const Projects = () => {
               >
                 <Button 
                   size="lg"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button text-lg px-8 py-6"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
                 >
                   {t("projects.impact.donate")}
                 </Button>

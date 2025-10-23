@@ -68,10 +68,11 @@ const Navigation = () => {
             </Link>
             <Link 
               to={basePath + "/donation"} 
-              className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md transition-colors"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
-              Donate
+              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                Donate
+              </Button>
             </Link>
             
             {/* Language Switcher */}
@@ -150,13 +151,14 @@ const Navigation = () => {
             </Link>
             <Link 
               to={basePath + "/donation"} 
-              className="block bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md transition-colors text-center"
               onClick={() => {
                 setIsMenuOpen(false);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             >
-              Donate
+              <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+                Donate
+              </Button>
             </Link>
             
             <Button

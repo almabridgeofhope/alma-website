@@ -243,11 +243,11 @@ const Donation = () => {
             <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed mb-8">
               {t("donation.hero.subtitle")}
             </p>
-            <Button 
-              size="lg" 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button text-lg px-8 py-6"
-              onClick={() => document.getElementById('donation-form')?.scrollIntoView({ behavior: 'smooth' })}
-            >
+              <Button 
+                size="lg" 
+                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
+                onClick={() => document.getElementById('donation-form')?.scrollIntoView({ behavior: 'smooth' })}
+              >
               <Heart className="mr-2 h-5 w-5" />
               {t("donation.hero.button")}
             </Button>

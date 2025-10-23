@@ -206,11 +206,11 @@ Vielen Dank!`);
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button text-base px-6 py-4"
-                onClick={() => window.open('mailto:info@almabridgeofhope.org', '_blank')}
-              >
+                <Button 
+                  size="lg" 
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
+                  onClick={() => window.open('mailto:info@almabridgeofhope.org', '_blank')}
+                >
                 E-Mail senden
               </Button>
             </div>

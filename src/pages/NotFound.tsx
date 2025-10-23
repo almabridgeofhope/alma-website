@@ -144,7 +144,7 @@ const NotFound = () => {
                   {t("404.button_home")}
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg">
+              <Button asChild variant="outline" size="lg" className="shadow-button">
                 <Link 
                   to="/dev/projects" 
                   className="flex items-center gap-2"
@@ -154,7 +154,7 @@ const NotFound = () => {
                   {t("404.button_projects")}
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg">
+              <Button asChild variant="outline" size="lg" className="shadow-button">
                 <Link 
                   to="/dev/contact" 
                   className="flex items-center gap-2"
