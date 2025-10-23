@@ -146,7 +146,6 @@ const translations = {
     "projects.stats.volunteers": "Engaged & Volunteers",
     
     // Team Page
-    "team.title": "About Us",
     "team.hero.subtitle": "Building bridges together between Uganda and Germany",
     "team.intro.title": "International Cooperation",
     "team.intro.p1": "Alma Bridge of Hope is a joint project of dedicated people from Uganda and Germany. Our strength lies in the close cooperation between both countries: While our team in Uganda implements the projects on site and directly supports the local communities, our German team coordinates strategic development, fundraising and international partnerships.",
