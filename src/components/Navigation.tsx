@@ -54,6 +54,13 @@ const Navigation = () => {
             >
               {t("nav.contact")}
             </Link>
+            <Link 
+              to="/donation" 
+              className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md transition-colors"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
+              Donate
+            </Link>
             
             {/* Language Switcher */}
             <Button
@@ -118,6 +125,16 @@ const Navigation = () => {
               }}
             >
               {t("nav.contact")}
+            </Link>
+            <Link 
+              to="/donation" 
+              className="block bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md transition-colors text-center"
+              onClick={() => {
+                setIsMenuOpen(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            >
+              Donate
             </Link>
             
             <Button
