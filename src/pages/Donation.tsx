@@ -7,6 +7,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 // import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
@@ -28,6 +29,7 @@ const Donation = () => {
   const [customAmount, setCustomAmount] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<"paypal" | "sepa" | "card">("paypal");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showWarningDialog, setShowWarningDialog] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -130,6 +132,13 @@ const Donation = () => {
       return;
     }
 
+    // Show warning dialog instead of proceeding directly
+    setShowWarningDialog(true);
+  };
+
+  const handleContinueDonation = () => {
+    setShowWarningDialog(false);
+    
     const finalAmount = amount || customAmount;
     console.log("Final amount:", finalAmount);
     
@@ -656,6 +665,29 @@ const Donation = () => {
       </main>
       
       <Footer />
+      
+      {/* Warning Dialog */}
+      <AlertDialog open={showWarningDialog} onOpenChange={setShowWarningDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-amber-500" />
+              {t("donation.warning.title")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base leading-relaxed">
+              {t("donation.warning.message")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowWarningDialog(false)}>
+              {t("donation.warning.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleContinueDonation} className="bg-primary hover:bg-primary/90">
+              {t("donation.warning.continue")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -369,6 +369,13 @@ const translations = {
     "donation.contact.subtitle": "Contact us for any questions about donations, tax receipts, or our work.",
     "donation.contact.email": "info@almabridgeofhope.org",
     "donation.contact.button": "Contact Us",
+    
+    // Donation Warning
+    "donation.warning.title": "Testing Mode",
+    "donation.warning.message": "This donation system is currently in testing mode and not fully set up yet. No actual payments will be processed. This is for demonstration purposes only.",
+    "donation.warning.continue": "I understand, continue",
+    "donation.warning.cancel": "Cancel",
+    
   },
   de: {
     // Navigation
@@ -730,6 +737,12 @@ const translations = {
     "donation.contact.subtitle": "Kontaktieren Sie uns bei Fragen zu Spenden, Spendenquittungen oder unserer Arbeit.",
     "donation.contact.email": "info@almabridgeofhope.org",
     "donation.contact.button": "Kontakt aufnehmen",
+    
+    // Donation Warning
+    "donation.warning.title": "Testmodus",
+    "donation.warning.message": "Dieses Spendensystem befindet sich derzeit im Testmodus und ist noch nicht vollständig eingerichtet. Es werden keine tatsächlichen Zahlungen verarbeitet. Dies dient nur zu Demonstrationszwecken.",
+    "donation.warning.continue": "Ich verstehe, fortfahren",
+    "donation.warning.cancel": "Abbrechen",
   },
 };
 
