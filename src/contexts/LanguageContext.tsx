@@ -401,6 +401,7 @@ const translations = {
     "news.article1.sections.community_points": "Over 150 community members actively participating in construction|Local employment opportunities created for 25+ residents|Skills training programs running alongside construction|Community meetings held weekly to ensure project alignment with local needs",
     "news.article1.sections.next_steps": "What's Next:",
     "news.article1.sections.next_steps_points": "Complete wall construction by end of February|Install solar panels for sustainable energy|Begin interior work on classrooms and office spaces|Prepare for official opening ceremony in March",
+    "news.article1.sections.conclusion": "This Community House represents more than just a building—it's a symbol of hope and collaboration. As construction progresses, we're witnessing the power of community-driven development and the strong partnership between our German and Ugandan teams. Together, we're building not just infrastructure, but lasting relationships that will support sustainable development for years to come.",
     "news.article2.title": "Community Engagement Program Exceeds Expectations in Namaliri Village",
     "news.article2.excerpt": "Our community engagement initiatives have brought together over 150 local residents to participate in project planning and implementation, creating a strong foundation for sustainable development.",
     "news.article2.content": "The community engagement program has exceeded expectations, with strong participation from local leaders and families in shaping our development projects. This collaborative approach ensures that all initiatives truly serve the community's needs.",
@@ -426,6 +427,8 @@ const translations = {
     "news.donation.title": "Support Our Mission",
     "news.donation.subtitle": "Help us continue building bridges of hope in Uganda",
     "news.donation.button": "Donate Now",
+    "news.related_articles.title": "Related Articles",
+    "news.read_more": "Read More",
     
     // 404 Page
     "404.title": "Page Not Found",
@@ -828,6 +831,7 @@ const translations = {
     "news.article1.sections.community_points": "Über 150 Gemeindemitglieder beteiligen sich aktiv am Bau|Lokale Beschäftigungsmöglichkeiten für 25+ Einwohner geschaffen|Qualifizierungsprogramme laufen parallel zum Bau|Wöchentliche Gemeindetreffen zur Sicherstellung der Projektausrichtung an lokalen Bedürfnissen",
     "news.article1.sections.next_steps": "Nächste Schritte:",
     "news.article1.sections.next_steps_points": "Wandbau bis Ende Februar abschließen|Solarpanels für nachhaltige Energie installieren|Innenarbeiten an Klassenzimmern und Büroräumen beginnen|Vorbereitung der offiziellen Eröffnungszeremonie im März",
+    "news.article1.sections.conclusion": "Dieses Community House steht für mehr als nur ein Gebäude—es ist ein Symbol der Hoffnung und Zusammenarbeit. Während der Bau voranschreitet, erleben wir die Kraft der gemeinschaftsgetriebenen Entwicklung und die starke Partnerschaft zwischen unseren deutschen und ugandischen Teams. Gemeinsam bauen wir nicht nur Infrastruktur, sondern nachhaltige Beziehungen, die die Entwicklung für Jahre unterstützen werden.",
     "news.article2.title": "Gemeindebeteiligungsprogramm übertrifft Erwartungen im Dorf Namaliri",
     "news.article2.excerpt": "Unsere Gemeindebeteiligungsinitiativen haben über 150 lokale Bewohner zusammengebracht, um an der Projektplanung und -umsetzung teilzunehmen und eine starke Grundlage für nachhaltige Entwicklung zu schaffen.",
     "news.article2.content": "Das Gemeindebeteiligungsprogramm hat die Erwartungen übertroffen, mit starker Teilnahme von lokalen Führungskräften und Familien bei der Gestaltung unserer Entwicklungsprojekte. Dieser kollaborative Ansatz stellt sicher, dass alle Initiativen wirklich den Bedürfnissen der Gemeinde dienen.",
@@ -867,6 +871,8 @@ const translations = {
     "news.article3.sections.impact_points": "Erhöhte Kapazität für strategische Planung und Entwicklung|Verbesserte Kommunikation zwischen deutschen und ugandischen Teams|Verbesserte Spenderbeziehungen und Fundraising-Bemühungen|Gestärkte Projektüberwachung und Evaluationsprozesse",
     "news.article3.sections.future": "Blick nach vorn:",
     "news.article3.sections.future_points": "Fortgesetzte Teamerweiterung für 2025 geplant|Verbesserte Schulungsprogramme für neue Freiwillige|Verbesserte Koordination mit lokalen Partnern in Uganda|Gestärkte internationale Zusammenarbeit und Wissensaustausch",
+    "news.related_articles.title": "Verwandte Artikel",
+    "news.read_more": "Weiterlesen",
     
     // 404 Page
     "404.title": "Seite nicht gefunden",

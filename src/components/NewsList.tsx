@@ -69,7 +69,7 @@ const NewsList = ({
 
               {/* Content */}
               <div className="p-6">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
                   <User className="w-3 h-3" />
                   <span>{article.author}</span>
                   <span>•</span>

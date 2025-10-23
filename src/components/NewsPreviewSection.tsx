@@ -89,9 +89,10 @@ const NewsPreviewSection = () => {
         {/* News Grid - Equal Size Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
           {newsArticles.map((article, index) => (
-            <Card 
+            <div 
               key={article.id}
-              className="overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 group cursor-pointer h-full"
+              className="overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 group animate-fade-in bg-card rounded-lg border cursor-pointer"
+              style={{ animationDelay: `${index * 0.1}s` }}
               onClick={() => handleReadMore(article)}
             >
               {/* Article Image */}
@@ -112,28 +113,28 @@ const NewsPreviewSection = () => {
 
               {/* Article Content */}
               <div className="p-6">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                  <User className="w-4 h-4" />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                  <User className="w-3 h-3" />
                   <span>{article.author}</span>
                   <span>•</span>
-                  <Calendar className="w-4 h-4" />
+                  <Calendar className="w-3 h-3" />
                   <span>{formatDate(article.date)}</span>
                 </div>
                 
-                <h3 className="text-xl font-bold text-foreground mb-4 line-clamp-2 group-hover:text-primary transition-colors">
+                <h3 className="text-lg font-bold text-foreground mb-3 line-clamp-2 group-hover:text-primary transition-colors">
                   {article.title}
                 </h3>
                 
-                <p className="text-muted-foreground mb-6 line-clamp-3 leading-relaxed">
+                <p className="text-sm text-muted-foreground mb-4 line-clamp-3 leading-relaxed">
                   {article.excerpt}
                 </p>
                 
                 <div className="flex items-center text-primary hover:text-primary/80 group">
-                  <span className="font-medium">Read More</span>
-                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                  <span className="text-sm font-medium">Read More</span>
+                  <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
-            </Card>
+            </div>
           ))}
         </div>
 

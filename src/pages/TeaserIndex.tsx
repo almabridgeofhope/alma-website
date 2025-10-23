@@ -22,14 +22,14 @@ const TeaserIndex = () => {
       
       <main className="pt-16">
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        <section className="relative py-20 flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5" />
           
           <div className="relative z-10 text-center max-w-4xl px-6">
-            <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-foreground">
+            <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight text-foreground">
               Alma Bridge of Hope
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            <p className="text-lg md:text-xl text-muted-foreground mb-6 max-w-2xl mx-auto">
               Building bridges of hope across continents through sustainable community development
             </p>
             
@@ -37,7 +37,7 @@ const TeaserIndex = () => {
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="text-lg px-8 py-6"
+                className="text-base px-6 py-4"
                 onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 Mehr erfahren
@@ -47,46 +47,46 @@ const TeaserIndex = () => {
         </section>
 
         {/* About Section */}
-        <section id="about" className="py-16 bg-muted/30">
+        <section id="about" className="py-12 bg-muted/30">
           <div className="max-w-6xl mx-auto px-6">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
                 Über Alma Bridge of Hope
               </h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              <p className="text-base text-muted-foreground max-w-3xl mx-auto">
                 Wir sind eine gemeinnützige Organisation, die sich für nachhaltige Entwicklung 
                 und Gemeinschaftsaufbau in Uganda einsetzt. Unser Ziel ist es, Brücken der Hoffnung 
                 zwischen Deutschland und Uganda zu schaffen.
               </p>
             </div>
             
-            <div className="grid md:grid-cols-3 gap-8">
-              <Card className="text-center p-6">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Heart className="w-8 h-8 text-primary" />
+            <div className="grid md:grid-cols-3 gap-6">
+              <Card className="text-center p-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Heart className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Gemeinschaft</h3>
-                <p className="text-muted-foreground">
+                <h3 className="text-lg font-semibold mb-2">Gemeinschaft</h3>
+                <p className="text-sm text-muted-foreground">
                   Wir stärken lokale Gemeinschaften durch partizipative Entwicklungsansätze
                 </p>
               </Card>
               
-              <Card className="text-center p-6">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-primary" />
+              <Card className="text-center p-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Users className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Bildung</h3>
-                <p className="text-muted-foreground">
+                <h3 className="text-lg font-semibold mb-2">Bildung</h3>
+                <p className="text-sm text-muted-foreground">
                   Zugang zu qualitativ hochwertiger Bildung für alle Altersgruppen
                 </p>
               </Card>
               
-              <Card className="text-center p-6">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Globe className="w-8 h-8 text-primary" />
+              <Card className="text-center p-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Globe className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Nachhaltigkeit</h3>
-                <p className="text-muted-foreground">
+                <h3 className="text-lg font-semibold mb-2">Nachhaltigkeit</h3>
+                <p className="text-sm text-muted-foreground">
                   Umweltfreundliche und langfristig tragfähige Lösungen
                 </p>
               </Card>
@@ -95,12 +95,12 @@ const TeaserIndex = () => {
         </section>
 
         {/* Coming Soon Section */}
-        <section className="py-16 bg-background">
+        <section className="py-12 bg-background">
           <div className="max-w-4xl mx-auto px-6 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
               Coming Soon
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-base text-muted-foreground max-w-2xl mx-auto">
               Wir arbeiten an einer vollständigen Website mit detaillierten Informationen 
               zu unseren Projekten und aktuellen Neuigkeiten.
             </p>
@@ -108,12 +108,12 @@ const TeaserIndex = () => {
         </section>
 
         {/* Contact Section */}
-        <section id="contact" className="py-16 bg-muted/30">
+        <section id="contact" className="py-12 bg-muted/30">
           <div className="max-w-6xl mx-auto px-6 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
               Kontakt
             </h2>
-            <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
+            <p className="text-base text-muted-foreground mb-6 max-w-2xl mx-auto">
               Haben Sie Fragen oder möchten Sie mehr über unsere Arbeit erfahren? 
               Wir freuen uns auf Ihre Nachricht.
             </p>
@@ -121,7 +121,7 @@ const TeaserIndex = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button text-lg px-8 py-6"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button text-base px-6 py-4"
                 onClick={() => window.open('mailto:info@almabridgeofhope.org', '_blank')}
               >
                 E-Mail senden
@@ -133,13 +133,13 @@ const TeaserIndex = () => {
       
       {/* Footer */}
       <footer className="bg-muted/50 border-t">
-        <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="text-center">
-            <div className="text-2xl font-bold text-primary mb-4">Alma Bridge of Hope</div>
-            <p className="text-muted-foreground mb-4">
+            <div className="text-xl font-bold text-primary mb-3">Alma Bridge of Hope</div>
+            <p className="text-sm text-muted-foreground mb-3">
               Building bridges of hope across continents
             </p>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-xs text-muted-foreground">
               © 2024 Alma Bridge of Hope. Alle Rechte vorbehalten.
             </div>
           </div>
