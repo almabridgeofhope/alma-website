@@ -89,7 +89,12 @@ const NotFound = () => {
   };
 
   const handleReadMore = (article: NewsArticle) => {
-    navigate(`/news/${article.date}`);
+    const dateSlug = article.date;
+    navigate(`/news/${dateSlug}`);
+    // Scroll to top after navigation
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
   };
 
   return (
