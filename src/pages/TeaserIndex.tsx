@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ArrowRight, Heart, Users, Globe } from "lucide-react";
+import logo from "@/assets/alma-logo.svg";
 
 const TeaserIndex = () => {
   return (
@@ -10,27 +11,41 @@ const TeaserIndex = () => {
         <div className="max-w-content mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-8">
-              <div className="text-2xl font-bold text-primary">Alma Bridge of Hope</div>
+              <img src={logo} alt="Alma Bridge of Hope" className="h-12 w-12 object-contain" />
             </div>
             <div className="flex items-center space-x-6">
-              <a href="#about" className="text-muted-foreground hover:text-primary transition-colors">About</a>
-              <a href="#contact" className="text-muted-foreground hover:text-primary transition-colors">Contact</a>
+              <button 
+                className="text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                About
+              </button>
+              <button 
+                className="text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                Contact
+              </button>
             </div>
           </div>
         </div>
       </nav>
       
       <main className="pt-16">
-        {/* Hero Section */}
+        {/* Coming Soon Section - Prominent at the top */}
         <section className="relative py-20 flex items-center justify-center overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5" />
           
           <div className="relative z-10 text-center max-w-4xl px-6">
-            <h1 className="text-3xl md:text-5xl font-bold mb-4 leading-tight text-foreground">
-              Alma Bridge of Hope
+            <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight text-foreground">
+              Coming Soon
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-6 max-w-2xl mx-auto">
-              Building bridges of hope across continents through sustainable community development
+            <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-foreground">
+              Alma Bridge of Hope
+            </h2>
+            <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Wir arbeiten an einer vollständigen Website mit detaillierten Informationen 
+              zu unseren Projekten und aktuellen Neuigkeiten.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -94,18 +109,6 @@ const TeaserIndex = () => {
           </div>
         </section>
 
-        {/* Coming Soon Section */}
-        <section className="py-12 bg-background">
-          <div className="max-w-4xl mx-auto px-6 text-center">
-            <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-              Coming Soon
-            </h2>
-            <p className="text-base text-muted-foreground max-w-2xl mx-auto">
-              Wir arbeiten an einer vollständigen Website mit detaillierten Informationen 
-              zu unseren Projekten und aktuellen Neuigkeiten.
-            </p>
-          </div>
-        </section>
 
         {/* Contact Section */}
         <section id="contact" className="py-12 bg-muted/30">
@@ -135,12 +138,14 @@ const TeaserIndex = () => {
       <footer className="bg-muted/50 border-t">
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="text-center">
-            <div className="text-xl font-bold text-primary mb-3">Alma Bridge of Hope</div>
+            <div className="flex items-center justify-center mb-3">
+              <img src={logo} alt="Alma Bridge of Hope" className="h-8 w-8 object-contain" />
+            </div>
             <p className="text-sm text-muted-foreground mb-3">
               Building bridges of hope across continents
             </p>
             <div className="text-xs text-muted-foreground">
-              © 2024 Alma Bridge of Hope. Alle Rechte vorbehalten.
+              © 2025 Alma Bridge of Hope. Alle Rechte vorbehalten.
             </div>
           </div>
         </div>
