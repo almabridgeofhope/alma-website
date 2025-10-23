@@ -41,6 +41,13 @@ const Navigation = () => {
               {t("nav.projects")}
             </Link>
             <Link 
+              to="/news" 
+              className="text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
+              {t("nav.news")}
+            </Link>
+            <Link 
               to="/about" 
               className="text-muted-foreground hover:text-primary transition-colors"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -105,6 +112,16 @@ const Navigation = () => {
               }}
             >
               {t("nav.projects")}
+            </Link>
+            <Link 
+              to="/news" 
+              className="block text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => {
+                setIsMenuOpen(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            >
+              {t("nav.news")}
             </Link>
             <Link 
               to="/about" 
