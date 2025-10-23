@@ -8,6 +8,9 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
+import constructionHouseImage from "@/assets/project/construction_house.png";
+import communityImage from "@/assets/community/community_2.png";
+import teamImage2 from "@/assets/team/team_2.jpg";
 
 interface NewsArticle {
   id: string;
@@ -43,7 +46,7 @@ const NotFound = () => {
       author: t("news.article1.author"),
       date: "2024-12-15",
       category: t("news.categories.project_update"),
-      image: "/src/assets/project/construction_house.png",
+      image: constructionHouseImage,
       featured: true,
     },
     {
@@ -54,7 +57,7 @@ const NotFound = () => {
       author: t("news.article2.author"),
       date: "2024-12-10",
       category: t("news.categories.community"),
-      image: "/src/assets/community/community_2.png",
+      image: communityImage,
       featured: false,
     },
     {
@@ -65,7 +68,7 @@ const NotFound = () => {
       author: t("news.article3.author"),
       date: "2024-12-05",
       category: t("news.categories.organization"),
-      image: "/src/assets/team/team_2.jpg",
+      image: teamImage2,
       featured: false,
     },
   ];

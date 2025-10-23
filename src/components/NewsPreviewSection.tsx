@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from "react-router-dom";
 import { Calendar, User, ArrowRight, Tag } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import constructionHouseImage from "@/assets/project/construction_house.png";
+import communityImage from "@/assets/community/community_2.png";
 
 interface NewsArticle {
   id: string;
@@ -28,7 +30,7 @@ const NewsPreviewSection = () => {
       author: t("news.article1.author"),
       date: "2024-12-15",
       category: t("news.categories.project_update"),
-      image: "/src/assets/project/construction_house.png",
+      image: constructionHouseImage,
     },
     {
       id: "2",
@@ -37,7 +39,7 @@ const NewsPreviewSection = () => {
       author: t("news.article2.author"),
       date: "2024-12-10",
       category: t("news.categories.community"),
-      image: "/src/assets/community/community_2.png",
+      image: communityImage,
     },
   ];
 
