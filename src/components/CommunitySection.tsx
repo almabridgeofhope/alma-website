@@ -163,7 +163,7 @@ const CommunitySection = () => {
           </Carousel>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Community Information */}
           <div className="space-y-6">
             <div className="space-y-4 text-lg text-muted-foreground leading-relaxed">
@@ -189,35 +189,69 @@ const CommunitySection = () => {
 
           {/* Map Section */}
           <div className="space-y-6">
-            <Card className="overflow-hidden shadow-card">
-              <div className="aspect-[4/3] bg-muted relative">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.7!2d32.851!3d0.602!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMMKwMzYnMDguOSJOIDMywrA1MScwMy4wIkU!5e0!3m2!1sen!2sde!4v1234567890123!5m2!1sen!2sde"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title="Community Location"
-                  className="w-full h-full"
-                />
-              </div>
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-3">
-                  <MapPin className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-semibold text-foreground">
-                    {t("community.location.title")}
-                  </h3>
+            <div className="space-y-6">
+              {/* First Map */}
+              <Card className="overflow-hidden shadow-card">
+                <div className="aspect-[4/3] bg-muted relative">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.7!2d32.827667236328125!3d0.6293768286705017!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMMKwMzcnNDkuOCJOIDMywrA0OSc0MC4wIkU!5e0!3m2!1sen!2sde!4v1234567890124!5m2!1sen!2sde"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Community Location"
+                    className="w-full h-full"
+                  />
                 </div>
-                <p className="text-muted-foreground text-sm">
-                  {t("community.location.coordinates")}
-                </p>
-                <p className="text-muted-foreground text-sm mt-1">
-                  {t("community.location.region")}
-                </p>
-              </div>
-            </Card>
+                <div className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <MapPin className="w-5 h-5 text-primary" />
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {t("community.location.title")}
+                    </h3>
+                  </div>
+                  <p className="text-muted-foreground text-sm">
+                    0.6293768286705017, 32.827667236328125
+                  </p>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    {t("community.location.region")}
+                  </p>
+                </div>
+              </Card>
+
+              {/* Second Map
+              <Card className="overflow-hidden shadow-card">
+                <div className="aspect-[4/3] bg-muted relative">
+                  <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.7!2d32.80263137817383!3d0.6462867856025696!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMMKwMzgnNDYuNiJOIDMywrA0OCcwOS41IkU!5e0!3m2!1sen!2sde!4v1234567890123!5m2!1sen!2sde"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Community Center Location"
+                    className="w-full h-full"
+                  />
+                </div>
+                <div className="p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <MapPin className="w-5 h-5 text-primary" />
+                    <h3 className="text-lg font-semibold text-foreground">
+                      {t("community.location.title_2")}
+                    </h3>
+                  </div>
+                  <p className="text-muted-foreground text-sm">
+                    0.6462867856025696, 32.80263137817383
+                  </p>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    {t("community.location.region")}
+                  </p>
+                </div>
+              </Card> */}
+            </div>
           </div>
         </div>
       </div>

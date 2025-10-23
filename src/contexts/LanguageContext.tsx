@@ -198,7 +198,7 @@ const translations = {
     "community.stats.people": "Community Members",
     "community.stats.projects": "Active Projects",
     "community.location.title": "Community Location",
-    "community.location.coordinates": "Coordinates: 0°36'08.9\"N 32°51'03.0\"E",
+    "community.location.title_2": "Community Center Location",
     "community.location.region": "Namaliri Village, Njeru Town Council, Mukono District, Uganda",
     
     // Impressum
@@ -493,7 +493,7 @@ const translations = {
     "community.stats.people": "Gemeindemitglieder",
     "community.stats.projects": "Aktive Projekte",
     "community.location.title": "Standort der Gemeinde",
-    "community.location.coordinates": "Koordinaten: 0°36'08,9\"N 32°51'03,0\"E",
+    "community.location.title_2": "Standort des Community Centers",
     "community.location.region": "Namaliri Dorf, Njeru Stadtgemeinde, Mukono-Distrikt, Uganda",
     
     // Impressum
