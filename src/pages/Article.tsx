@@ -56,6 +56,20 @@ const Article = () => {
       ],
       featured: false,
     },
+    {
+      id: "3",
+      title: t("news.article3.title"),
+      excerpt: t("news.article3.excerpt"),
+      content: t("news.article3.content"),
+      author: t("news.article3.author"),
+      date: "2024-12-05",
+      category: t("news.categories.organization"),
+      image: "/src/assets/team/team.png",
+      additionalImages: [
+        "/src/assets/team/team_2.jpg"
+      ],
+      featured: false,
+    },
   ];
 
   const formatDate = (dateString: string) => {
@@ -205,17 +219,21 @@ const Article = () => {
                 {/* Section Headline */}
                 <div className="my-12">
                   <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                    {article.id === "1" ? "Building the Future Together" : "Community at the Heart"}
+                    {article.id === "1" ? "Building the Future Together" : article.id === "2" ? "Community at the Heart" : "Growing Our Team"}
                   </h2>
                 </div>
 
                 {/* Progress/Impact Section */}
                 <div>
                   <h3 className="text-2xl font-bold text-foreground mb-4">
-                    {article.id === "1" ? t("news.article1.sections.progress") : t("news.article2.sections.participation")}
+                    {article.id === "1" ? t("news.article1.sections.progress") : 
+                     article.id === "2" ? t("news.article2.sections.participation") : 
+                     t("news.article3.sections.growth")}
                   </h3>
                   <ul className="space-y-4">
-                    {(article.id === "1" ? t("news.article1.sections.progress_points") : t("news.article2.sections.participation_points")).split('|').map((point: string, index: number) => (
+                    {(article.id === "1" ? t("news.article1.sections.progress_points") : 
+                      article.id === "2" ? t("news.article2.sections.participation_points") : 
+                      t("news.article3.sections.growth_points")).split('|').map((point: string, index: number) => (
                       <li key={index} className="flex items-center gap-4">
                         <div className="w-3 h-3 bg-primary rounded-full flex-shrink-0"></div>
                         <span className="leading-relaxed text-base">{point}</span>
@@ -227,10 +245,14 @@ const Article = () => {
                 {/* Community Impact Section */}
                 <div>
                   <h3 className="text-2xl font-bold text-foreground mb-4">
-                    {article.id === "1" ? t("news.article1.sections.community_impact") : t("news.article2.sections.impact")}
+                    {article.id === "1" ? t("news.article1.sections.community_impact") : 
+                     article.id === "2" ? t("news.article2.sections.impact") : 
+                     t("news.article3.sections.impact")}
                   </h3>
                   <ul className="space-y-4">
-                    {(article.id === "1" ? t("news.article1.sections.community_points") : t("news.article2.sections.impact_points")).split('|').map((point: string, index: number) => (
+                    {(article.id === "1" ? t("news.article1.sections.community_points") : 
+                      article.id === "2" ? t("news.article2.sections.impact_points") : 
+                      t("news.article3.sections.impact_points")).split('|').map((point: string, index: number) => (
                       <li key={index} className="flex items-center gap-4">
                         <div className="w-3 h-3 bg-primary rounded-full flex-shrink-0"></div>
                         <span className="leading-relaxed text-base">{point}</span>
@@ -257,10 +279,14 @@ const Article = () => {
                 {/* Next Steps/Success Factors Section */}
                 <div>
                   <h3 className="text-2xl font-bold text-foreground mb-4">
-                    {article.id === "1" ? t("news.article1.sections.next_steps") : t("news.article2.sections.success_factors")}
+                    {article.id === "1" ? t("news.article1.sections.next_steps") : 
+                     article.id === "2" ? t("news.article2.sections.success_factors") : 
+                     t("news.article3.sections.future")}
                   </h3>
                   <ul className="space-y-4">
-                    {(article.id === "1" ? t("news.article1.sections.next_steps_points") : t("news.article2.sections.success_factors_points")).split('|').map((point: string, index: number) => (
+                    {(article.id === "1" ? t("news.article1.sections.next_steps_points") : 
+                      article.id === "2" ? t("news.article2.sections.success_factors_points") : 
+                      t("news.article3.sections.future_points")).split('|').map((point: string, index: number) => (
                       <li key={index} className="flex items-center gap-4">
                         <div className="w-3 h-3 bg-primary rounded-full flex-shrink-0"></div>
                         <span className="leading-relaxed text-base">{point}</span>
@@ -269,12 +295,14 @@ const Article = () => {
                   </ul>
                 </div>
 
-                {/* Conclusion */}
-                <div className="bg-muted/30 p-6 rounded-lg">
-                  <p className="text-lg leading-relaxed font-medium">
-                    {t(`news.article${article.id}.sections.conclusion`)}
-                  </p>
-                </div>
+                {/* Conclusion - only for articles 1 and 2 */}
+                {article.id !== "3" && (
+                  <div className="bg-muted/30 p-6 rounded-lg">
+                    <p className="text-lg leading-relaxed font-medium">
+                      {t(`news.article${article.id}.sections.conclusion`)}
+                    </p>
+                  </div>
+                )}
 
 
                 {/* Donation Form */}

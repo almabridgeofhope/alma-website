@@ -55,6 +55,20 @@ const News = () => {
       ],
       featured: false,
     },
+    {
+      id: "3",
+      title: t("news.article3.title"),
+      excerpt: t("news.article3.excerpt"),
+      content: t("news.article3.content"),
+      author: t("news.article3.author"),
+      date: "2024-12-05",
+      category: t("news.categories.organization"),
+      image: "/src/assets/team/team.png",
+      additionalImages: [
+        "/src/assets/team/team_2.jpg"
+      ],
+      featured: false,
+    },
   ];
 
   const formatDate = (dateString: string) => {
