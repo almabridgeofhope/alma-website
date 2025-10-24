@@ -897,6 +897,10 @@ const getStoredLanguage = (): Language => {
   
   try {
     const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    // Force German as default for new users
+    if (!stored) {
+      return DEFAULT_LANGUAGE;
+    }
     if (stored === "en" || stored === "de") {
       return stored as Language;
     }
@@ -915,6 +919,17 @@ const setStoredLanguage = (language: Language): void => {
     localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
   } catch (error) {
     console.warn("Failed to save language to localStorage:", error);
+  }
+};
+
+// Helper function to clear language from localStorage (for testing)
+const clearStoredLanguage = (): void => {
+  if (typeof window === "undefined") return;
+  
+  try {
+    localStorage.removeItem(LANGUAGE_STORAGE_KEY);
+  } catch (error) {
+    console.warn("Failed to clear language from localStorage:", error);
   }
 };
 
