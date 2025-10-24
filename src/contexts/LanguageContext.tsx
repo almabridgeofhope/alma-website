@@ -889,7 +889,7 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 // Constants for better maintainability
 const LANGUAGE_STORAGE_KEY = "alma-language";
-const DEFAULT_LANGUAGE: Language = "en";
+const DEFAULT_LANGUAGE: Language = "de";
 
 // Helper function to safely get language from localStorage
 const getStoredLanguage = (): Language => {
