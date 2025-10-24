@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Heart, Users, Globe, Mail } from "lucide-react";
+import { ArrowRight, Heart, Users, Globe, Mail, Instagram } from "lucide-react";
 import logo from "@/assets/alma-logo.svg";
 import { useState } from "react";
 
@@ -104,44 +104,86 @@ Vielen Dank!`);
         <section className="py-12 bg-muted/30">
           <div className="max-w-4xl mx-auto px-6 text-center">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-              Newsletter
+              Bleib informiert
             </h2>
-            <p className="text-base text-muted-foreground mb-6 max-w-2xl mx-auto">
-              Bleiben Sie auf dem Laufenden über unsere Projekte und Neuigkeiten. 
-              Melden Sie sich für unseren Newsletter an.
+            <p className="text-base text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Folge uns auf Instagram für tägliche Einblicke oder melde dich für unseren Newsletter an, 
+              um nichts zu verpassen.
             </p>
             
-            {isSubscribed ? (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 max-w-md mx-auto">
-                <div className="flex items-center justify-center gap-2 text-green-700">
-                  <Mail className="w-5 h-5" />
-                  <span className="font-medium">Erfolgreich angemeldet!</span>
+            {/* Social Media & Newsletter Options */}
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-8">
+              {/* Instagram Card */}
+              <Card className="p-6 text-center hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-pink-200" onClick={() => window.open('https://instagram.com/almabridgeofhope', '_blank')}>
+                <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-all duration-300 shadow-lg">
+                  <Instagram className="w-10 h-10 text-white" />
                 </div>
-                <p className="text-sm text-green-600 mt-1">
-                  Vielen Dank für Ihre Anmeldung zum Newsletter.
+                <h3 className="text-xl font-bold mb-2 text-foreground">Instagram</h3>
+                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                  Folge uns für tägliche Einblicke in unsere Projekte, 
+                  <br />Fotos aus Uganda und Updates von vor Ort
                 </p>
-              </div>
-            ) : (
-              <form onSubmit={handleNewsletterSubmit} className="max-w-md mx-auto">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <Input
-                    type="email"
-                    placeholder="Ihre E-Mail-Adresse"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="flex-1"
-                  />
-                  <Button 
-                    type="submit"
-                    disabled={isLoading}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                  >
-                    {isLoading ? "Wird angemeldet..." : "Anmelden"}
-                  </Button>
+                <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-white group-hover:border-transparent transition-all duration-300">
+                  @almabridgeofhope
+                </Button>
+              </Card>
+              
+              {/* Newsletter Card */}
+              <Card className="p-6 text-center hover:shadow-xl transition-all duration-300 border-2 hover:border-primary/20 cursor-pointer group">
+                <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-all duration-300 shadow-lg">
+                  <Mail className="w-10 h-10 text-primary" />
                 </div>
-              </form>
-            )}
+                <h3 className="text-xl font-bold mb-2 text-foreground">Newsletter</h3>
+                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                  Erhalte monatliche Updates über unsere Fortschritte, 
+                  <br />Projektberichte und Erfolgsgeschichten
+                </p>
+                
+                {isSubscribed ? (
+                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-4 animate-in fade-in duration-500">
+                    <div className="flex items-center justify-center gap-2 text-green-700 mb-2">
+                      <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-sm">✓</span>
+                      </div>
+                      <span className="font-bold text-sm">Erfolgreich angemeldet!</span>
+                    </div>
+                    <p className="text-xs text-green-600 text-center">
+                      🎉 Vielen Dank! Du erhältst bald deine erste E-Mail von uns.
+                    </p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleNewsletterSubmit}>
+                    <div className="flex flex-col gap-3">
+                      <Input
+                        type="email"
+                        placeholder="Deine E-Mail-Adresse"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="w-full focus:ring-2 focus:ring-primary/20 transition-all duration-300"
+                      />
+                      <Button 
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 group-hover:scale-105"
+                      >
+                        {isLoading ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            Wird angemeldet...
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4" />
+                            Newsletter abonnieren
+                          </div>
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+              </Card>
+            </div>
           </div>
         </section>
 
@@ -162,11 +204,11 @@ Vielen Dank!`);
             <div className="grid md:grid-cols-3 gap-6">
               <Card className="text-center p-4">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Heart className="w-6 h-6 text-primary" />
+                  <Globe className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Gemeinschaft</h3>
+                <h3 className="text-lg font-semibold mb-2">Grundversorgung</h3>
                 <p className="text-sm text-muted-foreground">
-                  Wir stärken lokale Gemeinschaften durch partizipative Entwicklungsansätze
+                  Sauberes Wasser und erneuerbare Energielösungen für abgelegene Gemeinden
                 </p>
               </Card>
               
@@ -174,19 +216,19 @@ Vielen Dank!`);
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Users className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Bildung</h3>
+                <h3 className="text-lg font-semibold mb-2">Infrastruktur & Lokale Entwicklung</h3>
                 <p className="text-sm text-muted-foreground">
-                  Zugang zu qualitativ hochwertiger Bildung für alle Altersgruppen
+                  Nachhaltige Infrastruktur durch aktive Gemeinschaftsbeteiligung aufbauen
                 </p>
               </Card>
               
               <Card className="text-center p-4">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Globe className="w-6 h-6 text-primary" />
+                  <Heart className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Nachhaltigkeit</h3>
+                <h3 className="text-lg font-semibold mb-2">Bildung & Training</h3>
                 <p className="text-sm text-muted-foreground">
-                  Umweltfreundliche und langfristig tragfähige Lösungen
+                  Unterstützung von Bildungsinitiativen und Trainingsprogrammen für praktische Fähigkeiten
                 </p>
               </Card>
             </div>
