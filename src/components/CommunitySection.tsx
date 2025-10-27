@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { MapPin, Users, Heart } from "lucide-react";
+import { MapPin, Users, Droplets, Heart, GraduationCap } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -163,9 +163,9 @@ const CommunitySection = () => {
           </Carousel>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12 items-start">
+        <div className="grid lg:grid-cols-5 gap-12 items-start">
           {/* Community Information */}
-          <div className="space-y-6">
+          <div className="space-y-6 lg:col-span-3">
             <div className="space-y-4 text-lg text-muted-foreground leading-relaxed">
               <p>{t("community.description1")}</p>
               <p>{t("community.description2")}</p>
@@ -173,22 +173,27 @@ const CommunitySection = () => {
             </div>
 
             {/* Community Stats */}
-            <div className="grid grid-cols-2 gap-6 pt-6">
+            <div className="grid grid-cols-3 gap-6 pt-6">
               <Card className="p-6 text-center bg-primary-light/30">
                 <Users className="w-8 h-8 text-primary mx-auto mb-3" />
-                <div className="text-2xl font-bold text-primary mb-1">150+</div>
+                <div className="text-2xl font-bold text-primary mb-1">15.000</div>
                 <div className="text-sm text-muted-foreground">{t("community.stats.people")}</div>
               </Card>
               <Card className="p-6 text-center bg-primary-light/30">
-                <Heart className="w-8 h-8 text-primary mx-auto mb-3" />
-                <div className="text-2xl font-bold text-primary mb-1">2</div>
-                <div className="text-sm text-muted-foreground">{t("community.stats.projects")}</div>
+                <Droplets className="w-8 h-8 text-primary mx-auto mb-3" />
+                <div className="text-2xl font-bold text-primary mb-1">2 km</div>
+                <div className="text-sm text-muted-foreground">{t("community.stats.water_source")}</div>
+              </Card>
+              <Card className="p-6 text-center bg-primary-light/30">
+                <GraduationCap className="w-8 h-8 text-primary mx-auto mb-3" />
+                <div className="text-2xl font-bold text-primary mb-1">25%</div>
+                <div className="text-sm text-muted-foreground">{t("community.stats.education")}</div>
               </Card>
             </div>
           </div>
 
           {/* Map Section */}
-          <div className="space-y-6">
+          <div className="space-y-6 lg:col-span-2">
             <div className="space-y-6">
               {/* First Map */}
               <Card className="overflow-hidden shadow-card">

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { Home, Droplets, Sprout, BookOpen, Car } from "lucide-react";
+import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "react-router-dom";
 import heroImage from "@/assets/project/header_construction.jpeg";
@@ -386,23 +386,38 @@ const Projects = () => {
               </h2>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-              <div className="text-center p-6 bg-primary-light rounded-lg">
-                <div className="text-4xl md:text-5xl font-bold text-primary mb-2">6</div>
-                <div className="text-sm md:text-base text-muted-foreground">{t("projects.stats.projects")}</div>
-              </div>
-              <div className="text-center p-6 bg-primary-light rounded-lg">
-                <div className="text-4xl md:text-5xl font-bold text-primary mb-2">2</div>
-                <div className="text-sm md:text-base text-muted-foreground">{t("projects.stats.active")}</div>
-              </div>
-              <div className="text-center p-6 bg-primary-light rounded-lg">
-                <div className="text-4xl md:text-5xl font-bold text-primary mb-2">150+</div>
-                <div className="text-sm md:text-base text-muted-foreground">{t("projects.stats.people")}</div>
-              </div>
-              <div className="text-center p-6 bg-primary-light rounded-lg">
-                <div className="text-4xl md:text-5xl font-bold text-primary mb-2">30+</div>
-                <div className="text-sm md:text-base text-muted-foreground">{t("projects.stats.volunteers")}</div>
-              </div>
+            {/* Impact Facts Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+              <Card className="p-6 text-center bg-gradient-to-br from-primary-light/20 to-primary-light/10 border-primary/20 hover:shadow-lg transition-shadow">
+                <span className="inline-block px-3 py-1 text-xs font-semibold text-primary bg-primary/10 rounded-full mb-4 uppercase tracking-wide">
+                  {t("projects.impact.tag1")}
+                </span>
+                <Users className="w-12 h-12 text-primary mx-auto mb-3" />
+                <div className="text-3xl md:text-4xl font-bold text-primary mb-3">100%</div>
+                <p className="text-base text-foreground leading-relaxed">
+                  {t("projects.impact.fact1")}
+                </p>
+              </Card>
+              <Card className="p-6 text-center bg-gradient-to-br from-primary-light/20 to-primary-light/10 border-primary/20 hover:shadow-lg transition-shadow">
+                <span className="inline-block px-3 py-1 text-xs font-semibold text-primary bg-primary/10 rounded-full mb-4 uppercase tracking-wide">
+                  {t("projects.impact.tag2")}
+                </span>
+                <Sun className="w-12 h-12 text-primary mx-auto mb-3" />
+                <div className="text-3xl md:text-4xl font-bold text-primary mb-3">1st</div>
+                <p className="text-base text-foreground leading-relaxed">
+                  {t("projects.impact.fact2")}
+                </p>
+              </Card>
+              <Card className="p-6 text-center bg-gradient-to-br from-primary-light/20 to-primary-light/10 border-primary/20 hover:shadow-lg transition-shadow">
+                <span className="inline-block px-3 py-1 text-xs font-semibold text-primary bg-primary/10 rounded-full mb-4 uppercase tracking-wide">
+                  {t("projects.impact.tag3")}
+                </span>
+                <Droplet className="w-12 h-12 text-primary mx-auto mb-3" />
+                <div className="text-3xl md:text-4xl font-bold text-primary mb-3">1,000+</div>
+                <p className="text-base text-foreground leading-relaxed">
+                  {t("projects.impact.fact3")}
+                </p>
+              </Card>
             </div>
 
             <div className="text-center">
