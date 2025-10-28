@@ -4,17 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
+import { CartInline } from "./CartSidebar";
 import { ProjectItem, ProjectCost } from "@/services/clientGoogleSheetsService";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   // Construction phase icons
   FileText,
   Wrench,
   Building,
   // Specific construction icons
-  Home,
+  Bed,
   Droplets,
+  Toilet,
   Zap,
   BrickWall,
   Paintbrush,
@@ -28,6 +32,8 @@ import {
   ShoppingCart,
   Plus,
   Minus,
+  HelpCircle,
+  X,
 } from "lucide-react";
 
 interface ProjectItemsModalProps {
@@ -46,7 +52,10 @@ export const ProjectItemsModal = ({
   onItemCostUpdate 
 }: ProjectItemsModalProps) => {
   const { t } = useLanguage();
-  const { addItem, isItemInCart, removeFromCart, addItemPiece, removeItemPiece, getItemCartQuantity, isItemFullyInCart, state: cartState, toggleCart } = useShoppingCart();
+  const { addItem, isItemInCart, removeFromCart, addItemPiece, removeItemPiece, getItemCartQuantity, isItemFullyInCart, state: cartState, toggleCart, closeCart } = useShoppingCart();
+  const location = useLocation();
+  const navigate = useNavigate();
+  
   const [selectedPhase, setSelectedPhase] = useState<string>("all");
   const [viewMode, setViewMode] = useState<'overview' | 'details'>('overview');
   const [expandedSections, setExpandedSections] = useState({
@@ -55,37 +64,108 @@ export const ProjectItemsModal = ({
     unfunded: true
   });
 
-  // Handle keyboard navigation (Escape key)
+  // Handle URL-based navigation using hash fragments
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Escape key to go back to overview
-      if (e.key === 'Escape' && viewMode === 'details') {
-        setViewMode('overview');
+    const hash = decodeURIComponent(location.hash.replace('#', ''));
+    const phase = hash || 'all';
+    
+    if (phase && phase !== 'all') {
+      setViewMode('details');
+      setSelectedPhase(phase);
+    } else {
+      setViewMode('overview');
+      setSelectedPhase('all');
+    }
+  }, [location.hash]);
+
+  // Set initial URL when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      // Always ensure we default to overview when opening
+      navigate(`${location.pathname}#all`, { replace: true });
+    }
+  }, [isOpen, location.pathname, navigate]);
+
+  // Handle swipe gestures for modal navigation
+  useEffect(() => {
+    if (!isOpen) return;
+
+    let startX = 0;
+    let startY = 0;
+    let isTracking = false;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        isTracking = true;
       }
     };
 
-    // Add keyboard event listener
-    document.addEventListener('keydown', handleKeyDown);
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isTracking) return;
+      
+      const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      const deltaX = currentX - startX;
+      const deltaY = currentY - startY;
+      
+      // Detect left swipe (back gesture) - swipe left to go back
+      if (deltaX < -50 && Math.abs(deltaY) < 100 && viewMode === 'details') {
+        navigateToOverview();
+        isTracking = false;
+      }
+    };
+
+    const handleTouchEnd = () => {
+      isTracking = false;
+    };
+
+    // Add touch event listeners to the modal
+    const modalElement = document.querySelector('[role="dialog"]');
+    if (modalElement) {
+      modalElement.addEventListener('touchstart', handleTouchStart, { passive: true });
+      modalElement.addEventListener('touchmove', handleTouchMove, { passive: true });
+      modalElement.addEventListener('touchend', handleTouchEnd, { passive: true });
+    }
     
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      if (modalElement) {
+        modalElement.removeEventListener('touchstart', handleTouchStart);
+        modalElement.removeEventListener('touchmove', handleTouchMove);
+        modalElement.removeEventListener('touchend', handleTouchEnd);
+      }
     };
-  }, [viewMode]);
+  }, [isOpen, viewMode]);
 
   // Helper function to navigate to details view
   const navigateToDetails = (phase: string) => {
-    setViewMode('details');
-    setSelectedPhase(phase);
+    navigate(`${location.pathname}#${encodeURIComponent(phase)}`, { replace: false });
   };
 
   // Helper function to navigate back to overview
   const navigateToOverview = () => {
-    setViewMode('overview');
+    navigate(`${location.pathname}#all`, { replace: false });
   };
+
+  // Ensure overlay cart is closed when opening modal to avoid backdrop-only state
+  useEffect(() => {
+    if (isOpen && cartState.isOpen) {
+      closeCart();
+    }
+  }, [isOpen]);
 
   const categories = Array.from(new Set(projectCost.items.map(item => item.category)));
   const phases = Array.from(new Set(projectCost.items.map(item => item.phase)));
   
+  // Keep selectedPhase in sync with location.hash (overview/details)
+  useEffect(() => {
+    if (!isOpen) return;
+    const hash = decodeURIComponent(location.hash.replace('#', '')) || 'all';
+    setSelectedPhase(hash);
+    setViewMode(hash === 'all' ? 'overview' : 'details');
+  }, [isOpen, location.hash]);
+
   const filteredItems = projectCost.items.filter(item => {
     const matchesPhase = selectedPhase === "all" || item.phase === selectedPhase;
     return matchesPhase;
@@ -106,11 +186,8 @@ export const ProjectItemsModal = ({
 
   // Ensure cart is visible when adding items
   const addItemPieceWithCartOpen = (item: ProjectItem) => {
+    // In modal we don't force-open overlay cart; the inline cart shows when state.isOpen is true
     addItemPiece(item);
-    // Force cart to open if it's not already open
-    if (!cartState.isOpen) {
-      toggleCart();
-    }
   };
 
   const getPhaseName = (phase: string) => {
@@ -139,13 +216,13 @@ export const ProjectItemsModal = ({
       return <Droplets className="w-8 h-8 text-primary" />;
     }
     if (phaseLower.includes('interior') || phaseLower.includes('bedroom')) {
-      return <Home className="w-8 h-8 text-primary" />;
+      return <Bed className="w-8 h-8 text-primary" />;
     }
     if (phaseLower.includes('electricity') || phaseLower.includes('lighting')) {
       return <Zap className="w-8 h-8 text-primary" />;
     }
     if (phaseLower.includes('bathroom') || phaseLower.includes('sanitary')) {
-      return <Droplets className="w-8 h-8 text-primary" />;
+      return <Toilet className="w-8 h-8 text-primary" />;
     }
     if (phaseLower.includes('painting') || phaseLower.includes('finishing') || phaseLower.includes('paint')) {
       return <Paintbrush className="w-8 h-8 text-primary" />;
@@ -156,7 +233,9 @@ export const ProjectItemsModal = ({
 
   const getProgressPercentage = (item: ProjectItem) => {
     if (item.qtyNeededTotal === 0) return 0;
-    return Math.min((item.qtyFunded / item.qtyNeededTotal) * 100, 100);
+    const cartQuantity = getItemCartQuantity(item.itemId);
+    const totalProgress = item.qtyFunded + cartQuantity;
+    return Math.min((totalProgress / item.qtyNeededTotal) * 100, 100);
   };
 
   const getStatusColor = (item: ProjectItem) => {
@@ -203,10 +282,6 @@ export const ProjectItemsModal = ({
       phase: phaseGroup.phase,
       projectName: projectCost.projectName,
     });
-    // Force cart to open if it's not already open
-    if (!cartState.isOpen) {
-      toggleCart();
-    }
   };
 
   // Group items by phase for overview
@@ -233,7 +308,7 @@ export const ProjectItemsModal = ({
   const renderItemCard = (item: ProjectItem) => {
     const cartQuantity = getItemCartQuantity(item.itemId);
     const isFullyInCart = isItemFullyInCart(item);
-    const remainingPieces = item.qtyNeededTotal - cartQuantity;
+    const remainingPieces = item.qtyNeededTotal - item.qtyFunded - cartQuantity;
     
     return (
       <Card key={item.itemId} className={`p-2 transition-all hover:shadow-md ${isFullyInCart ? 'bg-green-50 border-green-200' : getStatusColor(item)}`}>
@@ -245,22 +320,37 @@ export const ProjectItemsModal = ({
 
           {/* Item Name */}
           <div className="flex-1 min-w-0">
-            <h4 className="font-medium text-gray-900 truncate text-sm">{item.displayName}</h4>
+            <div className="flex items-center gap-2">
+              <h4 className="font-medium text-gray-900 truncate text-sm">{item.displayName}</h4>
+              {item.blurb && (
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <HelpCircle 
+                      className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" 
+                      onClick={() => console.log('Blurb for', item.displayName, ':', item.blurb)}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    className="max-w-xs z-[9999]" 
+                    side="top"
+                    sideOffset={5}
+                  >
+                    <p className="text-sm">{item.blurb}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           </div>
 
           {/* Badges */}
           <div className="flex items-center gap-1 flex-shrink-0">
-            {cartQuantity > 0 && (
-              <Badge variant="default" className="text-xs px-1 py-0 bg-blue-100 text-blue-700">
-                {cartQuantity}
-              </Badge>
-            )}
+            {/* Cart quantity badge removed - progress bar now shows this dynamically */}
           </div>
 
           {/* Progress */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="text-xs text-gray-600">
-              {item.qtyFunded}/{item.qtyNeededTotal}
+              {item.qtyFunded + cartQuantity}/{item.qtyNeededTotal}
             </div>
             <div className="w-12">
               <Progress value={getProgressPercentage(item)} className="h-1" />
@@ -310,38 +400,52 @@ export const ProjectItemsModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <div className={`fixed inset-0 z-[55] flex items-center transition-all duration-300 pointer-events-none ${
-        cartState.isOpen ? 'justify-start' : 'justify-center'
-      }`}>
-        <div className={`transition-all duration-300 ${
-          cartState.isOpen ? 'w-[calc(50vw-200px)] pl-8' : 'w-full'
-        }`}>
-          <DialogContent 
-            className={`max-h-[90vh] overflow-hidden flex flex-col pr-0 transition-all duration-300 pointer-events-auto ${
-              cartState.isOpen 
-                ? 'max-w-4xl' // Verkleinert wenn Cart offen
-                : 'max-w-7xl' // Normale Größe wenn Cart geschlossen
-            }`}
-            onPointerDownOutside={(e) => {
-              // Prevent closing when clicking on cart
-              if (cartState.isOpen) {
-                e.preventDefault();
-              }
-            }}
-          >
+      <DialogContent 
+        className={`z-[60] h-[85vh] flex flex-col pr-0 transition-all duration-300 max-w-7xl bg-white touch-pan-y overscroll-none`}
+        onPointerDownOutside={(e) => {
+          // Prevent closing when clicking on cart
+          if (cartState.isOpen) {
+            e.preventDefault();
+          }
+        }}
+      >
+        {/* External Close Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onClose}
+          className="absolute -top-12 -right-4 z-[70] bg-white hover:bg-gray-50 border-gray-300 shadow-lg rounded-full w-8 h-8 p-0"
+        >
+          <X className="w-4 h-4" />
+        </Button>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <Package className="w-6 h-6 text-primary" />
-            {projectCost.projectName} - Projekt Details
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Package className="w-6 h-6 text-primary" />
+              {projectCost.projectName} - Projekt Details
+            </DialogTitle>
+            {viewMode === 'details' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={navigateToOverview}
+                className="flex items-center gap-2 mr-4"
+              >
+                <ChevronRight className="w-4 h-4 rotate-180" />
+                Zurück zur Übersicht
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto pr-4">
-          {viewMode === 'overview' ? (
-            /* Phase Overview */
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="flex-1 min-h-0">
+          {/* Left: Modal content */}
+          <div className="min-w-0 h-full overflow-y-auto pr-2">
+            {viewMode === 'overview' ? (
+              /* Phase Overview */
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                  {phaseGroups.map((phaseGroup) => (
                    <Card key={phaseGroup.phase} className="p-3 cursor-pointer transition-all hover:shadow-md">
                     <div className="flex items-center gap-3">
@@ -412,22 +516,13 @@ export const ProjectItemsModal = ({
                     </div>
                    </Card>
                  ))}
+                </div>
               </div>
-            </div>
-          ) : (
-            /* Details View */
-            <div className="space-y-3">
-              {/* Phase Info mit Zurück-Link */}
+            ) : (
+              /* Details View */
+              <div className="space-y-3">
+              {/* Phase Info */}
               <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-lg border">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setViewMode('overview')}
-                  className="flex items-center gap-2"
-                >
-                  <ChevronRight className="w-4 h-4 rotate-180" />
-                  Zurück zur Übersicht
-                </Button>
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
                     {getPhaseIcon(selectedPhase)}
@@ -516,15 +611,20 @@ export const ProjectItemsModal = ({
               )}
             </div>
           )}
+          </div>
+
+          {/* (Inline cart removed for simpler flow) */}
         </div>
 
+        {/* Floating CTA removed - now using footer cart link */}
+
         {/* Footer */}
-        <div className="flex justify-between items-center pt-4 border-t px-4">
+        <div className="flex justify-between items-center pt-4 border-t px-4 bg-white flex-shrink-0">
           <div className="text-sm text-muted-foreground">
             {viewMode === 'overview' ? `${projectCost.totalItems} Items insgesamt` : `${filteredItems.length} von ${projectCost.totalItems} Items angezeigt`}
           </div>
           
-          {/* Budget Summary - mittig, in beiden Modi */}
+          {/* Budget Summary - centered */}
           <div className="flex items-center gap-6">
             <div className="text-center">
               <div className="text-sm font-bold text-green-600">
@@ -557,17 +657,20 @@ export const ProjectItemsModal = ({
             </div>
           </div>
           
-          <Button 
-            onClick={viewMode === 'overview' ? onClose : () => setViewMode('overview')} 
-            size="sm"
-            variant={viewMode === 'details' ? "outline" : "default"}
-          >
-            {viewMode === 'overview' ? 'Schließen' : 'Zurück'}
-          </Button>
+          {/* Cart Link - right side, only if items are selected */}
+          {cartState.totalItems > 0 && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={toggleCart}
+              className="flex items-center gap-2"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              Warenkorb ({cartState.totalItems})
+            </Button>
+          )}
         </div>
       </DialogContent>
-        </div>
-      </div>
     </Dialog>
   );
 };
