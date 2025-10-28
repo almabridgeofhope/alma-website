@@ -16,7 +16,7 @@ import educationImage from "@/assets/project/pupils_2.jpg";
 import busImage from "@/assets/project/bus.png";
 import financialImage from "@/assets/project/education_5.jpg";
 
-type TimelinePhase = "planning" | "building" | "implementation" | "impact";
+type TimelinePhase = "planning" | "implementation" | "impact";
 
 interface Project {
   title: string;
@@ -40,7 +40,6 @@ const Projects = () => {
   
   const timelinePhases = [
     { id: "planning", icon: "🌱", label: t("projects.timeline.planning") },
-    { id: "building", icon: "🔧", label: t("projects.timeline.building") },
     { id: "implementation", icon: "💧", label: t("projects.timeline.implementation") },
     { id: "impact", icon: "🌾", label: t("projects.timeline.impact") },
   ];
@@ -60,7 +59,7 @@ const Projects = () => {
       statusText: t("projects.community.status"),
       statusIcon: "🟢",
       progress: 65,
-      currentPhase: "building",
+      currentPhase: "implementation",
       image: communityHouseImage,
       buttonText: t("projects.community.button"),
       priority: "active",
