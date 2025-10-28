@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,10 +14,12 @@ import {
   Package,
   Sprout,
   Droplets,
-  Wheat
+  Wheat,
+  ExternalLink
 } from 'lucide-react';
 import { useShoppingCart, CartItem } from '@/contexts/ShoppingCartContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 
 interface CartSidebarProps {
   className?: string;
@@ -38,10 +40,24 @@ const getPhaseIcon = (phase: string) => {
 };
 
 const CartItemComponent: React.FC<{ item: CartItem }> = ({ item }) => {
-  const { updateQuantity, removeItem, formatCurrency } = useShoppingCart();
+  const { updateQuantity, removeItem, formatCurrency, closeCart } = useShoppingCart();
+  const navigate = useNavigate();
+
+  const handleItemClick = (e: React.MouseEvent) => {
+    // Don't navigate if clicking on buttons or controls
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    
+    // Navigate to projects page - user can then find and open the specific project
+    if (item.projectName) {
+      navigate('/dev/projects');
+      closeCart(); // Close the cart sidebar to show the projects page
+    }
+  };
 
   return (
-    <Card className="p-3 mb-2">
+    <Card className="p-3 mb-2 cursor-pointer hover:bg-gray-50 transition-colors" onClick={handleItemClick}>
       <div className="flex items-start gap-3">
         {/* Icon */}
         <div className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0">
@@ -51,13 +67,21 @@ const CartItemComponent: React.FC<{ item: CartItem }> = ({ item }) => {
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
-            <h4 className="font-medium text-sm text-gray-900 truncate">
-              {item.name}
-            </h4>
+            <div className="flex items-center gap-2">
+              <h4 className="font-medium text-sm text-gray-900 truncate">
+                {item.name}
+              </h4>
+              {item.projectName && (
+                <ExternalLink className="w-3 h-3 text-gray-400" />
+              )}
+            </div>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => removeItem(item.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                removeItem(item.id);
+              }}
               className="h-6 w-6 p-0 text-gray-400 hover:text-red-600"
             >
               <Trash2 className="w-3 h-3" />
@@ -75,7 +99,10 @@ const CartItemComponent: React.FC<{ item: CartItem }> = ({ item }) => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateQuantity(item.id, item.quantity - 1);
+                }}
                 className="h-6 w-6 p-0"
               >
                 <Minus className="w-3 h-3" />
@@ -86,8 +113,13 @@ const CartItemComponent: React.FC<{ item: CartItem }> = ({ item }) => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                disabled={item.type === 'phase' && item.quantity >= 1}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (item.maxQuantity && item.quantity < item.maxQuantity) {
+                    updateQuantity(item.id, item.quantity + 1);
+                  }
+                }}
+                disabled={item.type === 'phase' && item.quantity >= 1 || (item.maxQuantity && item.quantity >= item.maxQuantity)}
                 className="h-6 w-6 p-0"
               >
                 <Plus className="w-3 h-3" />
@@ -121,6 +153,17 @@ const CartItemComponent: React.FC<{ item: CartItem }> = ({ item }) => {
 export const CartSidebar: React.FC<CartSidebarProps> = ({ className, basePath = "" }) => {
   const { state, closeCart, formatCurrency } = useShoppingCart();
 
+  // Lock body scroll while cart is open and render overlay at top layer
+  useEffect(() => {
+    if (state.isOpen) {
+      const previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = previousOverflow;
+      };
+    }
+  }, [state.isOpen]);
+
   // Don't close cart when clicking backdrop if there are items - allow continued shopping
   const handleBackdropClick = () => {
     // Only close cart if it's empty, don't interfere with popup
@@ -131,14 +174,18 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ className, basePath = 
 
   if (!state.isOpen) return null;
 
-  return (
-    <div className={`fixed inset-0 z-[60] pointer-events-none ${className}`}>
-      {/* No backdrop to avoid interfering with popup */}
+  return createPortal(
+    <div className={`fixed inset-0 z-[9999] pointer-events-auto overscroll-none ${className}`}>
+      {/* Backdrop to block interactions and allow closing by click */}
+      <div 
+        className="absolute inset-0 bg-black/50"
+        onClick={closeCart}
+      />
       
-      {/* Sidebar positioned next to popup */}
-      <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-xl flex flex-col pointer-events-auto">
+      {/* Sidebar positioned on the right */}
+      <div className="absolute right-0 top-0 h-full w-full max-w-sm md:max-w-none md:w-[33.333vw] md:min-w-[360px] bg-white shadow-xl flex flex-col min-h-0 overflow-hidden pointer-events-auto overscroll-none">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center justify-between p-4 border-b flex-none">
           <div className="flex items-center gap-2">
             <ShoppingCart className="w-5 h-5 text-primary" />
             <h2 className="text-lg font-semibold">Warenkorb</h2>
@@ -157,7 +204,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ className, basePath = 
         </div>
 
         {/* Content */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           {state.items.length === 0 ? (
             <div className="flex-1 flex items-center justify-center text-center p-6">
               <div>
@@ -175,18 +222,17 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ className, basePath = 
             </div>
           ) : (
             <>
-              {/* Items List */}
-              <ScrollArea className="flex-1 p-4">
+              {/* Items List - native scrolling for better trackpad/touch support */}
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-4" style={{ WebkitOverflowScrolling: 'touch' as any, overscrollBehavior: 'contain' }}>
                 <div className="space-y-2 pr-2">
                   {state.items.map((item) => (
                     <CartItemComponent key={item.id} item={item} />
                   ))}
                 </div>
-              </ScrollArea>
+              </div>
 
               {/* Footer */}
               <div className="border-t p-4 space-y-4 flex-shrink-0">
-                <Separator />
                 
                 {/* Total */}
                 <div className="flex items-center justify-between">
@@ -204,18 +250,13 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ className, basePath = 
                   </Button>
                 </Link>
 
-                <p className="text-xs text-gray-600 text-center">
-                  Sie werden zur Spenden-Seite weitergeleitet, um Ihre Spende abzuschließen
-                </p>
-                <p className="text-xs text-blue-600 text-center mt-2">
-                  💡 Sie können weiter shoppen, während der Warenkorb geöffnet ist
-                </p>
               </div>
             </>
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
@@ -240,6 +281,80 @@ export const CartBadge: React.FC = () => {
         {state.totalItems}
       </Badge>
     </Button>
+  );
+};
+
+// Inline Cart panel (for embedding inside modals/pages, no overlay/portal)
+export const CartInline: React.FC<{ basePath?: string; className?: string }> = ({ basePath = "", className = "" }) => {
+  const { state, closeCart, formatCurrency } = useShoppingCart();
+
+  return (
+    <div className={`bg-white border rounded-lg shadow-sm h-full flex flex-col ${className}`}>
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex items-center gap-2">
+          <ShoppingCart className="w-5 h-5 text-primary" />
+          <h2 className="text-lg font-semibold">Warenkorb</h2>
+          <Badge variant="secondary" className="text-xs">
+            {state.totalItems}
+          </Badge>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={closeCart}
+          className="h-8 w-8 p-0"
+        >
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 flex flex-col">
+        {state.items.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center text-center p-6">
+            <div>
+              <ShoppingCart className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Ihr Warenkorb ist leer
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Fügen Sie Items oder Bauphasen hinzu, um zu spenden
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-2 pr-2">
+                {state.items.map((item) => (
+                  <CartItemComponent key={item.id} item={item} />
+                ))}
+              </div>
+            </ScrollArea>
+
+            {/* Footer */}
+            <div className="border-t p-4 space-y-4 flex-shrink-0">
+              <Separator />
+              {/* Total */}
+              <div className="flex items-center justify-between">
+                <span className="text-lg font-semibold">Gesamtbetrag:</span>
+                <span className="text-xl font-bold text-primary">
+                  {formatCurrency(state.totalAmount)}
+                </span>
+              </div>
+              {/* Checkout Button */}
+              <Link to={basePath + "/donation"} className="block">
+                <Button className="w-full" size="lg">
+                  <span>Zur Spende</span>
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 };
 

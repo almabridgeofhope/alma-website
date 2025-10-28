@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCw, Euro, TrendingUp, Calendar, Package } from "lucide-react";
 import { ProjectCost } from "@/services/clientGoogleSheetsService";
 import { ProjectItemsModal } from "./ProjectItemsModal";
+import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 
 interface ProjectCostCardProps {
   projectCost: ProjectCost;
@@ -23,6 +24,7 @@ export const ProjectCostCard = ({
   onItemCostUpdate 
 }: ProjectCostCardProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { closeCart } = useShoppingCart();
   const spentPercentage = projectCost.totalBudget > 0 
     ? (projectCost.spentAmount / projectCost.totalBudget) * 100 
     : 0;
@@ -86,7 +88,11 @@ export const ProjectCostCard = ({
             <span>{formatDate(projectCost.lastUpdated)}</span>
           </div>
           <Button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              // Ensure any overlay cart is closed before opening the modal
+              closeCart();
+              setIsModalOpen(true);
+            }}
             variant="outline" 
             size="sm"
             className="flex items-center gap-2"

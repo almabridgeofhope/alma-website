@@ -13,6 +13,7 @@ export interface CartItem {
   phase?: string;
   imageUrl?: string;
   projectName?: string;
+  maxQuantity?: number; // Maximum quantity that can be added (remaining needed)
 }
 
 interface CartState {
@@ -186,11 +187,8 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
   }, [state.items]);
 
   const addItem = (item: Omit<CartItem, 'quantity' | 'totalPrice'>) => {
+    // Only add to cart. Do NOT auto-open; opening is done explicitly by UI (CTA).
     dispatch({ type: 'ADD_ITEM', payload: item });
-    // Auto-open cart when first item is added
-    if (state.items.length === 0) {
-      dispatch({ type: 'TOGGLE_CART' });
-    }
   };
 
   const removeItem = (id: string) => {
@@ -198,6 +196,10 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
   };
 
   const updateQuantity = (id: string, quantity: number) => {
+    const item = state.items.find(cartItem => cartItem.id === id);
+    if (item && item.maxQuantity && quantity > item.maxQuantity) {
+      quantity = item.maxQuantity;
+    }
     dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
   };
 
@@ -233,10 +235,13 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
   const addItemPiece = (item: ProjectItem) => {
     const cartItemId = `item-${item.itemId}`;
     const existingItem = state.items.find(cartItem => cartItem.id === cartItemId);
+    const remainingNeeded = item.qtyNeededTotal - item.qtyFunded;
     
     if (existingItem) {
-      // Increase quantity by 1
-      updateQuantity(cartItemId, existingItem.quantity + 1);
+      // Check if we can add more items
+      if (existingItem.quantity < remainingNeeded) {
+        updateQuantity(cartItemId, existingItem.quantity + 1);
+      }
     } else {
       // Add new item with quantity 1
       addItem({
@@ -249,6 +254,7 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
         phase: item.phase,
         imageUrl: item.imageUrl,
         projectName: '', // Will be set by the calling component
+        maxQuantity: remainingNeeded,
       });
     }
   };
