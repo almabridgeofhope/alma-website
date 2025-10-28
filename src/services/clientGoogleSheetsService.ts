@@ -94,10 +94,11 @@ export class ClientGoogleSheetsService {
 
       // Parse the detailed cost tracking data
       // Structure: [item_id, project, phase, category, display_name, unit, unit_cost_UGX, unit_cost_EUR, qty_needed_total, qty_funded, priority, blurb, image_url, visibility, sort_order]
-      const projectItems: ProjectItem[] = rows.slice(1).map((row: any[]) => {
+      const allProjectItems: ProjectItem[] = rows.slice(1).map((row: any[]) => {
         const unitCostEUR = parseFloat(row[7]?.toString().replace(',', '.') || '0');
         const qtyNeededTotal = parseFloat(row[8]?.toString().replace(',', '.') || '0');
         const qtyFunded = parseFloat(row[9]?.toString().replace(',', '.') || '0');
+        const visibility = row[13]?.toString().toLowerCase() || '';
         
         return {
           itemId: row[0] || '',
@@ -113,13 +114,21 @@ export class ClientGoogleSheetsService {
           priority: row[10] || '',
           blurb: row[11] || '',
           imageUrl: row[12] || '',
-          visibility: row[13] || '',
+          visibility: visibility,
           sortOrder: parseFloat(row[14]?.toString() || '0'),
           purchased: qtyFunded >= qtyNeededTotal, // Item is purchased if fully funded
           totalCostEUR: unitCostEUR * qtyNeededTotal,
           fundedCostEUR: unitCostEUR * qtyFunded
         };
       });
+
+      // Filter items based on visibility - only include items where visibility is TRUE or empty
+      const projectItems = allProjectItems.filter(item => {
+        const visibility = item.visibility.toLowerCase();
+        return visibility === 'true' || visibility === '' || visibility === '1';
+      });
+
+      console.log(`Filtered items by visibility: ${projectItems.length} visible items out of ${allProjectItems.length} total items`);
 
       console.log('Parsed project items:', projectItems);
 
