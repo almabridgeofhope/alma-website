@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { ProjectCostCard } from "@/components/ProjectCostCard";
 import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useProjectCosts } from "@/hooks/useProjectCosts";
 import { Link } from "react-router-dom";
 import heroImage from "@/assets/project/header_construction.jpeg";
 import communityHouseImage from "@/assets/project/construction_house.png";
@@ -34,6 +36,7 @@ interface Project {
 
 const Projects = () => {
   const { t } = useLanguage();
+  const { projectCosts, loading: costsLoading, error: costsError, getProjectCost, refreshCosts } = useProjectCosts();
   
   const timelinePhases = [
     { id: "planning", icon: "🌱", label: t("projects.timeline.planning") },
@@ -227,6 +230,7 @@ const Projects = () => {
   const renderProjectCard = (project: Project, index: number) => {
     const Icon = project.icon;
     const isEven = index % 2 === 0;
+    const projectCost = getProjectCost(project.title);
     
     return (
       <div 
@@ -304,18 +308,70 @@ const Projects = () => {
                 {/* Timeline */}
                 {renderTimeline(project.currentPhase)}
 
-                {/* Status Card with Progress */}
-                <div className="p-3 sm:p-4 bg-background rounded-lg border border-border mb-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-xs sm:text-sm font-semibold text-foreground">
-                      {t("projects.status")}: {project.statusText}
-                    </h4>
-                    <span className="text-xs sm:text-sm font-bold text-primary">
-                      {project.progress}%
-                    </span>
+                {/* Status Card with Progress - hidden when project costs exist */}
+                {!projectCost && (
+                  <div className="p-3 sm:p-4 bg-background rounded-lg border border-border mb-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-xs sm:text-sm font-semibold text-foreground">
+                        {t("projects.status")}: {project.statusText}
+                      </h4>
+                      <span className="text-xs sm:text-sm font-bold text-primary">
+                        {project.progress}%
+                      </span>
+                    </div>
+                    <Progress value={project.progress} className="h-2" />
                   </div>
-                  <Progress value={project.progress} className="h-2" />
-                </div>
+                )}
+
+                {/* Project Costs Card */}
+                {projectCost ? (
+                  <ProjectCostCard 
+                    projectCost={projectCost} 
+                    onRefresh={refreshCosts}
+                    loading={costsLoading}
+                    onItemToggle={(itemId, purchased) => {
+                      const updatedCost = {
+                        ...projectCost,
+                        items: projectCost.items.map(item => 
+                          item.itemId === itemId ? { ...item, purchased } : item
+                        ),
+                        purchasedItems: projectCost.items.filter(item => 
+                          item.itemId === itemId ? purchased : item.purchased
+                        ).length,
+                        spentAmount: projectCost.items
+                          .map(item => item.itemId === itemId ? { ...item, purchased } : item)
+                          .filter(item => item.purchased)
+                          .reduce((sum, item) => sum + (item.estimatedCost || 0), 0),
+                        remainingAmount: projectCost.totalBudget - projectCost.items
+                          .map(item => item.itemId === itemId ? { ...item, purchased } : item)
+                          .filter(item => item.purchased)
+                          .reduce((sum, item) => sum + (item.estimatedCost || 0), 0)
+                      };
+                      console.log('Item toggled:', itemId, purchased, updatedCost);
+                    }}
+                    onItemCostUpdate={(itemId, cost) => {
+                      const updatedCost = {
+                        ...projectCost,
+                        items: projectCost.items.map(item => 
+                          item.itemId === itemId ? { ...item, estimatedCost: cost } : item
+                        ),
+                        totalBudget: projectCost.items
+                          .map(item => item.itemId === itemId ? { ...item, estimatedCost: cost } : item)
+                          .reduce((sum, item) => sum + (item.estimatedCost || 0), 0),
+                        remainingAmount: projectCost.items
+                          .map(item => item.itemId === itemId ? { ...item, estimatedCost: cost } : item)
+                          .reduce((sum, item) => sum + (item.estimatedCost || 0), 0) - projectCost.spentAmount
+                      };
+                      console.log('Item cost updated:', itemId, cost, updatedCost);
+                    }}
+                  />
+                ) : costsError ? (
+                  <Card className="p-4 bg-red-50 border-red-200">
+                    <p className="text-sm text-red-600">
+                      Kosten konnten nicht geladen werden: {costsError}
+                    </p>
+                  </Card>
+                ) : null}
               </div>
             </div>
           </div>
