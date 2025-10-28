@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import logo from "@/assets/alma-logo.svg";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { DonateCartButton, CartBadge } from "@/components/CartSidebar";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -66,14 +67,11 @@ const Navigation = () => {
             >
               {t("nav.contact")}
             </Link>
-            <Link 
-              to={basePath + "/donation"} 
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            >
-              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-                Donate
-              </Button>
-            </Link>
+            {/* Donate Button */}
+            <DonateCartButton basePath={basePath} />
+            
+            {/* Shopping Cart */}
+            <CartBadge />
             
             {/* Language Switcher */}
             <Button
@@ -149,17 +147,15 @@ const Navigation = () => {
             >
               {t("nav.contact")}
             </Link>
-            <Link 
-              to={basePath + "/donation"} 
-              onClick={() => {
-                setIsMenuOpen(false);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            >
-              <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-                Donate
-              </Button>
-            </Link>
+            {/* Donate Button */}
+            <div className="flex justify-center">
+              <DonateCartButton basePath={basePath} />
+            </div>
+            
+            {/* Shopping Cart */}
+            <div className="flex justify-center">
+              <CartBadge />
+            </div>
             
             <Button
               variant="ghost"
