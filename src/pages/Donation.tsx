@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,11 +8,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 // import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote } from "lucide-react";
+import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import heroImage from "@/assets/nature/nature_2.jpg";
 import communityImage from "@/assets/community/community_2.png";
 
@@ -21,6 +24,7 @@ const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
 
 const Donation = () => {
   const { t } = useLanguage();
+  const { state: cartState, updateQuantity, removeItem, clearCart, formatCurrency, toggleCart } = useShoppingCart();
   
   // Debug: Check if component is rendering
   console.log("Donation component is rendering");
@@ -48,6 +52,27 @@ const Donation = () => {
   const handleAmountSelect = (selectedAmount: number) => {
     setAmount(selectedAmount.toString());
     setCustomAmount("");
+  };
+
+  // Keep amount in sync with cart when cart has items
+  useEffect(() => {
+    if (cartState.items.length > 0) {
+      setAmount(cartState.totalAmount.toString());
+      setCustomAmount("");
+    }
+  }, [cartState.totalAmount, cartState.items.length]);
+
+  const getPhaseIcon = (phase: string) => {
+    switch (phase?.toLowerCase()) {
+      case 'planning':
+        return <Sprout className="w-4 h-4 text-green-600" />;
+      case 'implementation':
+        return <Droplets className="w-4 h-4 text-blue-600" />;
+      case 'impact':
+        return <Wheat className="w-4 h-4 text-yellow-600" />;
+      default:
+        return <Package className="w-4 h-4 text-gray-600" />;
+    }
   };
 
   const handleCustomAmountChange = (value: string) => {
@@ -194,6 +219,9 @@ const Donation = () => {
       alert(t("donation.form.success"));
       setIsProcessingPayment(false);
       
+      // Clear shopping cart after successful payment
+      clearCart();
+      
       // Reset form
       setAmount("");
       setCustomAmount("");
@@ -269,18 +297,67 @@ const Donation = () => {
           </div>
         </section>
 
-        {/* 3. Donation Form */}
+        {/* 3. Integrated Cart in Form: no separate cart section */}
+
+        {/* 4. Donation Form */}
         <section id="donation-form" className="py-section bg-muted/30">
           <div className="max-w-content mx-auto px-6">
             <div className="max-w-2xl mx-auto">
               <Card className="p-8 shadow-card">
                 <div className="text-center mb-8">
                   <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                    {t("donation.form.title")}
+                    {cartState.items.length > 0 ? "Spende abschließen" : t("donation.form.title")}
                   </h2>
+                  {cartState.items.length > 0 && (
+                    <p className="text-muted-foreground">
+                      Vervollständigen Sie Ihre Spende für die ausgewählten Items
+                    </p>
+                  )}
                 </div>
                 
                 <div className="space-y-6">
+                  {/* Embedded Cart Summary when items exist */}
+                  {cartState.items.length > 0 && (
+                    <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <ShoppingCart className="w-5 h-5 text-primary" />
+                          <span className="font-semibold">Warenkorb</span>
+                          <Badge variant="secondary">{cartState.totalItems} Items</Badge>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm text-muted-foreground">Gesamtbetrag</div>
+                          <div className="text-xl font-bold text-primary">{formatCurrency(cartState.totalAmount)}</div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 max-h-48 overflow-auto pr-1">
+                        {cartState.items.map((item) => (
+                          <div key={item.id} className="flex items-center gap-3 py-2 border-b last:border-b-0">
+                            <div className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0">
+                              {item.type === 'phase' ? getPhaseIcon(item.phase || '') : <Package className="w-4 h-4 text-gray-600" />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium truncate">{item.name}</span>
+                                <span className="text-sm font-semibold">{formatCurrency(item.totalPrice)}</span>
+                              </div>
+                              <div className="text-xs text-gray-600">{item.quantity} × {formatCurrency(item.unitPrice)}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button variant="outline" onClick={toggleCart} className="flex-1">
+                          Warenkorb bearbeiten
+                        </Button>
+                        <Button variant="ghost" onClick={clearCart}>
+                          Leeren
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   {/* Donation Type */}
                   <div>
                     <Label className="text-base font-semibold">{t("donation.form.type")}</Label>
@@ -303,33 +380,42 @@ const Donation = () => {
                   {/* Amount Selection */}
                   <div>
                     <Label className="text-base font-semibold">{t("donation.form.amount")}</Label>
-                    <div className="grid grid-cols-3 gap-3 mt-3 mb-4">
-                      {predefinedAmounts.map((amountValue) => (
-                        <Button
-                          key={amountValue}
-                          variant={amount === amountValue.toString() ? "default" : "outline"}
-                          onClick={() => handleAmountSelect(amountValue)}
-                          className="h-12"
-                        >
-                          €{amountValue}
-                        </Button>
-                      ))}
-                    </div>
-                    <div>
-                      <Label htmlFor="custom-amount" className="text-sm text-muted-foreground">
-                        {t("donation.form.custom")}
-                      </Label>
-                      <Input
-                        id="custom-amount"
-                        type="number"
-                        placeholder="Enter amount"
-                        value={customAmount}
-                        onChange={(e) => handleCustomAmountChange(e.target.value)}
-                        className="mt-2"
-                        min="1"
-                        step="0.01"
-                      />
-                    </div>
+                    {cartState.items.length === 0 ? (
+                      <>
+                        <div className="grid grid-cols-3 gap-3 mt-3 mb-4">
+                          {predefinedAmounts.map((amountValue) => (
+                            <Button
+                              key={amountValue}
+                              variant={amount === amountValue.toString() ? "default" : "outline"}
+                              onClick={() => handleAmountSelect(amountValue)}
+                              className="h-12"
+                            >
+                              €{amountValue}
+                            </Button>
+                          ))}
+                        </div>
+                        <div>
+                          <Label htmlFor="custom-amount" className="text-sm text-muted-foreground">
+                            {t("donation.form.custom")}
+                          </Label>
+                          <Input
+                            id="custom-amount"
+                            type="number"
+                            placeholder="Enter amount"
+                            value={customAmount}
+                            onChange={(e) => handleCustomAmountChange(e.target.value)}
+                            className="mt-2"
+                            min="1"
+                            step="0.01"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-md flex items-center justify-between">
+                        <span className="text-sm text-green-700">Spendenbetrag aus Warenkorb</span>
+                        <span className="text-lg font-bold text-green-700">{formatCurrency(cartState.totalAmount)}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Payment Method */}
