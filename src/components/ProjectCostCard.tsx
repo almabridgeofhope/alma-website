@@ -65,28 +65,6 @@ export const ProjectCostCard = ({
       </div>
 
       <div className="space-y-4">
-        {/* Budget Overview */}
-        <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Gesamtbudget</p>
-            <p className="text-lg font-bold text-primary">
-              {formatCurrency(projectCost.totalBudget, projectCost.currency)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Ausgegeben</p>
-            <p className="text-lg font-bold text-orange-600">
-              {formatCurrency(projectCost.spentAmount, projectCost.currency)}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Verbleibend</p>
-            <p className="text-lg font-bold text-green-600">
-              {formatCurrency(projectCost.remainingAmount, projectCost.currency)}
-            </p>
-          </div>
-        </div>
-
         {/* Progress Bar */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -101,26 +79,11 @@ export const ProjectCostCard = ({
           />
         </div>
 
-        {/* Status Badge */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              {spentPercentage < 50 ? 'In Planung' : 
-               spentPercentage < 80 ? 'In Bearbeitung' : 
-               spentPercentage < 100 ? 'Fast fertig' : 'Abgeschlossen'}
-            </span>
-          </div>
+        {/* Footer with Date and Items Button */}
+        <div className="flex items-center justify-between pt-3 border-t">
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Calendar className="w-3 h-3" />
             <span>{formatDate(projectCost.lastUpdated)}</span>
-          </div>
-        </div>
-
-        {/* Items Summary */}
-        <div className="flex items-center justify-between pt-3 border-t">
-          <div className="text-sm text-muted-foreground">
-            {projectCost.purchasedItems} von {projectCost.totalItems} Items gekauft
           </div>
           <Button 
             onClick={() => setIsModalOpen(true)}
