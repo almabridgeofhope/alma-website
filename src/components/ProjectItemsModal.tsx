@@ -53,6 +53,7 @@ export const ProjectItemsModal = ({
 }: ProjectItemsModalProps) => {
   const { t } = useLanguage();
   const { addItem, isItemInCart, removeFromCart, addItemPiece, removeItemPiece, getItemCartQuantity, isItemFullyInCart, state: cartState, toggleCart, closeCart } = useShoppingCart();
+  const [showInlineCart, setShowInlineCart] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -152,6 +153,9 @@ export const ProjectItemsModal = ({
   useEffect(() => {
     if (isOpen && cartState.isOpen) {
       closeCart();
+    }
+    if (isOpen) {
+      setShowInlineCart(false);
     }
   }, [isOpen]);
 
@@ -409,15 +413,6 @@ export const ProjectItemsModal = ({
           }
         }}
       >
-        {/* External Close Button */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onClose}
-          className="absolute -top-12 -right-4 z-[70] bg-white hover:bg-gray-50 border-gray-300 shadow-lg rounded-full w-8 h-8 p-0"
-        >
-          <X className="w-4 h-4" />
-        </Button>
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2 text-xl">
@@ -438,8 +433,8 @@ export const ProjectItemsModal = ({
           </div>
         </DialogHeader>
 
-        {/* Content Area */}
-        <div className="flex-1 min-h-0">
+        {/* Content Area - optional inline cart at md+ */}
+        <div className={`grid gap-4 flex-1 min-h-0 ${showInlineCart ? 'md:grid-cols-[2fr_1fr]' : 'grid-cols-1'}`}>
           {/* Left: Modal content */}
           <div className="min-w-0 h-full overflow-y-auto pr-2">
             {viewMode === 'overview' ? (
@@ -613,7 +608,12 @@ export const ProjectItemsModal = ({
           )}
           </div>
 
-          {/* (Inline cart removed for simpler flow) */}
+          {/* Right: Inline Cart */}
+          {showInlineCart && (
+            <div className="hidden md:block h-full overflow-hidden">
+              <CartInline />
+            </div>
+          )}
         </div>
 
         {/* Floating CTA removed - now using footer cart link */}
@@ -657,16 +657,16 @@ export const ProjectItemsModal = ({
             </div>
           </div>
           
-          {/* Cart Link - right side, only if items are selected */}
+          {/* Cart Link toggles inline cart inside modal */}
           {cartState.totalItems > 0 && (
             <Button 
               variant="outline" 
               size="sm"
-              onClick={toggleCart}
+              onClick={() => setShowInlineCart(!showInlineCart)}
               className="flex items-center gap-2"
             >
               <ShoppingCart className="w-4 h-4" />
-              Warenkorb ({cartState.totalItems})
+              {showInlineCart ? 'Warenkorb schließen' : `Warenkorb (${cartState.totalItems})`}
             </Button>
           )}
         </div>
