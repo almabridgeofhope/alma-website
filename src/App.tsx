@@ -2,8 +2,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route, useLocation } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { ShoppingCartProvider } from "@/contexts/ShoppingCartContext";
+import { CartSidebar } from "@/components/CartSidebar";
+import Navigation from "@/components/Navigation";
 import Index from "./pages/Index";
 import Team from "./pages/Team";
 import Projects from "./pages/Projects";
@@ -18,29 +21,45 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const AppContent = () => {
+  const location = useLocation();
+  const isDevRoute = location.pathname.startsWith('/dev');
+  const basePath = isDevRoute ? '/dev' : '';
+
+  return (
+    <>
+      <Navigation />
+      <Routes>
+        <Route path="/" element={<TeaserIndex />} />
+        <Route path="/dev" element={<Index />} />
+        <Route path="/dev/about" element={<Team />} />
+        <Route path="/dev/projects" element={<Projects />} />
+        <Route path="/dev/news" element={<News />} />
+        <Route path="/dev/news/:date" element={<Article />} />
+        <Route path="/dev/contact" element={<Contact />} />
+        <Route path="/dev/impressum" element={<Impressum />} />
+        <Route path="/dev/privacy" element={<Privacy />} />
+        <Route path="/dev/donation" element={<Donation />} />
+        {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <CartSidebar basePath={basePath} />
+    </>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <HashRouter>
-          <Routes>
-            <Route path="/" element={<TeaserIndex />} />
-            <Route path="/dev" element={<Index />} />
-            <Route path="/dev/about" element={<Team />} />
-            <Route path="/dev/projects" element={<Projects />} />
-            <Route path="/dev/news" element={<News />} />
-            <Route path="/dev/news/:date" element={<Article />} />
-            <Route path="/dev/contact" element={<Contact />} />
-            <Route path="/dev/impressum" element={<Impressum />} />
-            <Route path="/dev/privacy" element={<Privacy />} />
-            <Route path="/dev/donation" element={<Donation />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </HashRouter>
-      </TooltipProvider>
+      <ShoppingCartProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <HashRouter>
+            <AppContent />
+          </HashRouter>
+        </TooltipProvider>
+      </ShoppingCartProvider>
     </LanguageProvider>
   </QueryClientProvider>
 );
