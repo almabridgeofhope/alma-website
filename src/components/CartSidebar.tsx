@@ -183,7 +183,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ className, basePath = 
       />
       
       {/* Sidebar positioned on the right */}
-      <div className="absolute right-0 top-0 h-full w-full max-w-sm md:max-w-none md:w-[33.333vw] md:min-w-[360px] bg-white shadow-xl flex flex-col min-h-0 overflow-hidden pointer-events-auto overscroll-none">
+      <div className="absolute right-0 top-1/2 -translate-y-1/2 h-[85vh] w-full max-w-sm md:max-w-none md:w-[33.333vw] md:min-w-[360px] bg-white shadow-xl flex flex-col min-h-0 overflow-hidden pointer-events-auto overscroll-none">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b flex-none">
           <div className="flex items-center gap-2">
@@ -223,7 +223,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ className, basePath = 
           ) : (
             <>
               {/* Items List - native scrolling for better trackpad/touch support */}
-              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-4" style={{ WebkitOverflowScrolling: 'touch' as any, overscrollBehavior: 'contain' }}>
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-4" style={{ WebkitOverflowScrolling: 'touch' as any, overscrollBehaviorY: 'contain', touchAction: 'pan-y' }}>
                 <div className="space-y-2 pr-2">
                   {state.items.map((item) => (
                     <CartItemComponent key={item.id} item={item} />
