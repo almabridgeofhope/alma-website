@@ -67,6 +67,12 @@ export const ProjectItemsModal = ({
     return matchesSearch && matchesCategory && matchesPhase;
   });
 
+  // For overview mode, show all phases regardless of filters
+  // For details mode, use filtered phases
+  const visiblePhases = viewMode === 'overview' 
+    ? Array.from(new Set(projectCost.items.map(item => item.phase)))
+    : Array.from(new Set(filteredItems.map(item => item.phase)));
+
   const fundedItems = filteredItems.filter(item => item.purchased);
   const partiallyFundedItems = filteredItems.filter(item => !item.purchased && item.qtyFunded > 0);
   
@@ -160,8 +166,8 @@ export const ProjectItemsModal = ({
     }));
   };
 
-  // Group items by phase for overview
-  const phaseGroups = phases.map(phase => {
+  // Group items by phase for overview - only use visible phases
+  const phaseGroups = visiblePhases.map(phase => {
     const phaseItems = filteredItems.filter(item => item.phase === phase);
     const phaseBudget = phaseItems.reduce((sum, item) => sum + (item.totalCostEUR || 0), 0);
     const phaseSpent = phaseItems.reduce((sum, item) => sum + (item.fundedCostEUR || 0), 0);
@@ -178,9 +184,8 @@ export const ProjectItemsModal = ({
       unfundedCount: phaseItems.filter(item => !item.purchased && item.qtyFunded === 0).length
     };
   }).sort((a, b) => {
-    // Sort phases by typical order
-    const phaseOrder = ['planning', 'implementation', 'impact'];
-    return phaseOrder.indexOf(a.phase) - phaseOrder.indexOf(b.phase);
+    // Sort phases by completeness (progress) - highest progress first
+    return b.progress - a.progress;
   });
 
   const renderItemCard = (item: ProjectItem) => (
@@ -311,7 +316,7 @@ export const ProjectItemsModal = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Alle Phasen</SelectItem>
-                    {phases.map(phase => (
+                    {visiblePhases.map(phase => (
                       <SelectItem key={phase} value={phase}>
                         {phase}
                       </SelectItem>
