@@ -5,6 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/alma-logo.svg";
 import { useLanguage } from "@/contexts/LanguageContext";
+import NewsletterForm from "@/components/NewsletterForm";
 
 const Footer = () => {
   const [email, setEmail] = useState("");
@@ -86,22 +87,11 @@ const Footer = () => {
           {/* Newsletter */}
           <div>
             <h4 className="font-semibold text-foreground mb-4">{t("newsletter.title")}</h4>
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <Input
-                type="email"
-                placeholder={t("newsletter.placeholder")}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full"
-              />
-              <Button 
-                type="submit" 
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                size="sm"
-              >
-                {t("newsletter.button")}
-              </Button>
-            </form>
+            <NewsletterForm 
+              placeholder={t("newsletter.placeholder")}
+              buttonLabel={t("newsletter.button")}
+              source="website-footer"
+            />
           </div>
         </div>
 

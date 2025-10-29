@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowRight, Heart, Users, Globe, Mail, Instagram } from "lucide-react";
 import logo from "@/assets/alma-logo.svg";
 import { useState } from "react";
+import NewsletterForm from "@/components/NewsletterForm";
 
 const TeaserIndex = () => {
   const [email, setEmail] = useState("");
@@ -139,49 +140,11 @@ Vielen Dank!`);
                   <br />Projektberichte und Erfolgsgeschichten
                 </p>
                 
-                {isSubscribed ? (
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-4 animate-in fade-in duration-500">
-                    <div className="flex items-center justify-center gap-2 text-green-700 mb-2">
-                      <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                        <span className="text-white text-sm">✓</span>
-                      </div>
-                      <span className="font-bold text-sm">Erfolgreich angemeldet!</span>
-                    </div>
-                    <p className="text-xs text-green-600 text-center">
-                      🎉 Vielen Dank! Du erhältst bald deine erste E-Mail von uns.
-                    </p>
-                  </div>
-                ) : (
-                  <form onSubmit={handleNewsletterSubmit}>
-                    <div className="flex flex-col gap-3">
-                      <Input
-                        type="email"
-                        placeholder="Deine E-Mail-Adresse"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        className="w-full focus:ring-2 focus:ring-primary/20 transition-all duration-300"
-                      />
-                      <Button 
-                        type="submit"
-                        disabled={isLoading}
-                        className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 group-hover:scale-105"
-                      >
-                        {isLoading ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                            Wird angemeldet...
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Mail className="w-4 h-4" />
-                            Newsletter abonnieren
-                          </div>
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                )}
+                <NewsletterForm 
+                  placeholder="Deine E-Mail-Adresse"
+                  buttonLabel="Newsletter abonnieren"
+                  source="teaser-index"
+                />
               </Card>
             </div>
           </div>
