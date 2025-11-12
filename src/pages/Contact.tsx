@@ -51,7 +51,7 @@ const Contact = () => {
 
     try {
       // EmailJS configuration
-      const serviceId = 'service_zdc12l3'; // Your EmailJS service ID
+      const serviceId = 'service_wou9sst'; // Your EmailJS service ID
       const templateId = 'template_eqc74jo'; // Your EmailJS template ID
       const publicKey = 'zxPupF44hCueD6u4K'; // Replace with your actual EmailJS public key
 
@@ -61,6 +61,7 @@ const Contact = () => {
         subject: formData.subject || 'Contact Form Message',
         message: formData.message,
         to_email: 'info@almabridgeofhope.org',
+        reply_to: formData.email, // Add reply-to for better email handling
       };
 
       await emailjs.send(serviceId, templateId, templateParams, publicKey);
@@ -244,8 +245,8 @@ const Contact = () => {
                       </h3>
                       <p className="text-muted-foreground">
                         Alma Bridge of Hope e. V.<br />
-                        Darmstädter Straße 97<br />
-                        70376 Stuttgart<br />
+                        Ferchensee 8<br />
+                        83562 Rechtmehring<br />
                         Deutschland
                       </p>
                     </div>
