@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,8 @@ const Article = () => {
 
   const newsArticles: NewsArticle[] = getNewsArticles(t);
   const navigate = useNavigate();
+  const [selectedDonationAmount, setSelectedDonationAmount] = useState<number | null>(null);
+
   const handleNavigate = useCallback(
     (targetDate: string) => {
       navigate(`/dev/news/${targetDate}`);
@@ -22,6 +24,12 @@ const Article = () => {
     },
     [navigate]
   );
+
+  const handleDonationNavigate = useCallback(() => {
+    const query = selectedDonationAmount ? `?amount=${selectedDonationAmount}` : "";
+    navigate(`/dev/donation${query}`);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [navigate, selectedDonationAmount]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -302,26 +310,31 @@ const Article = () => {
                 })()}
 
                 {(article.body?.conclusion?.length || article.body?.conclusionCTA) && (
-                  <div className="bg-muted/30 p-6 rounded-lg space-y-4">
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 shadow-soft space-y-5">
                     {article.body?.conclusion?.map((paragraph, index) => (
-                      <p key={index} className="text-lg leading-relaxed font-medium">
+                      <p
+                        key={index}
+                        className="text-lg leading-relaxed font-semibold text-foreground"
+                      >
                         {paragraph}
                       </p>
                     ))}
+
+                    {article.body?.conclusionCTA?.text && (
+                      <p className="text-lg leading-relaxed font-medium text-foreground">
+                        {article.body.conclusionCTA.text}
+                      </p>
+                    )}
+
                     {article.body?.conclusionCTA && (
-                      <div className="space-y-8">
-                        {article.body.conclusionCTA.text && (
-                          <p className="text-lg leading-relaxed font-medium">
-                            {article.body.conclusionCTA.text}
-                          </p>
-                        )}
+                      <div className="flex justify-center">
                         <Link
                           to={article.body.conclusionCTA.url}
                           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
                         >
                           <Button
                             size="lg"
-                            className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
+                            className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
                           >
                             {article.body.conclusionCTA.buttonLabel ??
                               article.body.conclusionCTA.text}
@@ -346,20 +359,29 @@ const Article = () => {
                     </div>
                     <div className="max-w-md mx-auto">
                       <div className="grid grid-cols-2 gap-4 mb-6">
-                        <Button variant="outline" className="h-12 text-lg">
-                          €25
-                        </Button>
-                        <Button variant="outline" className="h-12 text-lg">
-                          €50
-                        </Button>
-                        <Button variant="outline" className="h-12 text-lg">
-                          €100
-                        </Button>
-                        <Button variant="outline" className="h-12 text-lg">
-                          €250
-                        </Button>
+                        {[10, 25, 50, 100].map((amount) => {
+                          const isSelected = selectedDonationAmount === amount;
+                          return (
+                            <Button
+                              key={amount}
+                              variant={isSelected ? "default" : "outline"}
+                              className={`h-12 text-lg transition ${
+                                isSelected
+                                  ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
+                                  : ""
+                              }`}
+                              onClick={() => setSelectedDonationAmount(amount)}
+                            >
+                              €{amount}
+                            </Button>
+                          );
+                        })}
                       </div>
-                      <Button size="lg" className="w-full h-12 text-lg">
+                      <Button
+                        size="lg"
+                        className="w-full h-12 text-lg"
+                        onClick={handleDonationNavigate}
+                      >
                         {t("news.donation.button")}
                       </Button>
                     </div>
