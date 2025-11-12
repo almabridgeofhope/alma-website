@@ -1,4 +1,5 @@
-import { useParams, Link } from "react-router-dom";
+import { useCallback } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,6 +14,14 @@ const Article = () => {
   const { t } = useLanguage();
 
   const newsArticles: NewsArticle[] = getNewsArticles(t);
+  const navigate = useNavigate();
+  const handleNavigate = useCallback(
+    (targetDate: string) => {
+      navigate(`/dev/news/${targetDate}`);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [navigate]
+  );
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -66,6 +75,11 @@ const Article = () => {
       </div>
     );
   }
+
+  const bodyQuote = article.body?.quote;
+  const quoteText = bodyQuote?.text?.trim() || t("news.quote.text");
+  const quoteAuthor = bodyQuote?.author?.trim() || t("news.quote.author");
+  const shouldShowQuote = (article.body?.showQuote ?? true) && Boolean(quoteText);
 
   return (
     <div className="min-h-screen">
@@ -137,112 +151,184 @@ const Article = () => {
               
               <div className="text-base text-foreground leading-relaxed space-y-8">
                 {/* Introduction */}
-                <div>
-                  <p className="text-lg leading-relaxed">
-                    {t(`news.article${article.id}.sections.introduction`)}
-                  </p>
-                </div>
+                {article.body?.introduction && article.body.introduction.length > 0 && (
+                  <div className="space-y-4">
+                    {article.id === "4" ? (() => {
+                      const inlineImage = article.additionalImages?.[0];
+                      const firstTwoParagraphs = article.body?.introduction.slice(0, 2).filter(Boolean) ?? [];
+                      const remainingParagraphs = article.body?.introduction.slice(2) ?? [];
+
+                      return (
+                        <>
+                          <div className="text-lg leading-relaxed md:flex md:items-start md:gap-6">
+                            <div className="space-y-4 md:flex-1">
+                              {firstTwoParagraphs.map((paragraph, idx) => (
+                                <p key={`intro-${idx}`} className="text-lg leading-relaxed">
+                                  {paragraph}
+                                </p>
+                              ))}
+                            </div>
+                            {inlineImage && (
+                              <div className="mt-4 md:mt-0 md:w-56 md:flex-shrink-0">
+                                <div className="relative overflow-hidden rounded-lg shadow-soft">
+                                  <img
+                                    src={inlineImage}
+                                    alt={`${article.title} illustration`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {remainingParagraphs.map((paragraph, idx) => (
+                            <p key={`intro-rest-${idx}`} className="text-lg leading-relaxed">
+                              {paragraph}
+                            </p>
+                          ))}
+                        </>
+                      );
+                    })() : (
+                      article.body.introduction.map((paragraph, index) => (
+                        <p key={index} className="text-lg leading-relaxed">
+                          {paragraph}
+                        </p>
+                      ))
+                    )}
+                  </div>
+                )}
 
                 {/* Quote Component */}
-                <div className="my-12 p-8 bg-primary/5 border-l-4 border-primary rounded-r-lg">
-                  <div className="flex items-start gap-4">
-                    <Quote className="w-8 h-8 text-primary mt-1 flex-shrink-0" />
-                    <div>
-                      <blockquote className="text-xl font-medium text-foreground italic leading-relaxed mb-4">
-                        "{t("news.quote.text")}"
-                      </blockquote>
-                      <cite className="text-sm text-muted-foreground">
-                        — {t("news.quote.author")}
-                      </cite>
+                {shouldShowQuote && (
+                  <div className="my-12 p-8 bg-primary/5 border-l-4 border-primary rounded-r-lg">
+                    <div className="flex items-start gap-4">
+                      <Quote className="w-8 h-8 text-primary mt-1 flex-shrink-0" />
+                      <div>
+                        <blockquote className="text-xl font-medium text-foreground italic leading-relaxed mb-4">
+                          "{quoteText}"
+                        </blockquote>
+                        {quoteAuthor && (
+                          <cite className="text-sm text-muted-foreground">
+                            — {quoteAuthor}
+                          </cite>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
-                {/* Section Headline */}
-                <div className="my-12">
-                  <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                    {article.id === "1" ? "Building the Future Together" : article.id === "2" ? "Community at the Heart" : "Growing Our Team"}
-                  </h2>
-                </div>
+                {/* Highlight Title */}
+                {article.body?.highlightTitle && (
+                  <div className="my-12">
+                    <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                      {article.body.highlightTitle}
+                    </h2>
+                  </div>
+                )}
 
-                {/* Progress/Impact Section */}
-                <div>
-                  <h3 className="text-2xl font-bold text-foreground mb-4">
-                    {article.id === "1" ? t("news.article1.sections.progress") : 
-                     article.id === "2" ? t("news.article2.sections.participation") : 
-                     t("news.article3.sections.growth")}
-                  </h3>
-                  <ul className="space-y-4">
-                    {(article.id === "1" ? t("news.article1.sections.progress_points") : 
-                      article.id === "2" ? t("news.article2.sections.participation_points") : 
-                      t("news.article3.sections.growth_points")).split('|').map((point: string, index: number) => (
-                      <li key={index} className="flex items-center gap-4">
-                        <div className="w-3 h-3 bg-primary rounded-full flex-shrink-0"></div>
-                        <span className="leading-relaxed text-base">{point}</span>
-                      </li>
+                {/* Dynamic Sections */}
+                {article.body?.sections?.map((section, sectionIndex) => (
+                  <div key={sectionIndex} className="space-y-4">
+                    <h3 className="text-2xl font-bold text-foreground">
+                      {section.title}
+                    </h3>
+
+                    {section.paragraphs && section.paragraphs.length > 0 && (
+                      <div className="space-y-4">
+                        {section.paragraphs.map((paragraph, paragraphIndex) => (
+                          <p key={paragraphIndex} className="leading-relaxed text-base">
+                            {paragraph}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+
+                    {section.stats && section.stats.length > 0 && (
+                      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {section.stats.map((stat, statIndex) => (
+                          <Card
+                            key={statIndex}
+                            className="p-6 text-center bg-primary/5 border border-primary/10 shadow-none"
+                          >
+                            <div className="text-3xl font-bold text-primary mb-2">
+                              {stat.value}
+                            </div>
+                            <p className="text-sm text-muted-foreground leading-snug">
+                              {stat.label}
+                            </p>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+
+                    {section.bullets && section.bullets.length > 0 && (
+                      <ul className="space-y-4">
+                        {section.bullets.map((point, bulletIndex) => (
+                          <li key={bulletIndex} className="flex items-start gap-4">
+                            <div className="w-3 h-3 bg-primary rounded-full flex-shrink-0 mt-1.5" />
+                            <span className="leading-relaxed text-base">{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+
+                {/* Additional Images */}
+                {(() => {
+                  const inlineImage =
+                    article.id === "4" ? article.additionalImages?.[0] : undefined;
+                  const galleryImages = inlineImage
+                    ? article.additionalImages?.slice(1)
+                    : article.additionalImages;
+
+                  if (!galleryImages || galleryImages.length === 0) {
+                    return null;
+                  }
+
+                  return (
+                  <div className="mt-12 grid md:grid-cols-2 gap-6">
+                    {galleryImages.map((image, index) => (
+                      <div key={index} className="relative overflow-hidden rounded-lg aspect-video">
+                        <img 
+                          src={image} 
+                          alt={`${article.title} - Image ${index + 2}`}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
                     ))}
-                  </ul>
-                </div>
+                  </div>
+                  );
+                })()}
 
-                {/* Community Impact Section */}
-                <div>
-                  <h3 className="text-2xl font-bold text-foreground mb-4">
-                    {article.id === "1" ? t("news.article1.sections.community_impact") : 
-                     article.id === "2" ? t("news.article2.sections.impact") : 
-                     t("news.article3.sections.impact")}
-                  </h3>
-                  <ul className="space-y-4">
-                    {(article.id === "1" ? t("news.article1.sections.community_points") : 
-                      article.id === "2" ? t("news.article2.sections.impact_points") : 
-                      t("news.article3.sections.impact_points")).split('|').map((point: string, index: number) => (
-                      <li key={index} className="flex items-center gap-4">
-                        <div className="w-3 h-3 bg-primary rounded-full flex-shrink-0"></div>
-                        <span className="leading-relaxed text-base">{point}</span>
-                      </li>
+                {(article.body?.conclusion?.length || article.body?.conclusionCTA) && (
+                  <div className="bg-muted/30 p-6 rounded-lg space-y-4">
+                    {article.body?.conclusion?.map((paragraph, index) => (
+                      <p key={index} className="text-lg leading-relaxed font-medium">
+                        {paragraph}
+                      </p>
                     ))}
-                  </ul>
-                  
-                  {/* Additional Images */}
-                  {article.additionalImages && article.additionalImages.length > 0 && (
-                    <div className="mt-8 grid md:grid-cols-2 gap-6">
-                      {article.additionalImages.map((image, index) => (
-                        <div key={index} className="relative overflow-hidden rounded-lg aspect-video">
-                          <img 
-                            src={image} 
-                            alt={`${article.title} - Image ${index + 2}`}
-                            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Next Steps/Success Factors Section */}
-                <div>
-                  <h3 className="text-2xl font-bold text-foreground mb-4">
-                    {article.id === "1" ? t("news.article1.sections.next_steps") : 
-                     article.id === "2" ? t("news.article2.sections.success_factors") : 
-                     t("news.article3.sections.future")}
-                  </h3>
-                  <ul className="space-y-4">
-                    {(article.id === "1" ? t("news.article1.sections.next_steps_points") : 
-                      article.id === "2" ? t("news.article2.sections.success_factors_points") : 
-                      t("news.article3.sections.future_points")).split('|').map((point: string, index: number) => (
-                      <li key={index} className="flex items-center gap-4">
-                        <div className="w-3 h-3 bg-primary rounded-full flex-shrink-0"></div>
-                        <span className="leading-relaxed text-base">{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Conclusion - only for articles 1 and 2 */}
-                {article.id !== "3" && (
-                  <div className="bg-muted/30 p-6 rounded-lg">
-                    <p className="text-lg leading-relaxed font-medium">
-                      {t(`news.article${article.id}.sections.conclusion`)}
-                    </p>
+                    {article.body?.conclusionCTA && (
+                      <div className="space-y-8">
+                        {article.body.conclusionCTA.text && (
+                          <p className="text-lg leading-relaxed font-medium">
+                            {article.body.conclusionCTA.text}
+                          </p>
+                        )}
+                        <Link
+                          to={article.body.conclusionCTA.url}
+                          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                        >
+                          <Button
+                            size="lg"
+                            className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
+                          >
+                            {article.body.conclusionCTA.buttonLabel ??
+                              article.body.conclusionCTA.text}
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -294,10 +380,22 @@ const Article = () => {
               {newsArticles
                 .filter(relatedArticle => relatedArticle.id !== article.id)
                 .map((relatedArticle) => (
-                  <div key={relatedArticle.id} className="overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 group animate-fade-in bg-card rounded-lg border cursor-pointer">
+                  <div
+                    key={relatedArticle.id}
+                    role="link"
+                    tabIndex={0}
+                    onClick={() => handleNavigate(relatedArticle.date)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        handleNavigate(relatedArticle.date);
+                      }
+                    }}
+                    className="overflow-hidden shadow-card hover:shadow-soft transition-all duration-300 group animate-fade-in bg-card rounded-lg border cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                  >
                     <div className="relative aspect-video">
-                      <img 
-                        src={relatedArticle.image} 
+                      <img
+                        src={relatedArticle.image}
                         alt={relatedArticle.title}
                         className="w-full h-full object-cover"
                       />
@@ -322,15 +420,10 @@ const Article = () => {
                         <Calendar className="w-3 h-3" />
                         <span>{formatDate(relatedArticle.date)}</span>
                       </div>
-                      <Link 
-                        to={`/dev/news/${relatedArticle.date}`}
-                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                      >
-                        <div className="flex items-center text-primary hover:text-primary/80 group">
-                          <span className="text-sm font-medium">{t("news.read_more")}</span>
-                          <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
-                        </div>
-                      </Link>
+                      <div className="flex items-center text-primary group-hover:text-primary/80">
+                        <span className="text-sm font-medium">{t("news.read_more")}</span>
+                        <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
+                      </div>
                     </div>
                   </div>
                 ))}
