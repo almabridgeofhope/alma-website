@@ -4,44 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from "react-router-dom";
 import { Calendar, User, ArrowRight, Tag } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import constructionHouseImage from "@/assets/project/construction_house.png";
-import communityImage from "@/assets/community/community_2.png";
-
-interface NewsArticle {
-  id: string;
-  title: string;
-  excerpt: string;
-  author: string;
-  date: string;
-  category: string;
-  image: string;
-}
+import { getNewsArticles, NewsArticle } from "@/data/newsArticles";
 
 const NewsPreviewSection = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  // Sample news articles - same as in News.tsx
-  const newsArticles: NewsArticle[] = [
-    {
-      id: "1",
-      title: t("news.article1.title"),
-      excerpt: t("news.article1.excerpt"),
-      author: t("news.article1.author"),
-      date: "2024-12-15",
-      category: t("news.categories.project_update"),
-      image: constructionHouseImage,
-    },
-    {
-      id: "2",
-      title: t("news.article2.title"),
-      excerpt: t("news.article2.excerpt"),
-      author: t("news.article2.author"),
-      date: "2024-12-10",
-      category: t("news.categories.community"),
-      image: communityImage,
-    },
-  ];
+  const newsArticles: NewsArticle[] = getNewsArticles(t).slice(0, 3);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -130,7 +99,7 @@ const NewsPreviewSection = () => {
                 </p>
                 
                 <div className="flex items-center text-primary hover:text-primary/80 group">
-                  <span className="text-sm font-medium">Read More</span>
+                  <span className="text-sm font-medium">{t("news.read_more")}</span>
                   <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>

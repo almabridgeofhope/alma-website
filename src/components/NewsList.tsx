@@ -1,18 +1,6 @@
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Calendar, User, ArrowRight, Tag } from "lucide-react";
-
-interface NewsArticle {
-  id: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  author: string;
-  date: string;
-  category: string;
-  image: string;
-  featured: boolean;
-}
+import { NewsArticle } from "@/data/newsArticles";
 
 interface NewsListProps {
   articles: NewsArticle[];
@@ -21,6 +9,7 @@ interface NewsListProps {
   onReadMore: (article: NewsArticle) => void;
   title: string;
   subtitle: string;
+  readMoreLabel: string;
 }
 
 const NewsList = ({ 
@@ -29,7 +18,8 @@ const NewsList = ({
   getCategoryColor, 
   onReadMore, 
   title, 
-  subtitle 
+  subtitle,
+  readMoreLabel,
 }: NewsListProps) => {
   return (
     <section className="pt-8 pb-section bg-muted/30">
@@ -86,7 +76,7 @@ const NewsList = ({
                 </p>
                 
                 <div className="flex items-center text-primary hover:text-primary/80 group">
-                  <span className="text-sm font-medium">Read More</span>
+                  <span className="text-sm font-medium">{readMoreLabel}</span>
                   <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>

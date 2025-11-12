@@ -6,78 +6,13 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Calendar, User, ArrowLeft, Tag, Quote, ArrowRight } from "lucide-react";
-import constructionHouseImage from "@/assets/project/construction_house.png";
-import communityImage from "@/assets/community/community_2.png";
-import headerConstructionImage from "@/assets/project/header_construction.jpeg";
-import childrenImage from "@/assets/community/children.png";
-import community3Image from "@/assets/community/community_3.png";
-import teamImage from "@/assets/team/team.png";
-import teamImage2 from "@/assets/team/team_2.jpg";
-
-interface NewsArticle {
-  id: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  author: string;
-  date: string;
-  category: string;
-  image: string;
-  featured: boolean;
-  additionalImages?: string[];
-}
+import { getNewsArticles, NewsArticle } from "@/data/newsArticles";
 
 const Article = () => {
   const { date } = useParams<{ date: string }>();
   const { t } = useLanguage();
 
-  // Sample news articles - same as in News.tsx
-  const newsArticles: NewsArticle[] = [
-    {
-      id: "1",
-      title: t("news.article1.title"),
-      excerpt: t("news.article1.excerpt"),
-      content: t("news.article1.content"),
-      author: t("news.article1.author"),
-      date: "2024-12-15",
-      category: t("news.categories.project_update"),
-      image: constructionHouseImage,
-      additionalImages: [
-        headerConstructionImage,
-        communityImage
-      ],
-      featured: false,
-    },
-    {
-      id: "2",
-      title: t("news.article2.title"),
-      excerpt: t("news.article2.excerpt"),
-      content: t("news.article2.content"),
-      author: t("news.article2.author"),
-      date: "2024-12-10",
-      category: t("news.categories.community"),
-      image: communityImage,
-      additionalImages: [
-        childrenImage,
-        community3Image
-      ],
-      featured: false,
-    },
-    {
-      id: "3",
-      title: t("news.article3.title"),
-      excerpt: t("news.article3.excerpt"),
-      content: t("news.article3.content"),
-      author: t("news.article3.author"),
-      date: "2024-12-05",
-      category: t("news.categories.organization"),
-      image: teamImage2,
-      additionalImages: [
-        teamImage
-      ],
-      featured: false,
-    },
-  ];
+  const newsArticles: NewsArticle[] = getNewsArticles(t);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
