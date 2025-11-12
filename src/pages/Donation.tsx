@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote } from "lucide-r
 import { useLanguage } from "@/contexts/LanguageContext";
 import heroImage from "@/assets/nature/nature_2.jpg";
 import communityImage from "@/assets/community/community_2.png";
+import { useSearchParams } from "react-router-dom";
 
 // PayPal Configuration
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
@@ -24,6 +25,7 @@ const Donation = () => {
   
   // Debug: Check if component is rendering
   console.log("Donation component is rendering");
+  const [searchParams] = useSearchParams();
   const [donationType, setDonationType] = useState<"one-time" | "monthly">("one-time");
   const [amount, setAmount] = useState<string>("");
   const [customAmount, setCustomAmount] = useState<string>("");
@@ -43,7 +45,15 @@ const Donation = () => {
     privacyConsent: false,
   });
 
-  const predefinedAmounts = [10, 25, 50];
+  const predefinedAmounts = [10, 25, 50, 100];
+
+  useEffect(() => {
+    const amountParam = searchParams.get("amount");
+    if (amountParam) {
+      setAmount(amountParam);
+      setCustomAmount("");
+    }
+  }, [searchParams]);
 
   const handleAmountSelect = (selectedAmount: number) => {
     setAmount(selectedAmount.toString());
@@ -303,7 +313,7 @@ const Donation = () => {
                   {/* Amount Selection */}
                   <div>
                     <Label className="text-base font-semibold">{t("donation.form.amount")}</Label>
-                    <div className="grid grid-cols-3 gap-3 mt-3 mb-4">
+                    <div className="grid grid-cols-2 gap-3 mt-3 mb-4">
                       {predefinedAmounts.map((amountValue) => (
                         <Button
                           key={amountValue}
