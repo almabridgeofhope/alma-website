@@ -21,14 +21,17 @@ const Team = () => {
     {
       name: t("team.peter.name"),
       image: peterImage,
+      bio: t("team.peter.bio").split("|"),
     },
     {
       name: t("team.phionah.name"),
       image: phionaImage,
+      bio: t("team.phionah.bio").split("|"),
     },
     {
       name: t("team.tony.name"),
       image: tonyImage,
+      bio: t("team.tony.bio").split("|"),
     },
   ].sort((a, b) => a.name.localeCompare(b.name));
 
@@ -87,9 +90,9 @@ const Team = () => {
         </section>
 
         {/* Introduction Section */}
-        <section className="pt-section pb-8 bg-background">
+        <section className="pt-section pb-6 bg-background">
           <div className="max-w-content mx-auto px-6">
-            <div className="max-w-3xl mx-auto text-center mb-12">
+            <div className="max-w-3xl mx-auto text-center mb-8">
               <h2 className="text-3xl font-bold text-foreground mb-6">
                 {t("team.intro.title")}
               </h2>
@@ -104,20 +107,31 @@ const Team = () => {
         </section>
 
         {/* Team Uganda */}
-        <section className="pt-8 pb-section bg-background">
+        <section className="pt-4 pb-section bg-background">
           <div className="max-w-content mx-auto px-6">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12 text-center">
               {t("team.uganda.title")}
             </h2>
             <div className="grid md:grid-cols-3 gap-8">
               {teamUganda.map((member, index) => (
-                <Card key={index} className="overflow-hidden shadow-card hover:shadow-soft transition-shadow duration-300">
-                  <div className="aspect-square overflow-hidden bg-primary-light">
+                <Card
+                  key={index}
+                  tabIndex={0}
+                  className="group overflow-hidden shadow-card hover:shadow-soft transition-shadow duration-300"
+                >
+                  <div className="relative aspect-square overflow-hidden bg-primary-light">
                     <img 
                       src={member.image} 
                       alt={`${member.name}`}
                       className="w-full h-full object-cover"
                     />
+                    <div className="absolute inset-0 bg-foreground/85 text-white opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
+                      <div className="flex h-full w-full flex-col overflow-y-auto px-5 py-6 text-sm leading-relaxed gap-3">
+                        {member.bio.map((paragraph, bioIndex) => (
+                          <p key={bioIndex}>{paragraph}</p>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                   <div className="p-6">
                     <h3 className="text-xl font-semibold text-foreground">
