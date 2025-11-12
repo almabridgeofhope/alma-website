@@ -108,6 +108,16 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
     "news.article6.conclusion_cta_button"
   );
 
+  const article6QuoteText = sanitizeValue(
+    t("news.article6.quote.text"),
+    "news.article6.quote.text"
+  );
+
+  const article6QuoteAuthor = sanitizeValue(
+    t("news.article6.quote.author"),
+    "news.article6.quote.author"
+  );
+
   const article5QuoteText = sanitizeValue(
     t("news.article5.sections.quote.text"),
     "news.article5.sections.quote.text"
@@ -160,13 +170,6 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
               "news.article6.sections.goal.paragraphs"
             ),
           },
-          // {
-          //   title: t("news.article6.sections.call_to_action.title"),
-          //   paragraphs: splitToArray(
-          //     t("news.article6.sections.call_to_action.paragraphs"),
-          //     "news.article6.sections.call_to_action.paragraphs"
-          //   ),
-          // },
         ],
         conclusion: splitToArray(
           t("news.article6.conclusion"),
@@ -177,6 +180,12 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
               text: article6ConclusionCtaText,
               url: "/dev/projects",
               buttonLabel: article6ConclusionCtaButtonLabel || undefined,
+            }
+          : undefined,
+        quote: article6QuoteText
+          ? {
+              text: article6QuoteText,
+              author: article6QuoteAuthor || undefined,
             }
           : undefined,
       },
