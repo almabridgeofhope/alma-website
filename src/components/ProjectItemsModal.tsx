@@ -555,6 +555,7 @@ export const ProjectItemsModal = ({
       phase: item.phase,
       imageUrl: item.imageUrl,
       projectName: projectCost.projectName,
+      itemId: item.itemId, // Store original itemId for translation lookup
     });
   };
 

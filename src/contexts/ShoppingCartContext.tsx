@@ -17,6 +17,7 @@ export interface CartItem {
   maxQuantity?: number; // Maximum quantity that can be added (remaining needed)
   // For general donations, we can directly set the amount
   isEditable?: boolean; // If true, the amount can be edited directly (for general donations)
+  itemId?: string; // Original itemId for translation lookup (for type 'item')
 }
 
 interface CartState {
@@ -335,6 +336,7 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
         imageUrl: item.imageUrl,
         projectName: projectName || '',
         maxQuantity: remainingNeeded,
+        itemId: item.itemId, // Store original itemId for translation lookup
       });
     }
   };
@@ -375,6 +377,7 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
         imageUrl: item.imageUrl,
         projectName: projectName || '',
         maxQuantity: remainingNeeded,
+        itemId: item.itemId, // Store original itemId for translation lookup
       });
       // Set quantity to maximum
       updateQuantity(cartItemId, remainingNeeded);

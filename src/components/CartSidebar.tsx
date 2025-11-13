@@ -28,6 +28,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useProjectCosts } from '@/hooks/useProjectCosts';
+import { ProjectItem } from '@/services/clientGoogleSheetsService';
 
 interface CartSidebarProps {
   className?: string;
@@ -103,8 +105,59 @@ const getPhaseIcon = (phase: string) => {
 
 const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({ item, onClose }) => {
   const { updateQuantity, removeItem, formatCurrency, closeCart } = useShoppingCart();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
+  const { getProjectCost } = useProjectCosts();
+  
+  // Get translated name and description for items
+  const getTranslatedName = (): string => {
+    if (item.type === 'general-donation') {
+      return t("donation.form.unrestrictedDonation");
+    }
+    
+    // For items, try to get the original item data and translate it
+    if (item.type === 'item' && item.itemId && item.projectName) {
+      const projectCost = getProjectCost(item.projectName);
+      if (projectCost) {
+        const originalItem = projectCost.items.find(i => i.itemId === item.itemId);
+        if (originalItem) {
+          if (language === 'de' && originalItem.displayNameDe) {
+            return originalItem.displayNameDe;
+          }
+          return originalItem.displayName;
+        }
+      }
+    }
+    
+    // Fallback to stored name
+    return item.name;
+  };
+  
+  const getTranslatedDescription = (): string => {
+    if (item.type === 'general-donation') {
+      return t("donation.form.generalDonation.info");
+    }
+    
+    // For items, try to get the original item data and translate it
+    if (item.type === 'item' && item.itemId && item.projectName) {
+      const projectCost = getProjectCost(item.projectName);
+      if (projectCost) {
+        const originalItem = projectCost.items.find(i => i.itemId === item.itemId);
+        if (originalItem) {
+          const blurb = language === 'de' && originalItem.blurbDe ? originalItem.blurbDe : originalItem.blurb;
+          const category = language === 'de' && originalItem.categoryDe ? originalItem.categoryDe : originalItem.category;
+          const phase = language === 'de' && originalItem.phaseDe ? originalItem.phaseDe : originalItem.phase;
+          return blurb || `${category} - ${phase}`;
+        }
+      }
+    }
+    
+    // Fallback to stored description
+    return item.description;
+  };
+  
+  const displayName = getTranslatedName();
+  const displayDescription = getTranslatedDescription();
 
   const handleItemClick = (e: React.MouseEvent) => {
     // Don't navigate if clicking on buttons or controls
@@ -169,9 +222,9 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
           <div className="flex items-center justify-between mb-1 gap-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <h4 className="font-medium text-sm text-gray-900 truncate">
-                {item.type === 'general-donation' ? t("donation.form.unrestrictedDonation") : item.name}
+                {displayName}
               </h4>
-              {item.description && item.type !== 'general-donation' && (
+              {displayDescription && item.type !== 'general-donation' && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
                     <HelpCircle className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
@@ -181,7 +234,7 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
                     side="top"
                     sideOffset={5}
                   >
-                    <p className="text-sm">{item.description}</p>
+                    <p className="text-sm">{displayDescription}</p>
                   </TooltipContent>
                 </Tooltip>
               )}
