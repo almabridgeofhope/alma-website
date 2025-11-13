@@ -20,6 +20,10 @@ export interface ProjectItem {
   purchased?: boolean;
   totalCostEUR?: number;
   fundedCostEUR?: number;
+  // German translations (optional)
+  displayNameDe?: string;
+  categoryDe?: string;
+  blurbDe?: string;
 }
 
 export interface ProjectCost {
@@ -43,8 +47,8 @@ export class ClientGoogleSheetsService {
     // Environment variables from .env(.local)
     this.apiKey = import.meta.env.VITE_GOOGLE_API_KEY || '';
     this.sheetId = import.meta.env.VITE_GOOGLE_SHEET_ID || '1qCbZyPujr6_iZVNWSnM5aqMOX0tzamDJO2vMOulV514';
-    // e.g. "Tabelle1!A:O" or "Sheet1!A:O". Falls nicht gesetzt, alle Spalten bis O.
-    this.range = import.meta.env.VITE_GOOGLE_SHEET_RANGE || 'A:O';
+    // e.g. "Tabelle1!A:R" or "Sheet1!A:R". Falls nicht gesetzt, alle Spalten bis R (inkl. deutsche Übersetzungen).
+    this.range = import.meta.env.VITE_GOOGLE_SHEET_RANGE || 'A:R';
   }
 
   async getProjectCosts(): Promise<ProjectCost[]> {
@@ -93,7 +97,7 @@ export class ClientGoogleSheetsService {
       }
 
       // Parse the detailed cost tracking data
-      // Structure: [item_id, project, phase, category, display_name, unit, unit_cost_UGX, unit_cost_EUR, qty_needed_total, qty_funded, priority, blurb, image_url, visibility, sort_order]
+      // Structure: [item_id, project, phase, category, display_name, unit, unit_cost_UGX, unit_cost_EUR, qty_needed_total, qty_funded, priority, blurb, image_url, visibility, sort_order, display_name_de, category_de, blurb_de]
       const allProjectItems: ProjectItem[] = rows.slice(1).map((row: any[]) => {
         const unitCostEUR = parseFloat(row[7]?.toString().replace(',', '.') || '0');
         const qtyNeededTotal = parseFloat(row[8]?.toString().replace(',', '.') || '0');
@@ -118,7 +122,11 @@ export class ClientGoogleSheetsService {
           sortOrder: parseFloat(row[14]?.toString() || '0'),
           purchased: qtyFunded >= qtyNeededTotal, // Item is purchased if fully funded
           totalCostEUR: unitCostEUR * qtyNeededTotal,
-          fundedCostEUR: unitCostEUR * qtyFunded
+          fundedCostEUR: unitCostEUR * qtyFunded,
+          // German translations (optional - fallback to English if not provided)
+          displayNameDe: row[15]?.toString().trim() || undefined,
+          categoryDe: row[16]?.toString().trim() || undefined,
+          blurbDe: row[17]?.toString().trim() || undefined
         };
       });
 

@@ -60,8 +60,30 @@ export const ProjectItemsModal = ({
   onItemToggle,
   onItemCostUpdate 
 }: ProjectItemsModalProps) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { addItem, isItemInCart, removeFromCart, addItemPiece, addItemMax, removeItemPiece, getItemCartQuantity, isItemFullyInCart, state: cartState, toggleCart, closeCart } = useShoppingCart();
+  
+  // Helper functions to get translated item fields
+  const getItemDisplayName = (item: ProjectItem): string => {
+    if (language === 'de' && item.displayNameDe) {
+      return item.displayNameDe;
+    }
+    return item.displayName;
+  };
+  
+  const getItemCategory = (item: ProjectItem): string => {
+    if (language === 'de' && item.categoryDe) {
+      return item.categoryDe;
+    }
+    return item.category || '';
+  };
+  
+  const getItemBlurb = (item: ProjectItem): string => {
+    if (language === 'de' && item.blurbDe) {
+      return item.blurbDe;
+    }
+    return item.blurb || '';
+  };
   const [showCartDrawer, setShowCartDrawer] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -219,11 +241,18 @@ export const ProjectItemsModal = ({
   // Filter items by phase, search query, and category
   const filteredItems = projectCost.items.filter(item => {
     const matchesPhase = selectedPhase === "all" || item.phase === selectedPhase;
+    const displayName = getItemDisplayName(item);
+    const category = getItemCategory(item);
+    const blurb = getItemBlurb(item);
     const matchesSearch = searchQuery === "" || 
+      displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      blurb?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      // Also search in original language fields
       item.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.blurb?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
+    const matchesCategory = selectedCategory === "all" || category === selectedCategory || item.category === selectedCategory;
     return matchesPhase && matchesSearch && matchesCategory;
   });
 
@@ -231,7 +260,10 @@ export const ProjectItemsModal = ({
   const phaseItems = selectedPhase === "all" 
     ? projectCost.items 
     : projectCost.items.filter(item => item.phase === selectedPhase);
-  const categories = Array.from(new Set(phaseItems.map(item => item.category).filter(Boolean)));
+  const categories = Array.from(new Set(phaseItems.map(item => {
+    const category = getItemCategory(item);
+    return category || item.category;
+  }).filter(Boolean)));
 
   const getProgressPercentage = (item: ProjectItem) => {
     if (item.qtyNeededTotal === 0) return 0;
@@ -313,7 +345,7 @@ export const ProjectItemsModal = ({
     
     switch (sortBy) {
       case 'name':
-        return a.displayName.localeCompare(b.displayName);
+        return getItemDisplayName(a).localeCompare(getItemDisplayName(b));
       case 'price':
         return a.unitCostEUR - b.unitCostEUR; // Günstigste zuerst
       case 'progress': {
@@ -449,10 +481,10 @@ export const ProjectItemsModal = ({
     addItem({
       id: `item-${item.itemId}`,
       type: 'item',
-      name: item.displayName,
-      description: item.blurb || `${item.category} - ${getPhaseName(item.phase)}`,
+      name: getItemDisplayName(item),
+      description: getItemBlurb(item) || `${getItemCategory(item)} - ${getPhaseName(item.phase)}`,
       unitPrice: item.unitCostEUR,
-      category: item.category,
+      category: getItemCategory(item),
       phase: item.phase,
       imageUrl: item.imageUrl,
       projectName: projectCost.projectName,
@@ -546,27 +578,27 @@ export const ProjectItemsModal = ({
             {/* Item Name & Category */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <h4 className="font-medium text-gray-900 truncate text-sm">{item.displayName}</h4>
-                {item.category && (
+                <h4 className="font-medium text-gray-900 truncate text-sm">{getItemDisplayName(item)}</h4>
+                {getItemCategory(item) && (
                   <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0 hidden sm:inline-flex">
-                    {item.category}
+                    {getItemCategory(item)}
                   </Badge>
                 )}
-                {item.blurb && (
+                {getItemBlurb(item) && (
                   <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                       <HelpCircle className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs z-[9999]" side="top" sideOffset={5}>
-                      <p className="text-sm">{item.blurb}</p>
+                      <p className="text-sm">{getItemBlurb(item)}</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
               </div>
               {/* Category on mobile - below name */}
-              {item.category && (
+              {getItemCategory(item) && (
                 <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 mt-0.5 sm:hidden">
-                  {item.category}
+                  {getItemCategory(item)}
                 </Badge>
               )}
             </div>
@@ -667,8 +699,8 @@ export const ProjectItemsModal = ({
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start gap-1.5 mb-1">
-                <h4 className="font-semibold text-gray-900 text-sm leading-tight">{item.displayName}</h4>
-                {item.blurb && (
+                <h4 className="font-semibold text-gray-900 text-sm leading-tight">{getItemDisplayName(item)}</h4>
+                {getItemBlurb(item) && (
                   <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                       <HelpCircle 
@@ -680,14 +712,14 @@ export const ProjectItemsModal = ({
                       side="top"
                       sideOffset={5}
                     >
-                      <p className="text-sm">{item.blurb}</p>
+                      <p className="text-sm">{getItemBlurb(item)}</p>
                     </TooltipContent>
                   </Tooltip>
                 )}
               </div>
-              {item.category && (
+              {getItemCategory(item) && (
                 <Badge variant="outline" className="text-xs px-1.5 py-0.5 mt-0.5">
-                  {item.category}
+                  {getItemCategory(item)}
                 </Badge>
               )}
             </div>
@@ -845,7 +877,7 @@ export const ProjectItemsModal = ({
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs font-semibold uppercase tracking-wide text-orange-600">Nächstes wichtiges Item</span>
                         </div>
-                        <h4 className="font-semibold text-gray-900 text-sm truncate">{nextImportantItem.displayName}</h4>
+                        <h4 className="font-semibold text-gray-900 text-sm truncate">{getItemDisplayName(nextImportantItem)}</h4>
                         <div className="flex items-center gap-3 mt-1 flex-wrap">
                           <div className="flex items-center gap-1.5 text-xs">
                             <span className="text-gray-600">{nextImportantItem.qtyFunded + getItemCartQuantity(nextImportantItem.itemId)}</span>
