@@ -171,7 +171,19 @@ export const ProjectItemsModal = ({
     }
   }, [isOpen]);
 
-  const phases = Array.from(new Set(projectCost.items.map(item => item.phase)));
+  // Extract phases in the order they appear in the Excel table (based on sortOrder)
+  // Sort items by sortOrder to maintain Excel table order
+  const itemsSortedByOrder = [...projectCost.items].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  
+  // Extract unique phases in the order they first appear (maintains Excel table order)
+  const phases: string[] = [];
+  const seenPhases = new Set<string>();
+  for (const item of itemsSortedByOrder) {
+    if (!seenPhases.has(item.phase)) {
+      seenPhases.add(item.phase);
+      phases.push(item.phase);
+    }
+  }
   
   // Keep selectedPhase in sync with location.hash (overview/details)
   useEffect(() => {
@@ -480,9 +492,8 @@ export const ProjectItemsModal = ({
       unfundedCount: phaseItems.filter(item => !item.purchased && item.qtyFunded === 0).length,
       incompleteCount: phaseItems.filter(item => !item.purchased && item.qtyFunded < item.qtyNeededTotal).length
     };
-  }).sort((a, b) => {
-    return b.progress - a.progress;
   });
+  // Keep phases in original order (as defined in Excel table), don't sort by progress
 
   const renderItemCard = (item: ProjectItem, isNextImportant: boolean = false) => {
     const cartQuantity = getItemCartQuantity(item.itemId);
