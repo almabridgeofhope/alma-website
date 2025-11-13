@@ -392,26 +392,28 @@ export const ProjectItemsModal = ({
   const partiallyFundedItems = sortedItems.filter(item => !item.purchased && item.qtyFunded > 0);
   const unfundedItems = sortedItems.filter(item => !item.purchased && item.qtyFunded === 0);
 
-  // Find the next important item (first item not fully in cart, sorted by Excel order)
+  // Find the next important item phasenübergreifend (first item not fully funded or in cart, sorted by Excel order)
   const getNextImportantItem = (): ProjectItem | null => {
-    // Use all items for overview, filtered items for details
-    const itemsToCheck = viewMode === 'overview' ? projectCost.items : filteredItems;
+    // Always use all items from the project, regardless of view mode or filters
+    // This ensures phasenübergreifend (across all phases) only one next item is shown
+    const allItems = projectCost.items;
     
-    // Sort items by sortOrder (Excel table order) to maintain priority
-    const sortedItems = [...itemsToCheck].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    // Sort items by sortOrder (Excel table order) to maintain priority across all phases
+    const sortedItems = [...allItems].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
     
-    // Find the first item that:
+    // Find the first item across all phases that:
     // 1. Is not purchased
-    // 2. Is not fully funded
-    // 3. Is not fully in cart (cart quantity < remaining needed)
+    // 2. Still needs more items (not fully funded AND not fully in cart)
     for (const item of sortedItems) {
       if (item.purchased) continue;
       
       const cartQuantity = getItemCartQuantity(item.itemId);
-      const remainingNeeded = item.qtyNeededTotal - item.qtyFunded;
+      const totalAvailable = item.qtyFunded + cartQuantity;
+      const remainingNeeded = item.qtyNeededTotal - totalAvailable;
       
-      // Item is not fully in cart if cart quantity is less than remaining needed
-      if (cartQuantity < remainingNeeded) {
+      // Item is the next important item if it still needs more (remainingNeeded > 0)
+      // This ensures it switches automatically when fully funded or in cart
+      if (remainingNeeded > 0) {
         return item;
       }
     }
@@ -545,6 +547,11 @@ export const ProjectItemsModal = ({
   };
 
   const addItemToCart = (item: ProjectItem) => {
+    const nameEn = item.displayName;
+    const nameDe = item.displayNameDe || item.displayName;
+    const descriptionEn = item.blurb || `${item.category || ''} - ${item.phase || ''}`;
+    const descriptionDe = item.blurbDe || item.blurb || `${item.categoryDe || item.category || ''} - ${item.phaseDe || item.phase || ''}`;
+    
     addItem({
       id: `item-${item.itemId}`,
       type: 'item',
@@ -556,6 +563,10 @@ export const ProjectItemsModal = ({
       imageUrl: item.imageUrl,
       projectName: projectCost.projectName,
       itemId: item.itemId, // Store original itemId for translation lookup
+      nameDe: nameDe,
+      nameEn: nameEn,
+      descriptionDe: descriptionDe,
+      descriptionEn: descriptionEn,
     });
   };
 

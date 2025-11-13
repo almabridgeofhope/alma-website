@@ -115,7 +115,17 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
       return t("donation.form.unrestrictedDonation");
     }
     
-    // For items, try to get the original item data and translate it
+    // First try to use stored translations (available immediately, no need to wait for ProjectCosts)
+    if (item.type === 'item') {
+      if (language === 'de' && item.nameDe) {
+        return item.nameDe;
+      }
+      if (language === 'en' && item.nameEn) {
+        return item.nameEn;
+      }
+    }
+    
+    // Fallback: try to get the original item data and translate it (if ProjectCosts are loaded)
     if (item.type === 'item' && item.itemId && item.projectName) {
       const projectCost = getProjectCost(item.projectName);
       if (projectCost) {
@@ -129,7 +139,7 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
       }
     }
     
-    // Fallback to stored name
+    // Final fallback to stored name
     return item.name;
   };
   
@@ -138,7 +148,17 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
       return t("donation.form.generalDonation.info");
     }
     
-    // For items, try to get the original item data and translate it
+    // First try to use stored translations (available immediately, no need to wait for ProjectCosts)
+    if (item.type === 'item') {
+      if (language === 'de' && item.descriptionDe) {
+        return item.descriptionDe;
+      }
+      if (language === 'en' && item.descriptionEn) {
+        return item.descriptionEn;
+      }
+    }
+    
+    // Fallback: try to get the original item data and translate it (if ProjectCosts are loaded)
     if (item.type === 'item' && item.itemId && item.projectName) {
       const projectCost = getProjectCost(item.projectName);
       if (projectCost) {
@@ -152,7 +172,7 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
       }
     }
     
-    // Fallback to stored description
+    // Final fallback to stored description
     return item.description;
   };
   

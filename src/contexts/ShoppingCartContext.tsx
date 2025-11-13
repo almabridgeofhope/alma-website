@@ -18,6 +18,11 @@ export interface CartItem {
   // For general donations, we can directly set the amount
   isEditable?: boolean; // If true, the amount can be edited directly (for general donations)
   itemId?: string; // Original itemId for translation lookup (for type 'item')
+  // Store translations for immediate display without waiting for ProjectCosts to load
+  nameDe?: string; // German name
+  nameEn?: string; // English name
+  descriptionDe?: string; // German description
+  descriptionEn?: string; // English description
 }
 
 interface CartState {
@@ -325,6 +330,11 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
       }
     } else {
       // Add new item with quantity 1
+      const nameEn = item.displayName;
+      const nameDe = item.displayNameDe || item.displayName;
+      const descriptionEn = item.blurb || `${item.category || ''} - ${item.phase || ''}`;
+      const descriptionDe = item.blurbDe || item.blurb || `${item.categoryDe || item.category || ''} - ${item.phaseDe || item.phase || ''}`;
+      
       addItem({
         id: cartItemId,
         type: 'item',
@@ -337,6 +347,10 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
         projectName: projectName || '',
         maxQuantity: remainingNeeded,
         itemId: item.itemId, // Store original itemId for translation lookup
+        nameDe: nameDe,
+        nameEn: nameEn,
+        descriptionDe: descriptionDe,
+        descriptionEn: descriptionEn,
       });
     }
   };
@@ -366,6 +380,11 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
       }
     } else {
       // Add new item with maximum quantity
+      const nameEn = item.displayName;
+      const nameDe = item.displayNameDe || item.displayName;
+      const descriptionEn = item.blurb || `${item.category || ''} - ${item.phase || ''}`;
+      const descriptionDe = item.blurbDe || item.blurb || `${item.categoryDe || item.category || ''} - ${item.phaseDe || item.phase || ''}`;
+      
       addItem({
         id: cartItemId,
         type: 'item',
@@ -378,6 +397,10 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
         projectName: projectName || '',
         maxQuantity: remainingNeeded,
         itemId: item.itemId, // Store original itemId for translation lookup
+        nameDe: nameDe,
+        nameEn: nameEn,
+        descriptionDe: descriptionDe,
+        descriptionEn: descriptionEn,
       });
       // Set quantity to maximum
       updateQuantity(cartItemId, remainingNeeded);
