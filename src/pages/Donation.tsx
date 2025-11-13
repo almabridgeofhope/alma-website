@@ -16,7 +16,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import OptimizedImage from "@/components/OptimizedImage";
 import PreloadImage from "@/components/PreloadImage";
-import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle } from "lucide-react";
+import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import heroImage from "@/assets/nature/nature_2.jpg";
@@ -134,16 +134,70 @@ const Donation = () => {
   };
 
   const getPhaseIcon = (phase: string) => {
-    switch (phase?.toLowerCase()) {
+    const phaseLower = phase?.toLowerCase() || '';
+    
+    // General project phases
+    switch (phaseLower) {
       case 'planning':
         return <Sprout className="w-4 h-4 text-green-600" />;
       case 'implementation':
         return <Droplets className="w-4 h-4 text-blue-600" />;
       case 'impact':
         return <Wheat className="w-4 h-4 text-yellow-600" />;
-      default:
-        return <Package className="w-4 h-4 text-gray-600" />;
     }
+    
+    // Construction phases
+    if (phaseLower.includes('security')) {
+      return <Shield className="w-4 h-4 text-gray-600" />;
+    }
+    if ((phaseLower.includes('outer') && phaseLower.includes('walls')) || 
+        (phaseLower.includes('outer') && phaseLower.includes('floor')) ||
+        (phaseLower.includes('walls') && phaseLower.includes('flooring'))) {
+      return <BrickWall className="w-4 h-4 text-gray-600" />;
+    }
+    if (phaseLower.includes('foundation') && phaseLower.includes('sealing')) {
+      return <Layers className="w-4 h-4 text-gray-600" />;
+    }
+    if (phaseLower.includes('water') && phaseLower.includes('system')) {
+      return <Droplets className="w-4 h-4 text-gray-600" />;
+    }
+    if (phaseLower.includes('septic') || phaseLower.includes('soak')) {
+      return <Droplets className="w-4 h-4 text-gray-600" />;
+    }
+    if (phaseLower.includes('interior') && phaseLower.includes('furniture')) {
+      return <Sofa className="w-4 h-4 text-gray-600" />;
+    }
+    if (phaseLower.includes('interior') && phaseLower.includes('walls') && phaseLower.includes('finishing')) {
+      return <Paintbrush className="w-4 h-4 text-gray-600" />;
+    }
+    if (phaseLower.includes('electricity') && phaseLower.includes('lighting')) {
+      return <Zap className="w-4 h-4 text-gray-600" />;
+    }
+    if (phaseLower.includes('bathroom') && phaseLower.includes('sanitary')) {
+      return <Toilet className="w-4 h-4 text-gray-600" />;
+    }
+    
+    // Fallbacks
+    if (phaseLower.includes('outer') || (phaseLower.includes('walls') && phaseLower.includes('floor'))) {
+      return <BrickWall className="w-4 h-4 text-gray-600" />;
+    }
+    if (phaseLower.includes('foundation') || phaseLower.includes('sealing')) {
+      return <Layers className="w-4 h-4 text-gray-600" />;
+    }
+    if (phaseLower.includes('water')) {
+      return <Droplets className="w-4 h-4 text-gray-600" />;
+    }
+    if (phaseLower.includes('interior') && phaseLower.includes('finishing')) {
+      return <Paintbrush className="w-4 h-4 text-gray-600" />;
+    }
+    if (phaseLower.includes('electricity') || phaseLower.includes('lighting')) {
+      return <Zap className="w-4 h-4 text-gray-600" />;
+    }
+    if (phaseLower.includes('bathroom') || phaseLower.includes('sanitary')) {
+      return <Toilet className="w-4 h-4 text-gray-600" />;
+    }
+    
+    return <Package className="w-4 h-4 text-gray-600" />;
   };
 
   const handleCustomAmountChange = (value: string) => {
@@ -437,9 +491,57 @@ const Donation = () => {
           </div>
         </section>
 
-        {/* 3. Integrated Cart in Form: no separate cart section */}
+        {/* 3. Trust & Transparency */}
+        <section className="py-section bg-background">
+          <div className="max-w-content mx-auto px-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                  {t("donation.trust.title")}
+                </h2>
+              </div>
+              <div className="grid md:grid-cols-3 gap-6">
+                <Card className="p-6 text-center shadow-card">
+                  <div className="p-3 bg-primary/10 rounded-lg w-fit mx-auto mb-4">
+                    <Shield className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    {t("donation.trust.registered")}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {t("donation.trust.registered.desc")}
+                  </p>
+                </Card>
+                <Card className="p-6 text-center shadow-card">
+                  <div className="p-3 bg-primary/10 rounded-lg w-fit mx-auto mb-4">
+                    <CheckCircle className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    {t("donation.trust.tax")}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {t("donation.trust.tax.desc")}
+                  </p>
+                </Card>
+                <Card className="p-6 text-center shadow-card">
+                  <div className="p-3 bg-primary/10 rounded-lg w-fit mx-auto mb-4">
+                    <Mail className="w-8 h-8 text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    {t("donation.trust.transparency")}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {t("donation.trust.transparency.desc")}
+                  </p>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </section>
 
-        {/* 4. Donation Form */}
+        {/* 4. Integrated Cart in Form: no separate cart section */}
+
+        {/* 5. Donation Form */}
         <section id="donation-form" className="py-section bg-muted/30">
           <div className="max-w-content mx-auto px-6">
             <div className="max-w-2xl mx-auto">
@@ -464,6 +566,20 @@ const Donation = () => {
                           <ShoppingCart className="w-5 h-5 text-primary" />
                           <span className="font-semibold">{t("donation.form.cart")}</span>
                           <Badge variant="secondary">{cartState.totalItems} {t("donation.form.items")}</Badge>
+                          <Tooltip delayDuration={0}>
+                            <TooltipTrigger asChild>
+                              <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent 
+                              className="max-w-xs z-[9999]" 
+                              side="top"
+                              sideOffset={5}
+                            >
+                              <p className="text-sm leading-relaxed">
+                                {t("donation.itemFlexibility.warning")}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                         <div className="text-right">
                           <div className="text-sm text-muted-foreground">{t("donation.form.total")}</div>
@@ -1047,68 +1163,104 @@ const Donation = () => {
           </div>
         </section>
 
-        {/* 4. Trust & Transparency */}
-        <section className="py-section bg-background">
+        {/* 4. Transparency Commitment */}
+        <section className="py-section bg-muted/30">
           <div className="max-w-content mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-12">
                 <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                  {t("donation.trust.title")}
+                  {t("donation.transparency.title")}
                 </h2>
               </div>
-              <div className="grid md:grid-cols-3 gap-6">
-                <Card className="p-6 text-center shadow-card">
-                  <div className="p-3 bg-primary/10 rounded-lg w-fit mx-auto mb-4">
-                    <Shield className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    {t("donation.trust.registered")}
-                  </h3>
-                  <p className="text-muted-foreground">
-                    {t("donation.trust.registered.desc")}
-                  </p>
-                </Card>
-                <Card className="p-6 text-center shadow-card">
-                  <div className="p-3 bg-primary/10 rounded-lg w-fit mx-auto mb-4">
-                    <CheckCircle className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    {t("donation.trust.tax")}
-                  </h3>
-                  <p className="text-muted-foreground">
-                    {t("donation.trust.tax.desc")}
-                  </p>
-                </Card>
-                <Card className="p-6 text-center shadow-card">
-                  <div className="p-3 bg-primary/10 rounded-lg w-fit mx-auto mb-4">
-                    <Mail className="w-8 h-8 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    {t("donation.trust.transparency")}
-                  </h3>
-                  <p className="text-muted-foreground">
-                    {t("donation.trust.transparency.desc")}
-                  </p>
-                </Card>
+              <div className="space-y-8">
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  {t("donation.transparency.intro")}
+                </p>
+                
+                <div className="grid md:grid-cols-1 gap-6">
+                  <Card className="p-6 shadow-card">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-primary/10 rounded-lg flex-shrink-0">
+                        <CheckCircle className="w-6 h-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-foreground mb-3">
+                          {t("donation.transparency.coordination.title")}
+                        </h3>
+                        <p className="text-muted-foreground leading-relaxed">
+                          {t("donation.transparency.coordination.desc")}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                  
+                  <Card className="p-6 shadow-card">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-primary/10 rounded-lg flex-shrink-0">
+                        <Shield className="w-6 h-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-foreground mb-3">
+                          {t("donation.transparency.financial.title")}
+                        </h3>
+                        <p className="text-muted-foreground leading-relaxed">
+                          {t("donation.transparency.financial.desc")}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                  
+                  <Card className="p-6 shadow-card">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-primary/10 rounded-lg flex-shrink-0">
+                        <Info className="w-6 h-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-foreground mb-3">
+                          {t("donation.transparency.tracking.title")}
+                        </h3>
+                        <p className="text-muted-foreground leading-relaxed">
+                          {t("donation.transparency.tracking.desc")}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+                
+                <Card className="p-6 shadow-card">
+                    <div className="flex items-start gap-4">
+                      <div className="p-3 bg-primary/10 rounded-lg flex-shrink-0">
+                        <Info className="w-6 h-6 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-foreground mb-3">
+                          {t("donation.transparency.communication.title")}
+                        </h3>
+                        <p className="text-muted-foreground leading-relaxed">
+                          {t("donation.transparency.communication.desc")}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
               </div>
             </div>
           </div>
         </section>
 
         {/* 5. Community Photo & Quote */}
-        <section className="py-section bg-muted/30">
+        <section className="py-section bg-muted/30 relative z-0 overflow-hidden">
           <div className="max-w-content mx-auto px-6">
             <div className="max-w-4xl mx-auto">
-              <div className="grid md:grid-cols-2 gap-8 items-center">
-                <div>
+              <div className="grid md:grid-cols-2 gap-8 items-stretch">
+                <div className="flex items-center justify-center h-full">
                   <OptimizedImage
                     src={communityImage} 
                     alt="Community in Uganda" 
-                    className="w-full h-64 object-cover rounded-lg shadow-lg"
+                    className="w-full h-80 object-cover rounded-lg shadow-lg"
                     lazy={true}
                   />
                 </div>
-                <div className="text-center md:text-left">
+                <div className="text-center md:text-left flex flex-col justify-center h-full">
                   <blockquote className="text-2xl font-medium text-foreground mb-4 italic">
                     "{t("donation.quote.text")}"
                   </blockquote>
@@ -1122,7 +1274,7 @@ const Donation = () => {
         </section>
 
         {/* 6. FAQ */}
-        <section className="py-section bg-background">
+        <section className="py-section bg-background relative z-10">
           <div className="max-w-content mx-auto px-6">
             <div className="max-w-3xl mx-auto">
               <div className="text-center mb-12">
