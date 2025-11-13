@@ -120,6 +120,6 @@ Hopeful, professional, trustworthy design with soft blues and warm yellows
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground break-words;
   }
 }
