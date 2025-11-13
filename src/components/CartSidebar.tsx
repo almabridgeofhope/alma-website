@@ -14,7 +14,6 @@ import {
   Sprout,
   Droplets,
   Wheat,
-  ExternalLink,
   HelpCircle
 } from 'lucide-react';
 import { useShoppingCart, CartItem } from '@/contexts/ShoppingCartContext';
@@ -140,9 +139,6 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
                     </p>
                   </TooltipContent>
                 </Tooltip>
-              )}
-              {item.projectName && item.type === 'item' && (
-                <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
               )}
             </div>
             <Button

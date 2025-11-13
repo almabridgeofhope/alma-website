@@ -1118,13 +1118,14 @@ export const ProjectItemsModal = ({
         {/* Floating CTA removed - now using footer cart link */}
 
         {/* Footer */}
-        <div className="flex justify-between items-center pt-4 pb-6 sm:pb-8 border-t px-4 sm:px-6 bg-white flex-shrink-0">
+        <div className="grid grid-cols-3 items-center pt-4 pb-6 sm:pb-8 border-t px-4 sm:px-6 bg-white flex-shrink-0">
+          {/* Left: Item Count */}
           <div className="text-sm text-muted-foreground">
             {viewMode === 'overview' ? `${projectCost.totalItems} Items insgesamt` : `${filteredItems.length} von ${projectCost.totalItems} Items angezeigt`}
           </div>
           
-          {/* Budget Summary - centered */}
-          <div className="flex items-center gap-6">
+          {/* Center: Budget Summary - always centered */}
+          <div className="flex items-center justify-center gap-6">
             <div className="text-center">
               <div className="text-sm font-bold text-green-600">
                 {viewMode === 'overview' 
@@ -1156,8 +1157,8 @@ export const ProjectItemsModal = ({
             </div>
           </div>
           
-          {/* Cart Actions */}
-          <div className="flex items-center gap-2">
+          {/* Right: Cart Actions */}
+          <div className="flex items-center justify-end gap-2">
             {cartState.totalItems > 0 && (
               <>
                 <Button 
