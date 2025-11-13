@@ -3,7 +3,7 @@ import { ProjectItem } from '@/services/clientGoogleSheetsService';
 
 export interface CartItem {
   id: string;
-  type: 'item' | 'phase';
+  type: 'item' | 'phase' | 'general-donation';
   name: string;
   description: string;
   unitPrice: number;
@@ -14,6 +14,8 @@ export interface CartItem {
   imageUrl?: string;
   projectName?: string;
   maxQuantity?: number; // Maximum quantity that can be added (remaining needed)
+  // For general donations, we can directly set the amount
+  isEditable?: boolean; // If true, the amount can be edited directly (for general donations)
 }
 
 interface CartState {
@@ -27,6 +29,7 @@ type CartAction =
   | { type: 'ADD_ITEM'; payload: Omit<CartItem, 'quantity' | 'totalPrice'> }
   | { type: 'REMOVE_ITEM'; payload: string }
   | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
+  | { type: 'UPDATE_AMOUNT'; payload: { id: string; amount: number } } // For general donations
   | { type: 'CLEAR_CART' }
   | { type: 'TOGGLE_CART' }
   | { type: 'CLOSE_CART' }
@@ -113,6 +116,35 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       };
     }
     
+    case 'UPDATE_AMOUNT': {
+      if (action.payload.amount <= 0) {
+        return cartReducer(state, { type: 'REMOVE_ITEM', payload: action.payload.id });
+      }
+      
+      const updatedItems = state.items.map(item =>
+        item.id === action.payload.id
+          ? {
+              ...item,
+              totalPrice: action.payload.amount,
+              unitPrice: action.payload.amount, // For general donations, unitPrice = totalPrice
+              // Update name if it's still the old name
+              name: item.type === 'general-donation' && item.name === 'Allgemeine Spende' 
+                ? 'Ungebundene Spende' 
+                : item.name,
+              description: item.type === 'general-donation' && item.name === 'Allgemeine Spende'
+                ? 'Ungebundene Spende für unsere Projekte'
+                : item.description,
+            }
+          : item
+      );
+      
+      return {
+        ...state,
+        items: updatedItems,
+        totalAmount: updatedItems.reduce((sum, item) => sum + item.totalPrice, 0),
+      };
+    }
+    
     case 'CLEAR_CART':
       return {
         ...state,
@@ -151,6 +183,7 @@ interface ShoppingCartContextType {
   addItem: (item: Omit<CartItem, 'quantity' | 'totalPrice'>) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
+  updateAmount: (id: string, amount: number) => void; // For general donations
   clearCart: () => void;
   toggleCart: () => void;
   closeCart: () => void;
@@ -161,6 +194,8 @@ interface ShoppingCartContextType {
   removeItemPiece: (itemId: string) => void;
   getItemCartQuantity: (itemId: string) => number;
   isItemFullyInCart: (item: ProjectItem) => boolean;
+  addOrUpdateGeneralDonation: (amount: number) => void; // Add or update general donation
+  getGeneralDonation: () => CartItem | undefined; // Get general donation item if exists
 }
 
 const ShoppingCartContext = createContext<ShoppingCartContextType | undefined>(undefined);
@@ -201,6 +236,10 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
       quantity = item.maxQuantity;
     }
     dispatch({ type: 'UPDATE_QUANTITY', payload: { id, quantity } });
+  };
+
+  const updateAmount = (id: string, amount: number) => {
+    dispatch({ type: 'UPDATE_AMOUNT', payload: { id, amount } });
   };
 
   const clearCart = () => {
@@ -283,11 +322,35 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
     return cartQuantity >= item.qtyNeededTotal;
   };
 
+  const addOrUpdateGeneralDonation = (amount: number) => {
+    const generalDonationId = 'general-donation';
+    const existingDonation = state.items.find(item => item.id === generalDonationId);
+    
+    if (existingDonation) {
+      updateAmount(generalDonationId, amount);
+    } else {
+      addItem({
+        id: generalDonationId,
+        type: 'general-donation',
+        name: 'Ungebundene Spende',
+        description: 'Ungebundene Spende für unsere Projekte',
+        unitPrice: amount,
+        category: 'donation',
+        isEditable: true,
+      });
+    }
+  };
+
+  const getGeneralDonation = () => {
+    return state.items.find(item => item.id === 'general-donation');
+  };
+
   const value: ShoppingCartContextType = {
     state,
     addItem,
     removeItem,
     updateQuantity,
+    updateAmount,
     clearCart,
     toggleCart,
     closeCart,
@@ -298,6 +361,8 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
     removeItemPiece,
     getItemCartQuantity,
     isItemFullyInCart,
+    addOrUpdateGeneralDonation,
+    getGeneralDonation,
   };
 
   return (
