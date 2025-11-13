@@ -26,7 +26,7 @@ const translations = {
     "mission.p1": "Alma Bridge of Hope is a non-profit organization dedicated to sustainable development in rural Uganda. Through a close German–Ugandan partnership, we work with underserved communities to improve their living conditions for the long term.",
     "mission.p2": "We believe real change comes from within the community. That’s why we develop every project together with the local people – creating solutions that are effective and sustainable.",
     "mission.p3": "Through practical, community-based initiatives, we do not only build infrastructure – we build bridges of hope that connect communities across continents and create lasting positive change.",
-    "mission.contact": "Contact Us",
+    "mission.about": "About Us",
     "mission.donate": "Support Projects",
     
     // What We Do
@@ -503,7 +503,7 @@ const translations = {
     "mission.p1": "Alma Bridge of Hope ist ein gemeinnütziger Verein, der sich für nachhaltige Entwicklungsarbeit im ländlichen Uganda einsetzt. In enger deutsch-ugandischer Partnerschaft unterstützen wir unterversorgte Gemeinden dabei, ihre Lebensbedingungen langfristig zu verbessern.",
     "mission.p2": "Wir glauben, dass echte Veränderung aus der Gemeinde selbst entsteht. Deshalb entwickeln wir alle Projekte gemeinsam mit den Menschen vor Ort, um Lösungen zu schaffen, die wirken und nachhaltig Bestand haben.",
     "mission.p3": "Mit unseren praktischen, lokalen Entwicklungsprojekten fördern wir nicht nur den Aufbau von Infrastruktur, sondern bauen Brücken der Hoffnung – Verbindungen zwischen Kontinenten, die Menschen zusammenbringen und dauerhafte positive Veränderungen ermöglichen.",
-    "mission.contact": "Kontakt aufnehmen",
+    "mission.about": "Über uns",
     "mission.donate": "Projekte unterstützen",
     
     // What We Do
