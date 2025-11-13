@@ -24,6 +24,9 @@ import {
   Zap,
   BrickWall,
   Paintbrush,
+  Shield,
+  Sofa,
+  Layers,
   // UI Icons
   Package,
   ChevronDown,
@@ -43,6 +46,7 @@ import {
   ArrowUpDown,
   List,
   Grid3x3,
+  Info,
 } from "lucide-react";
 
 interface ProjectItemsModalProps {
@@ -83,6 +87,24 @@ export const ProjectItemsModal = ({
       return item.blurbDe;
     }
     return item.blurb || '';
+  };
+  
+  const getItemPhaseName = (item: ProjectItem): string => {
+    if (language === 'de' && item.phaseDe) {
+      return item.phaseDe;
+    }
+    return getPhaseName(item.phase);
+  };
+  
+  // Helper function to get phase name translation when we only have the phase string
+  const getPhaseNameTranslated = (phase: string): string => {
+    if (phase === 'all') return phase;
+    // Find first item with this phase to get translation
+    const itemWithPhase = projectCost.items.find(item => item.phase === phase);
+    if (itemWithPhase) {
+      return getItemPhaseName(itemWithPhase);
+    }
+    return getPhaseName(phase);
   };
   const [showCartDrawer, setShowCartDrawer] = useState(false);
   const location = useLocation();
@@ -322,13 +344,13 @@ export const ProjectItemsModal = ({
           {item.qtyFunded > 0 && (
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-gray-500"></span>
-              <span>{item.qtyFunded} bereits finanziert</span>
+              <span>{item.qtyFunded} {t("projectItems.funded")}</span>
             </div>
           )}
           {cartQuantity > 0 && (
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-primary"></span>
-              <span>{cartQuantity} im Warenkorb</span>
+              <span>{cartQuantity} {t("projectItems.inCart")}</span>
             </div>
           )}
         </div>
@@ -433,26 +455,71 @@ export const ProjectItemsModal = ({
   const getPhaseIcon = (phase: string) => {
     const phaseLower = phase.toLowerCase();
     
-    if (phaseLower.includes('outer') || phaseLower.includes('walls') || phaseLower.includes('wall') || phaseLower.includes('floor') || phaseLower.includes('flooring')) {
+    // Security - Sicherheitsmaßnahmen (check first as it's a single word)
+    if (phaseLower.includes('security')) {
+      return <Shield className="w-8 h-8 text-primary" />;
+    }
+    
+    // Outer walls & flooring - Äußere Wände & Boden
+    if ((phaseLower.includes('outer') && phaseLower.includes('walls')) || 
+        (phaseLower.includes('outer') && phaseLower.includes('floor')) ||
+        (phaseLower.includes('walls') && phaseLower.includes('flooring'))) {
+      return <BrickWall className="w-8 h-8 text-primary" />;
+    }
+    
+    // Foundation sealing - Fundamentabdichtung
+    if (phaseLower.includes('foundation') && phaseLower.includes('sealing')) {
+      return <Layers className="w-8 h-8 text-primary" />;
+    }
+    
+    // Water system - Wassersystem
+    if (phaseLower.includes('water') && phaseLower.includes('system')) {
+      return <Droplets className="w-8 h-8 text-primary" />;
+    }
+    
+    // Septic & soak pit - Klärgrube & Sickergrube (check before water fallback)
+    if (phaseLower.includes('septic') || phaseLower.includes('soak')) {
+      return <Droplets className="w-8 h-8 text-primary" />;
+    }
+    
+    // Interior & furniture - Inneneinrichtung (check before interior walls)
+    if (phaseLower.includes('interior') && phaseLower.includes('furniture')) {
+      return <Sofa className="w-8 h-8 text-primary" />;
+    }
+    
+    // Interior walls & finishing - Innenwände & Außendekoration
+    if (phaseLower.includes('interior') && phaseLower.includes('walls') && phaseLower.includes('finishing')) {
+      return <Paintbrush className="w-8 h-8 text-primary" />;
+    }
+    
+    // Electricity & lighting
+    if (phaseLower.includes('electricity') && phaseLower.includes('lighting')) {
+      return <Zap className="w-8 h-8 text-primary" />;
+    }
+    
+    // Bathroom & sanitary
+    if (phaseLower.includes('bathroom') && phaseLower.includes('sanitary')) {
+      return <Toilet className="w-8 h-8 text-primary" />;
+    }
+    
+    // Fallback: Check for partial matches (for backwards compatibility)
+    if (phaseLower.includes('outer') || (phaseLower.includes('walls') && phaseLower.includes('floor'))) {
       return <BrickWall className="w-8 h-8 text-primary" />;
     }
     if (phaseLower.includes('foundation') || phaseLower.includes('sealing')) {
-      return <Wrench className="w-8 h-8 text-primary" />;
+      return <Layers className="w-8 h-8 text-primary" />;
     }
-    if (phaseLower.includes('water') || phaseLower.includes('system')) {
+    if (phaseLower.includes('water')) {
       return <Droplets className="w-8 h-8 text-primary" />;
     }
-    if (phaseLower.includes('interior') || phaseLower.includes('bedroom')) {
-      return <Bed className="w-8 h-8 text-primary" />;
+    if (phaseLower.includes('interior') && phaseLower.includes('finishing')) {
+      return <Paintbrush className="w-8 h-8 text-primary" />;
     }
     if (phaseLower.includes('electricity') || phaseLower.includes('lighting')) {
       return <Zap className="w-8 h-8 text-primary" />;
     }
     if (phaseLower.includes('bathroom') || phaseLower.includes('sanitary')) {
       return <Toilet className="w-8 h-8 text-primary" />;
-    }
-    if (phaseLower.includes('painting') || phaseLower.includes('finishing') || phaseLower.includes('paint')) {
-      return <Paintbrush className="w-8 h-8 text-primary" />;
     }
     
     return <Package className="w-8 h-8 text-primary" />;
@@ -482,7 +549,7 @@ export const ProjectItemsModal = ({
       id: `item-${item.itemId}`,
       type: 'item',
       name: getItemDisplayName(item),
-      description: getItemBlurb(item) || `${getItemCategory(item)} - ${getPhaseName(item.phase)}`,
+      description: getItemBlurb(item) || `${getItemCategory(item)} - ${getItemPhaseName(item)}`,
       unitPrice: item.unitCostEUR,
       category: getItemCategory(item),
       phase: item.phase,
@@ -495,10 +562,10 @@ export const ProjectItemsModal = ({
     addItem({
       id: `phase-${phaseGroup.phase}`,
       type: 'phase',
-      name: `${getPhaseName(phaseGroup.phase)} - ${projectCost.projectName}`,
-      description: `Komplette Bauphase mit ${phaseGroup.items.length} Items`,
+      name: `${getPhaseNameTranslated(phaseGroup.phase)} - ${projectCost.projectName}`,
+      description: t("projectItems.completePhase").replace("{count}", phaseGroup.items.length.toString()),
       unitPrice: phaseGroup.budget,
-      category: 'Bauphase',
+      category: t("projectItems.phase"),
       phase: phaseGroup.phase,
       projectName: projectCost.projectName,
     });
@@ -731,7 +798,7 @@ export const ProjectItemsModal = ({
               {formatCurrency(item.unitCostEUR)}
             </div>
             <div className="text-xs text-gray-500">
-              pro {item.unit}
+              {t("projectItems.perUnit").replace("{unit}", item.unit)}
             </div>
           </div>
 
@@ -754,7 +821,7 @@ export const ProjectItemsModal = ({
           <div className="mt-auto pt-2 border-t">
             <div className="flex items-center justify-between">
               <span className="text-xs text-gray-600">
-                Im Warenkorb: <span className="font-semibold">{cartQuantity}</span>
+                {t("projectItems.inCartLabel")} <span className="font-semibold">{cartQuantity}</span>
               </span>
               <div className="flex items-center gap-1">
                 <Button
@@ -822,10 +889,24 @@ export const ProjectItemsModal = ({
                       <div className="w-4 h-4 bg-gray-100 rounded flex items-center justify-center">
                         {getPhaseIcon(selectedPhase)}
                       </div>
-                      <span className="text-sm text-gray-600 whitespace-nowrap">{getPhaseName(selectedPhase)}</span>
+                      <span className="text-sm text-gray-600 whitespace-nowrap">{getPhaseNameTranslated(selectedPhase)}</span>
                     </div>
                   </>
                 )}
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    className="max-w-xs z-[9999]" 
+                    side="top"
+                    sideOffset={5}
+                  >
+                    <p className="text-sm leading-relaxed">
+                      {t("donation.itemFlexibility.warning")}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </DialogTitle>
             {viewMode === 'details' && (
@@ -836,7 +917,7 @@ export const ProjectItemsModal = ({
                 className="flex items-center gap-1.5 h-8 flex-shrink-0"
               >
                 <ChevronRight className="w-3.5 h-3.5 rotate-180" />
-                <span className="text-xs">Zurück</span>
+                <span className="text-xs">{t("projectItems.back")}</span>
               </Button>
             )}
           </div>
@@ -875,7 +956,7 @@ export const ProjectItemsModal = ({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-semibold uppercase tracking-wide text-orange-600">Nächstes wichtiges Item</span>
+                          <span className="text-xs font-semibold uppercase tracking-wide text-orange-600">{t("projectItems.nextImportant")}</span>
                         </div>
                         <h4 className="font-semibold text-gray-900 text-sm truncate">{getItemDisplayName(nextImportantItem)}</h4>
                         <div className="flex items-center gap-3 mt-1 flex-wrap">
@@ -883,7 +964,7 @@ export const ProjectItemsModal = ({
                             <span className="text-gray-600">{nextImportantItem.qtyFunded + getItemCartQuantity(nextImportantItem.itemId)}</span>
                             <span className="text-gray-400">/</span>
                             <span className="text-gray-600">{nextImportantItem.qtyNeededTotal}</span>
-                            <span className="text-gray-500 ml-1">• noch benötigt: {nextImportantItem.qtyNeededTotal - nextImportantItem.qtyFunded - getItemCartQuantity(nextImportantItem.itemId)}</span>
+                            <span className="text-gray-500 ml-1">• {t("projectItems.stillNeeded")} {nextImportantItem.qtyNeededTotal - nextImportantItem.qtyFunded - getItemCartQuantity(nextImportantItem.itemId)}</span>
                           </div>
                           <span className="text-xs font-semibold text-primary">
                             {formatCurrency(nextImportantItem.unitCostEUR)} / {nextImportantItem.unit}
@@ -903,7 +984,7 @@ export const ProjectItemsModal = ({
                         className="flex-shrink-0"
                       >
                         <ChevronRight className="w-4 h-4 mr-1" />
-                        Anzeigen
+                        {t("projectItems.view")}
                       </Button>
                     </div>
                   </Card>
@@ -927,9 +1008,9 @@ export const ProjectItemsModal = ({
                       {/* Phase Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-semibold text-gray-900 text-base">{getPhaseName(phaseGroup.phase)}</h3>
+                          <h3 className="font-semibold text-gray-900 text-base">{getPhaseNameTranslated(phaseGroup.phase)}</h3>
                           <Badge variant="outline" className="text-xs px-1.5 py-0.5">
-                            {phaseGroup.items.length} Items
+                            {phaseGroup.items.length} {t("projectItems.items")}
                           </Badge>
                         </div>
                         
@@ -961,13 +1042,13 @@ export const ProjectItemsModal = ({
                                     {phaseGroup.spent > 0 && (
                                       <div className="flex items-center gap-2">
                                         <span className="w-3 h-3 rounded-full bg-gray-500"></span>
-                                        <span>{formatCurrency(phaseGroup.spent)} bereits finanziert</span>
+                                        <span>{formatCurrency(phaseGroup.spent)} {t("projectItems.funded")}</span>
                                       </div>
                                     )}
                                     {phaseGroup.cartValue > 0 && (
                                       <div className="flex items-center gap-2">
                                         <span className="w-3 h-3 rounded-full bg-primary"></span>
-                                        <span>{formatCurrency(phaseGroup.cartValue)} im Warenkorb</span>
+                                        <span>{formatCurrency(phaseGroup.cartValue)} {t("projectItems.inCart")}</span>
                                       </div>
                                     )}
                                   </div>
@@ -987,10 +1068,10 @@ export const ProjectItemsModal = ({
                         {/* Budget Info */}
                         <div className="flex items-center justify-between text-xs mb-3">
                           <div className="text-gray-600">
-                            <span className="font-medium">Bezahlt:</span> {formatCurrency(phaseGroup.spent)}
+                            <span className="font-medium">{t("projectItems.paid")}:</span> {formatCurrency(phaseGroup.spent)}
                           </div>
                           <div className="text-orange-600 font-semibold">
-                            Offen: {formatCurrency(phaseGroup.budget - phaseGroup.spent - phaseGroup.cartValue)}
+                            {t("projectItems.pending")}: {formatCurrency(phaseGroup.budget - phaseGroup.spent - phaseGroup.cartValue)}
                           </div>
                         </div>
                       </div>
@@ -1018,12 +1099,12 @@ export const ProjectItemsModal = ({
                             disabled={phaseGroup.incompleteCount === 0 || phaseGroup.allOpenItemsInCart}
                           >
                             <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
-                            Alle offenen Items hinzufügen
+                            {t("projectItems.addAllOpen")}
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-xs">
                           <p className="text-sm">
-                            Fügt alle {phaseGroup.unfundedCount} noch nicht finanzierten Items dieser Phase zum Warenkorb hinzu
+                            {t("projectItems.addAllOpenTooltip").replace("{count}", phaseGroup.unfundedCount.toString())}
                           </p>
                         </TooltipContent>
                       </Tooltip>
@@ -1038,7 +1119,7 @@ export const ProjectItemsModal = ({
                         className="flex-1 text-xs font-medium"
                       >
                         <ChevronRight className="w-3.5 h-3.5 mr-1.5" />
-                        Details
+                        {t("projectItems.details")}
                       </Button>
                     </div>
                    </Card>
@@ -1053,7 +1134,9 @@ export const ProjectItemsModal = ({
                 <div className="flex items-center justify-between gap-2">
                   {/* Item Count */}
                   <div className="text-xs text-gray-500">
-                    {filteredItems.length} Items {searchQuery && `• gefiltert`}
+                    {searchQuery 
+                      ? t("projectItems.itemsFiltered").replace("{count}", filteredItems.length.toString())
+                      : `${filteredItems.length} ${t("projectItems.items")}`}
                   </div>
 
                   {/* Filter Toggle & View Style */}
@@ -1095,7 +1178,7 @@ export const ProjectItemsModal = ({
                     <div className="relative flex-1 min-w-[180px]">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                       <Input
-                        placeholder="Durchsuchen..."
+                        placeholder={t("projectItems.search")}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-8 h-8 text-sm"
@@ -1107,10 +1190,10 @@ export const ProjectItemsModal = ({
                       <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                         <SelectTrigger className="w-[130px] h-8 text-xs">
                           <Filter className="w-3 h-3 mr-1.5" />
-                          <SelectValue placeholder="Kategorie" />
+                          <SelectValue placeholder={t("projectItems.category")} />
                         </SelectTrigger>
                         <SelectContent className="z-[70]">
-                          <SelectItem value="all">Alle Kategorien</SelectItem>
+                          <SelectItem value="all">{t("projectItems.allCategories")}</SelectItem>
                           {categories.map(cat => (
                             <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                           ))}
@@ -1125,10 +1208,10 @@ export const ProjectItemsModal = ({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="z-[70]">
-                        <SelectItem value="remaining">Priorität</SelectItem>
-                        <SelectItem value="name">Name</SelectItem>
-                        <SelectItem value="price">Preis</SelectItem>
-                        <SelectItem value="progress">Fortschritt</SelectItem>
+                        <SelectItem value="remaining">{t("projectItems.sort.priority")}</SelectItem>
+                        <SelectItem value="name">{t("projectItems.sort.name")}</SelectItem>
+                        <SelectItem value="price">{t("projectItems.sort.price")}</SelectItem>
+                        <SelectItem value="progress">{t("projectItems.sort.progress")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1145,7 +1228,7 @@ export const ProjectItemsModal = ({
                     <div className="flex items-center gap-1.5">
                       {expandedSections.funded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
                       <CheckCircle className="w-3.5 h-3.5" />
-                      <span>Vollständig finanziert</span>
+                      <span>{t("projectItems.fullyFunded")}</span>
                       <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0">{fundedItems.length}</Badge>
                     </div>
                   </button>
@@ -1171,8 +1254,8 @@ export const ProjectItemsModal = ({
               {filteredItems.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
                   <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p>Keine Items gefunden</p>
-                  <p className="text-sm">Versuchen Sie andere Suchbegriffe oder Filter</p>
+                  <p>{t("projectItems.noItemsFound")}</p>
+                  <p className="text-sm">{t("projectItems.tryOtherFilters")}</p>
                 </div>
               )}
             </div>
@@ -1187,7 +1270,9 @@ export const ProjectItemsModal = ({
         <div className="grid grid-cols-3 items-center pt-4 pb-6 sm:pb-8 border-t px-4 sm:px-6 bg-white flex-shrink-0">
           {/* Left: Item Count */}
           <div className="text-sm text-muted-foreground">
-            {viewMode === 'overview' ? `${projectCost.totalItems} Items insgesamt` : `${filteredItems.length} von ${projectCost.totalItems} Items angezeigt`}
+            {viewMode === 'overview' 
+              ? t("projectItems.itemsTotal").replace("{count}", projectCost.totalItems.toString())
+              : t("projectItems.itemsShown").replace("{shown}", filteredItems.length.toString()).replace("{total}", projectCost.totalItems.toString())}
           </div>
           
           {/* Center: Budget Summary - always centered */}
@@ -1199,7 +1284,7 @@ export const ProjectItemsModal = ({
                   : formatCurrency(filteredItems.reduce((sum, item) => sum + (item.fundedCostEUR || 0), 0))
                 }
               </div>
-              <div className="text-xs text-gray-600">Bezahlt</div>
+              <div className="text-xs text-gray-600">{t("projectItems.paid")}</div>
             </div>
             <div className="text-center">
               <div className="text-sm font-bold text-orange-600">
@@ -1208,7 +1293,7 @@ export const ProjectItemsModal = ({
                   : formatCurrency(filteredItems.reduce((sum, item) => sum + (item.totalCostEUR || 0), 0) - filteredItems.reduce((sum, item) => sum + (item.fundedCostEUR || 0), 0))
                 }
               </div>
-              <div className="text-xs text-gray-600">Ausstehend</div>
+              <div className="text-xs text-gray-600">{t("projectItems.pending")}</div>
             </div>
             <div className="text-center">
               <div className="text-sm font-bold text-primary">
@@ -1219,7 +1304,7 @@ export const ProjectItemsModal = ({
                     : '0.0'
                 }%
               </div>
-              <div className="text-xs text-gray-600">Fortschritt</div>
+              <div className="text-xs text-gray-600">{t("projectItems.progress")}</div>
             </div>
           </div>
           
@@ -1233,7 +1318,7 @@ export const ProjectItemsModal = ({
                   className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white"
                 >
                   <ShoppingCart className="w-4 h-4" />
-                  <span>Warenkorb</span>
+                  <span>{t("projectItems.cart")}</span>
                   <span className="font-semibold">
                     {formatCurrency(cartState.totalAmount)}
                   </span>
@@ -1245,7 +1330,7 @@ export const ProjectItemsModal = ({
                       variant="outline"
                       className="flex items-center gap-2 bg-white hover:bg-gray-50 border-gray-300"
                     >
-                      Jetzt spenden
+                      {t("projectItems.donateNow")}
                       <ArrowRight className="w-4 h-4" />
                     </Button>
                   </Link>
