@@ -490,7 +490,15 @@ export const ProjectItemsModal = ({
       fundedCount: phaseItems.filter(item => item.purchased).length,
       partiallyFundedCount: phaseItems.filter(item => !item.purchased && item.qtyFunded > 0).length,
       unfundedCount: phaseItems.filter(item => !item.purchased && item.qtyFunded === 0).length,
-      incompleteCount: phaseItems.filter(item => !item.purchased && item.qtyFunded < item.qtyNeededTotal).length
+      incompleteCount: phaseItems.filter(item => !item.purchased && item.qtyFunded < item.qtyNeededTotal).length,
+      // Check if all open items are already fully in cart
+      allOpenItemsInCart: phaseItems
+        .filter(item => !item.purchased && item.qtyFunded < item.qtyNeededTotal)
+        .every(item => {
+          const cartQuantity = getItemCartQuantity(item.itemId);
+          const remainingNeeded = item.qtyNeededTotal - item.qtyFunded;
+          return cartQuantity >= remainingNeeded;
+        })
     };
   });
   // Keep phases in original order (as defined in Excel table), don't sort by progress
@@ -510,7 +518,7 @@ export const ProjectItemsModal = ({
           key={item.itemId} 
           data-item-id={item.itemId}
           className={`group flex flex-col sm:flex-row sm:items-center gap-2 px-3 py-2.5 rounded-md transition-all hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${
-            isNextImportant ? 'bg-primary/5 border-l-4 border-l-primary' : ''
+            isNextImportant ? 'bg-orange-50 border-l-4 border-l-orange-500' : ''
           } ${
             isFullyComplete ? 'bg-green-50/50' : 
             cartQuantity > 0 ? 'bg-primary-light/30 border-l-2 border-l-primary' : 
@@ -633,7 +641,7 @@ export const ProjectItemsModal = ({
           key={item.itemId} 
           data-item-id={item.itemId}
           className={`p-3 transition-all hover:shadow-lg flex flex-col h-full ${
-            isNextImportant ? 'ring-2 ring-primary ring-offset-2 bg-primary/5 border-primary' : ''
+            isNextImportant ? 'ring-2 ring-orange-500 ring-offset-2 bg-orange-50 border-orange-500' : ''
           } ${
             isFullyComplete ? 'bg-green-50 border-green-200' : 
             cartQuantity > 0 ? 'bg-primary-light/40 border-primary/40' : 
@@ -815,16 +823,16 @@ export const ProjectItemsModal = ({
               <div className="space-y-4">
                 {/* Next Important Item Highlight */}
                 {nextImportantItem && (
-                  <Card className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/30 border-2">
+                  <Card className="p-4 bg-gradient-to-r from-orange-50 to-orange-50/50 border-orange-300 border-2">
                     <div className="flex items-center gap-3">
                       <div className="flex-shrink-0">
-                        <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-                          <Sparkles className="w-5 h-5 text-primary" />
+                        <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                          <Sparkles className="w-5 h-5 text-orange-600" />
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs font-semibold uppercase tracking-wide text-primary">Nächstes wichtiges Item</span>
+                          <span className="text-xs font-semibold uppercase tracking-wide text-orange-600">Nächstes wichtiges Item</span>
                         </div>
                         <h4 className="font-semibold text-gray-900 text-sm truncate">{nextImportantItem.displayName}</h4>
                         <div className="flex items-center gap-3 mt-1 flex-wrap">
@@ -964,7 +972,7 @@ export const ProjectItemsModal = ({
                               });
                             }}
                             className="flex-1 text-xs font-medium border-orange-200 text-orange-700 hover:bg-orange-50"
-                            disabled={phaseGroup.incompleteCount === 0}
+                            disabled={phaseGroup.incompleteCount === 0 || phaseGroup.allOpenItemsInCart}
                           >
                             <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
                             Alle offenen Items hinzufügen
