@@ -357,13 +357,13 @@ export const CartInline: React.FC<{ basePath?: string; className?: string; onClo
   };
 
   return (
-    <div className={`bg-white border rounded-lg shadow-sm h-full flex flex-col min-h-0 ${className}`}>
+    <div className={`bg-muted/40 h-full flex flex-col min-h-0 ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0 bg-white shadow-sm">
         <div className="flex items-center gap-2">
-          <ShoppingCart className="w-5 h-5 text-primary" />
-          <h2 className="text-lg font-semibold">Warenkorb</h2>
-          <Badge variant="secondary" className="text-xs">
+          <ShoppingCart className="w-4 h-4 text-primary" />
+          <h2 className="text-base font-semibold">Warenkorb</h2>
+          <Badge variant="secondary" className="text-xs h-5 px-1.5">
             {state.totalItems}
           </Badge>
         </div>
@@ -371,14 +371,14 @@ export const CartInline: React.FC<{ basePath?: string; className?: string; onClo
           variant="ghost"
           size="sm"
           onClick={handleClose}
-          className="h-8 w-8 p-0"
+          className="h-7 w-7 p-0 hover:bg-gray-100"
         >
           <X className="w-4 h-4" />
         </Button>
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-muted/30">
         {state.items.length === 0 ? (
           <div className="flex-1 flex items-center justify-center text-center p-6">
             <div>
@@ -402,14 +402,21 @@ export const CartInline: React.FC<{ basePath?: string; className?: string; onClo
             </div>
 
             {/* Footer */}
-            <div className="border-t p-4 flex-shrink-0">
+            <div className="border-t border-border px-4 py-3 space-y-3 flex-shrink-0 bg-white shadow-sm">
               {/* Total */}
               <div className="flex items-center justify-between">
-                <span className="text-lg font-semibold">Gesamtbetrag:</span>
-                <span className="text-xl font-bold text-primary">
+                <span className="text-sm font-medium text-muted-foreground">Gesamtbetrag:</span>
+                <span className="text-lg font-semibold text-primary">
                   {formatCurrency(state.totalAmount)}
                 </span>
               </div>
+              {/* Checkout Button */}
+              <Link to={basePath + "/donation"} onClick={handleClose} className="block">
+                <Button className="w-full" size="lg">
+                  <span>Zur Spende</span>
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
             </div>
           </>
         )}

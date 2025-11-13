@@ -779,10 +779,25 @@ export const ProjectItemsModal = ({
           </div>
         </DialogHeader>
 
+        {/* Cart Drawer - Overlay über Content, starts at header level */}
+        {showCartDrawer && (
+          <>
+            {/* Backdrop */}
+            <div 
+              className="absolute inset-0 bg-black/20 z-40 animate-in fade-in-0 duration-300"
+              onClick={() => setShowCartDrawer(false)}
+            />
+            {/* Drawer - extends over full height of dialog */}
+            <div className="absolute right-0 top-0 bottom-0 w-full sm:w-96 max-w-[90vw] bg-muted/40 border-l-2 border-border shadow-2xl z-50 flex flex-col min-h-0 transform transition-transform duration-300 ease-out translate-x-0">
+              <CartInline basePath="/dev" onClose={() => setShowCartDrawer(false)} className="rounded-none border-0 shadow-none h-full" />
+            </div>
+          </>
+        )}
+
         {/* Content Area */}
         <div className="relative flex-1 min-h-0 overflow-hidden">
           {/* Main Content */}
-          <div className="min-w-0 h-full overflow-y-auto px-4 sm:px-6 pb-4">
+          <div className="min-w-0 h-full overflow-y-auto px-4 sm:px-6 pb-4 relative">
             {viewMode === 'overview' ? (
               /* Phase Overview */
               <div className="space-y-4">
@@ -1098,21 +1113,6 @@ export const ProjectItemsModal = ({
           )}
           </div>
 
-          {/* Cart Drawer - Overlay über Content */}
-          {showCartDrawer && (
-            <>
-              {/* Backdrop */}
-              <div 
-                className="absolute inset-0 bg-black/20 z-40 animate-in fade-in-0 duration-300"
-                onClick={() => setShowCartDrawer(false)}
-              />
-              {/* Drawer */}
-              <div className="absolute right-0 top-0 bottom-0 w-full sm:w-96 max-w-[90vw] bg-white shadow-2xl z-50 flex flex-col min-h-0 animate-in slide-in-from-right duration-300">
-                <CartInline basePath="/dev" onClose={() => setShowCartDrawer(false)} className="rounded-none border-0 shadow-none h-full" />
-              </div>
-            </>
-          )}
-
         </div>
 
         {/* Floating CTA removed - now using footer cart link */}
@@ -1171,16 +1171,18 @@ export const ProjectItemsModal = ({
                     {cartState.totalItems}
                   </Badge>
                 </Button>
-                <Link to="/dev/donation" onClick={() => { closeCart(); setShowCartDrawer(false); }}>
-                  <Button 
-                    size="sm"
-                    variant="outline"
-                    className="flex items-center gap-2 bg-white hover:bg-gray-50 border-gray-300"
-                  >
-                    Jetzt spenden
-                    <ArrowRight className="w-4 h-4" />
-                  </Button>
-                </Link>
+                {showCartDrawer && (
+                  <Link to="/dev/donation" onClick={() => { closeCart(); setShowCartDrawer(false); }}>
+                    <Button 
+                      size="sm"
+                      variant="outline"
+                      className="flex items-center gap-2 bg-white hover:bg-gray-50 border-gray-300"
+                    >
+                      Jetzt spenden
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                )}
               </>
             )}
           </div>
