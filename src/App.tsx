@@ -25,6 +25,7 @@ const AppContent = () => {
   const location = useLocation();
   const isDevRoute = location.pathname.startsWith('/dev');
   const basePath = isDevRoute ? '/dev' : '';
+  const isDonationPage = location.pathname === '/dev/donation' || location.pathname === '/donation';
 
   return (
     <>
@@ -43,7 +44,7 @@ const AppContent = () => {
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <CartSidebar basePath={basePath} />
+      {!isDonationPage && <CartSidebar basePath={basePath} />}
     </>
   );
 };
