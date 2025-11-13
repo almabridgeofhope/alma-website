@@ -22,7 +22,7 @@ const NewsList = ({
   readMoreLabel,
 }: NewsListProps) => {
   return (
-    <section className="pt-8 pb-section bg-muted/30">
+    <section className="pt-section pb-section bg-muted/30">
       <div className="max-w-content mx-auto px-6">
         <div className="mb-12 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">

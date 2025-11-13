@@ -106,12 +106,7 @@ const Article = () => {
                 {t("news.back_to_news")}
               </Button>
             </Link>
-          </div>
-        </section>
 
-        {/* Article Header */}
-        <section className="pb-8 bg-background">
-          <div className="max-w-4xl mx-auto px-6">
             <div className="mb-6">
               <Badge className={getCategoryColor(article.category)}>
                 <Tag className="w-3 h-3 mr-1" />
@@ -137,7 +132,7 @@ const Article = () => {
         </section>
 
         {/* Article Image */}
-        <section className="pb-8 bg-background">
+        <section className="pb-section bg-background">
           <div className="max-w-4xl mx-auto px-6">
             <div className="relative overflow-hidden rounded-lg aspect-video">
               <img 
@@ -393,7 +388,7 @@ const Article = () => {
         </section>
 
         {/* Related Articles */}
-        <section className="pt-8 pb-section bg-muted/30">
+        <section className="pb-section bg-muted/30">
           <div className="max-w-4xl mx-auto px-6">
             <h2 className="text-3xl font-bold text-foreground mb-8 text-center">
               {t("news.related_articles.title")}
@@ -454,7 +449,7 @@ const Article = () => {
         </section>
 
         {/* Back to News Button */}
-        <section className="pt-8 pb-section bg-muted/30">
+        <section className="pb-section bg-muted/30">
           <div className="max-w-4xl mx-auto px-6 text-center">
             <Link 
               to="/dev/news"
