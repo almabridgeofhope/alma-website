@@ -72,7 +72,7 @@ const Navigation = () => {
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               <Button size="sm">
-                Donate
+                {t("nav.donate")}
               </Button>
             </Link>
             
@@ -158,7 +158,7 @@ const Navigation = () => {
               }}
             >
               <Button size="sm" className="w-full">
-                Donate
+                {t("nav.donate")}
               </Button>
             </Link>
             

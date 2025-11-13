@@ -16,6 +16,7 @@ const translations = {
     "nav.about": "About Us",
     "nav.news": "News",
     "nav.contact": "Contact",
+    "nav.donate": "Donate",
     
     // Hero
     "hero.title": "Bridges of Hope Across Continents",
@@ -588,6 +589,7 @@ const translations = {
     "nav.about": "Über uns",
     "nav.news": "Nachrichten",
     "nav.contact": "Kontakt",
+    "nav.donate": "Spenden",
     
     // Hero
     "hero.title": "Brücken der Hoffnung zwischen Kontinenten",
