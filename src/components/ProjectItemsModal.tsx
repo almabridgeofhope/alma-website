@@ -77,6 +77,7 @@ export const ProjectItemsModal = ({
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<'name' | 'price' | 'progress' | 'remaining'>('remaining');
   const [viewStyle, setViewStyle] = useState<'compact' | 'detailed'>('compact');
+  const [filtersExpanded, setFiltersExpanded] = useState(true);
 
   // Handle URL-based navigation using hash fragments
   useEffect(() => {
@@ -172,7 +173,6 @@ export const ProjectItemsModal = ({
     }
   }, [isOpen]);
 
-  const categories = Array.from(new Set(projectCost.items.map(item => item.category)));
   const phases = Array.from(new Set(projectCost.items.map(item => item.phase)));
   
   // Keep selectedPhase in sync with location.hash (overview/details)
@@ -199,6 +199,19 @@ export const ProjectItemsModal = ({
     return matchesPhase && matchesSearch && matchesCategory;
   });
 
+  // Get categories only from items in the current phase
+  const phaseItems = selectedPhase === "all" 
+    ? projectCost.items 
+    : projectCost.items.filter(item => item.phase === selectedPhase);
+  const categories = Array.from(new Set(phaseItems.map(item => item.category).filter(Boolean)));
+
+  const getProgressPercentage = (item: ProjectItem) => {
+    if (item.qtyNeededTotal === 0) return 0;
+    const cartQuantity = getItemCartQuantity(item.itemId);
+    const totalProgress = item.qtyFunded + cartQuantity;
+    return Math.min((totalProgress / item.qtyNeededTotal) * 100, 100);
+  };
+
   // Sort items
   const sortedItems = [...filteredItems].sort((a, b) => {
     const cartQuantityA = getItemCartQuantity(a.itemId);
@@ -210,9 +223,16 @@ export const ProjectItemsModal = ({
       case 'name':
         return a.displayName.localeCompare(b.displayName);
       case 'price':
-        return b.unitCostEUR - a.unitCostEUR;
-      case 'progress':
-        return getProgressPercentage(b) - getProgressPercentage(a);
+        return a.unitCostEUR - b.unitCostEUR; // Günstigste zuerst
+      case 'progress': {
+        const progressA = getProgressPercentage(a);
+        const progressB = getProgressPercentage(b);
+        // Handle NaN or undefined values
+        if (isNaN(progressA) || isNaN(progressB)) {
+          return (isNaN(progressB) ? 0 : progressB) - (isNaN(progressA) ? 0 : progressA);
+        }
+        return progressB - progressA; // Höchster Fortschritt zuerst
+      }
       case 'remaining':
       default:
         // Prioritize unfunded items, then by remaining quantity
@@ -298,13 +318,6 @@ export const ProjectItemsModal = ({
     }
     
     return <Package className="w-8 h-8 text-primary" />;
-  };
-
-  const getProgressPercentage = (item: ProjectItem) => {
-    if (item.qtyNeededTotal === 0) return 0;
-    const cartQuantity = getItemCartQuantity(item.itemId);
-    const totalProgress = item.qtyFunded + cartQuantity;
-    return Math.min((totalProgress / item.qtyNeededTotal) * 100, 100);
   };
 
   const getStatusColor = (item: ProjectItem) => {
@@ -467,24 +480,26 @@ export const ProjectItemsModal = ({
         </div>
       );
     } else {
-      // Detailed view - card layout
+      // Grid view - vertical card layout
       return (
-        <Card key={item.itemId} className={`p-3 transition-all hover:shadow-md ${isNextImportant ? 'ring-2 ring-primary ring-offset-2 bg-primary/5 border-primary' : ''} ${isFullyInCart ? 'bg-green-50 border-green-200' : getStatusColor(item)}`}>
-          <div className="flex items-center gap-3">
-            {/* Status Icon */}
-            <div className="flex-shrink-0">
+        <Card 
+          key={item.itemId} 
+          data-item-id={item.itemId}
+          className={`p-3 transition-all hover:shadow-lg flex flex-col h-full ${isNextImportant ? 'ring-2 ring-primary ring-offset-2 bg-primary/5 border-primary' : ''} ${isFullyInCart ? 'bg-green-50 border-green-200' : getStatusColor(item)}`}
+        >
+          {/* Header with Status Icon and Name */}
+          <div className="flex items-start gap-2 mb-2">
+            <div className="flex-shrink-0 mt-0.5">
               {isFullyInCart ? <CheckCircle className="w-4 h-4 text-green-600" /> : getStatusIcon(item)}
             </div>
-
-            {/* Item Name */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h4 className="font-medium text-gray-900 truncate text-sm">{item.displayName}</h4>
+              <div className="flex items-start gap-1.5 mb-1">
+                <h4 className="font-semibold text-gray-900 text-sm leading-tight">{item.displayName}</h4>
                 {item.blurb && (
                   <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                       <HelpCircle 
-                        className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" 
+                        className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0 mt-0.5" 
                       />
                     </TooltipTrigger>
                     <TooltipContent 
@@ -498,57 +513,63 @@ export const ProjectItemsModal = ({
                 )}
               </div>
               {item.category && (
-                <Badge variant="outline" className="text-xs px-1.5 py-0">
+                <Badge variant="outline" className="text-xs px-1.5 py-0.5 mt-0.5">
                   {item.category}
                 </Badge>
               )}
             </div>
+          </div>
 
-            {/* Progress */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="text-xs text-gray-600">
-                {item.qtyFunded + cartQuantity}/{item.qtyNeededTotal}
-              </div>
-              <div className="w-16">
-                <Progress value={getProgressPercentage(item)} className="h-2" />
-              </div>
-              <div className="text-xs font-medium w-8 text-right">
-                {getProgressPercentage(item).toFixed(0)}%
-              </div>
+          {/* Price */}
+          <div className="mb-2">
+            <div className="text-base font-bold text-gray-900">
+              {formatCurrency(item.unitCostEUR)}
             </div>
-
-            {/* Price */}
-            <div className="text-right flex-shrink-0">
-              <div className="text-sm font-semibold text-gray-900">
-                {formatCurrency(item.unitCostEUR)} / {item.unit}
-              </div>
+            <div className="text-xs text-gray-500">
+              pro {item.unit}
             </div>
+          </div>
 
-            {/* Cart Controls */}
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => removeItemPiece(item.itemId)}
-                disabled={cartQuantity === 0}
-                className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-50"
-              >
-                <Minus className="w-3.5 h-3.5" />
-              </Button>
-              
-              <span className="text-xs font-medium w-6 text-center">
-                {cartQuantity}
+          {/* Progress */}
+          <div className="mb-2">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-gray-600">
+                {item.qtyFunded + cartQuantity} / {item.qtyNeededTotal}
               </span>
-              
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => addItemPieceWithCartOpen(item)}
-                disabled={remainingPieces === 0}
-                className="h-7 w-7 p-0 disabled:opacity-50"
-              >
-                <Plus className="w-3.5 h-3.5" />
-              </Button>
+              <span className="text-xs font-semibold text-gray-700">
+                {getProgressPercentage(item).toFixed(0)}%
+              </span>
+            </div>
+            <Progress value={getProgressPercentage(item)} className="h-2" />
+          </div>
+
+          {/* Cart Controls */}
+          <div className="mt-auto pt-2 border-t">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-600">
+                Im Warenkorb: <span className="font-semibold">{cartQuantity}</span>
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => removeItemPiece(item.itemId)}
+                  disabled={cartQuantity === 0}
+                  className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-30"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </Button>
+                
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => addItemPieceWithCartOpen(item)}
+                  disabled={remainingPieces === 0}
+                  className="h-7 w-7 p-0 disabled:opacity-30"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </Button>
+              </div>
             </div>
           </div>
         </Card>
@@ -567,21 +588,34 @@ export const ProjectItemsModal = ({
           }
         }}
       >
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center gap-2 text-xl">
-              <Package className="w-6 h-6 text-primary" />
-              {projectCost.projectName} - Projekt Details
+        <DialogHeader className="pb-2">
+          <div className="flex items-center justify-between gap-2">
+            <DialogTitle className="flex items-center gap-2 text-lg flex-1 min-w-0">
+              <Package className="w-5 h-5 text-primary flex-shrink-0" />
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <span className="truncate">{projectCost.projectName}</span>
+                {viewMode === 'details' && selectedPhase !== 'all' && (
+                  <>
+                    <span className="text-gray-400">•</span>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <div className="w-4 h-4 bg-gray-100 rounded flex items-center justify-center">
+                        {getPhaseIcon(selectedPhase)}
+                      </div>
+                      <span className="text-sm text-gray-600 whitespace-nowrap">{getPhaseName(selectedPhase)}</span>
+                    </div>
+                  </>
+                )}
+              </div>
             </DialogTitle>
             {viewMode === 'details' && (
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={navigateToOverview}
-                className="flex items-center gap-2 mr-4"
+                className="flex items-center gap-1.5 h-8 flex-shrink-0"
               >
-                <ChevronRight className="w-4 h-4 rotate-180" />
-                Zurück zur Übersicht
+                <ChevronRight className="w-3.5 h-3.5 rotate-180" />
+                <span className="text-xs">Zurück</span>
               </Button>
             )}
           </div>
@@ -590,7 +624,7 @@ export const ProjectItemsModal = ({
         {/* Content Area - optional inline cart at md+ */}
         <div className={`grid gap-4 flex-1 min-h-0 ${showInlineCart ? 'md:grid-cols-[2fr_1fr]' : 'grid-cols-1'}`}>
           {/* Left: Modal content */}
-          <div className="min-w-0 h-full overflow-y-auto pr-2">
+          <div className="min-w-0 h-full overflow-y-auto pr-2 pb-4">
             {viewMode === 'overview' ? (
               /* Phase Overview */
               <div className="space-y-4">
@@ -726,88 +760,92 @@ export const ProjectItemsModal = ({
               </div>
             ) : (
               /* Details View */
-              <div className="space-y-4">
-              {/* Phase Info & Controls */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                      {getPhaseIcon(selectedPhase)}
+              <div className="space-y-2">
+              {/* Compact Filter Bar */}
+              <div className="sticky top-0 z-20 bg-white border-b pb-2 -mx-2 px-2">
+                <div className="flex items-center justify-between gap-2">
+                  {/* Item Count */}
+                  <div className="text-xs text-gray-500">
+                    {filteredItems.length} Items {searchQuery && `• gefiltert`}
+                  </div>
+
+                  {/* Filter Toggle & View Style */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <div className="flex items-center gap-1 border rounded-md p-0.5">
+                      <Button
+                        size="sm"
+                        variant={viewStyle === 'compact' ? 'default' : 'ghost'}
+                        onClick={() => setViewStyle('compact')}
+                        className="h-7 px-2"
+                      >
+                        <List className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={viewStyle === 'detailed' ? 'default' : 'ghost'}
+                        onClick={() => setViewStyle('detailed')}
+                        className="h-7 px-2"
+                      >
+                        <Grid3x3 className="w-3.5 h-3.5" />
+                      </Button>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">
-                        {getPhaseName(selectedPhase)}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {filteredItems.length} Items {searchQuery && `(gefiltert)`}
-                      </p>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setFiltersExpanded(!filtersExpanded)}
+                      className="h-7 px-2"
+                    >
+                      <Filter className="w-3.5 h-3.5" />
+                      {filtersExpanded ? <ChevronDown className="w-3.5 h-3.5 ml-1" /> : <ChevronRight className="w-3.5 h-3.5 ml-1" />}
+                    </Button>
                   </div>
                 </div>
 
-                {/* Search & Filter Bar */}
-                <div className="flex flex-wrap items-center gap-2 p-3 bg-white border rounded-lg">
-                  {/* Search */}
-                  <div className="relative flex-1 min-w-[200px]">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input
-                      placeholder="Items durchsuchen..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 h-9"
-                    />
-                  </div>
+                {/* Collapsible Search & Filter Bar */}
+                {filtersExpanded && (
+                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
+                    {/* Search */}
+                    <div className="relative flex-1 min-w-[180px]">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                      <Input
+                        placeholder="Durchsuchen..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-8 h-8 text-sm"
+                      />
+                    </div>
 
-                  {/* Category Filter */}
-                  {categories.length > 0 && (
-                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                      <SelectTrigger className="w-[140px] h-9">
-                        <Filter className="w-3.5 h-3.5 mr-2" />
-                        <SelectValue placeholder="Kategorie" />
+                    {/* Category Filter */}
+                    {categories.length > 0 && (
+                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                        <SelectTrigger className="w-[130px] h-8 text-xs">
+                          <Filter className="w-3 h-3 mr-1.5" />
+                          <SelectValue placeholder="Kategorie" />
+                        </SelectTrigger>
+                        <SelectContent className="z-[70]">
+                          <SelectItem value="all">Alle Kategorien</SelectItem>
+                          {categories.map(cat => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+
+                    {/* Sort */}
+                    <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+                      <SelectTrigger className="w-[120px] h-8 text-xs">
+                        <ArrowUpDown className="w-3 h-3 mr-1.5" />
+                        <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Alle Kategorien</SelectItem>
-                        {categories.map(cat => (
-                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                        ))}
+                      <SelectContent className="z-[70]">
+                        <SelectItem value="remaining">Priorität</SelectItem>
+                        <SelectItem value="name">Name</SelectItem>
+                        <SelectItem value="price">Preis</SelectItem>
+                        <SelectItem value="progress">Fortschritt</SelectItem>
                       </SelectContent>
                     </Select>
-                  )}
-
-                  {/* Sort */}
-                  <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
-                    <SelectTrigger className="w-[140px] h-9">
-                      <ArrowUpDown className="w-3.5 h-3.5 mr-2" />
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="remaining">Priorität</SelectItem>
-                      <SelectItem value="name">Name</SelectItem>
-                      <SelectItem value="price">Preis</SelectItem>
-                      <SelectItem value="progress">Fortschritt</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  {/* View Style Toggle */}
-                  <div className="flex items-center gap-1 border rounded-md p-0.5">
-                    <Button
-                      size="sm"
-                      variant={viewStyle === 'compact' ? 'default' : 'ghost'}
-                      onClick={() => setViewStyle('compact')}
-                      className="h-8 px-2"
-                    >
-                      <List className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={viewStyle === 'detailed' ? 'default' : 'ghost'}
-                      onClick={() => setViewStyle('detailed')}
-                      className="h-8 px-2"
-                    >
-                      <Grid3x3 className="w-4 h-4" />
-                    </Button>
                   </div>
-                </div>
+                )}
               </div>
               
               {/* Funded Items */}
@@ -815,17 +853,17 @@ export const ProjectItemsModal = ({
                 <div>
                   <button
                     onClick={() => toggleSection('funded')}
-                    className="sticky top-0 z-10 w-full text-left text-sm font-semibold text-green-700 mb-2 flex items-center justify-between hover:bg-green-50 p-2.5 rounded-md transition-colors bg-green-50/80 backdrop-blur-sm border border-green-200"
+                    className="sticky top-[60px] z-10 w-full text-left text-xs font-semibold text-green-700 mb-1.5 flex items-center justify-between hover:bg-green-50 px-2 py-1.5 rounded transition-colors bg-green-50/80 backdrop-blur-sm border border-green-200"
                   >
-                    <div className="flex items-center gap-2">
-                      {expandedSections.funded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                      <CheckCircle className="w-4 h-4" />
+                    <div className="flex items-center gap-1.5">
+                      {expandedSections.funded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                      <CheckCircle className="w-3.5 h-3.5" />
                       <span>Vollständig finanziert</span>
-                      <Badge variant="secondary" className="ml-2 text-xs">{fundedItems.length}</Badge>
+                      <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0">{fundedItems.length}</Badge>
                     </div>
                   </button>
                   {expandedSections.funded && (
-                    <div className={viewStyle === 'compact' ? 'space-y-0 bg-white border rounded-md overflow-hidden' : 'space-y-2 ml-1'}>
+                    <div className={viewStyle === 'compact' ? 'space-y-0 bg-white border rounded-md overflow-hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 pl-1 pb-2'}>
                       {fundedItems.map(item => renderItemCard(item, false))}
                     </div>
                   )}
@@ -837,17 +875,17 @@ export const ProjectItemsModal = ({
                 <div>
                   <button
                     onClick={() => toggleSection('partiallyFunded')}
-                    className="sticky top-0 z-10 w-full text-left text-sm font-semibold text-orange-700 mb-2 flex items-center justify-between hover:bg-orange-50 p-2.5 rounded-md transition-colors bg-orange-50/80 backdrop-blur-sm border border-orange-200"
+                    className="sticky top-[60px] z-10 w-full text-left text-xs font-semibold text-orange-700 mb-1.5 flex items-center justify-between hover:bg-orange-50 px-2 py-1.5 rounded transition-colors bg-orange-50/80 backdrop-blur-sm border border-orange-200"
                   >
-                    <div className="flex items-center gap-2">
-                      {expandedSections.partiallyFunded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                      <Circle className="w-4 h-4" />
+                    <div className="flex items-center gap-1.5">
+                      {expandedSections.partiallyFunded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                      <Circle className="w-3.5 h-3.5" />
                       <span>Teilweise finanziert</span>
-                      <Badge variant="secondary" className="ml-2 text-xs">{partiallyFundedItems.length}</Badge>
+                      <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0">{partiallyFundedItems.length}</Badge>
                     </div>
                   </button>
                   {expandedSections.partiallyFunded && (
-                    <div className={viewStyle === 'compact' ? 'space-y-0 bg-white border rounded-md overflow-hidden' : 'space-y-2 ml-1'}>
+                    <div className={viewStyle === 'compact' ? 'space-y-0 bg-white border rounded-md overflow-hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 pl-1 pb-2'}>
                       {partiallyFundedItems.map(item => renderItemCard(item, nextImportantItem?.itemId === item.itemId && unfundedItems.length === 0))}
                     </div>
                   )}
@@ -859,24 +897,20 @@ export const ProjectItemsModal = ({
                 <div>
                   <button
                     onClick={() => toggleSection('unfunded')}
-                    className="sticky top-0 z-10 w-full text-left text-sm font-semibold text-gray-700 mb-2 flex items-center justify-between hover:bg-gray-50 p-2.5 rounded-md transition-colors bg-gray-50/80 backdrop-blur-sm border border-gray-200"
+                    className="sticky top-[60px] z-10 w-full text-left text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-between hover:bg-gray-50 px-2 py-1.5 rounded transition-colors bg-gray-50/80 backdrop-blur-sm border border-gray-200"
                   >
-                    <div className="flex items-center gap-2">
-                      {expandedSections.unfunded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                      <Target className="w-4 h-4" />
+                    <div className="flex items-center gap-1.5">
+                      {expandedSections.unfunded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                      <Target className="w-3.5 h-3.5" />
                       <span>Ausstehend</span>
-                      <Badge variant="secondary" className="ml-2 text-xs">{unfundedItems.length}</Badge>
+                      <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0">{unfundedItems.length}</Badge>
                     </div>
                   </button>
                   {expandedSections.unfunded && (
-                    <div className={viewStyle === 'compact' ? 'space-y-0 bg-white border rounded-md overflow-hidden' : 'space-y-2 ml-1'}>
+                    <div className={viewStyle === 'compact' ? 'space-y-0 bg-white border rounded-md overflow-hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 pl-1 pb-2'}>
                       {unfundedItems.map(item => {
                         const isNextImportant = nextImportantItem?.itemId === item.itemId;
-                        return (
-                          <div key={item.itemId} data-item-id={item.itemId}>
-                            {renderItemCard(item, isNextImportant)}
-                          </div>
-                        );
+                        return renderItemCard(item, isNextImportant);
                       })}
                     </div>
                   )}
