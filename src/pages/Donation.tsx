@@ -14,6 +14,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 // import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import OptimizedImage from "@/components/OptimizedImage";
+import PreloadImage from "@/components/PreloadImage";
 import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
@@ -397,6 +399,7 @@ const Donation = () => {
       <main className="pt-16">
         {/* 1. Hero Section */}
         <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
+          <PreloadImage src={heroImage} />
           <div 
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: `url(${heroImage})` }}
@@ -1098,10 +1101,11 @@ const Donation = () => {
             <div className="max-w-4xl mx-auto">
               <div className="grid md:grid-cols-2 gap-8 items-center">
                 <div>
-                  <img 
+                  <OptimizedImage
                     src={communityImage} 
                     alt="Community in Uganda" 
                     className="w-full h-64 object-cover rounded-lg shadow-lg"
+                    lazy={true}
                   />
                 </div>
                 <div className="text-center md:text-left">

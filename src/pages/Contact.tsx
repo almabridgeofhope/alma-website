@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import PreloadImage from "@/components/PreloadImage";
 import { Mail, MapPin, Instagram, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -118,6 +119,7 @@ const Contact = () => {
       <main className="pt-16">
         {/* Hero Section with Background Image */}
         <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
+          <PreloadImage src={heroImage} />
           <div 
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: `url(${heroImage})` }}

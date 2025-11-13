@@ -10,6 +10,8 @@ import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet, Calendar as
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useProjectCosts } from "@/hooks/useProjectCosts";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import OptimizedImage from "@/components/OptimizedImage";
+import PreloadImage from "@/components/PreloadImage";
 import heroImage from "@/assets/project/header_construction.jpeg";
 import communityHouseImage from "@/assets/project/construction_house.png";
 import waterImage from "@/assets/project/well.jpg";
@@ -350,10 +352,11 @@ const Projects = () => {
           <div className={`grid md:grid-cols-2 gap-0 ${!isEven ? 'md:grid-flow-dense' : ''}`}>
             {/* Image Section */}
             <div className={`relative overflow-hidden ${!isEven ? 'md:col-start-2' : ''}`}>
-              <img 
+              <OptimizedImage
                 src={project.image} 
                 alt={project.title}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                lazy={true}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-800/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="absolute inset-x-0 bottom-0">
@@ -597,6 +600,7 @@ const Projects = () => {
       <main className="pt-16">
         {/* Hero Section */}
         <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
+          <PreloadImage src={heroImage} />
           <div 
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: `url(${heroImage})` }}

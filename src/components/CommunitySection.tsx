@@ -8,6 +8,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import OptimizedImage from "@/components/OptimizedImage";
 import community from "@/assets/community/community_3.png";
 import community1 from "@/assets/community/community.png";
 import community2 from "@/assets/community/community_2.png";
@@ -43,117 +44,117 @@ const CommunitySection = () => {
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <div className="aspect-[4/3] relative">
-                      <img
-                        src={community}
-                        alt="Community"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                    <OptimizedImage
+                      src={community}
+                      alt="Community"
+                      aspectRatio="4/3"
+                      className="w-full h-full object-cover"
+                      lazy={true}
+                    />
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <div className="aspect-[4/3] relative">
-                      <img
-                        src={community1}
-                        alt="Community members"
-                        className="w-full h-full object-cover object-top"
-                      />
-                    </div>
+                    <OptimizedImage
+                      src={community1}
+                      alt="Community members"
+                      aspectRatio="4/3"
+                      className="w-full h-full object-cover object-top"
+                      lazy={true}
+                    />
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <div className="aspect-[4/3] relative">
-                      <img
-                        src={community2}
-                        alt="Community activities"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                    <OptimizedImage
+                      src={community2}
+                      alt="Community activities"
+                      aspectRatio="4/3"
+                      className="w-full h-full object-cover"
+                      lazy={true}
+                    />
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <div className="aspect-[4/3] relative">
-                      <img
-                        src={community5}
-                        alt="Community gathering"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                    <OptimizedImage
+                      src={community5}
+                      alt="Community gathering"
+                      aspectRatio="4/3"
+                      className="w-full h-full object-cover"
+                      lazy={true}
+                    />
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <div className="aspect-[4/3] relative">
-                      <img
-                        src={communityHouse}
-                        alt="Community house"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                    <OptimizedImage
+                      src={communityHouse}
+                      alt="Community house"
+                      aspectRatio="4/3"
+                      className="w-full h-full object-cover"
+                      lazy={true}
+                    />
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <div className="aspect-[4/3] relative">
-                      <img
-                        src={children}
-                        alt="Children"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                    <OptimizedImage
+                      src={children}
+                      alt="Children"
+                      aspectRatio="4/3"
+                      className="w-full h-full object-cover"
+                      lazy={true}
+                    />
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <div className="aspect-[4/3] relative">
-                      <img
-                        src={community4}
-                        alt="Community activities"
-                        className="w-full h-full object-cover object-top"
-                      />
-                    </div>
+                    <OptimizedImage
+                      src={community4}
+                      alt="Community activities"
+                      aspectRatio="4/3"
+                      className="w-full h-full object-cover object-top"
+                      lazy={true}
+                    />
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <div className="aspect-[4/3] relative">
-                      <img
-                        src={house}
-                        alt="Community activities"
-                        className="w-full h-full object-cover object-top"
-                      />
-                    </div>
+                    <OptimizedImage
+                      src={house}
+                      alt="Community activities"
+                      aspectRatio="4/3"
+                      className="w-full h-full object-cover object-top"
+                      lazy={true}
+                    />
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <div className="aspect-[4/3] relative">
-                      <img
-                        src={community6}
-                        alt="Community activities"
-                        className="w-full h-full object-cover object-top"
-                      />
-                    </div>
+                    <OptimizedImage
+                      src={community6}
+                      alt="Community activities"
+                      aspectRatio="4/3"
+                      className="w-full h-full object-cover object-top"
+                      lazy={true}
+                    />
                   </Card>
                 </div>
               </CarouselItem>

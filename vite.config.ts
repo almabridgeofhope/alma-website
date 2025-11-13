@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { imagetools } from "vite-imagetools";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -12,6 +13,18 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    imagetools({
+      defaultDirectives: (url) => {
+        // Automatische Optimierung für alle Bilder
+        if (url.searchParams.has('format')) {
+          return new URLSearchParams();
+        }
+        return new URLSearchParams({
+          format: 'webp',
+          quality: '85',
+        });
+      },
+    }),
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),

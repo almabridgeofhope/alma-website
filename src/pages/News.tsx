@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import NewsList from "@/components/NewsList";
+import PreloadImage from "@/components/PreloadImage";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/project/water.jpg";
@@ -45,6 +46,7 @@ const News = () => {
       <main className="pt-16">
         {/* Hero Section */}
         <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
+          <PreloadImage src={heroImage} />
           <div 
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: `url(${heroImage})` }}

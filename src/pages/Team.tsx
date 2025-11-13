@@ -2,6 +2,8 @@ import { Card } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
+import OptimizedImage from "@/components/OptimizedImage";
+import PreloadImage from "@/components/PreloadImage";
 import heroImage from "@/assets/community/community_5.jpg";
 import phionaImage from "@/assets/team/phiona.png";
 import tonyImage from "@/assets/team/tony.png";
@@ -82,6 +84,7 @@ const Team = () => {
       <main className="pt-16">
         {/* Hero Section with Background Image */}
         <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
+          <PreloadImage src={heroImage} />
           <div 
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: `url(${heroImage})` }}
@@ -134,14 +137,16 @@ const Team = () => {
                 {originImages.map((image, index) => (
                   <div
                     key={index}
-                    className="overflow-hidden rounded-lg shadow-card aspect-[3/2] lg:aspect-[16/9]"
+                    className="overflow-hidden rounded-lg shadow-card"
                   >
-                    <img
+                    <OptimizedImage
                       src={image.src}
                       alt={image.alt}
+                      aspectRatio="3/2"
                       className={["h-full w-full object-cover", image.objectPositionClass]
                         .filter(Boolean)
                         .join(" ")}
+                      lazy={true}
                     />
                   </div>
                 ))}
@@ -164,10 +169,12 @@ const Team = () => {
                   className="group overflow-hidden shadow-card hover:shadow-soft transition-shadow duration-300"
                 >
                   <div className="relative aspect-square overflow-hidden bg-primary-light">
-                    <img 
+                    <OptimizedImage
                       src={member.image} 
                       alt={`${member.name}`}
+                      aspectRatio="1/1"
                       className="w-full h-full object-cover"
+                      lazy={true}
                     />
                     <div className="absolute inset-0 bg-foreground/85 text-white opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 group-focus-visible:opacity-100">
                       <div className="flex h-full w-full flex-col overflow-y-auto px-5 py-6 text-sm leading-relaxed gap-3">
@@ -198,10 +205,12 @@ const Team = () => {
               {teamGermany.map((member, index) => (
                 <Card key={index} className="overflow-hidden shadow-card hover:shadow-soft transition-shadow duration-300">
                   <div className="aspect-square overflow-hidden bg-background">
-                    <img 
+                    <OptimizedImage
                       src={member.image} 
                       alt={`${member.name}`}
+                      aspectRatio="1/1"
                       className="w-full h-full object-cover"
+                      lazy={true}
                     />
                   </div>
                   <div className="p-6">

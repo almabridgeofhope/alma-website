@@ -1,11 +1,15 @@
 import heroImage from "@/assets/nature/land_3.jpg";
 import { useLanguage } from "@/contexts/LanguageContext";
+import PreloadImage from "@/components/PreloadImage";
 
 const HeroSection = () => {
   const { t } = useLanguage();
   
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Preload kritisches Hero-Bild */}
+      <PreloadImage src={heroImage} />
+      
       {/* Background Image */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
