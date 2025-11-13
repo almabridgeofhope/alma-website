@@ -69,9 +69,7 @@ export const ProjectItemsModal = ({
   const [selectedPhase, setSelectedPhase] = useState<string>("all");
   const [viewMode, setViewMode] = useState<'overview' | 'details'>('overview');
   const [expandedSections, setExpandedSections] = useState({
-    funded: false,
-    partiallyFunded: true,
-    unfunded: true
+    funded: false
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -328,7 +326,7 @@ export const ProjectItemsModal = ({
 
   const getStatusIcon = (item: ProjectItem) => {
     if (item.purchased) return <CheckCircle className="w-4 h-4 text-green-600" />;
-    if (item.qtyFunded > 0) return <Circle className="w-4 h-4 text-orange-600" />;
+    // Use same icon for both partially funded and unfunded items
     return <Target className="w-4 h-4 text-gray-500" />;
   };
 
@@ -860,7 +858,7 @@ export const ProjectItemsModal = ({
                 )}
               </div>
               
-              {/* Funded Items */}
+              {/* Funded Items - Collapsed by default */}
               {fundedItems.length > 0 && (
                 <div>
                   <button
@@ -882,50 +880,13 @@ export const ProjectItemsModal = ({
                 </div>
               )}
 
-              {/* Partially Funded Items */}
-              {partiallyFundedItems.length > 0 && (
-                <div>
-                  <button
-                    onClick={() => toggleSection('partiallyFunded')}
-                    className="sticky top-[60px] z-10 w-full text-left text-xs font-semibold text-orange-700 mb-1.5 flex items-center justify-between hover:bg-orange-50 px-4 sm:px-6 py-1.5 rounded transition-colors bg-orange-50/80 backdrop-blur-sm border border-orange-200"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      {expandedSections.partiallyFunded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                      <Circle className="w-3.5 h-3.5" />
-                      <span>Teilweise finanziert</span>
-                      <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0">{partiallyFundedItems.length}</Badge>
-                    </div>
-                  </button>
-                  {expandedSections.partiallyFunded && (
-                    <div className={viewStyle === 'compact' ? 'space-y-0 bg-white border rounded-md overflow-hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:pl-1 pb-2'}>
-                      {partiallyFundedItems.map(item => renderItemCard(item, nextImportantItem?.itemId === item.itemId && unfundedItems.length === 0))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Unfunded Items */}
-              {unfundedItems.length > 0 && (
-                <div>
-                  <button
-                    onClick={() => toggleSection('unfunded')}
-                    className="sticky top-[60px] z-10 w-full text-left text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-between hover:bg-gray-50 px-4 sm:px-6 py-1.5 rounded transition-colors bg-gray-50/80 backdrop-blur-sm border border-gray-200"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      {expandedSections.unfunded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-                      <Target className="w-3.5 h-3.5" />
-                      <span>Ausstehend</span>
-                      <Badge variant="secondary" className="ml-1.5 text-[10px] px-1.5 py-0">{unfundedItems.length}</Badge>
-                    </div>
-                  </button>
-                  {expandedSections.unfunded && (
-                    <div className={viewStyle === 'compact' ? 'space-y-0 bg-white border rounded-md overflow-hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:pl-1 pb-2'}>
-                      {unfundedItems.map(item => {
-                        const isNextImportant = nextImportantItem?.itemId === item.itemId;
-                        return renderItemCard(item, isNextImportant);
-                      })}
-                    </div>
-                  )}
+              {/* Active Items - Combined Partially Funded & Unfunded - No Toggle */}
+              {(partiallyFundedItems.length > 0 || unfundedItems.length > 0) && (
+                <div className={viewStyle === 'compact' ? 'space-y-0 bg-white border rounded-md overflow-hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:pl-1 pb-2'}>
+                  {[...partiallyFundedItems, ...unfundedItems].map(item => {
+                    const isNextImportant = nextImportantItem?.itemId === item.itemId;
+                    return renderItemCard(item, isNextImportant);
+                  })}
                 </div>
               )}
 
