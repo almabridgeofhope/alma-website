@@ -210,6 +210,70 @@ export const ProjectItemsModal = ({
     return Math.min((totalProgress / item.qtyNeededTotal) * 100, 100);
   };
 
+  const getFundedPercentage = (item: ProjectItem) => {
+    if (item.qtyNeededTotal === 0) return 0;
+    return Math.min((item.qtyFunded / item.qtyNeededTotal) * 100, 100);
+  };
+
+  const getCartPercentage = (item: ProjectItem) => {
+    if (item.qtyNeededTotal === 0) return 0;
+    const cartQuantity = getItemCartQuantity(item.itemId);
+    return Math.min((cartQuantity / item.qtyNeededTotal) * 100, 100);
+  };
+
+  // Render multi-segment progress bar
+  const renderProgressBar = (item: ProjectItem, className: string = "h-1.5") => {
+    const fundedPercent = getFundedPercentage(item);
+    const cartPercent = getCartPercentage(item);
+    
+    return (
+      <div className={`relative w-full overflow-hidden rounded-full bg-gray-200 ${className}`}>
+        {/* Funded segment (gray) */}
+        {fundedPercent > 0 && (
+          <div
+            className="absolute left-0 top-0 h-full bg-gray-500 transition-all"
+            style={{ width: `${fundedPercent}%` }}
+          />
+        )}
+        {/* Cart segment (primary color) - positioned after funded */}
+        {cartPercent > 0 && (
+          <div
+            className="absolute top-0 h-full bg-primary transition-all"
+            style={{ left: `${fundedPercent}%`, width: `${cartPercent}%` }}
+          />
+        )}
+      </div>
+    );
+  };
+
+  // Render tooltip content for item details
+  const renderItemTooltip = (item: ProjectItem) => {
+    const cartQuantity = getItemCartQuantity(item.itemId);
+    
+    if (item.qtyFunded === 0 && cartQuantity === 0) {
+      return null;
+    }
+
+    return (
+      <TooltipContent className="z-[9999]" side="top" sideOffset={5}>
+        <div className="text-sm space-y-1">
+          {item.qtyFunded > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-gray-500"></span>
+              <span>{item.qtyFunded} bereits finanziert</span>
+            </div>
+          )}
+          {cartQuantity > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-primary"></span>
+              <span>{cartQuantity} im Warenkorb</span>
+            </div>
+          )}
+        </div>
+      </TooltipContent>
+    );
+  };
+
   // Sort items
   const sortedItems = [...filteredItems].sort((a, b) => {
     const cartQuantityA = getItemCartQuantity(a.itemId);
@@ -393,11 +457,18 @@ export const ProjectItemsModal = ({
     
     if (isCompact) {
       // Compact view - responsive layout
-      return (
+      const tooltipContent = renderItemTooltip(item);
+      const itemContent = (
         <div 
           key={item.itemId} 
           data-item-id={item.itemId}
-          className={`group flex flex-col sm:flex-row sm:items-center gap-2 px-3 py-2.5 rounded-md transition-all hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${isNextImportant ? 'bg-primary/5 border-l-4 border-l-primary' : ''} ${isFullyInCart ? 'bg-green-50/50' : ''}`}
+          className={`group flex flex-col sm:flex-row sm:items-center gap-2 px-3 py-2.5 rounded-md transition-all hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${
+            isNextImportant ? 'bg-primary/5 border-l-4 border-l-primary' : ''
+          } ${
+            isFullyInCart ? 'bg-green-50/50' : 
+            cartQuantity > 0 ? 'bg-primary-light/30 border-l-2 border-l-primary' : 
+            item.qtyFunded > 0 ? 'bg-green-50/20' : ''
+          }`}
         >
           {/* Top Row: Status, Name, Category */}
           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -440,16 +511,20 @@ export const ProjectItemsModal = ({
             {/* Progress - shown on larger screens, hidden on very small mobile */}
             <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 hidden min-[400px]:flex sm:w-20">
               <div className="w-12 sm:w-16">
-                <Progress value={getProgressPercentage(item)} className="h-1.5" />
+                {renderProgressBar(item, "h-1.5")}
               </div>
               <div className="text-xs font-medium text-gray-600 w-6 sm:w-8 text-right">
                 {getProgressPercentage(item).toFixed(0)}%
               </div>
             </div>
 
-            {/* Quantity Info - compact on mobile */}
-            <div className="text-xs text-gray-600 flex-shrink-0 text-right sm:w-14">
-              {item.qtyFunded + cartQuantity}/{item.qtyNeededTotal}
+            {/* Quantity Info - simple gray total */}
+            <div className="text-xs flex-shrink-0 text-right sm:w-auto min-w-[60px]">
+              <div className="flex items-center gap-1 justify-end">
+                <span className="text-gray-600">{item.qtyFunded + cartQuantity}</span>
+                <span className="text-gray-400">/</span>
+                <span className="text-gray-600">{item.qtyNeededTotal}</span>
+              </div>
             </div>
 
             {/* Price - compact on mobile */}
@@ -489,13 +564,35 @@ export const ProjectItemsModal = ({
           </div>
         </div>
       );
+
+      // Wrap with tooltip if there's info to show
+      if (tooltipContent) {
+        return (
+          <Tooltip key={item.itemId} delayDuration={0}>
+            <TooltipTrigger asChild>
+              {itemContent}
+            </TooltipTrigger>
+            {tooltipContent}
+          </Tooltip>
+        );
+      }
+
+      return itemContent;
     } else {
       // Grid view - vertical card layout
-      return (
+      const tooltipContent = renderItemTooltip(item);
+      const cardContent = (
         <Card 
           key={item.itemId} 
           data-item-id={item.itemId}
-          className={`p-3 transition-all hover:shadow-lg flex flex-col h-full ${isNextImportant ? 'ring-2 ring-primary ring-offset-2 bg-primary/5 border-primary' : ''} ${isFullyInCart ? 'bg-green-50 border-green-200' : getStatusColor(item)}`}
+          className={`p-3 transition-all hover:shadow-lg flex flex-col h-full ${
+            isNextImportant ? 'ring-2 ring-primary ring-offset-2 bg-primary/5 border-primary' : ''
+          } ${
+            isFullyInCart ? 'bg-green-50 border-green-200' : 
+            cartQuantity > 0 ? 'bg-primary-light/40 border-primary/40' : 
+            item.qtyFunded > 0 ? 'bg-green-50/30 border-green-200' : 
+            getStatusColor(item)
+          }`}
         >
           {/* Header with Status Icon and Name */}
           <div className="flex items-start gap-2 mb-2">
@@ -543,14 +640,16 @@ export const ProjectItemsModal = ({
           {/* Progress */}
           <div className="mb-2">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-xs text-gray-600">
-                {item.qtyFunded + cartQuantity} / {item.qtyNeededTotal}
-              </span>
+              <div className="flex items-center gap-1 text-xs">
+                <span className="text-gray-600">{item.qtyFunded + cartQuantity}</span>
+                <span className="text-gray-400">/</span>
+                <span className="text-gray-600">{item.qtyNeededTotal}</span>
+              </div>
               <span className="text-xs font-semibold text-gray-700">
                 {getProgressPercentage(item).toFixed(0)}%
               </span>
             </div>
-            <Progress value={getProgressPercentage(item)} className="h-2" />
+            {renderProgressBar(item, "h-2")}
           </div>
 
           {/* Cart Controls */}
@@ -584,6 +683,20 @@ export const ProjectItemsModal = ({
           </div>
         </Card>
       );
+
+      // Wrap with tooltip if there's info to show
+      if (tooltipContent) {
+        return (
+          <Tooltip key={item.itemId} delayDuration={0}>
+            <TooltipTrigger asChild>
+              {cardContent}
+            </TooltipTrigger>
+            {tooltipContent}
+          </Tooltip>
+        );
+      }
+
+      return cardContent;
     }
   };
 
@@ -652,10 +765,13 @@ export const ProjectItemsModal = ({
                           <span className="text-xs font-semibold uppercase tracking-wide text-primary">Nächstes wichtiges Item</span>
                         </div>
                         <h4 className="font-semibold text-gray-900 text-sm truncate">{nextImportantItem.displayName}</h4>
-                        <div className="flex items-center gap-3 mt-1">
-                          <p className="text-xs text-gray-600">
-                            {nextImportantItem.qtyNeededTotal - nextImportantItem.qtyFunded - getItemCartQuantity(nextImportantItem.itemId)} von {nextImportantItem.qtyNeededTotal} noch benötigt
-                          </p>
+                        <div className="flex items-center gap-3 mt-1 flex-wrap">
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <span className="text-gray-600">{nextImportantItem.qtyFunded + getItemCartQuantity(nextImportantItem.itemId)}</span>
+                            <span className="text-gray-400">/</span>
+                            <span className="text-gray-600">{nextImportantItem.qtyNeededTotal}</span>
+                            <span className="text-gray-500 ml-1">• noch benötigt: {nextImportantItem.qtyNeededTotal - nextImportantItem.qtyFunded - getItemCartQuantity(nextImportantItem.itemId)}</span>
+                          </div>
                           <span className="text-xs font-semibold text-primary">
                             {formatCurrency(nextImportantItem.unitCostEUR)} / {nextImportantItem.unit}
                           </span>
@@ -956,10 +1072,9 @@ export const ProjectItemsModal = ({
             {cartState.totalItems > 0 && (
               <>
                 <Button 
-                  variant="outline" 
                   size="sm"
                   onClick={() => setShowInlineCart(!showInlineCart)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white"
                 >
                   <ShoppingCart className="w-4 h-4" />
                   {showInlineCart ? 'Warenkorb schließen' : `Warenkorb (${cartState.totalItems})`}
@@ -967,9 +1082,10 @@ export const ProjectItemsModal = ({
                 <Link to="/dev/donation" onClick={closeCart}>
                   <Button 
                     size="sm"
-                    className="flex items-center gap-2 bg-primary hover:bg-primary/90"
+                    variant="outline"
+                    className="flex items-center gap-2 bg-white hover:bg-gray-50 border-gray-300"
                   >
-                    Zur Spende
+                    Jetzt spenden
                     <ArrowRight className="w-4 h-4" />
                   </Button>
                 </Link>
