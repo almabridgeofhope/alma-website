@@ -452,6 +452,7 @@ export const ProjectItemsModal = ({
   const renderItemCard = (item: ProjectItem, isNextImportant: boolean = false) => {
     const cartQuantity = getItemCartQuantity(item.itemId);
     const isFullyInCart = isItemFullyInCart(item);
+    const isFullyComplete = item.qtyFunded + cartQuantity >= item.qtyNeededTotal;
     const remainingPieces = item.qtyNeededTotal - item.qtyFunded - cartQuantity;
     const isCompact = viewStyle === 'compact';
     
@@ -465,7 +466,7 @@ export const ProjectItemsModal = ({
           className={`group flex flex-col sm:flex-row sm:items-center gap-2 px-3 py-2.5 rounded-md transition-all hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${
             isNextImportant ? 'bg-primary/5 border-l-4 border-l-primary' : ''
           } ${
-            isFullyInCart ? 'bg-green-50/50' : 
+            isFullyComplete ? 'bg-green-50/50' : 
             cartQuantity > 0 ? 'bg-primary-light/30 border-l-2 border-l-primary' : 
             item.qtyFunded > 0 ? 'bg-green-50/20' : ''
           }`}
@@ -474,7 +475,7 @@ export const ProjectItemsModal = ({
           <div className="flex items-center gap-2 flex-1 min-w-0">
             {/* Status Icon */}
             <div className="flex-shrink-0">
-              {isFullyInCart ? <CheckCircle className="w-4 h-4 text-green-600" /> : getStatusIcon(item)}
+              {isFullyComplete ? <CheckCircle className="w-4 h-4 text-green-600" /> : getStatusIcon(item)}
             </div>
 
             {/* Item Name & Category */}
@@ -588,7 +589,7 @@ export const ProjectItemsModal = ({
           className={`p-3 transition-all hover:shadow-lg flex flex-col h-full ${
             isNextImportant ? 'ring-2 ring-primary ring-offset-2 bg-primary/5 border-primary' : ''
           } ${
-            isFullyInCart ? 'bg-green-50 border-green-200' : 
+            isFullyComplete ? 'bg-green-50 border-green-200' : 
             cartQuantity > 0 ? 'bg-primary-light/40 border-primary/40' : 
             item.qtyFunded > 0 ? 'bg-green-50/30 border-green-200' : 
             getStatusColor(item)
@@ -597,7 +598,7 @@ export const ProjectItemsModal = ({
           {/* Header with Status Icon and Name */}
           <div className="flex items-start gap-2 mb-2">
             <div className="flex-shrink-0 mt-0.5">
-              {isFullyInCart ? <CheckCircle className="w-4 h-4 text-green-600" /> : getStatusIcon(item)}
+              {isFullyComplete ? <CheckCircle className="w-4 h-4 text-green-600" /> : getStatusIcon(item)}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start gap-1.5 mb-1">
