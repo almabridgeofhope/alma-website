@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import NewsList from "@/components/NewsList";
 import PreloadImage from "@/components/PreloadImage";
+import NewsletterForm from "@/components/NewsletterForm";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/project/water.jpg";
@@ -11,6 +13,7 @@ import { getNewsArticles, NewsArticle } from "@/data/newsArticles";
 const News = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const [showNewsletterForm, setShowNewsletterForm] = useState(false);
 
   const newsArticles: NewsArticle[] = getNewsArticles(t);
 
@@ -84,9 +87,19 @@ const News = () => {
               <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
                 {t("news.newsletter.subtitle")}
               </p>
-              <Button size="lg">
-                {t("news.newsletter.button")}
-              </Button>
+              {!showNewsletterForm ? (
+                <Button size="lg" onClick={() => setShowNewsletterForm(true)}>
+                  {t("news.newsletter.button")}
+                </Button>
+              ) : (
+                <div className="max-w-md mx-auto">
+                  <NewsletterForm
+                    placeholder={t("newsletter.placeholder")}
+                    buttonLabel={t("newsletter.button")}
+                    source="news-page"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </section>
