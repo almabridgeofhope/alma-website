@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { ProjectItem } from '@/services/clientGoogleSheetsService';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export interface CartItem {
   id: string;
@@ -203,6 +204,36 @@ const ShoppingCartContext = createContext<ShoppingCartContextType | undefined>(u
 
 export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
+  const { language } = useLanguage();
+  
+  // Helper functions to get translated item fields
+  const getItemDisplayName = (item: ProjectItem): string => {
+    if (language === 'de' && item.displayNameDe) {
+      return item.displayNameDe;
+    }
+    return item.displayName;
+  };
+  
+  const getItemCategory = (item: ProjectItem): string => {
+    if (language === 'de' && item.categoryDe) {
+      return item.categoryDe;
+    }
+    return item.category || '';
+  };
+  
+  const getItemBlurb = (item: ProjectItem): string => {
+    if (language === 'de' && item.blurbDe) {
+      return item.blurbDe;
+    }
+    return item.blurb || '';
+  };
+  
+  const getItemPhaseName = (item: ProjectItem): string => {
+    if (language === 'de' && item.phaseDe) {
+      return item.phaseDe;
+    }
+    return item.phase;
+  };
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -296,10 +327,10 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
       addItem({
         id: cartItemId,
         type: 'item',
-        name: item.displayName,
-        description: item.blurb || `${item.category} - ${item.phase}`,
+        name: getItemDisplayName(item),
+        description: getItemBlurb(item) || `${getItemCategory(item)} - ${getItemPhaseName(item)}`,
         unitPrice: item.unitCostEUR,
-        category: item.category,
+        category: getItemCategory(item),
         phase: item.phase,
         imageUrl: item.imageUrl,
         projectName: projectName || '',
@@ -336,10 +367,10 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
       addItem({
         id: cartItemId,
         type: 'item',
-        name: item.displayName,
-        description: item.blurb || `${item.category} - ${item.phase}`,
+        name: getItemDisplayName(item),
+        description: getItemBlurb(item) || `${getItemCategory(item)} - ${getItemPhaseName(item)}`,
         unitPrice: item.unitCostEUR,
-        category: item.category,
+        category: getItemCategory(item),
         phase: item.phase,
         imageUrl: item.imageUrl,
         projectName: projectName || '',

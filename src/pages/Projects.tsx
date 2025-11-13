@@ -118,8 +118,8 @@ const Projects = () => {
   const youngMobilityUrl = "/dev/projects?section=young-mobility";
   const anchorHref = `#${schoolAccessUrl}`;
   const mobilityAnchorHref = `#${youngMobilityUrl}`;
-  const germanTarget = "um Kinder sicher zu Partnerschulen zu bringen";
-  const englishTarget = "School Access Project";
+  const germanTarget = t("projects.mobility.target.de");
+  const englishTarget = t("projects.mobility.target.en");
 
   const handleAnchorClick = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
@@ -167,8 +167,8 @@ const Projects = () => {
   }
 
   const sponsorshipDescription = t("projects.sponsorship.description");
-  const germanMobilityTarget = "Young Mobility Project";
-  const englishMobilityTarget = "Young Mobility Project";
+  const germanMobilityTarget = t("projects.sponsorship.target");
+  const englishMobilityTarget = t("projects.sponsorship.target");
 
   if (language === "de" && sponsorshipDescription.includes(germanMobilityTarget)) {
     const [before, after] = sponsorshipDescription.split(germanMobilityTarget);
@@ -333,11 +333,11 @@ const Projects = () => {
     const displayProgressValue = spentPercentage ?? project.progress;
     const statusProgressLabel = spentPercentage !== null ? `${Math.round(spentPercentage)}%` : `${project.progress}%`;
     const detailedProgressLabel = spentPercentage !== null ? `${spentPercentage.toFixed(1)}%` : statusProgressLabel;
-    const costTitle = language === "de" ? "Projektkosten" : "Project Costs";
-    const fundedLabel = language === "de" ? "Finanziert" : "Funded";
-    const remainingLabel = language === "de" ? "Offen" : "Remaining";
-    const costProgressLabel = language === "de" ? "Kosten-Fortschritt" : "Cost Progress";
-    const detailsLabel = language === "de" ? "Details anzeigen" : "View details";
+    const costTitle = t("projects.cost.title");
+    const fundedLabel = t("projects.cost.funded");
+    const remainingLabel = t("projects.cost.remaining");
+    const costProgressLabel = t("projects.cost.progress");
+    const detailsLabel = t("projects.cost.details");
     
     return (
       <div 
@@ -514,7 +514,7 @@ const Projects = () => {
                         <div className="sm:min-w-[200px]">
                           <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-white">
                             <span className="uppercase tracking-wide text-white/100">
-                              {t("projects.progress_label") ?? t("projects.progress") ?? "Progress"}
+                              {t("projects.progress_label")}
                             </span>
                             <span className="text-white">{statusProgressLabel}</span>
                           </div>
@@ -581,9 +581,7 @@ const Projects = () => {
                 </div>
                 {!projectCost && costsError && (
                   <Card className="p-3 sm:p-4 bg-red-50 border border-red-200 text-sm text-red-600">
-                    {language === "de"
-                      ? `Kosten konnten nicht geladen werden: ${costsError}`
-                      : `Failed to load costs: ${costsError}`}
+                    {t("projects.cost.error").replace("{error}", costsError)}
                   </Card>
                 )}
               </div>

@@ -391,7 +391,7 @@ const Donation = () => {
           currency_code: "EUR",
           value: finalAmount,
         },
-        description: `${donationType === "one-time" ? "One-time" : "Monthly"} donation to Alma Bridge of Hope`,
+        description: `${donationType === "one-time" ? t("donation.form.oneTime") : t("donation.form.monthly")} donation to Alma Bridge of Hope`,
         custom_id: `${donationType}-${Date.now()}`,
       }],
       application_context: {
@@ -630,6 +630,7 @@ const Donation = () => {
                                         onClick={handleSaveGeneralDonation}
                                         className="h-8 px-2"
                                       >
+                                        <Check className="h-4 w-4" />
                                       </Button>
                                       <Button
                                         size="sm"
@@ -637,6 +638,7 @@ const Donation = () => {
                                         onClick={handleCancelEditGeneralDonation}
                                         className="h-8 px-2"
                                       >
+                                        <X className="h-4 w-4" />
                                       </Button>
                                     </div>
                                   </div>
@@ -688,6 +690,7 @@ const Donation = () => {
                                             className="h-6 w-6 p-0"
                                             title={t("donation.form.changeAmount")}
                                           >
+                                            <Edit2 className="h-3 w-3" />
                                           </Button>
                                         )}
                                       </div>
@@ -703,6 +706,7 @@ const Donation = () => {
                                             className="h-6 w-6 p-0"
                                             disabled={item.quantity <= 1 && (item.type === 'phase' || false)}
                                           >
+                                            <Minus className="h-3 w-3" />
                                           </Button>
                                           <span className="text-sm font-medium w-8 text-center">
                                             {item.quantity}
@@ -720,6 +724,7 @@ const Donation = () => {
                                             disabled={item.type === 'phase' && item.quantity >= 1 || (item.maxQuantity && item.quantity >= item.maxQuantity)}
                                             className="h-6 w-6 p-0"
                                           >
+                                            <Plus className="h-3 w-3" />
                                           </Button>
                                         </div>
                                       </div>
@@ -735,6 +740,7 @@ const Donation = () => {
                                   className="h-6 w-6 p-0 text-gray-400 hover:text-red-600"
                                   title={t("donation.form.remove")}
                                 >
+                                  <Trash2 className="h-3 w-3" />
                                 </Button>
                               )}
                             </div>
@@ -768,6 +774,7 @@ const Donation = () => {
                               onClick={handleSaveNewGeneralDonation}
                               className="h-8 px-2"
                             >
+                              <Check className="h-4 w-4" />
                             </Button>
                             <Button
                               size="sm"
@@ -775,6 +782,7 @@ const Donation = () => {
                               onClick={handleCancelAddGeneralDonation}
                               className="h-8 px-2"
                             >
+                              <X className="h-4 w-4" />
                             </Button>
                           </div>
                           <p className="text-xs text-blue-600">{t("donation.form.addGeneralDonation")}</p>
@@ -912,6 +920,7 @@ const Donation = () => {
                                     onClick={handleSaveNewGeneralDonation}
                                     className="h-8 px-2"
                                   >
+                                    <Check className="h-4 w-4" />
                                   </Button>
                                   <Button
                                     size="sm"
@@ -919,6 +928,7 @@ const Donation = () => {
                                     onClick={handleCancelAddGeneralDonation}
                                     className="h-8 px-2"
                                   >
+                                    <X className="h-4 w-4" />
                                   </Button>
                                 </div>
                                 <p className="text-xs text-blue-600">{t("donation.form.addGeneralDonation")}</p>
@@ -938,7 +948,7 @@ const Donation = () => {
                           {hasUrlAmount && !hasManualSelection && (
                             <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md mb-4">
                               <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm text-blue-700 font-medium">Vorgemerkter Betrag aus Artikel</span>
+                                <span className="text-sm text-blue-700 font-medium">{t("donation.form.preselectAmountArticle")}</span>
                                 <span className="text-lg font-bold text-blue-700">€{amountParam}</span>
                               </div>
                             </div>
@@ -965,7 +975,7 @@ const Donation = () => {
                               <Input
                                 id="custom-amount"
                                 type="number"
-                                placeholder="Enter amount"
+                                placeholder={t("donation.form.enterAmountPlaceholder")}
                                 value={customAmount}
                                 onChange={(e) => handleCustomAmountChange(e.target.value)}
                                 className="mt-2"
