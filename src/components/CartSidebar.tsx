@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   ShoppingCart, 
@@ -42,7 +41,7 @@ const getPhaseIcon = (phase: string) => {
   }
 };
 
-const CartItemComponent: React.FC<{ item: CartItem }> = ({ item }) => {
+const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({ item, onClose }) => {
   const { updateQuantity, removeItem, formatCurrency, closeCart } = useShoppingCart();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -53,15 +52,52 @@ const CartItemComponent: React.FC<{ item: CartItem }> = ({ item }) => {
       return;
     }
     
-    // Navigate to projects page - user can then find and open the specific project
-    if (item.projectName) {
+    // Only navigate for item types (not phase or general-donation)
+    if (item.type !== 'item') {
+      return;
+    }
+    
+    // Navigate to projects page with phase hash and itemId to open modal and show the item
+    if (item.phase) {
+      // Extract itemId from cart item id (format: "item-{itemId}")
+      const itemId = item.id.replace('item-', '');
+      
+      // Close cart drawer if open
+      if (onClose) {
+        onClose();
+      } else {
+        closeCart();
+      }
+      
+      // Navigate to projects page with phase hash and itemId as query param
+      navigate(`/dev/projects?itemId=${encodeURIComponent(itemId)}#${encodeURIComponent(item.phase)}`);
+      
+      // Scroll to item after modal opens - use a longer delay and retry mechanism
+      let attempts = 0;
+      const maxAttempts = 10;
+      const scrollToItem = () => {
+        attempts++;
+        const element = document.querySelector(`[data-item-id="${itemId}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else if (attempts < maxAttempts) {
+          setTimeout(scrollToItem, 200);
+        }
+      };
+      setTimeout(scrollToItem, 800);
+    } else {
+      // For items without phase, just navigate to projects
       navigate('/dev/projects');
-      closeCart(); // Close the cart sidebar to show the projects page
+      if (onClose) {
+        onClose();
+      } else {
+        closeCart();
+      }
     }
   };
 
   return (
-    <Card className="p-3 mb-2 cursor-pointer hover:bg-gray-50 transition-colors" onClick={handleItemClick}>
+    <Card className="p-3 mb-2 cursor-pointer hover:bg-gray-50 transition-colors w-full" onClick={handleItemClick}>
       <div className="flex items-start gap-3">
         {/* Icon */}
         <div className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0">
@@ -69,12 +105,29 @@ const CartItemComponent: React.FC<{ item: CartItem }> = ({ item }) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
-              <h4 className="font-medium text-sm text-gray-900 truncate">
-                {item.type === 'general-donation' ? t("donation.form.unrestrictedDonation") : item.name}
-              </h4>
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex items-center justify-between mb-1 gap-2">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              {item.description && item.type !== 'general-donation' ? (
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <h4 className="font-medium text-sm text-gray-900 truncate cursor-pointer hover:text-primary transition-colors">
+                      {item.name}
+                    </h4>
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    className="max-w-xs z-[9999]" 
+                    side="top"
+                    sideOffset={5}
+                  >
+                    <p className="text-sm">{item.description}</p>
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <h4 className="font-medium text-sm text-gray-900 truncate">
+                  {item.type === 'general-donation' ? t("donation.form.unrestrictedDonation") : item.name}
+                </h4>
+              )}
               {item.type === 'general-donation' && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
@@ -91,8 +144,8 @@ const CartItemComponent: React.FC<{ item: CartItem }> = ({ item }) => {
                   </TooltipContent>
                 </Tooltip>
               )}
-              {item.projectName && (
-                <ExternalLink className="w-3 h-3 text-gray-400" />
+              {item.projectName && item.type === 'item' && (
+                <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
               )}
             </div>
             <Button
@@ -102,17 +155,11 @@ const CartItemComponent: React.FC<{ item: CartItem }> = ({ item }) => {
                 e.stopPropagation();
                 removeItem(item.id);
               }}
-              className="h-6 w-6 p-0 text-gray-400 hover:text-red-600"
+              className="h-6 w-6 p-0 text-gray-400 hover:text-red-600 flex-shrink-0"
             >
               <Trash2 className="w-3 h-3" />
             </Button>
           </div>
-
-          {item.description && (
-            <p className="text-xs text-gray-600 mb-2 line-clamp-2">
-              {item.description}
-            </p>
-          )}
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
@@ -156,14 +203,6 @@ const CartItemComponent: React.FC<{ item: CartItem }> = ({ item }) => {
             </div>
           </div>
 
-          {/* Phase Badge */}
-          {item.phase && (
-            <div className="flex items-center gap-1 mt-2">
-              <Badge variant="secondary" className="text-xs px-1 py-0">
-                {item.phase}
-              </Badge>
-            </div>
-          )}
         </div>
       </div>
     </Card>
@@ -306,13 +345,21 @@ export const CartBadge: React.FC = () => {
 };
 
 // Inline Cart panel (for embedding inside modals/pages, no overlay/portal)
-export const CartInline: React.FC<{ basePath?: string; className?: string }> = ({ basePath = "", className = "" }) => {
+export const CartInline: React.FC<{ basePath?: string; className?: string; onClose?: () => void }> = ({ basePath = "", className = "", onClose }) => {
   const { state, closeCart, formatCurrency } = useShoppingCart();
+  
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      closeCart();
+    }
+  };
 
   return (
-    <div className={`bg-white border rounded-lg shadow-sm h-full flex flex-col ${className}`}>
+    <div className={`bg-white border rounded-lg shadow-sm h-full flex flex-col min-h-0 ${className}`}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b">
+      <div className="flex items-center justify-between p-4 border-b flex-shrink-0">
         <div className="flex items-center gap-2">
           <ShoppingCart className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-semibold">Warenkorb</h2>
@@ -323,7 +370,7 @@ export const CartInline: React.FC<{ basePath?: string; className?: string }> = (
         <Button
           variant="ghost"
           size="sm"
-          onClick={closeCart}
+          onClick={handleClose}
           className="h-8 w-8 p-0"
         >
           <X className="w-4 h-4" />
@@ -331,7 +378,7 @@ export const CartInline: React.FC<{ basePath?: string; className?: string }> = (
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {state.items.length === 0 ? (
           <div className="flex-1 flex items-center justify-center text-center p-6">
             <div>
@@ -346,17 +393,16 @@ export const CartInline: React.FC<{ basePath?: string; className?: string }> = (
           </div>
         ) : (
           <>
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-2 pr-2">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 overscroll-contain">
+              <div className="space-y-2 pr-1">
                 {state.items.map((item) => (
-                  <CartItemComponent key={item.id} item={item} />
+                  <CartItemComponent key={item.id} item={item} onClose={onClose} />
                 ))}
               </div>
-            </ScrollArea>
+            </div>
 
             {/* Footer */}
-            <div className="border-t p-4 space-y-4 flex-shrink-0">
-              <Separator />
+            <div className="border-t p-4 flex-shrink-0">
               {/* Total */}
               <div className="flex items-center justify-between">
                 <span className="text-lg font-semibold">Gesamtbetrag:</span>
@@ -364,13 +410,6 @@ export const CartInline: React.FC<{ basePath?: string; className?: string }> = (
                   {formatCurrency(state.totalAmount)}
                 </span>
               </div>
-              {/* Checkout Button */}
-              <Link to={basePath + "/donation"} className="block">
-                <Button className="w-full" size="lg">
-                  <span>Zur Spende</span>
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
             </div>
           </>
         )}

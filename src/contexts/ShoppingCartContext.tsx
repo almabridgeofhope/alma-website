@@ -190,7 +190,7 @@ interface ShoppingCartContextType {
   formatCurrency: (amount: number) => string;
   isItemInCart: (id: string) => boolean;
   removeFromCart: (id: string) => void;
-  addItemPiece: (item: ProjectItem) => void;
+  addItemPiece: (item: ProjectItem, projectName?: string) => void;
   removeItemPiece: (itemId: string) => void;
   getItemCartQuantity: (itemId: string) => number;
   isItemFullyInCart: (item: ProjectItem) => boolean;
@@ -271,7 +271,7 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
     dispatch({ type: 'REMOVE_ITEM', payload: id });
   };
 
-  const addItemPiece = (item: ProjectItem) => {
+  const addItemPiece = (item: ProjectItem, projectName?: string) => {
     const cartItemId = `item-${item.itemId}`;
     const existingItem = state.items.find(cartItem => cartItem.id === cartItemId);
     const remainingNeeded = item.qtyNeededTotal - item.qtyFunded;
@@ -280,6 +280,15 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
       // Check if we can add more items
       if (existingItem.quantity < remainingNeeded) {
         updateQuantity(cartItemId, existingItem.quantity + 1);
+      }
+      // Update projectName if it was not set before
+      if (projectName && !existingItem.projectName) {
+        const updatedItems = state.items.map(cartItem =>
+          cartItem.id === cartItemId
+            ? { ...cartItem, projectName }
+            : cartItem
+        );
+        dispatch({ type: 'LOAD_CART', payload: updatedItems });
       }
     } else {
       // Add new item with quantity 1
@@ -292,7 +301,7 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
         category: item.category,
         phase: item.phase,
         imageUrl: item.imageUrl,
-        projectName: '', // Will be set by the calling component
+        projectName: projectName || '',
         maxQuantity: remainingNeeded,
       });
     }

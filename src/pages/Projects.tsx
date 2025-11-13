@@ -82,15 +82,33 @@ const Projects = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const section = params.get("section");
-    if (!section) {
-      return;
+    if (section) {
+      const target = document.getElementById(section);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
 
-    const target = document.getElementById(section);
-    if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Check if there's a hash fragment (phase) and open the modal for the corresponding project
+    const hash = location.hash.replace('#', '');
+    if (hash && hash !== 'all') {
+      // Find the project that has this phase
+      const allProjects = [...activeProjects, ...plannedProjects];
+      for (const project of allProjects) {
+        const projectCost = getProjectCost(project.title);
+        if (projectCost) {
+          const hasPhase = projectCost.items.some(item => item.phase === hash);
+          if (hasPhase) {
+            // Only set if it's a different project or modal is closed
+            if (!activeCostProject || activeCostProject.projectName !== projectCost.projectName) {
+              setActiveCostProject(projectCost);
+            }
+            break;
+          }
+        }
+      }
     }
-  }, [location]);
+  }, [location, getProjectCost, activeCostProject]);
 
   const mobilityDescription = t("projects.mobility.description");
   const anchorClasses = "text-primary underline underline-offset-4";

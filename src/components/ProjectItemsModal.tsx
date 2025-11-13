@@ -62,7 +62,7 @@ export const ProjectItemsModal = ({
 }: ProjectItemsModalProps) => {
   const { t } = useLanguage();
   const { addItem, isItemInCart, removeFromCart, addItemPiece, removeItemPiece, getItemCartQuantity, isItemFullyInCart, state: cartState, toggleCart, closeCart } = useShoppingCart();
-  const [showInlineCart, setShowInlineCart] = useState(false);
+  const [showCartDrawer, setShowCartDrawer] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   
@@ -167,7 +167,7 @@ export const ProjectItemsModal = ({
       closeCart();
     }
     if (isOpen) {
-      setShowInlineCart(false);
+      setShowCartDrawer(false);
     }
   }, [isOpen]);
 
@@ -184,7 +184,25 @@ export const ProjectItemsModal = ({
       setSearchQuery("");
       setSelectedCategory("all");
     }
-  }, [isOpen, location.hash]);
+
+    // Check if there's an itemId in query params and scroll to it
+    const params = new URLSearchParams(location.search);
+    const itemId = params.get('itemId');
+    if (itemId && hash !== 'all') {
+      // Wait for the view to update, then scroll to item
+      setTimeout(() => {
+        const element = document.querySelector(`[data-item-id="${itemId}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Remove itemId from URL after scrolling
+          const newParams = new URLSearchParams(location.search);
+          newParams.delete('itemId');
+          const newSearch = newParams.toString();
+          navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}${location.hash}`, { replace: true });
+        }
+      }, 300);
+    }
+  }, [isOpen, location.hash, location.search, navigate, location.pathname]);
 
   // Filter items by phase, search query, and category
   const filteredItems = projectCost.items.filter(item => {
@@ -337,8 +355,11 @@ export const ProjectItemsModal = ({
 
   // Ensure cart is visible when adding items
   const addItemPieceWithCartOpen = (item: ProjectItem) => {
-    // In modal we don't force-open overlay cart; the inline cart shows when state.isOpen is true
-    addItemPiece(item);
+    addItemPiece(item, projectCost.projectName);
+    // Auto-open cart drawer when adding first item
+    if (cartState.totalItems === 0) {
+      setShowCartDrawer(true);
+    }
   };
 
   const getPhaseName = (phase: string) => {
@@ -758,9 +779,9 @@ export const ProjectItemsModal = ({
           </div>
         </DialogHeader>
 
-        {/* Content Area - optional inline cart at md+ */}
-        <div className={`grid gap-4 flex-1 min-h-0 ${showInlineCart ? 'md:grid-cols-[2fr_1fr]' : 'grid-cols-1'}`}>
-          {/* Left: Modal content */}
+        {/* Content Area */}
+        <div className="relative flex-1 min-h-0 overflow-hidden">
+          {/* Main Content */}
           <div className="min-w-0 h-full overflow-y-auto px-4 sm:px-6 pb-4">
             {viewMode === 'overview' ? (
               /* Phase Overview */
@@ -909,7 +930,7 @@ export const ProjectItemsModal = ({
                               e.stopPropagation();
                               const unfundedItems = phaseGroup.items.filter(item => !item.purchased && item.qtyFunded === 0);
                               unfundedItems.forEach(item => {
-                                addItemPiece(item);
+                                addItemPiece(item, projectCost.projectName);
                               });
                             }}
                             className="flex-1 text-xs font-medium border-orange-200 text-orange-700 hover:bg-orange-50"
@@ -1077,12 +1098,21 @@ export const ProjectItemsModal = ({
           )}
           </div>
 
-          {/* Right: Inline Cart */}
-          {showInlineCart && (
-            <div className="hidden md:block h-full overflow-hidden">
-              <CartInline />
-            </div>
+          {/* Cart Drawer - Overlay über Content */}
+          {showCartDrawer && (
+            <>
+              {/* Backdrop */}
+              <div 
+                className="absolute inset-0 bg-black/20 z-40 animate-in fade-in-0 duration-300"
+                onClick={() => setShowCartDrawer(false)}
+              />
+              {/* Drawer */}
+              <div className="absolute right-0 top-0 bottom-0 w-full sm:w-96 max-w-[90vw] bg-white shadow-2xl z-50 flex flex-col min-h-0 animate-in slide-in-from-right duration-300">
+                <CartInline basePath="/dev" onClose={() => setShowCartDrawer(false)} className="rounded-none border-0 shadow-none h-full" />
+              </div>
+            </>
           )}
+
         </div>
 
         {/* Floating CTA removed - now using footer cart link */}
@@ -1132,13 +1162,16 @@ export const ProjectItemsModal = ({
               <>
                 <Button 
                   size="sm"
-                  onClick={() => setShowInlineCart(!showInlineCart)}
-                  className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white"
+                  onClick={() => setShowCartDrawer(!showCartDrawer)}
+                  className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white relative"
                 >
                   <ShoppingCart className="w-4 h-4" />
-                  {showInlineCart ? 'Warenkorb schließen' : `Warenkorb (${cartState.totalItems})`}
+                  <span>Warenkorb</span>
+                  <Badge variant="secondary" className="ml-1 h-5 min-w-5 flex items-center justify-center px-1.5 text-xs">
+                    {cartState.totalItems}
+                  </Badge>
                 </Button>
-                <Link to="/dev/donation" onClick={closeCart}>
+                <Link to="/dev/donation" onClick={() => { closeCart(); setShowCartDrawer(false); }}>
                   <Button 
                     size="sm"
                     variant="outline"
