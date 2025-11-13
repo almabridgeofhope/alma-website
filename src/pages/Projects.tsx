@@ -616,8 +616,23 @@ const Projects = () => {
           </div>
         </section>
 
+        {/* Introduction Section */}
+        <section className="pt-section pb-8 bg-background">
+          <div className="max-w-content mx-auto px-6">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6 text-center">
+                {t("projects.intro.title")}
+              </h2>
+              <div className="space-y-4 text-lg text-muted-foreground leading-relaxed">
+                <p>{t("projects.intro.p1")}</p>
+                <p>{t("projects.intro.p2")}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Active Projects Section */}
-        <section className="pt-section pb-section bg-background">
+        <section className="pt-8 pb-section bg-background">
           <div className="max-w-content mx-auto px-6">
             <div className="mb-12 text-center">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
