@@ -338,19 +338,30 @@ export const ProjectItemsModal = ({
   const partiallyFundedItems = sortedItems.filter(item => !item.purchased && item.qtyFunded > 0);
   const unfundedItems = sortedItems.filter(item => !item.purchased && item.qtyFunded === 0);
 
-  // Find the next important item (first unfunded item, or first partially funded item if no unfunded)
+  // Find the next important item (first item not fully in cart, sorted by Excel order)
   const getNextImportantItem = (): ProjectItem | null => {
     // Use all items for overview, filtered items for details
     const itemsToCheck = viewMode === 'overview' ? projectCost.items : filteredItems;
-    const allUnfunded = itemsToCheck.filter(item => !item.purchased && item.qtyFunded === 0);
-    const allPartiallyFunded = itemsToCheck.filter(item => !item.purchased && item.qtyFunded > 0);
     
-    if (allUnfunded.length > 0) {
-      return allUnfunded[0];
+    // Sort items by sortOrder (Excel table order) to maintain priority
+    const sortedItems = [...itemsToCheck].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    
+    // Find the first item that:
+    // 1. Is not purchased
+    // 2. Is not fully funded
+    // 3. Is not fully in cart (cart quantity < remaining needed)
+    for (const item of sortedItems) {
+      if (item.purchased) continue;
+      
+      const cartQuantity = getItemCartQuantity(item.itemId);
+      const remainingNeeded = item.qtyNeededTotal - item.qtyFunded;
+      
+      // Item is not fully in cart if cart quantity is less than remaining needed
+      if (cartQuantity < remainingNeeded) {
+        return item;
+      }
     }
-    if (allPartiallyFunded.length > 0) {
-      return allPartiallyFunded[0];
-    }
+    
     return null;
   };
 
