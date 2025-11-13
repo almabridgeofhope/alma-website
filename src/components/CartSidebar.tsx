@@ -73,7 +73,7 @@ const CartItemComponent: React.FC<{ item: CartItem }> = ({ item }) => {
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
               <h4 className="font-medium text-sm text-gray-900 truncate">
-                {item.name}
+                {item.type === 'general-donation' ? t("donation.form.unrestrictedDonation") : item.name}
               </h4>
               {item.type === 'general-donation' && (
                 <Tooltip delayDuration={0}>
