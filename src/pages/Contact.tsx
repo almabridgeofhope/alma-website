@@ -277,11 +277,6 @@ const Contact = () => {
                   </div>
                 </Card>
 
-                <Card className="p-6 shadow-card bg-primary-light border-primary/20">
-                  <p className="text-muted-foreground leading-relaxed">
-                    <strong className="text-foreground">{t("contact.note.title")}</strong> {t("contact.note.text")}
-                  </p>
-                </Card>
               </div>
             </div>
           </div>

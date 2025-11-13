@@ -57,8 +57,7 @@ const translations = {
     "contact.subtitle": "We'd love to hear from you. Reach out to learn more about our work or explore potential partnerships.",
     "contact.email": "info@almabridgeofhope.org",
     "contact.button": "Contact Us",
-    "contact.note": "Currently, we're focused on establishing our projects. Donation and volunteering opportunities will be available soon. Thank you for your patience and interest.",
-    
+
     // Footer
     "footer.tagline": "Bridging hope across continents through sustainable community development.",
     "footer.nav.title": "Navigation",
@@ -208,8 +207,6 @@ const translations = {
     "contact.info.email": "E-Mail",
     "contact.info.address": "Address",
     "contact.info.social": "Social Media",
-    "contact.note.title": "Note:",
-    "contact.note.text": "We are currently in the setup phase. Donation and volunteer opportunities will be available soon. Thank you for your interest and patience!",
     "contact.error.title": "Error",
     "contact.error.required": "Please fill in all required fields.",
     "contact.error.email": "Please enter a valid email address.",
@@ -632,7 +629,6 @@ const translations = {
     "contact.subtitle": "Wir freuen uns auf Ihre Nachricht. Kontaktieren Sie uns, um mehr über unsere Arbeit zu erfahren oder potenzielle Partnerschaften zu erkunden.",
     "contact.email": "info@almabridgeofhope.org",
     "contact.button": "Kontaktieren Sie uns",
-    "contact.note": "Derzeit konzentrieren wir uns auf die Einrichtung unserer Projekte. Spenden- und Freiwilligenmöglichkeiten werden bald verfügbar sein. Vielen Dank für Ihre Geduld und Ihr Interesse.",
     
     // Footer
     "footer.tagline": "Brücken der Hoffnung zwischen Kontinenten durch nachhaltige Gemeindeentwicklung.",
@@ -784,8 +780,6 @@ const translations = {
     "contact.info.email": "E-Mail",
     "contact.info.address": "Adresse",
     "contact.info.social": "Social Media",
-    "contact.note.title": "Hinweis:",
-    "contact.note.text": "Wir befinden uns derzeit in der Aufbauphase. Spenden- und Freiwilligenmöglichkeiten werden in Kürze verfügbar sein. Vielen Dank für Ihr Interesse und Ihre Geduld!",
     "contact.error.title": "Fehler",
     "contact.error.required": "Bitte füllen Sie alle Pflichtfelder aus.",
     "contact.error.email": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",

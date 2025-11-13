@@ -35,11 +35,6 @@ const ContactSection = () => {
               </Link>
             </div>
 
-            <div className="pt-8 border-t border-border">
-              <p className="text-muted-foreground">
-                {t("contact.note")}
-              </p>
-            </div>
           </div>
         </div>
       </div>
