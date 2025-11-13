@@ -1,3 +1,4 @@
+import { ReactNode, useEffect, MouseEvent } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -5,7 +6,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import heroImage from "@/assets/project/header_construction.jpeg";
 import communityHouseImage from "@/assets/project/construction_house.png";
 import waterImage from "@/assets/project/well.jpg";
@@ -21,6 +22,7 @@ interface Project {
   icon: typeof Home;
   teaser: string;
   description: string;
+  descriptionNode?: ReactNode;
   goals: string[];
   impact: string;
   statusText: string;
@@ -30,10 +32,13 @@ interface Project {
   image: string;
   buttonText: string;
   priority: "active" | "planned";
+  anchorId?: string;
 }
 
 const Projects = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const location = useLocation();
+  const navigate = useNavigate();
   
   const timelinePhases = [
     { id: "planning", icon: "🌱", label: t("projects.timeline.planning") },
@@ -41,6 +46,109 @@ const Projects = () => {
     { id: "implementation", icon: "💧", label: t("projects.timeline.implementation") },
     { id: "impact", icon: "🌾", label: t("projects.timeline.impact") },
   ];
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const section = params.get("section");
+    if (!section) {
+      return;
+    }
+
+    const target = document.getElementById(section);
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [location]);
+
+  const mobilityDescription = t("projects.mobility.description");
+  const anchorClasses = "text-primary underline underline-offset-4";
+  const schoolAccessUrl = "/dev/projects?section=school-access";
+  const youngMobilityUrl = "/dev/projects?section=young-mobility";
+  const anchorHref = `#${schoolAccessUrl}`;
+  const mobilityAnchorHref = `#${youngMobilityUrl}`;
+  const germanTarget = "um Kinder sicher zu Partnerschulen zu bringen";
+  const englishTarget = "School Access Project";
+
+  const handleAnchorClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    navigate(schoolAccessUrl);
+  };
+
+  const handleMobilityAnchorClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    navigate(youngMobilityUrl);
+  };
+
+  let mobilityDescriptionNode: ReactNode | undefined;
+  let sponsorshipDescriptionNode: ReactNode | undefined;
+
+  if (language === "de" && mobilityDescription.includes(germanTarget)) {
+    const [before, after] = mobilityDescription.split(germanTarget);
+    mobilityDescriptionNode = (
+      <>
+        {before}
+        <a
+          href={anchorHref}
+          className={anchorClasses}
+          onClick={handleAnchorClick}
+        >
+          {germanTarget}
+        </a>
+        {after}
+      </>
+    );
+  } else if (language === "en" && mobilityDescription.includes(englishTarget)) {
+    const [before, after] = mobilityDescription.split(englishTarget);
+    mobilityDescriptionNode = (
+      <>
+        {before}
+        <a
+          href={anchorHref}
+          className={anchorClasses}
+          onClick={handleAnchorClick}
+        >
+          {englishTarget}
+        </a>
+        {after}
+      </>
+    );
+  }
+
+  const sponsorshipDescription = t("projects.sponsorship.description");
+  const germanMobilityTarget = "Young Mobility Project";
+  const englishMobilityTarget = "Young Mobility Project";
+
+  if (language === "de" && sponsorshipDescription.includes(germanMobilityTarget)) {
+    const [before, after] = sponsorshipDescription.split(germanMobilityTarget);
+    sponsorshipDescriptionNode = (
+      <>
+        {before}
+        <a
+          href={mobilityAnchorHref}
+          className={anchorClasses}
+          onClick={handleMobilityAnchorClick}
+        >
+          {germanMobilityTarget}
+        </a>
+        {after}
+      </>
+    );
+  } else if (language === "en" && sponsorshipDescription.includes(englishMobilityTarget)) {
+    const [before, after] = sponsorshipDescription.split(englishMobilityTarget);
+    sponsorshipDescriptionNode = (
+      <>
+        {before}
+        <a
+          href={mobilityAnchorHref}
+          className={anchorClasses}
+          onClick={handleMobilityAnchorClick}
+        >
+          {englishMobilityTarget}
+        </a>
+        {after}
+      </>
+    );
+  }
 
   const activeProjects: Project[] = [
     {
@@ -107,7 +215,8 @@ const Projects = () => {
       title: t("projects.mobility.title"),
       icon: Car,
       teaser: t("projects.mobility.teaser"),
-      description: t("projects.mobility.description"),
+      description: mobilityDescription,
+      descriptionNode: mobilityDescriptionNode,
       goals: [
         t("projects.mobility.goal1"),
         t("projects.mobility.goal2"),
@@ -121,12 +230,14 @@ const Projects = () => {
       image: busImage,
       buttonText: t("projects.mobility.button"),
       priority: "planned",
+      anchorId: "young-mobility",
     },
     {
       title: t("projects.sponsorship.title"),
       icon: BookOpen,
       teaser: t("projects.sponsorship.teaser"),
-      description: t("projects.sponsorship.description"),
+      description: sponsorshipDescription,
+      descriptionNode: sponsorshipDescriptionNode,
       goals: [
         t("projects.sponsorship.goal1"),
         t("projects.sponsorship.goal2"),
@@ -140,6 +251,7 @@ const Projects = () => {
       image: educationImage,
       buttonText: t("projects.sponsorship.button"),
       priority: "planned",
+      anchorId: "school-access",
     },
     {
       title: t("projects.financial.title"),
@@ -231,6 +343,7 @@ const Projects = () => {
     return (
       <div 
         key={index}
+        id={project.anchorId}
         className="animate-fade-in"
         style={{ animationDelay: `${index * 0.1}s` }}
       >
@@ -268,7 +381,7 @@ const Projects = () => {
                 
                 {/* Description */}
                 <p className="text-sm sm:text-base text-muted-foreground mb-6 leading-relaxed">
-                  {project.description}
+                  {project.descriptionNode ?? project.description}
                 </p>
 
                 {/* Two Column Layout: Goals & Impact */}
@@ -348,7 +461,7 @@ const Projects = () => {
         </section>
 
         {/* Active Projects Section */}
-        <section className="pt-section pb-8 bg-background">
+        <section className="pt-section pb-section bg-background">
           <div className="max-w-content mx-auto px-6">
             <div className="mb-12 text-center">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -363,7 +476,7 @@ const Projects = () => {
         </section>
 
         {/* Planned Projects Section */}
-        <section className="pt-8 pb-8 bg-muted/30">
+        <section className="pt-section pb-section bg-muted/30">
           <div className="max-w-content mx-auto px-6">
             <div className="mb-12 text-center">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
@@ -374,11 +487,12 @@ const Projects = () => {
             <div className="space-y-16">
               {plannedProjects.map((project, index) => renderProjectCard(project, index + activeProjects.length))}
             </div>
+
           </div>
         </section>
 
         {/* Impact Section */}
-        <section className="pt-8 pb-section bg-background">
+        <section className="pt-section pb-section bg-background">
           <div className="max-w-content mx-auto px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
