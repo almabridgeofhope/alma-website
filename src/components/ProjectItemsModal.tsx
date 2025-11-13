@@ -433,14 +433,27 @@ export const ProjectItemsModal = ({
     const phaseItems = projectCost.items.filter(item => item.phase === phase);
     const phaseBudget = phaseItems.reduce((sum, item) => sum + (item.totalCostEUR || 0), 0);
     const phaseSpent = phaseItems.reduce((sum, item) => sum + (item.fundedCostEUR || 0), 0);
-    const phaseProgress = phaseBudget > 0 ? (phaseSpent / phaseBudget) * 100 : 0;
+    
+    // Calculate cart value for this phase
+    const phaseCartValue = phaseItems.reduce((sum, item) => {
+      const cartQuantity = getItemCartQuantity(item.itemId);
+      return sum + (cartQuantity * item.unitCostEUR);
+    }, 0);
+    
+    const phaseTotalProgress = phaseSpent + phaseCartValue;
+    const phaseProgress = phaseBudget > 0 ? (phaseTotalProgress / phaseBudget) * 100 : 0;
+    const phaseFundedPercent = phaseBudget > 0 ? (phaseSpent / phaseBudget) * 100 : 0;
+    const phaseCartPercent = phaseBudget > 0 ? (phaseCartValue / phaseBudget) * 100 : 0;
     
     return {
       phase,
       items: phaseItems,
       budget: phaseBudget,
       spent: phaseSpent,
+      cartValue: phaseCartValue,
       progress: phaseProgress,
+      fundedPercent: phaseFundedPercent,
+      cartPercent: phaseCartPercent,
       fundedCount: phaseItems.filter(item => item.purchased).length,
       partiallyFundedCount: phaseItems.filter(item => !item.purchased && item.qtyFunded > 0).length,
       unfundedCount: phaseItems.filter(item => !item.purchased && item.qtyFunded === 0).length
@@ -799,7 +812,11 @@ export const ProjectItemsModal = ({
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                  {phaseGroups.map((phaseGroup) => (
-                   <Card key={phaseGroup.phase} className="p-4 cursor-pointer transition-all hover:shadow-lg flex flex-col h-full">
+                   <Card 
+                     key={phaseGroup.phase} 
+                     onClick={() => navigateToDetails(phaseGroup.phase)}
+                     className="p-4 cursor-pointer transition-all hover:shadow-lg flex flex-col h-full"
+                   >
                     <div className="flex items-start gap-3 flex-1">
                       {/* Phase Icon */}
                       <div className="flex-shrink-0">
@@ -819,8 +836,49 @@ export const ProjectItemsModal = ({
                         
                         {/* Progress Bar */}
                         <div className="flex items-center gap-2 mb-3">
-                          <div className="flex-1 min-w-0">
-                            <Progress value={phaseGroup.progress} className="h-2.5" />
+                          <div className="flex-1 min-w-0 relative">
+                            {(phaseGroup.spent > 0 || phaseGroup.cartValue > 0) ? (
+                              <Tooltip delayDuration={0}>
+                                <TooltipTrigger asChild>
+                                  <div className="relative w-full overflow-hidden rounded-full bg-gray-200 h-2.5 cursor-help">
+                                    {/* Funded segment (gray) */}
+                                    {phaseGroup.fundedPercent > 0 && (
+                                      <div
+                                        className="absolute left-0 top-0 h-full bg-gray-500 transition-all"
+                                        style={{ width: `${phaseGroup.fundedPercent}%` }}
+                                      />
+                                    )}
+                                    {/* Cart segment (primary color) - positioned after funded */}
+                                    {phaseGroup.cartPercent > 0 && (
+                                      <div
+                                        className="absolute top-0 h-full bg-primary transition-all"
+                                        style={{ left: `${phaseGroup.fundedPercent}%`, width: `${phaseGroup.cartPercent}%` }}
+                                      />
+                                    )}
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="z-[9999]" side="top" sideOffset={5}>
+                                  <div className="text-sm space-y-1">
+                                    {phaseGroup.spent > 0 && (
+                                      <div className="flex items-center gap-2">
+                                        <span className="w-3 h-3 rounded-full bg-gray-500"></span>
+                                        <span>{formatCurrency(phaseGroup.spent)} bereits finanziert</span>
+                                      </div>
+                                    )}
+                                    {phaseGroup.cartValue > 0 && (
+                                      <div className="flex items-center gap-2">
+                                        <span className="w-3 h-3 rounded-full bg-primary"></span>
+                                        <span>{formatCurrency(phaseGroup.cartValue)} im Warenkorb</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <div className="relative w-full overflow-hidden rounded-full bg-gray-200 h-2.5">
+                                {/* Empty progress bar */}
+                              </div>
+                            )}
                           </div>
                           <div className="text-xs font-semibold text-gray-700 min-w-[35px] text-right">
                             {phaseGroup.progress.toFixed(0)}%
@@ -833,7 +891,7 @@ export const ProjectItemsModal = ({
                             <span className="font-medium">Bezahlt:</span> {formatCurrency(phaseGroup.spent)}
                           </div>
                           <div className="text-orange-600 font-semibold">
-                            Offen: {formatCurrency(phaseGroup.budget - phaseGroup.spent)}
+                            Offen: {formatCurrency(phaseGroup.budget - phaseGroup.spent - phaseGroup.cartValue)}
                           </div>
                         </div>
                       </div>
