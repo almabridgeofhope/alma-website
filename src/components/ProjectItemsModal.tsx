@@ -394,88 +394,100 @@ export const ProjectItemsModal = ({
     const isCompact = viewStyle === 'compact';
     
     if (isCompact) {
-      // Compact view - single line
+      // Compact view - responsive layout
       return (
         <div 
           key={item.itemId} 
           data-item-id={item.itemId}
-          className={`group flex items-center gap-2 px-3 py-2 rounded-md transition-all hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${isNextImportant ? 'bg-primary/5 border-l-4 border-l-primary' : ''} ${isFullyInCart ? 'bg-green-50/50' : ''}`}
+          className={`group flex flex-col sm:flex-row sm:items-center gap-2 px-3 py-2.5 rounded-md transition-all hover:bg-gray-50 border-b border-gray-100 last:border-b-0 ${isNextImportant ? 'bg-primary/5 border-l-4 border-l-primary' : ''} ${isFullyInCart ? 'bg-green-50/50' : ''}`}
         >
-          {/* Status Icon */}
-          <div className="flex-shrink-0 w-4">
-            {isFullyInCart ? <CheckCircle className="w-4 h-4 text-green-600" /> : getStatusIcon(item)}
-          </div>
+          {/* Top Row: Status, Name, Category */}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            {/* Status Icon */}
+            <div className="flex-shrink-0">
+              {isFullyInCart ? <CheckCircle className="w-4 h-4 text-green-600" /> : getStatusIcon(item)}
+            </div>
 
-          {/* Item Name & Category */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h4 className="font-medium text-gray-900 truncate text-sm">{item.displayName}</h4>
+            {/* Item Name & Category */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h4 className="font-medium text-gray-900 truncate text-sm">{item.displayName}</h4>
+                {item.category && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0 hidden sm:inline-flex">
+                    {item.category}
+                  </Badge>
+                )}
+                {item.blurb && (
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs z-[9999]" side="top" sideOffset={5}>
+                      <p className="text-sm">{item.blurb}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+              {/* Category on mobile - below name */}
               {item.category && (
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 flex-shrink-0">
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 mt-0.5 sm:hidden">
                   {item.category}
                 </Badge>
               )}
-              {item.blurb && (
-                <Tooltip delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    <HelpCircle className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs z-[9999]" side="top" sideOffset={5}>
-                    <p className="text-sm">{item.blurb}</p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
             </div>
           </div>
 
-          {/* Progress - compact */}
-          <div className="flex items-center gap-2 flex-shrink-0 w-24">
-            <div className="w-16">
-              <Progress value={getProgressPercentage(item)} className="h-1.5" />
+          {/* Bottom Row on Mobile / Right Side on Desktop: Progress, Quantity, Price, Controls */}
+          <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-2 sm:flex-shrink-0">
+            {/* Progress - shown on larger screens, hidden on very small mobile */}
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 hidden min-[400px]:flex sm:w-20">
+              <div className="w-12 sm:w-16">
+                <Progress value={getProgressPercentage(item)} className="h-1.5" />
+              </div>
+              <div className="text-xs font-medium text-gray-600 w-6 sm:w-8 text-right">
+                {getProgressPercentage(item).toFixed(0)}%
+              </div>
             </div>
-            <div className="text-xs font-medium text-gray-600 w-8 text-right">
-              {getProgressPercentage(item).toFixed(0)}%
+
+            {/* Quantity Info - compact on mobile */}
+            <div className="text-xs text-gray-600 flex-shrink-0 text-right sm:w-14">
+              {item.qtyFunded + cartQuantity}/{item.qtyNeededTotal}
             </div>
-          </div>
 
-          {/* Quantity Info */}
-          <div className="text-xs text-gray-600 flex-shrink-0 w-16 text-right">
-            {item.qtyFunded + cartQuantity}/{item.qtyNeededTotal}
-          </div>
-
-          {/* Price */}
-          <div className="text-right flex-shrink-0 w-20">
-            <div className="text-xs font-semibold text-gray-900">
-              {formatCurrency(item.unitCostEUR)}
+            {/* Price - compact on mobile */}
+            <div className="text-right flex-shrink-0 sm:w-20">
+              <div className="text-xs font-semibold text-gray-900">
+                {formatCurrency(item.unitCostEUR)}
+              </div>
+              <div className="text-[10px] text-gray-500 hidden sm:block">{item.unit}</div>
             </div>
-            <div className="text-[10px] text-gray-500">{item.unit}</div>
-          </div>
 
-          {/* Cart Controls */}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => removeItemPiece(item.itemId)}
-              disabled={cartQuantity === 0}
-              className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-30"
-            >
-              <Minus className="w-3.5 h-3.5" />
-            </Button>
-            
-            <span className="text-xs font-medium w-6 text-center">
-              {cartQuantity}
-            </span>
-            
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => addItemPieceWithCartOpen(item)}
-              disabled={remainingPieces === 0}
-              className="h-7 w-7 p-0 disabled:opacity-30"
-            >
-              <Plus className="w-3.5 h-3.5" />
-            </Button>
+            {/* Cart Controls */}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => removeItemPiece(item.itemId)}
+                disabled={cartQuantity === 0}
+                className="h-7 w-7 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-30"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </Button>
+              
+              <span className="text-xs font-medium w-5 sm:w-6 text-center">
+                {cartQuantity}
+              </span>
+              
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => addItemPieceWithCartOpen(item)}
+                disabled={remainingPieces === 0}
+                className="h-7 w-7 p-0 disabled:opacity-30"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </Button>
+            </div>
           </div>
         </div>
       );
@@ -580,7 +592,7 @@ export const ProjectItemsModal = ({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className={`z-[60] h-[85vh] flex flex-col pr-0 transition-all duration-300 max-w-7xl bg-white touch-pan-y overscroll-none`}
+        className={`z-[60] h-[85vh] flex flex-col p-0 transition-all duration-300 max-w-7xl bg-white touch-pan-y overscroll-none`}
         onPointerDownOutside={(e) => {
           // Prevent closing when clicking on cart
           if (cartState.isOpen) {
@@ -588,7 +600,7 @@ export const ProjectItemsModal = ({
           }
         }}
       >
-        <DialogHeader className="pb-2">
+        <DialogHeader className="pb-2 px-4 sm:px-6 pt-6">
           <div className="flex items-center justify-between gap-2">
             <DialogTitle className="flex items-center gap-2 text-lg flex-1 min-w-0">
               <Package className="w-5 h-5 text-primary flex-shrink-0" />
@@ -624,7 +636,7 @@ export const ProjectItemsModal = ({
         {/* Content Area - optional inline cart at md+ */}
         <div className={`grid gap-4 flex-1 min-h-0 ${showInlineCart ? 'md:grid-cols-[2fr_1fr]' : 'grid-cols-1'}`}>
           {/* Left: Modal content */}
-          <div className="min-w-0 h-full overflow-y-auto pr-2 pb-4">
+          <div className="min-w-0 h-full overflow-y-auto px-4 sm:px-6 pb-4">
             {viewMode === 'overview' ? (
               /* Phase Overview */
               <div className="space-y-4">
@@ -762,7 +774,7 @@ export const ProjectItemsModal = ({
               /* Details View */
               <div className="space-y-2">
               {/* Compact Filter Bar */}
-              <div className="sticky top-0 z-20 bg-white border-b pb-2 -mx-2 px-2">
+              <div className="sticky top-0 z-20 bg-white border-b pb-2 -mx-4 sm:-mx-6 px-4 sm:px-6">
                 <div className="flex items-center justify-between gap-2">
                   {/* Item Count */}
                   <div className="text-xs text-gray-500">
@@ -853,7 +865,7 @@ export const ProjectItemsModal = ({
                 <div>
                   <button
                     onClick={() => toggleSection('funded')}
-                    className="sticky top-[60px] z-10 w-full text-left text-xs font-semibold text-green-700 mb-1.5 flex items-center justify-between hover:bg-green-50 px-2 py-1.5 rounded transition-colors bg-green-50/80 backdrop-blur-sm border border-green-200"
+                    className="sticky top-[60px] z-10 w-full text-left text-xs font-semibold text-green-700 mb-1.5 flex items-center justify-between hover:bg-green-50 px-4 sm:px-6 py-1.5 rounded transition-colors bg-green-50/80 backdrop-blur-sm border border-green-200"
                   >
                     <div className="flex items-center gap-1.5">
                       {expandedSections.funded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
@@ -863,7 +875,7 @@ export const ProjectItemsModal = ({
                     </div>
                   </button>
                   {expandedSections.funded && (
-                    <div className={viewStyle === 'compact' ? 'space-y-0 bg-white border rounded-md overflow-hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 pl-1 pb-2'}>
+                    <div className={viewStyle === 'compact' ? 'space-y-0 bg-white border rounded-md overflow-hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:pl-1 pb-2'}>
                       {fundedItems.map(item => renderItemCard(item, false))}
                     </div>
                   )}
@@ -875,7 +887,7 @@ export const ProjectItemsModal = ({
                 <div>
                   <button
                     onClick={() => toggleSection('partiallyFunded')}
-                    className="sticky top-[60px] z-10 w-full text-left text-xs font-semibold text-orange-700 mb-1.5 flex items-center justify-between hover:bg-orange-50 px-2 py-1.5 rounded transition-colors bg-orange-50/80 backdrop-blur-sm border border-orange-200"
+                    className="sticky top-[60px] z-10 w-full text-left text-xs font-semibold text-orange-700 mb-1.5 flex items-center justify-between hover:bg-orange-50 px-4 sm:px-6 py-1.5 rounded transition-colors bg-orange-50/80 backdrop-blur-sm border border-orange-200"
                   >
                     <div className="flex items-center gap-1.5">
                       {expandedSections.partiallyFunded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
@@ -885,7 +897,7 @@ export const ProjectItemsModal = ({
                     </div>
                   </button>
                   {expandedSections.partiallyFunded && (
-                    <div className={viewStyle === 'compact' ? 'space-y-0 bg-white border rounded-md overflow-hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 pl-1 pb-2'}>
+                    <div className={viewStyle === 'compact' ? 'space-y-0 bg-white border rounded-md overflow-hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:pl-1 pb-2'}>
                       {partiallyFundedItems.map(item => renderItemCard(item, nextImportantItem?.itemId === item.itemId && unfundedItems.length === 0))}
                     </div>
                   )}
@@ -897,7 +909,7 @@ export const ProjectItemsModal = ({
                 <div>
                   <button
                     onClick={() => toggleSection('unfunded')}
-                    className="sticky top-[60px] z-10 w-full text-left text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-between hover:bg-gray-50 px-2 py-1.5 rounded transition-colors bg-gray-50/80 backdrop-blur-sm border border-gray-200"
+                    className="sticky top-[60px] z-10 w-full text-left text-xs font-semibold text-gray-700 mb-1.5 flex items-center justify-between hover:bg-gray-50 px-4 sm:px-6 py-1.5 rounded transition-colors bg-gray-50/80 backdrop-blur-sm border border-gray-200"
                   >
                     <div className="flex items-center gap-1.5">
                       {expandedSections.unfunded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
@@ -907,7 +919,7 @@ export const ProjectItemsModal = ({
                     </div>
                   </button>
                   {expandedSections.unfunded && (
-                    <div className={viewStyle === 'compact' ? 'space-y-0 bg-white border rounded-md overflow-hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 pl-1 pb-2'}>
+                    <div className={viewStyle === 'compact' ? 'space-y-0 bg-white border rounded-md overflow-hidden' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:pl-1 pb-2'}>
                       {unfundedItems.map(item => {
                         const isNextImportant = nextImportantItem?.itemId === item.itemId;
                         return renderItemCard(item, isNextImportant);
@@ -940,7 +952,7 @@ export const ProjectItemsModal = ({
         {/* Floating CTA removed - now using footer cart link */}
 
         {/* Footer */}
-        <div className="flex justify-between items-center pt-4 border-t px-4 bg-white flex-shrink-0">
+        <div className="flex justify-between items-center pt-4 pb-6 sm:pb-8 border-t px-4 sm:px-6 bg-white flex-shrink-0">
           <div className="text-sm text-muted-foreground">
             {viewMode === 'overview' ? `${projectCost.totalItems} Items insgesamt` : `${filteredItems.length} von ${projectCost.totalItems} Items angezeigt`}
           </div>
