@@ -414,7 +414,6 @@ const Donation = () => {
               size="lg" 
               onClick={() => document.getElementById('donation-form')?.scrollIntoView({ behavior: 'smooth' })}
             >
-              <Heart className="mr-2 h-5 w-5" />
               {t("donation.hero.button")}
             </Button>
           </div>
@@ -512,7 +511,6 @@ const Donation = () => {
                                         onClick={handleSaveGeneralDonation}
                                         className="h-8 px-2"
                                       >
-                                        <Check className="w-3 h-3" />
                                       </Button>
                                       <Button
                                         size="sm"
@@ -520,7 +518,6 @@ const Donation = () => {
                                         onClick={handleCancelEditGeneralDonation}
                                         className="h-8 px-2"
                                       >
-                                        <X className="w-3 h-3" />
                                       </Button>
                                     </div>
                                   </div>
@@ -572,7 +569,6 @@ const Donation = () => {
                                             className="h-6 w-6 p-0"
                                             title={t("donation.form.changeAmount")}
                                           >
-                                            <Edit2 className="w-3 h-3" />
                                           </Button>
                                         )}
                                       </div>
@@ -588,7 +584,6 @@ const Donation = () => {
                                             className="h-6 w-6 p-0"
                                             disabled={item.quantity <= 1 && (item.type === 'phase' || false)}
                                           >
-                                            <Minus className="w-3 h-3" />
                                           </Button>
                                           <span className="text-sm font-medium w-8 text-center">
                                             {item.quantity}
@@ -606,7 +601,6 @@ const Donation = () => {
                                             disabled={item.type === 'phase' && item.quantity >= 1 || (item.maxQuantity && item.quantity >= item.maxQuantity)}
                                             className="h-6 w-6 p-0"
                                           >
-                                            <Plus className="w-3 h-3" />
                                           </Button>
                                         </div>
                                       </div>
@@ -622,7 +616,6 @@ const Donation = () => {
                                   className="h-6 w-6 p-0 text-gray-400 hover:text-red-600"
                                   title={t("donation.form.remove")}
                                 >
-                                  <Trash2 className="w-3 h-3" />
                                 </Button>
                               )}
                             </div>
@@ -656,7 +649,6 @@ const Donation = () => {
                               onClick={handleSaveNewGeneralDonation}
                               className="h-8 px-2"
                             >
-                              <Check className="w-3 h-3" />
                             </Button>
                             <Button
                               size="sm"
@@ -664,7 +656,6 @@ const Donation = () => {
                               onClick={handleCancelAddGeneralDonation}
                               className="h-8 px-2"
                             >
-                              <X className="w-3 h-3" />
                             </Button>
                           </div>
                           <p className="text-xs text-blue-600">{t("donation.form.addGeneralDonation")}</p>
@@ -773,7 +764,6 @@ const Donation = () => {
                                 onClick={handleAddGeneralDonation} 
                                 className="w-full"
                               >
-                                <Heart className="w-4 h-4 mr-2" />
                                 {generalDonation ? t("donation.form.editGeneralDonation") : t("donation.form.addGeneralDonation")}
                               </Button>
                             )}
@@ -803,7 +793,6 @@ const Donation = () => {
                                     onClick={handleSaveNewGeneralDonation}
                                     className="h-8 px-2"
                                   >
-                                    <Check className="w-3 h-3" />
                                   </Button>
                                   <Button
                                     size="sm"
@@ -811,7 +800,6 @@ const Donation = () => {
                                     onClick={handleCancelAddGeneralDonation}
                                     className="h-8 px-2"
                                   >
-                                    <X className="w-3 h-3" />
                                   </Button>
                                 </div>
                                 <p className="text-xs text-blue-600">{t("donation.form.addGeneralDonation")}</p>
@@ -1048,8 +1036,7 @@ const Donation = () => {
                     className="w-full h-12"
                     disabled={isProcessingPayment}
                   >
-                    <Heart className="mr-2 h-5 w-5" />
-                    {paymentMethod === "paypal" ? "PayPal - " : ""}{donationType === "one-time" ? t("donation.form.donate") : t("donation.form.donate_monthly")}
+                    {donationType === "one-time" ? t("donation.form.donate") : t("donation.form.donate_monthly")}
                   </Button>
                 </div>
               </Card>
@@ -1190,7 +1177,6 @@ const Donation = () => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button asChild variant="outline" size="lg">
                   <a href={`mailto:${t("donation.contact.email")}`}>
-                    <Mail className="mr-2 h-4 w-4" />
                     {t("donation.contact.email")}
                   </a>
                 </Button>
