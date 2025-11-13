@@ -123,3 +123,14 @@ Hopeful, professional, trustworthy design with soft blues and warm yellows
     @apply bg-background text-foreground break-words;
   }
 }
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+}

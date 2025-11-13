@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -645,6 +645,40 @@ export const ProjectItemsModal = ({
       }
     }
   }, [viewMode, phaseGroups.length]);
+
+  // Auto-scroll timeline to active phase
+  const timelineRef = React.useRef<HTMLDivElement>(null);
+  const activePhaseCardRef = React.useRef<HTMLDivElement>(null);
+  
+  useEffect(() => {
+    if (viewMode === 'overview' && timelineRef.current && phaseGroups.length > 0) {
+      const activeElement = timelineRef.current.children[activePhaseIndex] as HTMLElement;
+      if (activeElement) {
+        setTimeout(() => {
+          activeElement.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'nearest', 
+            inline: 'center' 
+          });
+        }, 100);
+      }
+    }
+  }, [activePhaseIndex, viewMode, phaseGroups.length]);
+
+  // Scroll to active phase card when phase is clicked
+  const handlePhaseClick = (index: number) => {
+    setActivePhaseIndex(index);
+    // Scroll to the active phase card after a short delay
+    setTimeout(() => {
+      if (activePhaseCardRef.current) {
+        activePhaseCardRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest'
+        });
+      }
+    }, 150);
+  };
   
   // Get current active phase
   const currentActivePhase = phaseGroups[activePhaseIndex] || phaseGroups[0];
@@ -1193,58 +1227,78 @@ export const ProjectItemsModal = ({
                   </div>
 
                   {/* Timeline Stepper - All Phases Visible */}
-                  <div className="relative">
-                    <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-hide">
+                  <div className="relative py-1">
+                    <div 
+                      ref={timelineRef}
+                      className="flex items-start gap-2 overflow-x-auto overflow-y-visible pb-3 pl-4 pr-4 scrollbar-hide scroll-smooth"
+                      style={{ scrollPadding: '0 1rem' }}
+                    >
                       {phaseGroups.map((phaseGroup, index) => {
                         const isActive = index === activePhaseIndex;
                         const isCompleted = phaseGroup.isCompleted;
                         const isPast = index < activePhaseIndex;
+                        const phaseName = getPhaseNameTranslated(phaseGroup.phase);
                         
                         return (
-                          <div key={phaseGroup.phase} className="flex items-center flex-shrink-0">
+                          <div key={phaseGroup.phase} className="flex items-center flex-shrink-0 min-w-[100px]">
                             {/* Phase Dot */}
-                            <button
-                              onClick={() => setActivePhaseIndex(index)}
-                              className={`relative z-10 flex flex-col items-center gap-2 transition-all ${
-                                isActive ? 'scale-110' : 'hover:scale-105'
-                              }`}
-                            >
-                              <div className={`
-                                w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all
-                                ${isCompleted 
-                                  ? 'bg-green-500 border-green-600 shadow-lg' 
-                                  : isActive 
-                                    ? 'bg-primary border-primary shadow-lg' 
-                                    : isPast
-                                      ? 'bg-gray-300 border-gray-400'
-                                      : 'bg-gray-200 border-gray-300'
-                                }
-                              `}>
-                                {isCompleted ? (
-                                  <CheckCircle className="w-6 h-6 text-white" />
-                                ) : (
-                                  <div className="w-6 h-6 flex items-center justify-center">
-                                    {getPhaseIcon(phaseGroup.phase)}
+                            <Tooltip delayDuration={0}>
+                              <TooltipTrigger asChild>
+                                <button
+                                  onClick={() => handlePhaseClick(index)}
+                                  className={`relative z-10 flex flex-col items-center gap-1.5 transition-all pt-1 pb-2 ${
+                                    isActive ? 'scale-110' : 'hover:scale-105'
+                                  }`}
+                                >
+                                  {/* Active indicator dot - positioned above circle */}
+                                  {isActive && (
+                                    <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full z-20 shadow-sm" />
+                                  )}
+                                  <div className={`
+                                    w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all flex-shrink-0
+                                    ${isCompleted 
+                                      ? 'bg-green-500 border-green-600 shadow-lg' 
+                                      : isActive 
+                                        ? 'bg-primary border-primary shadow-lg ring-2 ring-primary/20' 
+                                        : isPast
+                                          ? 'bg-gray-300 border-gray-400'
+                                          : 'bg-gray-200 border-gray-300'
+                                    }
+                                  `}>
+                                    {isCompleted ? (
+                                      <CheckCircle className="w-5 h-5 text-white" />
+                                    ) : (
+                                      <div className="w-5 h-5 flex items-center justify-center text-white">
+                                        {getPhaseIcon(phaseGroup.phase)}
+                                      </div>
+                                    )}
                                   </div>
+                                  <div className={`
+                                    text-xs font-medium text-center px-1 w-full
+                                    ${isActive ? 'text-primary font-semibold' : 'text-gray-600'}
+                                  `}>
+                                    <div className="line-clamp-2 leading-tight min-h-[2rem]">
+                                      {phaseName}
+                                    </div>
+                                  </div>
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent className="z-[9999]" side="top" sideOffset={5}>
+                                <p className="text-sm font-medium">{phaseName}</p>
+                                {isCompleted && (
+                                  <p className="text-xs text-gray-500 mt-1">{t("projectItems.completed")}</p>
                                 )}
-                              </div>
-                              <div className={`
-                                text-xs font-medium text-center max-w-[80px] px-1
-                                ${isActive ? 'text-primary font-semibold' : 'text-gray-600'}
-                              `}>
-                                {getPhaseNameTranslated(phaseGroup.phase).split(' ').slice(0, 2).join(' ')}
-                              </div>
-                              {isActive && (
-                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rounded-full" />
-                              )}
-                            </button>
+                              </TooltipContent>
+                            </Tooltip>
                             
                             {/* Connector Line */}
                             {index < phaseGroups.length - 1 && (
                               <div className={`
-                                w-16 sm:w-24 h-0.5 mx-2 transition-all
+                                w-16 sm:w-20 md:w-24 h-0.5 mx-2 transition-all flex-shrink-0
                                 ${isPast || isActive ? 'bg-green-500' : 'bg-gray-300'}
-                              `} />
+                              `} 
+                              style={{ marginTop: '-20px' }}
+                              />
                             )}
                           </div>
                         );
@@ -1254,7 +1308,7 @@ export const ProjectItemsModal = ({
 
                   {/* Active Phase Card - Large and Prominent */}
                   {currentActivePhase && (
-                    <div className="relative">
+                    <div ref={activePhaseCardRef} className="relative">
                       {/* Navigation Arrows */}
                       {phaseGroups.length > 1 && (
                         <>
