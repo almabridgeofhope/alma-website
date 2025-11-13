@@ -253,11 +253,10 @@ const Donation = () => {
             <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed mb-8">
               {t("donation.hero.subtitle")}
             </p>
-              <Button 
-                size="lg" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
-                onClick={() => document.getElementById('donation-form')?.scrollIntoView({ behavior: 'smooth' })}
-              >
+            <Button 
+              size="lg" 
+              onClick={() => document.getElementById('donation-form')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               <Heart className="mr-2 h-5 w-5" />
               {t("donation.hero.button")}
             </Button>
@@ -514,7 +513,8 @@ const Donation = () => {
                       console.log("Button clicked!");
                       handleDonate();
                     }}
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-button h-12 text-lg"
+                    size="lg"
+                    className="w-full h-12"
                     disabled={isProcessingPayment}
                   >
                     <Heart className="mr-2 h-5 w-5" />
@@ -657,13 +657,13 @@ const Donation = () => {
                 {t("donation.contact.subtitle")}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button asChild variant="outline" size="lg" className="shadow-button">
+                <Button asChild variant="outline" size="lg">
                   <a href={`mailto:${t("donation.contact.email")}`}>
                     <Mail className="mr-2 h-4 w-4" />
                     {t("donation.contact.email")}
                   </a>
                 </Button>
-                <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button">
+                <Button asChild size="lg">
                   <a href="/contact">
                     {t("donation.contact.button")}
                   </a>
@@ -692,7 +692,7 @@ const Donation = () => {
             <AlertDialogCancel onClick={() => setShowWarningDialog(false)}>
               {t("donation.warning.cancel")}
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleContinueDonation} className="bg-primary hover:bg-primary/90">
+            <AlertDialogAction onClick={handleContinueDonation}>
               {t("donation.warning.continue")}
             </AlertDialogAction>
           </AlertDialogFooter>

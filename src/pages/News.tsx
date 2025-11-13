@@ -82,10 +82,7 @@ const News = () => {
               <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
                 {t("news.newsletter.subtitle")}
               </p>
-              <Button 
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
-              >
+              <Button size="lg">
                 {t("news.newsletter.button")}
               </Button>
             </div>

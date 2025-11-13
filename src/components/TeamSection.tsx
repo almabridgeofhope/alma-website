@@ -33,10 +33,7 @@ const TeamSection = () => {
                   to={basePath + "/about"}
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 >
-                  <Button 
-                    size="lg" 
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
-                  >
+                  <Button size="lg">
                     {t("team.button")}
                   </Button>
                 </Link>

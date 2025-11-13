@@ -199,7 +199,8 @@ const Contact = () => {
                   <Button 
                     type="submit"
                     disabled={isLoading}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button w-full"
+                    size="lg"
+                    className="w-full"
                   >
                     {isLoading ? (
                       <>

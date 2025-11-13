@@ -85,7 +85,7 @@ const NotFound = () => {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
+              <Button asChild size="lg">
                 <Link 
                   to="/dev" 
                   className="flex items-center gap-2"
@@ -95,7 +95,7 @@ const NotFound = () => {
                   {t("404.button_home")}
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="shadow-button">
+              <Button asChild variant="outline" size="lg">
                 <Link 
                   to="/dev/projects" 
                   className="flex items-center gap-2"
@@ -105,7 +105,7 @@ const NotFound = () => {
                   {t("404.button_projects")}
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="shadow-button">
+              <Button asChild variant="outline" size="lg">
                 <Link 
                   to="/dev/contact" 
                   className="flex items-center gap-2"

@@ -94,9 +94,9 @@ const Article = () => {
       <Navigation />
       
       <main className="pt-16">
-        {/* Back Button */}
-        <section className="pt-8 pb-4 bg-background">
-          <div className="max-w-content mx-auto px-6">
+        {/* Article Header */}
+        <section className="pt-section pb-section bg-background">
+          <div className="max-w-4xl mx-auto px-6">
             <Link 
               to="/dev/news"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -329,7 +329,7 @@ const Article = () => {
                         >
                           <Button
                             size="lg"
-                            className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
+                            className="w-full sm:w-auto"
                           >
                             {article.body.conclusionCTA.buttonLabel ??
                               article.body.conclusionCTA.text}
@@ -360,11 +360,7 @@ const Article = () => {
                             <Button
                               key={amount}
                               variant={isSelected ? "default" : "outline"}
-                              className={`h-12 text-lg transition ${
-                                isSelected
-                                  ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90"
-                                  : ""
-                              }`}
+                              className="h-12 text-lg"
                               onClick={() => setSelectedDonationAmount(amount)}
                             >
                               €{amount}
@@ -455,7 +451,7 @@ const Article = () => {
               to="/dev/news"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button size="lg">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 {t("news.back_to_news")}
               </Button>

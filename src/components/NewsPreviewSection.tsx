@@ -113,10 +113,7 @@ const NewsPreviewSection = () => {
             to="/dev/news"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
-            <Button 
-              size="lg" 
-              className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
-            >
+            <Button size="lg">
               View All News & Updates
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>

@@ -70,7 +70,7 @@ const Navigation = () => {
               to={basePath + "/donation"} 
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
-              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button size="sm">
                 Donate
               </Button>
             </Link>
@@ -156,7 +156,7 @@ const Navigation = () => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             >
-              <Button size="sm" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+              <Button size="sm" className="w-full">
                 Donate
               </Button>
             </Link>

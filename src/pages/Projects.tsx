@@ -169,6 +169,7 @@ const Projects = () => {
       image: communityHouseImage,
       buttonText: t("projects.community.button"),
       priority: "active",
+      anchorId: "community-house",
     },
     {
       title: t("projects.well.title"),
@@ -542,10 +543,7 @@ const Projects = () => {
                 to="/dev/donation"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
-                <Button 
-                  size="lg"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
-                >
+                <Button size="lg">
                   {t("projects.impact.donate")}
                 </Button>
               </Link>
