@@ -8,6 +8,8 @@ import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Calendar, User, ArrowLeft, Tag, Quote, ArrowRight } from "lucide-react";
 import { getNewsArticles, NewsArticle } from "@/data/newsArticles";
+import AgeDistributionChart from "@/components/AgeDistributionChart";
+import GenderDistributionChart from "@/components/GenderDistributionChart";
 
 const Article = () => {
   const { date } = useParams<{ date: string }>();
@@ -236,16 +238,6 @@ const Article = () => {
                       {section.title}
                     </h3>
 
-                    {section.paragraphs && section.paragraphs.length > 0 && (
-                      <div className="space-y-4">
-                        {section.paragraphs.map((paragraph, paragraphIndex) => (
-                          <p key={paragraphIndex} className="leading-relaxed text-base">
-                            {paragraph}
-                          </p>
-                        ))}
-                      </div>
-                    )}
-
                     {section.stats && section.stats.length > 0 && (
                       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {section.stats.map((stat, statIndex) => (
@@ -261,6 +253,28 @@ const Article = () => {
                             </p>
                           </Card>
                         ))}
+                      </div>
+                    )}
+
+                    {section.paragraphs && section.paragraphs.length > 0 && (
+                      <div className="space-y-4">
+                        {section.paragraphs.map((paragraph, paragraphIndex) => (
+                          <p key={paragraphIndex} className="leading-relaxed text-base">
+                            {paragraph}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Charts for Population section in article 4 */}
+                    {article.id === "4" && section.title === t("news.article4.sections.population.title") && (
+                      <div className="grid md:grid-cols-2 gap-8 my-8">
+                        <div className="bg-card border border-border rounded-lg px-6 pt-6 pb-2 shadow-sm">
+                          <AgeDistributionChart />
+                        </div>
+                        <div className="bg-card border border-border rounded-lg px-6 pt-6 pb-2 shadow-sm">
+                          <GenderDistributionChart />
+                        </div>
                       </div>
                     )}
 
