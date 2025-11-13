@@ -51,13 +51,25 @@ export class ClientGoogleSheetsService {
     // e.g. "Tabelle1!A:S" or "Sheet1!A:S". Falls nicht gesetzt, alle Spalten bis S (inkl. deutsche Übersetzungen).
     // Spaltenreihenfolge: item_id, project, phase, phasede, category, categoryde, display_name, displaynamede, unit, unit_cost_UGX, unit_cost_EUR, qty_needed_total, qty_funded, priority, blurb, blurbde, image_url, visibility, sort_order
     this.range = import.meta.env.VITE_GOOGLE_SHEET_RANGE || 'A:S';
+    
+    // Debug logging (only in development)
+    if (import.meta.env.DEV) {
+      console.log('Google Sheets Service initialized:', {
+        apiKeyConfigured: !!this.apiKey,
+        apiKeyLength: this.apiKey.length,
+        sheetId: this.sheetId,
+        range: this.range,
+        envVarExists: !!import.meta.env.VITE_GOOGLE_API_KEY
+      });
+    }
   }
 
   async getProjectCosts(): Promise<ProjectCost[]> {
     try {
       // Check if API key is configured
       if (!this.apiKey) {
-        throw new Error('Google API Key not configured. Please set VITE_GOOGLE_API_KEY in your .env.local file');
+        console.warn('Google API Key not configured. Project costs will not be loaded. Set VITE_GOOGLE_API_KEY in your .env.local file to enable this feature.');
+        return [];
       }
 
       console.log('Fetching project costs from Google Sheets...', {
