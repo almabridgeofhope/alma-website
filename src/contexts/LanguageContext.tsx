@@ -461,6 +461,8 @@ const translations = {
     "projectItems.addAllOpen": "Add all open items",
     "projectItems.addAllOpenTooltip": "Adds all {count} unfunded items of this phase to the cart",
     "projectItems.details": "Details",
+    "projectItems.completed": "Completed",
+    "projectItems.showCompletedPhases": "Show completed phases",
     
     // Cart Sidebar
     "cart.inline.title": "Cart",
@@ -1034,6 +1036,8 @@ const translations = {
     "projectItems.addAllOpen": "Alle offenen Items hinzufügen",
     "projectItems.addAllOpenTooltip": "Fügt alle {count} noch nicht finanzierten Items dieser Phase zum Warenkorb hinzu",
     "projectItems.details": "Details",
+    "projectItems.completed": "Abgeschlossen",
+    "projectItems.showCompletedPhases": "Abgeschlossene Phasen anzeigen",
     
     // Cart Sidebar
     "cart.inline.title": "Warenkorb",

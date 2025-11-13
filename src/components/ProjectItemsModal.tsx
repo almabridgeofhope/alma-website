@@ -120,6 +120,7 @@ export const ProjectItemsModal = ({
   const [sortBy, setSortBy] = useState<'name' | 'price' | 'progress' | 'remaining'>('remaining');
   const [viewStyle, setViewStyle] = useState<'compact' | 'detailed'>('compact');
   const [filtersExpanded, setFiltersExpanded] = useState(true);
+  const [showCompletedPhases, setShowCompletedPhases] = useState(false);
 
   // Handle URL-based navigation using hash fragments
   useEffect(() => {
@@ -620,10 +621,16 @@ export const ProjectItemsModal = ({
           const cartQuantity = getItemCartQuantity(item.itemId);
           const remainingNeeded = item.qtyNeededTotal - item.qtyFunded;
           return cartQuantity >= remainingNeeded;
-        })
+        }),
+      // A phase is completed when progress is 100% (all items are fully funded)
+      isCompleted: phaseProgress >= 100
     };
   });
   // Keep phases in original order (as defined in Excel table), don't sort by progress
+  
+  // Separate active and completed phases
+  const activePhases = phaseGroups.filter(phase => !phase.isCompleted);
+  const completedPhases = phaseGroups.filter(phase => phase.isCompleted);
 
   const renderItemCard = (item: ProjectItem, isNextImportant: boolean = false) => {
     const cartQuantity = getItemCartQuantity(item.itemId);
@@ -1003,7 +1010,7 @@ export const ProjectItemsModal = ({
                 )}
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                 {phaseGroups.map((phaseGroup) => (
+                 {activePhases.map((phaseGroup) => (
                    <Card 
                      key={phaseGroup.phase} 
                      onClick={() => navigateToDetails(phaseGroup.phase)}
@@ -1137,6 +1144,131 @@ export const ProjectItemsModal = ({
                    </Card>
                  ))}
                 </div>
+                
+                {/* Toggle for completed phases */}
+                {completedPhases.length > 0 && (
+                  <div className="mt-4 pt-4 border-t">
+                    <button
+                      onClick={() => setShowCompletedPhases(!showCompletedPhases)}
+                      className="w-full text-left text-sm font-medium text-gray-600 hover:text-gray-900 flex items-center justify-between hover:bg-gray-50 px-4 py-2 rounded transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        {showCompletedPhases ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                        <span>{t("projectItems.showCompletedPhases")}</span>
+                        <Badge variant="secondary" className="ml-1.5 text-xs px-1.5 py-0">{completedPhases.length}</Badge>
+                      </div>
+                    </button>
+                    
+                    {/* Completed Phases - shown when toggle is active, below the toggle */}
+                    {showCompletedPhases && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                        {completedPhases.map((phaseGroup) => (
+                          <Card 
+                            key={phaseGroup.phase} 
+                            onClick={() => navigateToDetails(phaseGroup.phase)}
+                            className="p-4 cursor-pointer transition-all hover:shadow-lg flex flex-col h-full opacity-75"
+                          >
+                            <div className="flex items-start gap-3 flex-1">
+                              {/* Phase Icon */}
+                              <div className="flex-shrink-0">
+                                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                                  {getPhaseIcon(phaseGroup.phase)}
+                                </div>
+                              </div>
+
+                              {/* Phase Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h3 className="font-semibold text-gray-900 text-base">{getPhaseNameTranslated(phaseGroup.phase)}</h3>
+                                  <Badge variant="outline" className="text-xs px-1.5 py-0.5">
+                                    {phaseGroup.items.length} {t("projectItems.items")}
+                                  </Badge>
+                                </div>
+                                
+                                {/* Progress Bar */}
+                                <div className="flex items-center gap-2 mb-3">
+                                  <div className="flex-1 min-w-0 relative">
+                                    {(phaseGroup.spent > 0 || phaseGroup.cartValue > 0) ? (
+                                      <Tooltip delayDuration={0}>
+                                        <TooltipTrigger asChild>
+                                          <div className="relative w-full overflow-hidden rounded-full bg-gray-200 h-2.5 cursor-help">
+                                            {/* Funded segment (gray) */}
+                                            {phaseGroup.fundedPercent > 0 && (
+                                              <div
+                                                className="absolute left-0 top-0 h-full bg-gray-500 transition-all"
+                                                style={{ width: `${phaseGroup.fundedPercent}%` }}
+                                              />
+                                            )}
+                                            {/* Cart segment (primary color) - positioned after funded */}
+                                            {phaseGroup.cartPercent > 0 && (
+                                              <div
+                                                className="absolute top-0 h-full bg-primary transition-all"
+                                                style={{ left: `${phaseGroup.fundedPercent}%`, width: `${phaseGroup.cartPercent}%` }}
+                                              />
+                                            )}
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="z-[9999]" side="top" sideOffset={5}>
+                                          <div className="text-sm space-y-1">
+                                            {phaseGroup.spent > 0 && (
+                                              <div className="flex items-center gap-2">
+                                                <span className="w-3 h-3 rounded-full bg-gray-500"></span>
+                                                <span>{formatCurrency(phaseGroup.spent)} {t("projectItems.funded")}</span>
+                                              </div>
+                                            )}
+                                            {phaseGroup.cartValue > 0 && (
+                                              <div className="flex items-center gap-2">
+                                                <span className="w-3 h-3 rounded-full bg-primary"></span>
+                                                <span>{formatCurrency(phaseGroup.cartValue)} {t("projectItems.inCart")}</span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    ) : (
+                                      <div className="relative w-full overflow-hidden rounded-full bg-gray-200 h-2.5">
+                                        {/* Empty progress bar */}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="text-xs font-semibold text-gray-700 min-w-[35px] text-right">
+                                    {phaseGroup.progress.toFixed(0)}%
+                                  </div>
+                                </div>
+
+                                {/* Budget Info */}
+                                <div className="flex items-center justify-between text-xs mb-3">
+                                  <div className="text-gray-600">
+                                    <span className="font-medium">{t("projectItems.paid")}:</span> {formatCurrency(phaseGroup.spent)}
+                                  </div>
+                                  <div className="text-green-600 font-semibold">
+                                    {t("projectItems.completed")}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+                              {/* Details Button */}
+                              <Button
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigateToDetails(phaseGroup.phase);
+                                }}
+                                className="flex-1 text-xs font-medium"
+                              >
+                                <ChevronRight className="w-3.5 h-3.5 mr-1.5" />
+                                {t("projectItems.details")}
+                              </Button>
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               /* Details View */
