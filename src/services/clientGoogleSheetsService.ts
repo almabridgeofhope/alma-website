@@ -21,6 +21,7 @@ export interface ProjectItem {
   totalCostEUR?: number;
   fundedCostEUR?: number;
   // German translations (optional)
+  phaseDe?: string;
   displayNameDe?: string;
   categoryDe?: string;
   blurbDe?: string;
@@ -47,8 +48,9 @@ export class ClientGoogleSheetsService {
     // Environment variables from .env(.local)
     this.apiKey = import.meta.env.VITE_GOOGLE_API_KEY || '';
     this.sheetId = import.meta.env.VITE_GOOGLE_SHEET_ID || '1qCbZyPujr6_iZVNWSnM5aqMOX0tzamDJO2vMOulV514';
-    // e.g. "Tabelle1!A:R" or "Sheet1!A:R". Falls nicht gesetzt, alle Spalten bis R (inkl. deutsche Übersetzungen).
-    this.range = import.meta.env.VITE_GOOGLE_SHEET_RANGE || 'A:R';
+    // e.g. "Tabelle1!A:S" or "Sheet1!A:S". Falls nicht gesetzt, alle Spalten bis S (inkl. deutsche Übersetzungen).
+    // Spaltenreihenfolge: item_id, project, phase, phasede, category, categoryde, display_name, displaynamede, unit, unit_cost_UGX, unit_cost_EUR, qty_needed_total, qty_funded, priority, blurb, blurbde, image_url, visibility, sort_order
+    this.range = import.meta.env.VITE_GOOGLE_SHEET_RANGE || 'A:S';
   }
 
   async getProjectCosts(): Promise<ProjectCost[]> {
@@ -97,36 +99,37 @@ export class ClientGoogleSheetsService {
       }
 
       // Parse the detailed cost tracking data
-      // Structure: [item_id, project, phase, category, display_name, unit, unit_cost_UGX, unit_cost_EUR, qty_needed_total, qty_funded, priority, blurb, image_url, visibility, sort_order, display_name_de, category_de, blurb_de]
+      // Structure: [item_id, project, phase, phasede, category, categoryde, display_name, displaynamede, unit, unit_cost_UGX, unit_cost_EUR, qty_needed_total, qty_funded, priority, blurb, blurbde, image_url, visibility, sort_order]
       const allProjectItems: ProjectItem[] = rows.slice(1).map((row: any[]) => {
-        const unitCostEUR = parseFloat(row[7]?.toString().replace(',', '.') || '0');
-        const qtyNeededTotal = parseFloat(row[8]?.toString().replace(',', '.') || '0');
-        const qtyFunded = parseFloat(row[9]?.toString().replace(',', '.') || '0');
-        const visibility = row[13]?.toString().toLowerCase() || '';
+        const unitCostEUR = parseFloat(row[10]?.toString().replace(',', '.') || '0');
+        const qtyNeededTotal = parseFloat(row[11]?.toString().replace(',', '.') || '0');
+        const qtyFunded = parseFloat(row[12]?.toString().replace(',', '.') || '0');
+        const visibility = row[17]?.toString().toLowerCase() || '';
         
         return {
           itemId: row[0] || '',
           project: row[1] || '',
           phase: row[2] || '',
-          category: row[3] || '',
-          displayName: row[4] || '',
-          unit: row[5] || '',
-          unitCostUGX: parseFloat(row[6]?.toString().replace(',', '.') || '0'),
+          category: row[4] || '',
+          displayName: row[6] || '',
+          unit: row[8] || '',
+          unitCostUGX: parseFloat(row[9]?.toString().replace(',', '.') || '0'),
           unitCostEUR: unitCostEUR,
           qtyNeededTotal: qtyNeededTotal,
           qtyFunded: qtyFunded,
-          priority: row[10] || '',
-          blurb: row[11] || '',
-          imageUrl: row[12] || '',
+          priority: row[13] || '',
+          blurb: row[14] || '',
+          imageUrl: row[16] || '',
           visibility: visibility,
-          sortOrder: parseFloat(row[14]?.toString() || '0'),
+          sortOrder: parseFloat(row[18]?.toString() || '0'),
           purchased: qtyFunded >= qtyNeededTotal, // Item is purchased if fully funded
           totalCostEUR: unitCostEUR * qtyNeededTotal,
           fundedCostEUR: unitCostEUR * qtyFunded,
           // German translations (optional - fallback to English if not provided)
-          displayNameDe: row[15]?.toString().trim() || undefined,
-          categoryDe: row[16]?.toString().trim() || undefined,
-          blurbDe: row[17]?.toString().trim() || undefined
+          phaseDe: row[3]?.toString().trim() || undefined,
+          displayNameDe: row[7]?.toString().trim() || undefined,
+          categoryDe: row[5]?.toString().trim() || undefined,
+          blurbDe: row[15]?.toString().trim() || undefined
         };
       });
 
