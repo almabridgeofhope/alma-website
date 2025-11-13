@@ -337,9 +337,9 @@ const Projects = () => {
                 alt={project.title}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-800/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="absolute inset-x-0 bottom-0">
-                <div className="bg-gradient-to-t from-black/85 via-black/60 to-transparent px-4 sm:px-6 py-4 sm:py-5 text-white backdrop-blur-[2px] pointer-events-auto">
+                <div className="bg-gradient-to-t from-slate-800/85 via-slate-700/65 to-transparent px-4 sm:px-6 py-4 sm:py-5 text-white backdrop-blur-[2px] pointer-events-auto">
                   <div className="flex flex-col gap-3 sm:gap-4 z-10 relative">
                     <div className="flex flex-wrap items-center gap-2">
                       {timelinePhases.map((phase, phaseIndex) => {
@@ -394,8 +394,8 @@ const Projects = () => {
 
                     {!projectCost && (
                       <div className="sm:min-w-[200px]">
-                        <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-white/80">
-                          <span className="uppercase tracking-wide text-white/60">
+                        <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-white">
+                          <span className="uppercase tracking-wide text-white/100">
                             {t("projects.progress_label") ?? t("projects.progress") ?? "Progress"}
                           </span>
                           <span className="text-white">{statusProgressLabel}</span>
