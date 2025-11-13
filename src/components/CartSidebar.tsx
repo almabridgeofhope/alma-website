@@ -108,12 +108,13 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
         <div className="flex-1 min-w-0 overflow-hidden">
           <div className="flex items-center justify-between mb-1 gap-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
-              {item.description && item.type !== 'general-donation' ? (
+              <h4 className="font-medium text-sm text-gray-900 truncate">
+                {item.type === 'general-donation' ? t("donation.form.unrestrictedDonation") : item.name}
+              </h4>
+              {item.description && item.type !== 'general-donation' && (
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
-                    <h4 className="font-medium text-sm text-gray-900 truncate cursor-pointer hover:text-primary transition-colors">
-                      {item.name}
-                    </h4>
+                    <HelpCircle className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
                   </TooltipTrigger>
                   <TooltipContent 
                     className="max-w-xs z-[9999]" 
@@ -123,10 +124,6 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
                     <p className="text-sm">{item.description}</p>
                   </TooltipContent>
                 </Tooltip>
-              ) : (
-                <h4 className="font-medium text-sm text-gray-900 truncate">
-                  {item.type === 'general-donation' ? t("donation.form.unrestrictedDonation") : item.name}
-                </h4>
               )}
               {item.type === 'general-donation' && (
                 <Tooltip delayDuration={0}>

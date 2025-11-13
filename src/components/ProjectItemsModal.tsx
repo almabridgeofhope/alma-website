@@ -1163,13 +1163,13 @@ export const ProjectItemsModal = ({
                 <Button 
                   size="sm"
                   onClick={() => setShowCartDrawer(!showCartDrawer)}
-                  className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white relative"
+                  className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white"
                 >
                   <ShoppingCart className="w-4 h-4" />
                   <span>Warenkorb</span>
-                  <Badge variant="secondary" className="ml-1 h-5 min-w-5 flex items-center justify-center px-1.5 text-xs">
-                    {cartState.totalItems}
-                  </Badge>
+                  <span className="font-semibold">
+                    {formatCurrency(cartState.totalAmount)}
+                  </span>
                 </Button>
                 {showCartDrawer && (
                   <Link to="/dev/donation" onClick={() => { closeCart(); setShowCartDrawer(false); }}>
