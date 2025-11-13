@@ -42,7 +42,7 @@ const Projects = () => {
   const { t, language } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { error: costsError, getProjectCost, refreshCosts } = useProjectCosts();
+  const { error: costsError, getProjectCost, refreshCosts, loading: costsLoading } = useProjectCosts();
   const [activeCostProject, setActiveCostProject] = useState<ProjectCost | null>(null);
 
   const formatCurrency = (amount: number, currency: string = "EUR") => {
@@ -410,19 +410,50 @@ const Projects = () => {
                       })}
                     </div>
 
-                    {!projectCost && (
-                      <div className="sm:min-w-[200px]">
-                        <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-white">
-                          <span className="uppercase tracking-wide text-white/100">
-                            {t("projects.progress_label") ?? t("projects.progress") ?? "Progress"}
-                          </span>
-                          <span className="text-white">{statusProgressLabel}</span>
+                    <div className="relative">
+                      {costsLoading ? (
+                        // Show empty cost container skeleton while loading
+                        <div className="min-h-[120px]">
+                          <div className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-4 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors animate-pulse">
+                            <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                              <div className="flex-1 min-w-[140px]">
+                                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                                  {costTitle}
+                                </p>
+                                <div className="h-5 bg-gray-200 rounded mt-1 w-24" />
+                              </div>
+                              <div className="flex-1 min-w-[120px]">
+                                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                                  {fundedLabel}
+                                </p>
+                                <div className="h-5 bg-gray-200 rounded mt-1 w-20" />
+                              </div>
+                              <div className="flex-1 min-w-[120px]">
+                                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                                  {remainingLabel}
+                                </p>
+                                <div className="h-5 bg-gray-200 rounded mt-1 w-20" />
+                              </div>
+                            </div>
+                            <div className="mt-4 flex flex-col gap-3">
+                              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                <span>{costProgressLabel}</span>
+                                <div className="h-4 bg-gray-200 rounded w-12" />
+                              </div>
+                              <div className="h-2 rounded-full bg-gray-200" />
+                              <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] sm:text-xs text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                  <CalendarIcon className="w-3.5 h-3.5" />
+                                  <div className="h-4 bg-gray-200 rounded w-20" />
+                                </div>
+                                <div className="h-6 bg-gray-200 rounded-full w-24" />
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <Progress value={displayProgressValue} className="mt-2 h-1.5 bg-white/25" />
-                      </div>
-                    )}
-                    {projectCost && (
-                      <div className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-4 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors">
+                      ) : projectCost ? (
+                        <div className="min-h-[120px]">
+                          <div className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-4 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors">
                         <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                           <div className="flex-1 min-w-[140px]">
                             <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
@@ -473,8 +504,20 @@ const Projects = () => {
                             </Button>
                           </div>
                         </div>
-                      </div>
-                    )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="sm:min-w-[200px]">
+                          <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-white">
+                            <span className="uppercase tracking-wide text-white/100">
+                              {t("projects.progress_label") ?? t("projects.progress") ?? "Progress"}
+                            </span>
+                            <span className="text-white">{statusProgressLabel}</span>
+                          </div>
+                          <Progress value={displayProgressValue} className="mt-2 h-1.5 bg-white/25" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
