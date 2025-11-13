@@ -22,7 +22,7 @@ const Team = () => {
   
   const originImages = [
     { src: teamAaronPhionah, alt: "Aaron Hesser & Phionah Nagujja" },
-    { src: teamPeter, alt: "Peter Ssenga" },
+    { src: teamPeter, alt: "Peter Ssenga", objectPositionClass: "object-[center_25%]" },
     { src: teamPeterTony, alt: "Peter Ssenga & Tony Kalulu" },
   ];
 
@@ -139,7 +139,9 @@ const Team = () => {
                     <img
                       src={image.src}
                       alt={image.alt}
-                      className="h-full w-full object-cover"
+                      className={["h-full w-full object-cover", image.objectPositionClass]
+                        .filter(Boolean)
+                        .join(" ")}
                     />
                   </div>
                 ))}
