@@ -68,8 +68,11 @@ export class ClientGoogleSheetsService {
     try {
       // Check if API key is configured
       if (!this.apiKey) {
-        console.warn('Google API Key not configured. Project costs will not be loaded. Set VITE_GOOGLE_API_KEY in your .env.local file to enable this feature.');
-        return [];
+        const errorMessage = import.meta.env.PROD 
+          ? 'Google API Key not configured in deployment. Please set VITE_GOOGLE_API_KEY secret in GitHub repository settings.'
+          : 'Google API Key not configured. Project costs will not be loaded. Set VITE_GOOGLE_API_KEY in your .env.local file to enable this feature.';
+        console.error(errorMessage);
+        throw new Error(errorMessage);
       }
 
       console.log('Fetching project costs from Google Sheets...', {
