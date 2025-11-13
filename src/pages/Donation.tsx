@@ -1261,16 +1261,16 @@ const Donation = () => {
         <section className="py-section bg-muted/30 relative z-0 overflow-hidden">
           <div className="max-w-content mx-auto px-6">
             <div className="max-w-4xl mx-auto">
-              <div className="grid md:grid-cols-2 gap-8 items-stretch">
-                <div className="flex items-center justify-center h-full">
+              <div className="grid md:grid-cols-2 gap-8 items-center">
+                <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden shadow-lg">
                   <OptimizedImage
                     src={communityImage} 
                     alt="Community in Uganda" 
-                    className="w-full h-80 object-cover rounded-lg shadow-lg"
+                    className="w-full h-full object-cover object-center"
                     lazy={true}
                   />
                 </div>
-                <div className="text-center md:text-left flex flex-col justify-center h-full">
+                <div className="text-center md:text-left flex flex-col justify-center">
                   <blockquote className="text-2xl font-medium text-foreground mb-4 italic">
                     "{t("donation.quote.text")}"
                   </blockquote>
