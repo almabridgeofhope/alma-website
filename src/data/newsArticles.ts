@@ -178,7 +178,7 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
         conclusionCTA: article6ConclusionCtaText
           ? {
               text: article6ConclusionCtaText,
-              url: "/dev/projects",
+              url: "/dev/projects?section=community-house",
               buttonLabel: article6ConclusionCtaButtonLabel || undefined,
             }
           : undefined,
