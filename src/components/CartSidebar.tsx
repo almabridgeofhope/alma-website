@@ -14,7 +14,14 @@ import {
   Sprout,
   Droplets,
   Wheat,
-  HelpCircle
+  HelpCircle,
+  BrickWall,
+  Layers,
+  Zap,
+  Toilet,
+  Shield,
+  Sofa,
+  Paintbrush
 } from 'lucide-react';
 import { useShoppingCart, CartItem } from '@/contexts/ShoppingCartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -28,16 +35,70 @@ interface CartSidebarProps {
 }
 
 const getPhaseIcon = (phase: string) => {
-  switch (phase?.toLowerCase()) {
+  const phaseLower = phase?.toLowerCase() || '';
+  
+  // General project phases
+  switch (phaseLower) {
     case 'planning':
       return <Sprout className="w-4 h-4 text-green-600" />;
     case 'implementation':
       return <Droplets className="w-4 h-4 text-blue-600" />;
     case 'impact':
       return <Wheat className="w-4 h-4 text-yellow-600" />;
-    default:
-      return <Package className="w-4 h-4 text-gray-600" />;
   }
+  
+  // Construction phases
+  if (phaseLower.includes('security')) {
+    return <Shield className="w-4 h-4 text-gray-600" />;
+  }
+  if ((phaseLower.includes('outer') && phaseLower.includes('walls')) || 
+      (phaseLower.includes('outer') && phaseLower.includes('floor')) ||
+      (phaseLower.includes('walls') && phaseLower.includes('flooring'))) {
+    return <BrickWall className="w-4 h-4 text-gray-600" />;
+  }
+  if (phaseLower.includes('foundation') && phaseLower.includes('sealing')) {
+    return <Layers className="w-4 h-4 text-gray-600" />;
+  }
+  if (phaseLower.includes('water') && phaseLower.includes('system')) {
+    return <Droplets className="w-4 h-4 text-gray-600" />;
+  }
+  if (phaseLower.includes('septic') || phaseLower.includes('soak')) {
+    return <Droplets className="w-4 h-4 text-gray-600" />;
+  }
+  if (phaseLower.includes('interior') && phaseLower.includes('furniture')) {
+    return <Sofa className="w-4 h-4 text-gray-600" />;
+  }
+  if (phaseLower.includes('interior') && phaseLower.includes('walls') && phaseLower.includes('finishing')) {
+    return <Paintbrush className="w-4 h-4 text-gray-600" />;
+  }
+  if (phaseLower.includes('electricity') && phaseLower.includes('lighting')) {
+    return <Zap className="w-4 h-4 text-gray-600" />;
+  }
+  if (phaseLower.includes('bathroom') && phaseLower.includes('sanitary')) {
+    return <Toilet className="w-4 h-4 text-gray-600" />;
+  }
+  
+  // Fallbacks
+  if (phaseLower.includes('outer') || (phaseLower.includes('walls') && phaseLower.includes('floor'))) {
+    return <BrickWall className="w-4 h-4 text-gray-600" />;
+  }
+  if (phaseLower.includes('foundation') || phaseLower.includes('sealing')) {
+    return <Layers className="w-4 h-4 text-gray-600" />;
+  }
+  if (phaseLower.includes('water')) {
+    return <Droplets className="w-4 h-4 text-gray-600" />;
+  }
+  if (phaseLower.includes('interior') && phaseLower.includes('finishing')) {
+    return <Paintbrush className="w-4 h-4 text-gray-600" />;
+  }
+  if (phaseLower.includes('electricity') || phaseLower.includes('lighting')) {
+    return <Zap className="w-4 h-4 text-gray-600" />;
+  }
+  if (phaseLower.includes('bathroom') || phaseLower.includes('sanitary')) {
+    return <Toilet className="w-4 h-4 text-gray-600" />;
+  }
+  
+  return <Package className="w-4 h-4 text-gray-600" />;
 };
 
 const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({ item, onClose }) => {
@@ -191,7 +252,7 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
                 {formatCurrency(item.totalPrice)}
               </div>
               <div className="text-xs text-gray-600">
-                {formatCurrency(item.unitPrice)} / Stück
+                {formatCurrency(item.unitPrice)} {t("cart.perPiece")}
               </div>
             </div>
           </div>
@@ -340,6 +401,7 @@ export const CartBadge: React.FC = () => {
 // Inline Cart panel (for embedding inside modals/pages, no overlay/portal)
 export const CartInline: React.FC<{ basePath?: string; className?: string; onClose?: () => void }> = ({ basePath = "", className = "", onClose }) => {
   const { state, closeCart, formatCurrency } = useShoppingCart();
+  const { t } = useLanguage();
   
   const handleClose = () => {
     if (onClose) {
@@ -355,7 +417,7 @@ export const CartInline: React.FC<{ basePath?: string; className?: string; onClo
       <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0 bg-white shadow-sm">
         <div className="flex items-center gap-2">
           <ShoppingCart className="w-4 h-4 text-primary" />
-          <h2 className="text-base font-semibold">Warenkorb</h2>
+          <h2 className="text-base font-semibold">{t("cart.inline.title")}</h2>
           <Badge variant="secondary" className="text-xs h-5 px-1.5">
             {state.totalItems}
           </Badge>
@@ -377,10 +439,10 @@ export const CartInline: React.FC<{ basePath?: string; className?: string; onClo
             <div>
               <ShoppingCart className="w-12 h-12 mx-auto mb-4 text-gray-300" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Ihr Warenkorb ist leer
+                {t("cart.inline.empty")}
               </h3>
               <p className="text-gray-600 mb-4">
-                Fügen Sie Items oder Bauphasen hinzu, um zu spenden
+                {t("cart.inline.emptyDesc")}
               </p>
             </div>
           </div>
@@ -398,7 +460,7 @@ export const CartInline: React.FC<{ basePath?: string; className?: string; onClo
             <div className="border-t border-border px-4 py-3 space-y-3 flex-shrink-0 bg-white shadow-sm">
               {/* Total */}
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">Gesamtbetrag:</span>
+                <span className="text-sm font-medium text-muted-foreground">{t("cart.inline.total")}</span>
                 <span className="text-lg font-semibold text-primary">
                   {formatCurrency(state.totalAmount)}
                 </span>
@@ -406,7 +468,7 @@ export const CartInline: React.FC<{ basePath?: string; className?: string; onClo
               {/* Checkout Button */}
               <Link to={basePath + "/donation"} onClick={handleClose} className="block">
                 <Button className="w-full" size="lg">
-                  <span>Zur Spende</span>
+                  <span>{t("cart.inline.toDonation")}</span>
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </Link>
@@ -421,12 +483,13 @@ export const CartInline: React.FC<{ basePath?: string; className?: string; onClo
 // Combined Donate/Cart Button Component
 export const DonateCartButton: React.FC<{ basePath?: string }> = ({ basePath = "" }) => {
   const { state } = useShoppingCart();
+  const { t } = useLanguage();
 
   // Always show donate button that goes directly to donation page
   return (
     <Link to={basePath + "/donation"} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
       <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-        Spenden
+        {t("cart.donate")}
       </Button>
     </Link>
   );
