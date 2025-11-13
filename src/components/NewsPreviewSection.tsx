@@ -114,7 +114,7 @@ const NewsPreviewSection = () => {
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
             <Button size="lg">
-              View All News & Updates
+              {t("news.view_all")}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </Link>
