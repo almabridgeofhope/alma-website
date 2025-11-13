@@ -10,10 +10,11 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 // import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus } from "lucide-react";
+import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import heroImage from "@/assets/nature/nature_2.jpg";
@@ -25,7 +26,12 @@ const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
 
 const Donation = () => {
   const { t } = useLanguage();
-  const { state: cartState, updateQuantity, removeItem, clearCart, formatCurrency, toggleCart } = useShoppingCart();
+  const { state: cartState, updateQuantity, removeItem, clearCart, formatCurrency, addOrUpdateGeneralDonation, getGeneralDonation, updateAmount, closeCart } = useShoppingCart();
+  
+  // Close cart sidebar if it's open when on donation page
+  useEffect(() => {
+    closeCart();
+  }, [closeCart]);
   
   // Debug: Check if component is rendering
   console.log("Donation component is rendering");
@@ -50,26 +56,78 @@ const Donation = () => {
   });
 
   const predefinedAmounts = [10, 25, 50, 100];
+  const [useCartAmount, setUseCartAmount] = useState(false);
+  const [hasManualSelection, setHasManualSelection] = useState(false);
+  const [generalDonationAmount, setGeneralDonationAmount] = useState<string>("");
+  const [editingGeneralDonation, setEditingGeneralDonation] = useState(false);
+  const [editGeneralDonationValue, setEditGeneralDonationValue] = useState<string>("");
+  const [addingGeneralDonation, setAddingGeneralDonation] = useState(false);
+  const [newGeneralDonationAmount, setNewGeneralDonationAmount] = useState<string>("");
+
+  // Auto-add general donation when URL param exists and cart has items
+  useEffect(() => {
+    const amountParam = searchParams.get("amount");
+    const hasUrlAmount = !!amountParam;
+    const hasCartItems = cartState.items.some(item => item.type !== 'general-donation');
+    const generalDonation = getGeneralDonation();
+    
+    // If URL param exists and cart has non-donation items, add/update general donation
+    if (hasUrlAmount && hasCartItems && amountParam) {
+      const amount = parseFloat(amountParam);
+      if (!isNaN(amount) && amount > 0) {
+        // Only update if the amount is different from current general donation
+        if (!generalDonation || generalDonation.totalPrice !== amount) {
+          addOrUpdateGeneralDonation(amount);
+        }
+      }
+    }
+  }, [searchParams, cartState.items, getGeneralDonation, addOrUpdateGeneralDonation]);
+
+  // Update general donation amount state when cart changes
+  useEffect(() => {
+    const generalDonation = getGeneralDonation();
+    if (generalDonation) {
+      setGeneralDonationAmount(generalDonation.totalPrice.toString());
+    } else {
+      setGeneralDonationAmount("");
+    }
+  }, [cartState.items, getGeneralDonation]);
 
   useEffect(() => {
     const amountParam = searchParams.get("amount");
-    // Priority: cart items > URL param > nothing
+    const hasCartItems = cartState.items.some(item => item.type !== 'general-donation');
+    
+    // If we have cart items (including general donation), clear amount selection
     if (cartState.items.length > 0) {
-      // Cart takes precedence - don't override with URL param
-      setAmount(cartState.totalAmount.toString());
+      setAmount("");
       setCustomAmount("");
-    } else if (amountParam) {
-      // URL param from news articles - preserve it
+      return;
+    }
+    
+    // If no cart items, use URL param if available
+    if (amountParam && !hasCartItems && !hasManualSelection) {
       setAmount(amountParam);
       setCustomAmount("");
+    } else if (!amountParam && !hasCartItems && !hasManualSelection) {
+      setAmount("");
+      setCustomAmount("");
     }
-  }, [searchParams, cartState.items.length, cartState.totalAmount]);
+  }, [searchParams, cartState.items.length, hasManualSelection]);
 
   const handleAmountSelect = (selectedAmount: number) => {
-    // Only allow selection if cart is empty
-    if (cartState.items.length === 0) {
-      setAmount(selectedAmount.toString());
+    // Always allow selection - user can override cart amount or URL param
+    setAmount(selectedAmount.toString());
+    setCustomAmount("");
+    setUseCartAmount(false);
+    setHasManualSelection(true);
+  };
+
+  const handleUseCartAmount = () => {
+    if (cartState.items.length > 0) {
+      setUseCartAmount(true);
+      setAmount(cartState.totalAmount.toString());
       setCustomAmount("");
+      setHasManualSelection(true);
     }
   };
 
@@ -87,11 +145,60 @@ const Donation = () => {
   };
 
   const handleCustomAmountChange = (value: string) => {
-    // Only allow custom amount if cart is empty
-    if (cartState.items.length === 0) {
-      setCustomAmount(value);
-      setAmount("");
+    // Always allow custom amount - user can override cart amount or URL param
+    setCustomAmount(value);
+    setAmount("");
+    setUseCartAmount(false);
+    setHasManualSelection(true);
+  };
+
+  const handleEditGeneralDonation = () => {
+    const generalDonation = getGeneralDonation();
+    if (generalDonation) {
+      setEditGeneralDonationValue(generalDonation.totalPrice.toString());
+      setEditingGeneralDonation(true);
     }
+  };
+
+  const handleSaveGeneralDonation = () => {
+    const amount = parseFloat(editGeneralDonationValue);
+    if (!isNaN(amount) && amount > 0) {
+      updateAmount('general-donation', amount);
+      setEditingGeneralDonation(false);
+    }
+  };
+
+  const handleCancelEditGeneralDonation = () => {
+    setEditingGeneralDonation(false);
+    setEditGeneralDonationValue("");
+  };
+
+  const handleAddGeneralDonation = () => {
+    const existingGeneralDonation = getGeneralDonation();
+    if (existingGeneralDonation) {
+      // If general donation exists, edit it instead of adding new one
+      setEditGeneralDonationValue(existingGeneralDonation.totalPrice.toString());
+      setEditingGeneralDonation(true);
+    } else {
+      // If no general donation exists, add new one
+      setAddingGeneralDonation(true);
+      setNewGeneralDonationAmount("");
+    }
+  };
+
+  const handleSaveNewGeneralDonation = () => {
+    const amount = parseFloat(newGeneralDonationAmount);
+    if (!isNaN(amount) && amount > 0) {
+      // Add new general donation
+      addOrUpdateGeneralDonation(amount);
+      setAddingGeneralDonation(false);
+      setNewGeneralDonationAmount("");
+    }
+  };
+
+  const handleCancelAddGeneralDonation = () => {
+    setAddingGeneralDonation(false);
+    setNewGeneralDonationAmount("");
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -102,7 +209,13 @@ const Donation = () => {
   };
 
   const validateForm = () => {
-    const finalAmount = amount || customAmount;
+    // For monthly donations, always use selected amount (no cart items)
+    // For one-time donations, use cart total if items exist, otherwise use selected amount
+    const finalAmount = donationType === "monthly"
+      ? (amount || customAmount)
+      : (cartState.items.length > 0 
+          ? cartState.totalAmount.toString() 
+          : (amount || customAmount));
     console.log("Validating form...");
     console.log("Final amount:", finalAmount);
     console.log("Form data:", formData);
@@ -178,7 +291,13 @@ const Donation = () => {
   const handleContinueDonation = () => {
     setShowWarningDialog(false);
     
-    const finalAmount = amount || customAmount;
+    // For monthly donations, always use selected amount (no cart items)
+    // For one-time donations, use cart total if items exist, otherwise use selected amount
+    const finalAmount = donationType === "monthly"
+      ? (amount || customAmount)
+      : (cartState.items.length > 0 
+          ? cartState.totalAmount.toString() 
+          : (amount || customAmount));
     console.log("Final amount:", finalAmount);
     
     if (paymentMethod === "paypal") {
@@ -202,7 +321,13 @@ const Donation = () => {
 
   // PayPal payment handlers
   const createPayPalOrder = (data: any, actions: any) => {
-    const finalAmount = amount || customAmount;
+    // For monthly donations, always use selected amount (no cart items)
+    // For one-time donations, use cart total if items exist, otherwise use selected amount
+    const finalAmount = donationType === "monthly"
+      ? (amount || customAmount)
+      : (cartState.items.length > 0 
+          ? cartState.totalAmount.toString() 
+          : (amount || customAmount));
     
     return actions.order.create({
       purchase_units: [{
@@ -319,56 +444,232 @@ const Donation = () => {
               <Card className="p-8 shadow-card">
                 <div className="text-center mb-8">
                   <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                    {cartState.items.length > 0 ? "Spende abschließen" : t("donation.form.title")}
+                    {cartState.items.length > 0 ? t("donation.form.completeDonation") : t("donation.form.title")}
                   </h2>
                   {cartState.items.length > 0 && (
                     <p className="text-muted-foreground">
-                      Vervollständigen Sie Ihre Spende für die ausgewählten Items
+                      {t("donation.form.completeDonationDesc")}
                     </p>
                   )}
                 </div>
                 
                 <div className="space-y-6">
-                  {/* Embedded Cart Summary when items exist */}
-                  {cartState.items.length > 0 && (
+                  {/* Embedded Cart Summary when items exist - only for one-time donations */}
+                  {cartState.items.length > 0 && donationType === "one-time" && (
                     <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <ShoppingCart className="w-5 h-5 text-primary" />
-                          <span className="font-semibold">Warenkorb</span>
-                          <Badge variant="secondary">{cartState.totalItems} Items</Badge>
+                          <span className="font-semibold">{t("donation.form.cart")}</span>
+                          <Badge variant="secondary">{cartState.totalItems} {t("donation.form.items")}</Badge>
                         </div>
                         <div className="text-right">
-                          <div className="text-sm text-muted-foreground">Gesamtbetrag</div>
+                          <div className="text-sm text-muted-foreground">{t("donation.form.total")}</div>
                           <div className="text-xl font-bold text-primary">{formatCurrency(cartState.totalAmount)}</div>
                         </div>
                       </div>
 
-                      <div className="space-y-2 max-h-48 overflow-auto pr-1">
-                        {cartState.items.map((item) => (
-                          <div key={item.id} className="flex items-center gap-3 py-2 border-b last:border-b-0">
-                            <div className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0">
-                              {item.type === 'phase' ? getPhaseIcon(item.phase || '') : <Package className="w-4 h-4 text-gray-600" />}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium truncate">{item.name}</span>
-                                <span className="text-sm font-semibold">{formatCurrency(item.totalPrice)}</span>
+                      <div className="space-y-2 max-h-64 overflow-auto pr-1">
+                        {cartState.items.map((item) => {
+                          const isGeneralDonation = item.type === 'general-donation';
+                          const isEditing = isGeneralDonation && editingGeneralDonation;
+                          
+                          return (
+                            <div key={item.id} className="flex items-center gap-3 py-3 border-b last:border-b-0">
+                              <div className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 bg-gray-100">
+                                {isGeneralDonation ? (
+                                  <Heart className="w-4 h-4 text-blue-600" />
+                                ) : item.type === 'phase' ? (
+                                  getPhaseIcon(item.phase || '')
+                                ) : (
+                                  <Package className="w-4 h-4 text-gray-600" />
+                                )}
                               </div>
-                              <div className="text-xs text-gray-600">{item.quantity} × {formatCurrency(item.unitPrice)}</div>
+                              <div className="flex-1 min-w-0">
+                                {isEditing ? (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <Input
+                                        type="number"
+                                        value={editGeneralDonationValue}
+                                        onChange={(e) => setEditGeneralDonationValue(e.target.value)}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            handleSaveGeneralDonation();
+                                          } else if (e.key === 'Escape') {
+                                            handleCancelEditGeneralDonation();
+                                          }
+                                        }}
+                                        className="h-8 text-sm"
+                                        min="1"
+                                        step="0.01"
+                                        placeholder={t("donation.form.amountPlaceholder")}
+                                        autoFocus
+                                      />
+                                      <Button
+                                        size="sm"
+                                        variant="default"
+                                        onClick={handleSaveGeneralDonation}
+                                        className="h-8 px-2"
+                                      >
+                                        <Check className="w-3 h-3" />
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={handleCancelEditGeneralDonation}
+                                        className="h-8 px-2"
+                                      >
+                                        <X className="w-3 h-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-sm font-medium truncate">
+                                          {isGeneralDonation ? t("donation.form.unrestrictedDonation") : item.name}
+                                        </span>
+                                        {isGeneralDonation && (
+                                          <Tooltip delayDuration={0}>
+                                            <TooltipTrigger asChild>
+                                              <HelpCircle className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
+                                            </TooltipTrigger>
+                                            <TooltipContent 
+                                              className="max-w-xs z-[9999]" 
+                                              side="top"
+                                              sideOffset={5}
+                                            >
+                                              <p className="text-sm">
+                                                {t("donation.form.generalDonation.info")}
+                                              </p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        )}
+                                        {!isGeneralDonation && item.description && (
+                                          <Tooltip delayDuration={0}>
+                                            <TooltipTrigger asChild>
+                                              <HelpCircle className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
+                                            </TooltipTrigger>
+                                            <TooltipContent 
+                                              className="max-w-xs z-[9999]" 
+                                              side="top"
+                                              sideOffset={5}
+                                            >
+                                              <p className="text-sm">{item.description}</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        )}
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-sm font-semibold">{formatCurrency(item.totalPrice)}</span>
+                                        {isGeneralDonation && (
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={handleEditGeneralDonation}
+                                            className="h-6 w-6 p-0"
+                                            title={t("donation.form.changeAmount")}
+                                          >
+                                            <Edit2 className="w-3 h-3" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {!isGeneralDonation && (
+                                      <div className="flex items-center justify-between">
+                                        <div className="text-xs text-gray-600">{item.quantity} × {formatCurrency(item.unitPrice)}</div>
+                                        <div className="flex items-center gap-1">
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                            className="h-6 w-6 p-0"
+                                            disabled={item.quantity <= 1 && (item.type === 'phase' || false)}
+                                          >
+                                            <Minus className="w-3 h-3" />
+                                          </Button>
+                                          <span className="text-sm font-medium w-8 text-center">
+                                            {item.quantity}
+                                          </span>
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => {
+                                              if (item.maxQuantity && item.quantity < item.maxQuantity) {
+                                                updateQuantity(item.id, item.quantity + 1);
+                                              } else if (!item.maxQuantity) {
+                                                updateQuantity(item.id, item.quantity + 1);
+                                              }
+                                            }}
+                                            disabled={item.type === 'phase' && item.quantity >= 1 || (item.maxQuantity && item.quantity >= item.maxQuantity)}
+                                            className="h-6 w-6 p-0"
+                                          >
+                                            <Plus className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                              {!isEditing && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeItem(item.id)}
+                                  className="h-6 w-6 p-0 text-gray-400 hover:text-red-600"
+                                  title={t("donation.form.remove")}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              )}
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
 
-                      <div className="flex gap-2">
-                        <Button variant="outline" onClick={toggleCart} className="flex-1">
-                          Warenkorb bearbeiten
-                        </Button>
-                        <Button variant="ghost" onClick={clearCart}>
-                          Leeren
-                        </Button>
-                      </div>
+                      {addingGeneralDonation && (
+                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Input
+                              type="number"
+                              value={newGeneralDonationAmount}
+                              onChange={(e) => setNewGeneralDonationAmount(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  handleSaveNewGeneralDonation();
+                                } else if (e.key === 'Escape') {
+                                  handleCancelAddGeneralDonation();
+                                }
+                              }}
+                              className="h-8 text-sm"
+                              min="1"
+                              step="0.01"
+                              placeholder={t("donation.form.enterAmount")}
+                              autoFocus
+                            />
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={handleSaveNewGeneralDonation}
+                              className="h-8 px-2"
+                            >
+                              <Check className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={handleCancelAddGeneralDonation}
+                              className="h-8 px-2"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                          <p className="text-xs text-blue-600">{t("donation.form.addGeneralDonation")}</p>
+                        </div>
+                      )}
                     </div>
                   )}
                   {/* Donation Type */}
@@ -376,7 +677,14 @@ const Donation = () => {
                     <Label className="text-base font-semibold">{t("donation.form.type")}</Label>
                     <RadioGroup 
                       value={donationType} 
-                      onValueChange={(value: "one-time" | "monthly") => setDonationType(value)}
+                      onValueChange={(value: "one-time" | "monthly") => {
+                        const scrollY = window.scrollY;
+                        setDonationType(value);
+                        // Prevent scrolling when switching donation type
+                        requestAnimationFrame(() => {
+                          window.scrollTo(0, scrollY);
+                        });
+                      }}
                       className="flex gap-6 mt-3"
                     >
                       <div className="flex items-center space-x-2">
@@ -393,42 +701,175 @@ const Donation = () => {
                   {/* Amount Selection */}
                   <div>
                     <Label className="text-base font-semibold">{t("donation.form.amount")}</Label>
-                    {cartState.items.length === 0 ? (
-                      <>
-                        <div className="grid grid-cols-2 gap-3 mt-3 mb-4">
-                          {predefinedAmounts.map((amountValue) => (
-                            <Button
-                              key={amountValue}
-                              variant={amount === amountValue.toString() ? "default" : "outline"}
-                              onClick={() => handleAmountSelect(amountValue)}
-                              className="h-12"
-                            >
-                              €{amountValue}
-                            </Button>
-                          ))}
-                        </div>
-                        <div>
-                          <Label htmlFor="custom-amount" className="text-sm text-muted-foreground">
-                            {t("donation.form.custom")}
-                          </Label>
-                          <Input
-                            id="custom-amount"
-                            type="number"
-                            placeholder="Enter amount"
-                            value={customAmount}
-                            onChange={(e) => handleCustomAmountChange(e.target.value)}
-                            className="mt-2"
-                            min="1"
-                            step="0.01"
-                          />
-                        </div>
-                      </>
-                    ) : (
-                      <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-md flex items-center justify-between">
-                        <span className="text-sm text-green-700">Spendenbetrag aus Warenkorb</span>
-                        <span className="text-lg font-bold text-green-700">{formatCurrency(cartState.totalAmount)}</span>
-                      </div>
-                    )}
+                    {(() => {
+                      // For monthly donations, always show amount selection (no cart items)
+                      if (donationType === "monthly") {
+                        const amountParam = searchParams.get("amount");
+                        const hasUrlAmount = !!amountParam;
+                        
+                        return (
+                          <>
+                            {/* Show URL amount if present */}
+                            {hasUrlAmount && !hasManualSelection && (
+                              <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md mb-4">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-sm text-blue-700 font-medium">{t("donation.form.preselectAmount")}</span>
+                                  <span className="text-lg font-bold text-blue-700">€{amountParam}</span>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Amount selection buttons */}
+                            <div className="mt-3">
+                              <div className="grid grid-cols-2 gap-3 mb-4">
+                                {predefinedAmounts.map((amountValue) => (
+                                  <Button
+                                    key={amountValue}
+                                    variant={amount === amountValue.toString() ? "default" : "outline"}
+                                    onClick={() => handleAmountSelect(amountValue)}
+                                    className="h-12"
+                                  >
+                                    €{amountValue}
+                                  </Button>
+                                ))}
+                              </div>
+                              <div>
+                                <Label htmlFor="custom-amount" className="text-sm text-muted-foreground">
+                                  {t("donation.form.custom")}
+                                </Label>
+                                <Input
+                                  id="custom-amount"
+                                  type="number"
+                                  placeholder={t("donation.form.enterAmount")}
+                                  value={customAmount}
+                                  onChange={(e) => handleCustomAmountChange(e.target.value)}
+                                  className="mt-2"
+                                  min="1"
+                                  step="0.01"
+                                />
+                              </div>
+                            </div>
+                          </>
+                        );
+                      }
+                      
+                      // For one-time donations
+                      const hasCartItems = cartState.items.length > 0;
+                      const generalDonation = getGeneralDonation();
+                      
+                      // If cart has items, show total amount (general donation can be edited in cart)
+                      if (hasCartItems) {
+                        return (
+                          <div className="mt-3 space-y-3">
+                            <div className="p-4 bg-green-50 border border-green-200 rounded-md">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-green-700 font-medium">{t("donation.form.totalAmount")}</span>
+                                <span className="text-xl font-bold text-green-700">{formatCurrency(cartState.totalAmount)}</span>
+                              </div>
+                            </div>
+                            {!addingGeneralDonation && !editingGeneralDonation && (
+                              <Button 
+                                variant="outline" 
+                                onClick={handleAddGeneralDonation} 
+                                className="w-full"
+                              >
+                                <Heart className="w-4 h-4 mr-2" />
+                                {generalDonation ? t("donation.form.editGeneralDonation") : t("donation.form.addGeneralDonation")}
+                              </Button>
+                            )}
+                            {addingGeneralDonation && (
+                              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Input
+                                    type="number"
+                                    value={newGeneralDonationAmount}
+                                    onChange={(e) => setNewGeneralDonationAmount(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        handleSaveNewGeneralDonation();
+                                      } else if (e.key === 'Escape') {
+                                        handleCancelAddGeneralDonation();
+                                      }
+                                    }}
+                                    className="h-8 text-sm"
+                                    min="1"
+                                    step="0.01"
+                                    placeholder={t("donation.form.enterAmount")}
+                                    autoFocus
+                                  />
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    onClick={handleSaveNewGeneralDonation}
+                                    className="h-8 px-2"
+                                  >
+                                    <Check className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={handleCancelAddGeneralDonation}
+                                    className="h-8 px-2"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                                <p className="text-xs text-blue-600">{t("donation.form.addGeneralDonation")}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                      
+                      // If no cart items, show amount selection
+                      const amountParam = searchParams.get("amount");
+                      const hasUrlAmount = !!amountParam;
+                      
+                      return (
+                        <>
+                          {/* Show URL amount if present */}
+                          {hasUrlAmount && !hasManualSelection && (
+                            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md mb-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm text-blue-700 font-medium">Vorgemerkter Betrag aus Artikel</span>
+                                <span className="text-lg font-bold text-blue-700">€{amountParam}</span>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Amount selection buttons */}
+                          <div className="mt-3">
+                            <div className="grid grid-cols-2 gap-3 mb-4">
+                              {predefinedAmounts.map((amountValue) => (
+                                <Button
+                                  key={amountValue}
+                                  variant={amount === amountValue.toString() ? "default" : "outline"}
+                                  onClick={() => handleAmountSelect(amountValue)}
+                                  className="h-12"
+                                >
+                                  €{amountValue}
+                                </Button>
+                              ))}
+                            </div>
+                            <div>
+                              <Label htmlFor="custom-amount" className="text-sm text-muted-foreground">
+                                {t("donation.form.custom")}
+                              </Label>
+                              <Input
+                                id="custom-amount"
+                                type="number"
+                                placeholder="Enter amount"
+                                value={customAmount}
+                                onChange={(e) => handleCustomAmountChange(e.target.value)}
+                                className="mt-2"
+                                min="1"
+                                step="0.01"
+                              />
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
 
                   {/* Payment Method */}
