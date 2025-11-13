@@ -8,21 +8,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
-import constructionHouseImage from "@/assets/project/construction_house.png";
-import communityImage from "@/assets/community/community_2.png";
-import teamImage2 from "@/assets/team/team_2.jpg";
-
-interface NewsArticle {
-  id: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  author: string;
-  date: string;
-  category: string;
-  image: string;
-  featured: boolean;
-}
+import { getNewsArticles, NewsArticle } from "@/data/newsArticles";
 
 const NotFound = () => {
   const location = useLocation();
@@ -36,42 +22,7 @@ const NotFound = () => {
     );
   }, [location.pathname]);
 
-  // Sample news articles for 404 page
-  const featuredArticles: NewsArticle[] = [
-    {
-      id: "1",
-      title: t("news.article1.title"),
-      excerpt: t("news.article1.excerpt"),
-      content: t("news.article1.content"),
-      author: t("news.article1.author"),
-      date: "2024-12-15",
-      category: t("news.categories.project_update"),
-      image: constructionHouseImage,
-      featured: true,
-    },
-    {
-      id: "2",
-      title: t("news.article2.title"),
-      excerpt: t("news.article2.excerpt"),
-      content: t("news.article2.content"),
-      author: t("news.article2.author"),
-      date: "2024-12-10",
-      category: t("news.categories.community"),
-      image: communityImage,
-      featured: false,
-    },
-    {
-      id: "3",
-      title: t("news.article3.title"),
-      excerpt: t("news.article3.excerpt"),
-      content: t("news.article3.content"),
-      author: t("news.article3.author"),
-      date: "2024-12-05",
-      category: t("news.categories.organization"),
-      image: teamImage2,
-      featured: false,
-    },
-  ];
+  const featuredArticles: NewsArticle[] = getNewsArticles(t).slice(0, 3);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -134,7 +85,7 @@ const NotFound = () => {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-              <Button asChild size="lg" className="bg-primary hover:bg-primary/90">
+              <Button asChild size="lg">
                 <Link 
                   to="/dev" 
                   className="flex items-center gap-2"
@@ -144,7 +95,7 @@ const NotFound = () => {
                   {t("404.button_home")}
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="shadow-button">
+              <Button asChild variant="outline" size="lg">
                 <Link 
                   to="/dev/projects" 
                   className="flex items-center gap-2"
@@ -154,7 +105,7 @@ const NotFound = () => {
                   {t("404.button_projects")}
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="shadow-button">
+              <Button asChild variant="outline" size="lg">
                 <Link 
                   to="/dev/contact" 
                   className="flex items-center gap-2"

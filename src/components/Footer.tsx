@@ -87,11 +87,22 @@ const Footer = () => {
           {/* Newsletter */}
           <div>
             <h4 className="font-semibold text-foreground mb-4">{t("newsletter.title")}</h4>
-            <NewsletterForm 
-              placeholder={t("newsletter.placeholder")}
-              buttonLabel={t("newsletter.button")}
-              source="website-footer"
-            />
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <Input
+                type="email"
+                placeholder={t("newsletter.placeholder")}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full"
+              />
+              <Button 
+                type="submit" 
+                size="sm"
+                className="w-full"
+              >
+                {t("newsletter.button")}
+              </Button>
+            </form>
           </div>
         </div>
 

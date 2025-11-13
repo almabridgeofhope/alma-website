@@ -189,25 +189,18 @@ const MissionSection = () => {
             
             <div className="flex flex-col sm:flex-row gap-4">
               <Link 
-                to={basePath + "/contact"}
+                to={basePath + "/about"}
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
-                <Button 
-                  size="lg" 
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
-                >
-                  {t("mission.contact")}
+                <Button size="lg">
+                  {t("mission.about")}
                 </Button>
               </Link>
               <Link 
                 to={basePath + "/projects"}
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  className="shadow-button"
-                >
+                <Button size="lg" variant="outline">
                   {t("mission.donate")}
                 </Button>
               </Link>

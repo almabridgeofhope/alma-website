@@ -67,11 +67,14 @@ const Navigation = () => {
             >
               {t("nav.contact")}
             </Link>
-            {/* Donate Button */}
-            <DonateCartButton basePath={basePath} />
-            
-            {/* Shopping Cart */}
-            <CartBadge />
+            <Link 
+              to={basePath + "/donation"} 
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            >
+              <Button size="sm">
+                Donate
+              </Button>
+            </Link>
             
             {/* Language Switcher */}
             <Button
@@ -147,15 +150,17 @@ const Navigation = () => {
             >
               {t("nav.contact")}
             </Link>
-            {/* Donate Button */}
-            <div className="flex justify-center">
-              <DonateCartButton basePath={basePath} />
-            </div>
-            
-            {/* Shopping Cart */}
-            <div className="flex justify-center">
-              <CartBadge />
-            </div>
+            <Link 
+              to={basePath + "/donation"} 
+              onClick={() => {
+                setIsMenuOpen(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            >
+              <Button size="sm" className="w-full">
+                Donate
+              </Button>
+            </Link>
             
             <Button
               variant="ghost"

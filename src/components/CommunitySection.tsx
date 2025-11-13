@@ -173,18 +173,18 @@ const CommunitySection = () => {
             </div>
 
             {/* Community Stats */}
-            <div className="grid grid-cols-3 gap-6 pt-6">
-              <Card className="p-6 text-center bg-primary-light/30">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-6">
+              <Card className="p-6 text-center bg-primary-light/30 break-words">
                 <Users className="w-8 h-8 text-primary mx-auto mb-3" />
                 <div className="text-2xl font-bold text-primary mb-1">15.000</div>
                 <div className="text-sm text-muted-foreground">{t("community.stats.people")}</div>
               </Card>
-              <Card className="p-6 text-center bg-primary-light/30">
+              <Card className="p-6 text-center bg-primary-light/30 break-words">
                 <Droplets className="w-8 h-8 text-primary mx-auto mb-3" />
                 <div className="text-2xl font-bold text-primary mb-1">2 km</div>
                 <div className="text-sm text-muted-foreground">{t("community.stats.water_source")}</div>
               </Card>
-              <Card className="p-6 text-center bg-primary-light/30">
+              <Card className="p-6 text-center bg-primary-light/30 break-words">
                 <GraduationCap className="w-8 h-8 text-primary mx-auto mb-3" />
                 <div className="text-2xl font-bold text-primary mb-1">25%</div>
                 <div className="text-sm text-muted-foreground">{t("community.stats.education")}</div>

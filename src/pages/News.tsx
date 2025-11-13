@@ -5,78 +5,13 @@ import NewsList from "@/components/NewsList";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/project/water.jpg";
-import constructionHouseImage from "@/assets/project/construction_house.png";
-import communityImage from "@/assets/community/community_2.png";
-import headerConstructionImage from "@/assets/project/header_construction.jpeg";
-import childrenImage from "@/assets/community/children.png";
-import community3Image from "@/assets/community/community_3.png";
-import teamImage from "@/assets/team/team.png";
-import teamImage2 from "@/assets/team/team_2.jpg";
-
-interface NewsArticle {
-  id: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  author: string;
-  date: string;
-  category: string;
-  image: string;
-  featured: boolean;
-  additionalImages?: string[];
-}
+import { getNewsArticles, NewsArticle } from "@/data/newsArticles";
 
 const News = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  // Sample news articles
-  const newsArticles: NewsArticle[] = [
-    {
-      id: "1",
-      title: t("news.article1.title"),
-      excerpt: t("news.article1.excerpt"),
-      content: t("news.article1.content"),
-      author: t("news.article1.author"),
-      date: "2024-12-15",
-      category: t("news.categories.project_update"),
-      image: constructionHouseImage,
-      additionalImages: [
-        headerConstructionImage,
-        communityImage
-      ],
-      featured: false,
-    },
-    {
-      id: "2",
-      title: t("news.article2.title"),
-      excerpt: t("news.article2.excerpt"),
-      content: t("news.article2.content"),
-      author: t("news.article2.author"),
-      date: "2024-12-10",
-      category: t("news.categories.community"),
-      image: communityImage,
-      additionalImages: [
-        childrenImage,
-        community3Image
-      ],
-      featured: false,
-    },
-    {
-      id: "3",
-      title: t("news.article3.title"),
-      excerpt: t("news.article3.excerpt"),
-      content: t("news.article3.content"),
-      author: t("news.article3.author"),
-      date: "2024-12-05",
-      category: t("news.categories.organization"),
-      image: teamImage,
-      additionalImages: [
-        teamImage2
-      ],
-      featured: false,
-    },
-  ];
+  const newsArticles: NewsArticle[] = getNewsArticles(t);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -134,6 +69,7 @@ const News = () => {
           onReadMore={handleReadMore}
           title={t("news.all_news.title")}
           subtitle={t("news.all_news.subtitle")}
+          readMoreLabel={t("news.read_more")}
         />
 
         {/* Newsletter Section */}
@@ -146,10 +82,7 @@ const News = () => {
               <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
                 {t("news.newsletter.subtitle")}
               </p>
-              <Button 
-                size="lg"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
-              >
+              <Button size="lg">
                 {t("news.newsletter.button")}
               </Button>
             </div>

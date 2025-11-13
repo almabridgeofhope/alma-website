@@ -18,6 +18,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import heroImage from "@/assets/nature/nature_2.jpg";
 import communityImage from "@/assets/community/community_2.png";
+import { useSearchParams } from "react-router-dom";
 
 // PayPal Configuration
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
@@ -28,6 +29,7 @@ const Donation = () => {
   
   // Debug: Check if component is rendering
   console.log("Donation component is rendering");
+  const [searchParams] = useSearchParams();
   const [donationType, setDonationType] = useState<"one-time" | "monthly">("one-time");
   const [amount, setAmount] = useState<string>("");
   const [customAmount, setCustomAmount] = useState<string>("");
@@ -47,20 +49,29 @@ const Donation = () => {
     privacyConsent: false,
   });
 
-  const predefinedAmounts = [10, 25, 50];
+  const predefinedAmounts = [10, 25, 50, 100];
 
-  const handleAmountSelect = (selectedAmount: number) => {
-    setAmount(selectedAmount.toString());
-    setCustomAmount("");
-  };
-
-  // Keep amount in sync with cart when cart has items
   useEffect(() => {
+    const amountParam = searchParams.get("amount");
+    // Priority: cart items > URL param > nothing
     if (cartState.items.length > 0) {
+      // Cart takes precedence - don't override with URL param
       setAmount(cartState.totalAmount.toString());
       setCustomAmount("");
+    } else if (amountParam) {
+      // URL param from news articles - preserve it
+      setAmount(amountParam);
+      setCustomAmount("");
     }
-  }, [cartState.totalAmount, cartState.items.length]);
+  }, [searchParams, cartState.items.length, cartState.totalAmount]);
+
+  const handleAmountSelect = (selectedAmount: number) => {
+    // Only allow selection if cart is empty
+    if (cartState.items.length === 0) {
+      setAmount(selectedAmount.toString());
+      setCustomAmount("");
+    }
+  };
 
   const getPhaseIcon = (phase: string) => {
     switch (phase?.toLowerCase()) {
@@ -76,8 +87,11 @@ const Donation = () => {
   };
 
   const handleCustomAmountChange = (value: string) => {
-    setCustomAmount(value);
-    setAmount("");
+    // Only allow custom amount if cart is empty
+    if (cartState.items.length === 0) {
+      setCustomAmount(value);
+      setAmount("");
+    }
   };
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -271,11 +285,10 @@ const Donation = () => {
             <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed mb-8">
               {t("donation.hero.subtitle")}
             </p>
-              <Button 
-                size="lg" 
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
-                onClick={() => document.getElementById('donation-form')?.scrollIntoView({ behavior: 'smooth' })}
-              >
+            <Button 
+              size="lg" 
+              onClick={() => document.getElementById('donation-form')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               <Heart className="mr-2 h-5 w-5" />
               {t("donation.hero.button")}
             </Button>
@@ -382,7 +395,7 @@ const Donation = () => {
                     <Label className="text-base font-semibold">{t("donation.form.amount")}</Label>
                     {cartState.items.length === 0 ? (
                       <>
-                        <div className="grid grid-cols-3 gap-3 mt-3 mb-4">
+                        <div className="grid grid-cols-2 gap-3 mt-3 mb-4">
                           {predefinedAmounts.map((amountValue) => (
                             <Button
                               key={amountValue}
@@ -590,7 +603,8 @@ const Donation = () => {
                       console.log("Button clicked!");
                       handleDonate();
                     }}
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-button h-12 text-lg"
+                    size="lg"
+                    className="w-full h-12"
                     disabled={isProcessingPayment}
                   >
                     <Heart className="mr-2 h-5 w-5" />
@@ -733,13 +747,13 @@ const Donation = () => {
                 {t("donation.contact.subtitle")}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button asChild variant="outline" size="lg" className="shadow-button">
+                <Button asChild variant="outline" size="lg">
                   <a href={`mailto:${t("donation.contact.email")}`}>
                     <Mail className="mr-2 h-4 w-4" />
                     {t("donation.contact.email")}
                   </a>
                 </Button>
-                <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button">
+                <Button asChild size="lg">
                   <a href="/contact">
                     {t("donation.contact.button")}
                   </a>
@@ -768,7 +782,7 @@ const Donation = () => {
             <AlertDialogCancel onClick={() => setShowWarningDialog(false)}>
               {t("donation.warning.cancel")}
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleContinueDonation} className="bg-primary hover:bg-primary/90">
+            <AlertDialogAction onClick={handleContinueDonation}>
               {t("donation.warning.continue")}
             </AlertDialogAction>
           </AlertDialogFooter>

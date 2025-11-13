@@ -53,19 +53,23 @@ Vielen Dank!`);
             <div className="flex items-center space-x-8">
               <img src={logo} alt="Alma Bridge of Hope" className="h-12 w-12 object-contain" />
             </div>
-            <div className="flex items-center space-x-6">
-              <button 
-                className="text-muted-foreground hover:text-primary transition-colors"
+            <div className="flex items-center space-x-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
                 onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 About
-              </button>
-              <button 
-                className="text-muted-foreground hover:text-primary transition-colors"
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
                 onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 Contact
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -91,8 +95,7 @@ Vielen Dank!`);
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 variant="outline" 
-                size="lg" 
-                className="text-base px-6 py-4"
+                size="lg"
                 onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 Mehr erfahren
@@ -124,7 +127,7 @@ Vielen Dank!`);
                   Folge uns für tägliche Einblicke in unsere Projekte, 
                   <br />Fotos aus Uganda und Updates von vor Ort
                 </p>
-                <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-white group-hover:border-transparent transition-all duration-300">
+                <Button variant="outline" className="w-full">
                   @almabridgeofhope
                 </Button>
               </Card>
@@ -211,11 +214,10 @@ Vielen Dank!`);
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  size="lg" 
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-button"
-                  onClick={() => window.open('mailto:info@almabridgeofhope.org', '_blank')}
-                >
+              <Button 
+                size="lg"
+                onClick={() => window.open('mailto:info@almabridgeofhope.org', '_blank')}
+              >
                 E-Mail senden
               </Button>
             </div>
