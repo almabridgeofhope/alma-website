@@ -61,7 +61,7 @@ export const ProjectItemsModal = ({
   onItemCostUpdate 
 }: ProjectItemsModalProps) => {
   const { t } = useLanguage();
-  const { addItem, isItemInCart, removeFromCart, addItemPiece, removeItemPiece, getItemCartQuantity, isItemFullyInCart, state: cartState, toggleCart, closeCart } = useShoppingCart();
+  const { addItem, isItemInCart, removeFromCart, addItemPiece, addItemMax, removeItemPiece, getItemCartQuantity, isItemFullyInCart, state: cartState, toggleCart, closeCart } = useShoppingCart();
   const [showCartDrawer, setShowCartDrawer] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -477,7 +477,8 @@ export const ProjectItemsModal = ({
       cartPercent: phaseCartPercent,
       fundedCount: phaseItems.filter(item => item.purchased).length,
       partiallyFundedCount: phaseItems.filter(item => !item.purchased && item.qtyFunded > 0).length,
-      unfundedCount: phaseItems.filter(item => !item.purchased && item.qtyFunded === 0).length
+      unfundedCount: phaseItems.filter(item => !item.purchased && item.qtyFunded === 0).length,
+      incompleteCount: phaseItems.filter(item => !item.purchased && item.qtyFunded < item.qtyNeededTotal).length
     };
   }).sort((a, b) => {
     return b.progress - a.progress;
@@ -943,13 +944,16 @@ export const ProjectItemsModal = ({
                             variant="outline"
                             onClick={(e) => {
                               e.stopPropagation();
-                              const unfundedItems = phaseGroup.items.filter(item => !item.purchased && item.qtyFunded === 0);
-                              unfundedItems.forEach(item => {
-                                addItemPiece(item, projectCost.projectName);
+                              // Add all items that are not fully funded (including partially funded)
+                              const itemsToAdd = phaseGroup.items.filter(item => 
+                                !item.purchased && item.qtyFunded < item.qtyNeededTotal
+                              );
+                              itemsToAdd.forEach(item => {
+                                addItemMax(item, projectCost.projectName);
                               });
                             }}
                             className="flex-1 text-xs font-medium border-orange-200 text-orange-700 hover:bg-orange-50"
-                            disabled={phaseGroup.unfundedCount === 0}
+                            disabled={phaseGroup.incompleteCount === 0}
                           >
                             <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
                             Alle offenen Items hinzufügen

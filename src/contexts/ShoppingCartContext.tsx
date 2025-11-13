@@ -191,6 +191,7 @@ interface ShoppingCartContextType {
   isItemInCart: (id: string) => boolean;
   removeFromCart: (id: string) => void;
   addItemPiece: (item: ProjectItem, projectName?: string) => void;
+  addItemMax: (item: ProjectItem, projectName?: string) => void; // Add item with maximum available quantity
   removeItemPiece: (itemId: string) => void;
   getItemCartQuantity: (itemId: string) => number;
   isItemFullyInCart: (item: ProjectItem) => boolean;
@@ -307,6 +308,48 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
   };
 
+  const addItemMax = (item: ProjectItem, projectName?: string) => {
+    const cartItemId = `item-${item.itemId}`;
+    const existingItem = state.items.find(cartItem => cartItem.id === cartItemId);
+    const remainingNeeded = item.qtyNeededTotal - item.qtyFunded;
+    const cartQuantity = existingItem ? existingItem.quantity : 0;
+    const maxToAdd = remainingNeeded - cartQuantity;
+    
+    if (maxToAdd <= 0) {
+      return; // Already at max or nothing needed
+    }
+    
+    if (existingItem) {
+      // Update to maximum quantity
+      updateQuantity(cartItemId, remainingNeeded);
+      // Update projectName if it was not set before
+      if (projectName && !existingItem.projectName) {
+        const updatedItems = state.items.map(cartItem =>
+          cartItem.id === cartItemId
+            ? { ...cartItem, projectName }
+            : cartItem
+        );
+        dispatch({ type: 'LOAD_CART', payload: updatedItems });
+      }
+    } else {
+      // Add new item with maximum quantity
+      addItem({
+        id: cartItemId,
+        type: 'item',
+        name: item.displayName,
+        description: item.blurb || `${item.category} - ${item.phase}`,
+        unitPrice: item.unitCostEUR,
+        category: item.category,
+        phase: item.phase,
+        imageUrl: item.imageUrl,
+        projectName: projectName || '',
+        maxQuantity: remainingNeeded,
+      });
+      // Set quantity to maximum
+      updateQuantity(cartItemId, remainingNeeded);
+    }
+  };
+
   const removeItemPiece = (itemId: string) => {
     const cartItemId = `item-${itemId}`;
     const existingItem = state.items.find(cartItem => cartItem.id === cartItemId);
@@ -367,6 +410,7 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
     isItemInCart,
     removeFromCart,
     addItemPiece,
+    addItemMax,
     removeItemPiece,
     getItemCartQuantity,
     isItemFullyInCart,
