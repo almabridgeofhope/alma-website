@@ -1,9 +1,16 @@
 import heroImage from "@/assets/nature/land_3.jpg";
 import { useLanguage } from "@/contexts/LanguageContext";
 import PreloadImage from "@/components/PreloadImage";
+import { Button } from "@/components/ui/button";
+import { Link, useLocation } from "react-router-dom";
 
 const HeroSection = () => {
   const { t } = useLanguage();
+  const location = useLocation();
+  
+  // Check if we're on the /dev routes
+  const isDevRoute = location.pathname.startsWith('/dev');
+  const basePath = isDevRoute ? '/dev' : '';
   
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -27,6 +34,18 @@ const HeroSection = () => {
         <p className="text-xl md:text-2xl mb-8 text-white/90 max-w-3xl mx-auto">
           {t("hero.subtitle")}
         </p>
+        <Link 
+          to={basePath + "/donation"} 
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="inline-block"
+        >
+          <Button 
+            size="lg" 
+            className="bg-primary hover:bg-primary/90 text-primary-foreground text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all duration-300"
+          >
+            {t("hero.donateButton")}
+          </Button>
+        </Link>
       </div>
     </section>
   );

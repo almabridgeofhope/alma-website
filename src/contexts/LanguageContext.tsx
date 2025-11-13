@@ -21,6 +21,7 @@ const translations = {
     // Hero
     "hero.title": "Bridges of Hope Across Continents",
     "hero.subtitle": "Empowering sustainable community development in rural Uganda",
+    "hero.donateButton": "Donate Now",
     
     // Mission
     "mission.title": "Our Mission",
@@ -610,6 +611,7 @@ const translations = {
     // Hero
     "hero.title": "Brücken der Hoffnung zwischen Kontinenten",
     "hero.subtitle": "Wir fördern die nachhaltige Entwicklung von Gemeinden im ländlichen Uganda",
+    "hero.donateButton": "Spenden",
     
     // Mission
     "mission.title": "Unsere Mission",
