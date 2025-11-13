@@ -15,11 +15,14 @@ import {
   Sprout,
   Droplets,
   Wheat,
-  ExternalLink
+  ExternalLink,
+  HelpCircle
 } from 'lucide-react';
 import { useShoppingCart, CartItem } from '@/contexts/ShoppingCartContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface CartSidebarProps {
   className?: string;
@@ -41,6 +44,7 @@ const getPhaseIcon = (phase: string) => {
 
 const CartItemComponent: React.FC<{ item: CartItem }> = ({ item }) => {
   const { updateQuantity, removeItem, formatCurrency, closeCart } = useShoppingCart();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const handleItemClick = (e: React.MouseEvent) => {
@@ -71,6 +75,22 @@ const CartItemComponent: React.FC<{ item: CartItem }> = ({ item }) => {
               <h4 className="font-medium text-sm text-gray-900 truncate">
                 {item.name}
               </h4>
+              {item.type === 'general-donation' && (
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <HelpCircle className="w-3 h-3 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
+                  </TooltipTrigger>
+                  <TooltipContent 
+                    className="max-w-xs z-[9999]" 
+                    side="top"
+                    sideOffset={5}
+                  >
+                    <p className="text-sm">
+                      {t("donation.form.generalDonation.info")}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
               {item.projectName && (
                 <ExternalLink className="w-3 h-3 text-gray-400" />
               )}
@@ -152,6 +172,7 @@ const CartItemComponent: React.FC<{ item: CartItem }> = ({ item }) => {
 
 export const CartSidebar: React.FC<CartSidebarProps> = ({ className, basePath = "" }) => {
   const { state, closeCart, formatCurrency } = useShoppingCart();
+  const { t } = useLanguage();
 
   // Lock body scroll while cart is open and render overlay at top layer
   useEffect(() => {
@@ -188,7 +209,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ className, basePath = 
         <div className="flex items-center justify-between p-4 border-b flex-none">
           <div className="flex items-center gap-2">
             <ShoppingCart className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-semibold">Warenkorb</h2>
+            <h2 className="text-lg font-semibold">{t("donation.form.cart")}</h2>
             <Badge variant="secondary" className="text-xs">
               {state.totalItems}
             </Badge>
@@ -210,13 +231,13 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ className, basePath = 
               <div>
                 <ShoppingCart className="w-12 h-12 mx-auto mb-4 text-gray-300" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Ihr Warenkorb ist leer
+                  {t("donation.cart.empty")}
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Fügen Sie Items oder Bauphasen hinzu, um zu spenden
+                  {t("donation.cart.emptyDesc")}
                 </p>
                 <Button onClick={closeCart} variant="outline">
-                  Weiter einkaufen
+                  {t("donation.cart.continueShopping")}
                 </Button>
               </div>
             </div>
@@ -236,7 +257,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ className, basePath = 
                 
                 {/* Total */}
                 <div className="flex items-center justify-between">
-                  <span className="text-lg font-semibold">Gesamtbetrag:</span>
+                  <span className="text-lg font-semibold">{t("donation.cart.total")}</span>
                   <span className="text-xl font-bold text-primary">
                     {formatCurrency(state.totalAmount)}
                   </span>
@@ -245,7 +266,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ className, basePath = 
                 {/* Checkout Button */}
                 <Link to={basePath + "/donation"} onClick={closeCart} className="block">
                   <Button className="w-full" size="lg">
-                    <span>Zur Spende</span>
+                    <span>{t("donation.cart.toDonation")}</span>
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
