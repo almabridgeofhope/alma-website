@@ -469,6 +469,9 @@ const translations = {
     "projectItems.add": "Add",
     "projectItems.remove": "Remove",
     "projectItems.availableItems": "Available Items",
+    "projectItems.nextItem": "Next Item",
+    "projectItems.addOne": "Add 1x",
+    "projectItems.allItems": "Show All Items",
     
     // Cart Sidebar
     "cart.inline.title": "Cart",
@@ -1066,6 +1069,9 @@ const translations = {
     "projectItems.add": "Hinzufügen",
     "projectItems.remove": "Entfernen",
     "projectItems.availableItems": "Verfügbare Items",
+    "projectItems.nextItem": "Nächstes Item",
+    "projectItems.addOne": "1x hinzufügen",
+    "projectItems.allItems": "Alle Items anzeigen",
     
     // Cart Sidebar
     "cart.inline.title": "Warenkorb",
