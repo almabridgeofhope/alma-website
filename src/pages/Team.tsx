@@ -13,10 +13,19 @@ import hansenImage from "@/assets/team/hansen.jpeg";
 import maxImage from "@/assets/team/max.jpeg";
 import yuanImage from "@/assets/team/yuan.jpeg";
 import eileenImage from "@/assets/team/eileen.jpeg";
+import teamAaronPhionah from "@/assets/team/team.png";
+import teamPeter from "@/assets/team/team_2.jpg";
+import teamPeterTony from "@/assets/team/team_3.jpg";
 
 const Team = () => {
   const { t } = useLanguage();
   
+  const originImages = [
+    { src: teamAaronPhionah, alt: "Aaron Hesser & Phionah Nagujja" },
+    { src: teamPeter, alt: "Peter Ssenga" },
+    { src: teamPeterTony, alt: "Peter Ssenga & Tony Kalulu" },
+  ];
+
   const teamUganda = [
     {
       name: t("team.peter.name"),
@@ -90,7 +99,7 @@ const Team = () => {
         </section>
 
         {/* Introduction Section */}
-        <section className="pt-section pb-6 bg-background">
+        <section className="pt-section pb-section bg-background">
           <div className="max-w-content mx-auto px-6">
             <div className="max-w-3xl mx-auto text-center mb-8">
               <h2 className="text-3xl font-bold text-foreground mb-6">
@@ -106,8 +115,41 @@ const Team = () => {
           </div>
         </section>
 
+        {/* Origin Story */}
+        <section className="py-section bg-muted">
+          <div className="max-w-content mx-auto px-6">
+            <div className="grid gap-10 lg:grid-cols-[1.6fr,1fr] items-start">
+              <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
+                <h2 className="text-3xl font-bold text-foreground">
+                  {t("team.origin.title")}
+                </h2>
+                <div className="space-y-4">
+                  <p>{t("team.origin.p1")}</p>
+                  <p>{t("team.origin.p2")}</p>
+                  <p>{t("team.origin.p3")}</p>
+                  <p>{t("team.origin.p4")}</p>
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1 lg:self-start lg:max-h-full">
+                {originImages.map((image, index) => (
+                  <div
+                    key={index}
+                    className="overflow-hidden rounded-lg shadow-card aspect-[3/2] lg:aspect-[16/9]"
+                  >
+                    <img
+                      src={image.src}
+                      alt={image.alt}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Team Uganda */}
-        <section className="pt-4 pb-section bg-background">
+        <section className="pt-section pb-section bg-background">
           <div className="max-w-content mx-auto px-6">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12 text-center">
               {t("team.uganda.title")}
