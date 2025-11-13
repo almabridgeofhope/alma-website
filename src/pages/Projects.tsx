@@ -1,11 +1,12 @@
-import { ReactNode, useEffect, MouseEvent } from "react";
+import { ReactNode, useEffect, MouseEvent, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { ProjectCostCard } from "@/components/ProjectCostCard";
-import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet } from "lucide-react";
+import { ProjectItemsModal } from "@/components/ProjectItemsModal";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet, Calendar as CalendarIcon, Package } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useProjectCosts } from "@/hooks/useProjectCosts";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -16,6 +17,7 @@ import agricultureImage from "@/assets/project/goat_farm.webp";
 import educationImage from "@/assets/project/pupils_2.jpg";
 import busImage from "@/assets/project/bus.png";
 import financialImage from "@/assets/project/education_5.jpg";
+import { ProjectCost } from "@/services/clientGoogleSheetsService";
 
 type TimelinePhase = "planning" | "implementation" | "impact";
 
@@ -28,7 +30,6 @@ interface Project {
   goals: string[];
   impact: string;
   statusText: string;
-  statusIcon: string;
   progress: number;
   currentPhase: TimelinePhase;
   image: string;
@@ -41,7 +42,36 @@ const Projects = () => {
   const { t, language } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { projectCosts, loading: costsLoading, error: costsError, getProjectCost, refreshCosts } = useProjectCosts();
+  const { error: costsError, getProjectCost, refreshCosts } = useProjectCosts();
+  const [activeCostProject, setActiveCostProject] = useState<ProjectCost | null>(null);
+
+  const formatCurrency = (amount: number, currency: string = "EUR") => {
+    try {
+      return new Intl.NumberFormat(language === "de" ? "de-DE" : "en-US", {
+        style: "currency",
+        currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(amount);
+    } catch {
+      return `${amount.toFixed ? amount.toFixed(0) : amount} ${currency}`;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString(
+        language === "de" ? "de-DE" : "en-US",
+        {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        }
+      );
+    } catch {
+      return dateString;
+    }
+  };
   
   const timelinePhases = [
     { id: "planning", icon: "🌱", label: t("projects.timeline.planning") },
@@ -165,7 +195,6 @@ const Projects = () => {
       ],
       impact: t("projects.community.impact"),
       statusText: t("projects.community.status"),
-      statusIcon: "🟢",
       progress: 65,
       currentPhase: "implementation",
       image: communityHouseImage,
@@ -185,7 +214,6 @@ const Projects = () => {
       ],
       impact: t("projects.well.impact"),
       statusText: t("projects.well.status"),
-      statusIcon: "🟢",
       progress: 15,
       currentPhase: "planning",
       image: waterImage,
@@ -207,7 +235,6 @@ const Projects = () => {
       ],
       impact: t("projects.livestock.impact"),
       statusText: t("projects.livestock.status"),
-      statusIcon: "🟡",
       progress: 10,
       currentPhase: "planning",
       image: agricultureImage,
@@ -227,7 +254,6 @@ const Projects = () => {
       ],
       impact: t("projects.mobility.impact"),
       statusText: t("projects.mobility.status"),
-      statusIcon: "⚪",
       progress: 5,
       currentPhase: "planning",
       image: busImage,
@@ -244,11 +270,9 @@ const Projects = () => {
       goals: [
         t("projects.sponsorship.goal1"),
         t("projects.sponsorship.goal2"),
-        t("projects.sponsorship.goal3"),
       ],
       impact: t("projects.sponsorship.impact"),
       statusText: t("projects.sponsorship.status"),
-      statusIcon: "⚪",
       progress: 5,
       currentPhase: "planning",
       image: educationImage,
@@ -268,7 +292,6 @@ const Projects = () => {
       ],
       impact: t("projects.financial.impact"),
       statusText: t("projects.financial.status"),
-      statusIcon: "⚪",
       progress: 5,
       currentPhase: "planning",
       image: financialImage,
@@ -277,72 +300,24 @@ const Projects = () => {
     }
   ];
 
-  const renderTimeline = (currentPhase: TimelinePhase) => (
-    <div className="mb-6">
-      {/* Timeline Icons and Connecting Lines */}
-      <div className="flex justify-between items-center relative">
-        {/* Absolute connecting lines */}
-        <div className="absolute inset-y-0 left-0 right-0 flex items-center">
-          {timelinePhases.slice(0, -1).map((_, index) => {
-            const isPast = timelinePhases.findIndex(p => p.id === currentPhase) > index;
-            return (
-              <div 
-                key={`line-${index}`} 
-                className={`h-1 flex-1 mx-6 transition-all duration-300 ${
-                  isPast ? "bg-blue-200" : "bg-gray-200"
-                }`}
-              />
-            );
-          })}
-        </div>
-
-        {/* Icons */}
-        {timelinePhases.map((phase, index) => {
-          const isActive = phase.id === currentPhase;
-          const isPast = timelinePhases.findIndex(p => p.id === currentPhase) > index;
-          
-          return (
-            <div key={phase.id} className="flex flex-col items-center relative z-10">
-              <div 
-                className={`w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all duration-300 ${
-                  isActive 
-                    ? "bg-red-200 text-red-700 shadow-lg scale-110" 
-                    : isPast
-                    ? "bg-blue-200 text-blue-700"
-                    : "bg-gray-200 text-gray-500"
-                }`}
-              >
-                {phase.icon}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      
-      {/* Timeline Labels - Match exact positioning of icons */}
-      <div className="flex justify-between mt-2">
-        {timelinePhases.map((phase, index) => {
-          const isActive = phase.id === currentPhase;
-          return (
-            <div key={`label-${phase.id}`} className="flex justify-center">
-              <span 
-                className={`text-xs sm:text-sm font-medium ${
-                  isActive ? "text-primary" : "text-muted-foreground"
-                }`}
-              >
-                {phase.label}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-
   const renderProjectCard = (project: Project, index: number) => {
     const Icon = project.icon;
     const isEven = index % 2 === 0;
     const projectCost = getProjectCost(project.title);
+    const currentPhaseIndex = timelinePhases.findIndex(p => p.id === project.currentPhase);
+    const spentPercentage = projectCost
+      ? projectCost.totalBudget > 0
+        ? Math.min(100, (projectCost.spentAmount / projectCost.totalBudget) * 100)
+        : 0
+      : null;
+    const displayProgressValue = spentPercentage ?? project.progress;
+    const statusProgressLabel = spentPercentage !== null ? `${Math.round(spentPercentage)}%` : `${project.progress}%`;
+    const detailedProgressLabel = spentPercentage !== null ? `${spentPercentage.toFixed(1)}%` : statusProgressLabel;
+    const costTitle = language === "de" ? "Projektkosten" : "Project Costs";
+    const fundedLabel = language === "de" ? "Finanziert" : "Funded";
+    const remainingLabel = language === "de" ? "Offen" : "Remaining";
+    const costProgressLabel = language === "de" ? "Kosten-Fortschritt" : "Cost Progress";
+    const detailsLabel = language === "de" ? "Details anzeigen" : "View details";
     
     return (
       <div 
@@ -363,6 +338,128 @@ const Projects = () => {
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute inset-x-0 bottom-0">
+                <div className="bg-gradient-to-t from-black/85 via-black/60 to-transparent px-4 sm:px-6 py-4 sm:py-5 text-white backdrop-blur-[2px] pointer-events-auto">
+                  <div className="flex flex-col gap-3 sm:gap-4 z-10 relative">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {timelinePhases.map((phase, phaseIndex) => {
+                        const isActive = phaseIndex === currentPhaseIndex;
+                        const isPast = phaseIndex < currentPhaseIndex;
+                        const tooltipTitle = t(`projects.timeline.${phase.id}`);
+                        const activeDescription = isActive ? project.statusText?.trim() ?? "" : "";
+                        const badge = (
+                          <span
+                            className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] sm:text-xs font-semibold uppercase tracking-wide transition-colors ${
+                              isActive
+                                ? "bg-white text-slate-900 shadow-lg"
+                                : isPast
+                                ? "bg-white/40 text-white"
+                                : "bg-white/20 text-white/70"
+                            }`}
+                            role="status"
+                            aria-label={
+                              activeDescription
+                                ? `${tooltipTitle} – ${activeDescription}`
+                                : tooltipTitle
+                            }
+                          >
+                            <span className="text-base leading-none">{phase.icon}</span>
+                            <span className="leading-tight">{phase.label}</span>
+                          </span>
+                        );
+
+                        if (!activeDescription) {
+                          return (
+                            <div key={phase.id} className="flex items-center">
+                              {badge}
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <Tooltip key={phase.id} delayDuration={100}>
+                            <TooltipTrigger asChild>{badge}</TooltipTrigger>
+                            <TooltipContent side="top" sideOffset={12} align="center" className="max-w-xs text-left">
+                              <div className="text-xs font-semibold uppercase tracking-wide text-primary mb-1">
+                                {tooltipTitle}
+                              </div>
+                              <p className="text-xs text-muted-foreground leading-relaxed">
+                                {activeDescription}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      })}
+                    </div>
+
+                    {!projectCost && (
+                      <div className="sm:min-w-[200px]">
+                        <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-white/80">
+                          <span className="uppercase tracking-wide text-white/60">
+                            {t("projects.progress_label") ?? t("projects.progress") ?? "Progress"}
+                          </span>
+                          <span className="text-white">{statusProgressLabel}</span>
+                        </div>
+                        <Progress value={displayProgressValue} className="mt-2 h-1.5 bg-white/25" />
+                      </div>
+                    )}
+                    {projectCost && (
+                      <div className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-4 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors">
+                        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                          <div className="flex-1 min-w-[140px]">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                              {costTitle}
+                            </p>
+                            <p className="text-sm sm:text-base font-bold">
+                              {formatCurrency(projectCost.totalBudget, projectCost.currency)}
+                            </p>
+                          </div>
+                          <div className="flex-1 min-w-[120px]">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                              {fundedLabel}
+                            </p>
+                            <p className="text-sm sm:text-base font-semibold text-emerald-600">
+                              {formatCurrency(projectCost.spentAmount, projectCost.currency)}
+                            </p>
+                          </div>
+                          <div className="flex-1 min-w-[120px]">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                              {remainingLabel}
+                            </p>
+                            <p className="text-sm sm:text-base font-semibold text-orange-600">
+                              {formatCurrency(projectCost.remainingAmount, projectCost.currency)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-4 flex flex-col gap-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            <span>{costProgressLabel}</span>
+                            <span className="text-slate-900">{detailedProgressLabel}</span>
+                          </div>
+                          <Progress
+                            value={spentPercentage ?? 0}
+                            className="h-2 rounded-full bg-primary/15 [&>div]:rounded-full [&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:via-primary/90 [&>div]:to-primary/70"
+                          />
+                          <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] sm:text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <CalendarIcon className="w-3.5 h-3.5" />
+                              <span>{formatDate(projectCost.lastUpdated)}</span>
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => setActiveCostProject(projectCost)}
+                              className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm hover:bg-primary/90 focus-visible:ring-white/50"
+                            >
+                              <Package className="w-3 h-3" />
+                              {detailsLabel}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Content Section */}
@@ -417,74 +514,13 @@ const Projects = () => {
                     </p>
                   </div>
                 </div>
-
-                {/* Timeline */}
-                {renderTimeline(project.currentPhase)}
-
-                {/* Status Card with Progress - hidden when project costs exist */}
-                {!projectCost && (
-                  <div className="p-3 sm:p-4 bg-background rounded-lg border border-border mb-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-xs sm:text-sm font-semibold text-foreground">
-                        {t("projects.status")}: {project.statusText}
-                      </h4>
-                      <span className="text-xs sm:text-sm font-bold text-primary">
-                        {project.progress}%
-                      </span>
-                    </div>
-                    <Progress value={project.progress} className="h-2" />
-                  </div>
-                )}
-
-                {/* Project Costs Card */}
-                {projectCost ? (
-                  <ProjectCostCard 
-                    projectCost={projectCost} 
-                    onRefresh={refreshCosts}
-                    loading={costsLoading}
-                    onItemToggle={(itemId, purchased) => {
-                      const updatedCost = {
-                        ...projectCost,
-                        items: projectCost.items.map(item => 
-                          item.itemId === itemId ? { ...item, purchased } : item
-                        ),
-                        purchasedItems: projectCost.items.filter(item => 
-                          item.itemId === itemId ? purchased : item.purchased
-                        ).length,
-                        spentAmount: projectCost.items
-                          .map(item => item.itemId === itemId ? { ...item, purchased } : item)
-                          .filter(item => item.purchased)
-                          .reduce((sum, item) => sum + (item.unitCostEUR || 0), 0),
-                        remainingAmount: projectCost.totalBudget - projectCost.items
-                          .map(item => item.itemId === itemId ? { ...item, purchased } : item)
-                          .filter(item => item.purchased)
-                          .reduce((sum, item) => sum + (item.unitCostEUR || 0), 0)
-                      };
-                      console.log('Item toggled:', itemId, purchased, updatedCost);
-                    }}
-                    onItemCostUpdate={(itemId, cost) => {
-                      const updatedCost = {
-                        ...projectCost,
-                        items: projectCost.items.map(item => 
-                          item.itemId === itemId ? { ...item, unitCostEUR: cost } : item
-                        ),
-                        totalBudget: projectCost.items
-                          .map(item => item.itemId === itemId ? { ...item, unitCostEUR: cost } : item)
-                          .reduce((sum, item) => sum + (item.unitCostEUR || 0), 0),
-                        remainingAmount: projectCost.items
-                          .map(item => item.itemId === itemId ? { ...item, unitCostEUR: cost } : item)
-                          .reduce((sum, item) => sum + (item.unitCostEUR || 0), 0) - projectCost.spentAmount
-                      };
-                      console.log('Item cost updated:', itemId, cost, updatedCost);
-                    }}
-                  />
-                ) : costsError ? (
-                  <Card className="p-4 bg-red-50 border-red-200">
-                    <p className="text-sm text-red-600">
-                      Kosten konnten nicht geladen werden: {costsError}
-                    </p>
+                {!projectCost && costsError && (
+                  <Card className="p-3 sm:p-4 bg-red-50 border border-red-200 text-sm text-red-600">
+                    {language === "de"
+                      ? `Kosten konnten nicht geladen werden: ${costsError}`
+                      : `Failed to load costs: ${costsError}`}
                   </Card>
-                ) : null}
+                )}
               </div>
             </div>
           </div>
@@ -606,6 +642,57 @@ const Projects = () => {
           </div>
         </section>
       </main>
+
+      {activeCostProject && (
+        <ProjectItemsModal
+          projectCost={activeCostProject}
+          isOpen={!!activeCostProject}
+          onClose={() => {
+            setActiveCostProject(null);
+            refreshCosts();
+          }}
+          onItemToggle={(itemId, purchased) => {
+            if (!activeCostProject) {
+              return;
+            }
+            const updatedItems = activeCostProject.items.map(item =>
+              item.itemId === itemId ? { ...item, purchased } : item
+            );
+            const purchasedItems = updatedItems.filter(item => item.purchased).length;
+            const spentAmount = updatedItems
+              .filter(item => item.purchased)
+              .reduce((sum, item) => sum + (item.unitCostEUR || 0), 0);
+            const remainingAmount = activeCostProject.totalBudget - spentAmount;
+            console.log('Item toggled:', itemId, purchased, {
+              ...activeCostProject,
+              items: updatedItems,
+              purchasedItems,
+              spentAmount,
+              remainingAmount,
+            });
+          }}
+          onItemCostUpdate={(itemId, cost) => {
+            if (!activeCostProject) {
+              return;
+            }
+            const updatedItems = activeCostProject.items.map(item =>
+              item.itemId === itemId ? { ...item, unitCostEUR: cost } : item
+            );
+            const totalBudget = updatedItems.reduce((sum, item) => sum + (item.unitCostEUR || 0), 0);
+            const spentAmount = updatedItems
+              .filter(item => item.purchased)
+              .reduce((sum, item) => sum + (item.unitCostEUR || 0), 0);
+            const remainingAmount = totalBudget - spentAmount;
+            console.log('Item cost updated:', itemId, cost, {
+              ...activeCostProject,
+              items: updatedItems,
+              totalBudget,
+              spentAmount,
+              remainingAmount,
+            });
+          }}
+        />
+      )}
       
       <Footer />
     </div>
