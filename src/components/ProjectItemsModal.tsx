@@ -9,7 +9,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { CartInline } from "./CartSidebar";
 import { ProjectItem, ProjectCost } from "@/services/clientGoogleSheetsService";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
   // Construction phase icons
   FileText,
@@ -34,6 +34,8 @@ import {
   Minus,
   HelpCircle,
   X,
+  ArrowRight,
+  Sparkles,
 } from "lucide-react";
 
 interface ProjectItemsModalProps {
@@ -179,6 +181,24 @@ export const ProjectItemsModal = ({
   const partiallyFundedItems = filteredItems.filter(item => !item.purchased && item.qtyFunded > 0);
   const unfundedItems = filteredItems.filter(item => !item.purchased && item.qtyFunded === 0);
 
+  // Find the next important item (first unfunded item, or first partially funded item if no unfunded)
+  const getNextImportantItem = (): ProjectItem | null => {
+    // Use all items for overview, filtered items for details
+    const itemsToCheck = viewMode === 'overview' ? projectCost.items : filteredItems;
+    const allUnfunded = itemsToCheck.filter(item => !item.purchased && item.qtyFunded === 0);
+    const allPartiallyFunded = itemsToCheck.filter(item => !item.purchased && item.qtyFunded > 0);
+    
+    if (allUnfunded.length > 0) {
+      return allUnfunded[0];
+    }
+    if (allPartiallyFunded.length > 0) {
+      return allPartiallyFunded[0];
+    }
+    return null;
+  };
+
+  const nextImportantItem = getNextImportantItem();
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('de-DE', {
       style: 'currency',
@@ -309,13 +329,13 @@ export const ProjectItemsModal = ({
     return b.progress - a.progress;
   });
 
-  const renderItemCard = (item: ProjectItem) => {
+  const renderItemCard = (item: ProjectItem, isNextImportant: boolean = false) => {
     const cartQuantity = getItemCartQuantity(item.itemId);
     const isFullyInCart = isItemFullyInCart(item);
     const remainingPieces = item.qtyNeededTotal - item.qtyFunded - cartQuantity;
     
     return (
-      <Card key={item.itemId} className={`p-2 transition-all hover:shadow-md ${isFullyInCart ? 'bg-green-50 border-green-200' : getStatusColor(item)}`}>
+      <Card key={item.itemId} className={`p-2 transition-all hover:shadow-md ${isNextImportant ? 'ring-2 ring-primary ring-offset-2 bg-primary/5 border-primary' : ''} ${isFullyInCart ? 'bg-green-50 border-green-200' : getStatusColor(item)}`}>
         <div className="flex items-center gap-3">
           {/* Status Icon */}
           <div className="flex-shrink-0">
@@ -439,11 +459,48 @@ export const ProjectItemsModal = ({
           <div className="min-w-0 h-full overflow-y-auto pr-2">
             {viewMode === 'overview' ? (
               /* Phase Overview */
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                 {phaseGroups.map((phaseGroup) => (
-                   <Card key={phaseGroup.phase} className="p-3 cursor-pointer transition-all hover:shadow-md">
+              <div className="space-y-4">
+                {/* Next Important Item Highlight */}
+                {nextImportantItem && (
+                  <Card className="p-4 bg-gradient-to-r from-primary/10 to-primary/5 border-primary/30 border-2">
                     <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0">
+                        <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+                          <Sparkles className="w-5 h-5 text-primary" />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-primary">Nächstes wichtiges Item</span>
+                        </div>
+                        <h4 className="font-semibold text-gray-900 text-sm truncate">{nextImportantItem.displayName}</h4>
+                        <p className="text-xs text-gray-600 mt-1">
+                          {nextImportantItem.qtyNeededTotal - nextImportantItem.qtyFunded - getItemCartQuantity(nextImportantItem.itemId)} von {nextImportantItem.qtyNeededTotal} noch benötigt
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          navigateToDetails(nextImportantItem.phase);
+                          // Scroll to item after navigation
+                          setTimeout(() => {
+                            const element = document.querySelector(`[data-item-id="${nextImportantItem.itemId}"]`);
+                            element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }, 100);
+                        }}
+                        className="flex-shrink-0"
+                      >
+                        <ChevronRight className="w-4 h-4 mr-1" />
+                        Anzeigen
+                      </Button>
+                    </div>
+                  </Card>
+                )}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                 {phaseGroups.map((phaseGroup) => (
+                   <Card key={phaseGroup.phase} className="p-4 cursor-pointer transition-all hover:shadow-lg flex flex-col h-full">
+                    <div className="flex items-start gap-3 flex-1">
                       {/* Phase Icon */}
                       <div className="flex-shrink-0">
                         <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -453,61 +510,76 @@ export const ProjectItemsModal = ({
 
                       {/* Phase Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-gray-900 text-sm">{getPhaseName(phaseGroup.phase)}</h3>
-                          <Badge variant="outline" className="text-xs px-1 py-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-gray-900 text-base">{getPhaseName(phaseGroup.phase)}</h3>
+                          <Badge variant="outline" className="text-xs px-1.5 py-0.5">
                             {phaseGroup.items.length} Items
                           </Badge>
                         </div>
                         
-                        {/* Progress Bar - nach links */}
-                        <div className="flex items-center gap-2">
-                          <div className="w-20">
-                            <Progress value={phaseGroup.progress} className="h-2" />
+                        {/* Progress Bar */}
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="flex-1 min-w-0">
+                            <Progress value={phaseGroup.progress} className="h-2.5" />
                           </div>
-                          <div className="text-xs font-medium">
+                          <div className="text-xs font-semibold text-gray-700 min-w-[35px] text-right">
                             {phaseGroup.progress.toFixed(0)}%
                           </div>
                         </div>
-                      </div>
 
-                      {/* Budget Info & Action Button */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {/* Offene Posten Info mit Shopping Cart */}
-                        <div 
-                          className="p-1.5 bg-orange-50 rounded border border-orange-200 text-center cursor-pointer hover:bg-orange-100 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const unfundedItems = phaseGroup.items.filter(item => !item.purchased && item.qtyFunded === 0);
-                            unfundedItems.forEach(item => {
-                              addItemPiece(item);
-                            });
-                          }}
-                        >
-                          <div className="flex items-center gap-1">
-                            <ShoppingCart className="w-3 h-3 text-orange-600" />
-                            <div className="text-xs font-bold text-orange-600">
-                              {phaseGroup.unfundedCount} offen
-                            </div>
+                        {/* Budget Info */}
+                        <div className="flex items-center justify-between text-xs mb-3">
+                          <div className="text-gray-600">
+                            <span className="font-medium">Bezahlt:</span> {formatCurrency(phaseGroup.spent)}
                           </div>
-                          <div className="text-[10px] text-orange-700">
-                            {formatCurrency(phaseGroup.budget - phaseGroup.spent)}
+                          <div className="text-orange-600 font-semibold">
+                            Offen: {formatCurrency(phaseGroup.budget - phaseGroup.spent)}
                           </div>
                         </div>
-
-                        {/* Details Button */}
-                        <Button
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigateToDetails(phaseGroup.phase);
-                          }}
-                          className="h-10 text-xs font-medium"
-                        >
-                          <ChevronRight className="w-3 h-3 mr-1" />
-                          Details
-                        </Button>
                       </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+                      {/* Add all unfunded items button with tooltip */}
+                      <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const unfundedItems = phaseGroup.items.filter(item => !item.purchased && item.qtyFunded === 0);
+                              unfundedItems.forEach(item => {
+                                addItemPiece(item);
+                              });
+                            }}
+                            className="flex-1 text-xs font-medium border-orange-200 text-orange-700 hover:bg-orange-50"
+                            disabled={phaseGroup.unfundedCount === 0}
+                          >
+                            <ShoppingCart className="w-3.5 h-3.5 mr-1.5" />
+                            Alle offenen Items hinzufügen
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs">
+                          <p className="text-sm">
+                            Fügt alle {phaseGroup.unfundedCount} noch nicht finanzierten Items dieser Phase zum Warenkorb hinzu
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      {/* Details Button */}
+                      <Button
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigateToDetails(phaseGroup.phase);
+                        }}
+                        className="flex-1 text-xs font-medium"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5 mr-1.5" />
+                        Details
+                      </Button>
                     </div>
                    </Card>
                  ))}
@@ -548,7 +620,7 @@ export const ProjectItemsModal = ({
                   </button>
                   {expandedSections.funded && (
                     <div className="space-y-2 ml-7">
-                      {fundedItems.map(renderItemCard)}
+                      {fundedItems.map(item => renderItemCard(item, false))}
                     </div>
                   )}
                 </div>
@@ -569,7 +641,7 @@ export const ProjectItemsModal = ({
                   </button>
                   {expandedSections.partiallyFunded && (
                     <div className="space-y-2 ml-7">
-                      {partiallyFundedItems.map(renderItemCard)}
+                      {partiallyFundedItems.map(item => renderItemCard(item, nextImportantItem?.itemId === item.itemId && unfundedItems.length === 0))}
                     </div>
                   )}
                 </div>
@@ -590,7 +662,14 @@ export const ProjectItemsModal = ({
                   </button>
                   {expandedSections.unfunded && (
                     <div className="space-y-2 ml-7">
-                      {unfundedItems.map(renderItemCard)}
+                      {unfundedItems.map(item => {
+                        const isNextImportant = nextImportantItem?.itemId === item.itemId;
+                        return (
+                          <div key={item.itemId} data-item-id={item.itemId}>
+                            {renderItemCard(item, isNextImportant)}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -657,18 +736,31 @@ export const ProjectItemsModal = ({
             </div>
           </div>
           
-          {/* Cart Link toggles inline cart inside modal */}
-          {cartState.totalItems > 0 && (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowInlineCart(!showInlineCart)}
-              className="flex items-center gap-2"
-            >
-              <ShoppingCart className="w-4 h-4" />
-              {showInlineCart ? 'Warenkorb schließen' : `Warenkorb (${cartState.totalItems})`}
-            </Button>
-          )}
+          {/* Cart Actions */}
+          <div className="flex items-center gap-2">
+            {cartState.totalItems > 0 && (
+              <>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowInlineCart(!showInlineCart)}
+                  className="flex items-center gap-2"
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                  {showInlineCart ? 'Warenkorb schließen' : `Warenkorb (${cartState.totalItems})`}
+                </Button>
+                <Link to="/dev/donation" onClick={closeCart}>
+                  <Button 
+                    size="sm"
+                    className="flex items-center gap-2 bg-primary hover:bg-primary/90"
+                  >
+                    Zur Spende
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
