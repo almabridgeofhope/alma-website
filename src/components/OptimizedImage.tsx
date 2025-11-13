@@ -101,11 +101,13 @@ export const OptimizedImage = ({
 
   // Ohne aspectRatio, direktes Bild
   return (
-    <div className={cn("relative", containerClassName)}>
+    <div className={cn("relative w-full h-full", containerClassName)}>
       {!isLoaded && !hasError && (
         <div className="absolute inset-0 bg-muted animate-pulse" />
       )}
-      {imageElement}
+      <div className="absolute inset-0 w-full h-full">
+        {imageElement}
+      </div>
       {hasError && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted text-muted-foreground">
           <span className="text-sm">Bild konnte nicht geladen werden</span>

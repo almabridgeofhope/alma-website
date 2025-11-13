@@ -351,11 +351,12 @@ const Projects = () => {
         }`}>
           <div className={`grid md:grid-cols-2 gap-0 ${!isEven ? 'md:grid-flow-dense' : ''}`}>
             {/* Image Section */}
-            <div className={`relative overflow-hidden ${!isEven ? 'md:col-start-2' : ''}`}>
+            <div className={`relative overflow-hidden h-full min-h-[400px] md:min-h-[500px] ${!isEven ? 'md:col-start-2' : ''}`}>
               <OptimizedImage
                 src={project.image} 
                 alt={project.title}
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                containerClassName="h-full"
                 lazy={true}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-800/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
