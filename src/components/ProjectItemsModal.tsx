@@ -608,9 +608,14 @@ export const ProjectItemsModal = ({
                           <span className="text-xs font-semibold uppercase tracking-wide text-primary">Nächstes wichtiges Item</span>
                         </div>
                         <h4 className="font-semibold text-gray-900 text-sm truncate">{nextImportantItem.displayName}</h4>
-                        <p className="text-xs text-gray-600 mt-1">
-                          {nextImportantItem.qtyNeededTotal - nextImportantItem.qtyFunded - getItemCartQuantity(nextImportantItem.itemId)} von {nextImportantItem.qtyNeededTotal} noch benötigt
-                        </p>
+                        <div className="flex items-center gap-3 mt-1">
+                          <p className="text-xs text-gray-600">
+                            {nextImportantItem.qtyNeededTotal - nextImportantItem.qtyFunded - getItemCartQuantity(nextImportantItem.itemId)} von {nextImportantItem.qtyNeededTotal} noch benötigt
+                          </p>
+                          <span className="text-xs font-semibold text-primary">
+                            {formatCurrency(nextImportantItem.unitCostEUR)} / {nextImportantItem.unit}
+                          </span>
+                        </div>
                       </div>
                       <Button
                         size="sm"
