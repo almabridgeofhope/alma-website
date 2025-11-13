@@ -462,6 +462,13 @@ const translations = {
     "projectItems.details": "Details",
     "projectItems.completed": "Completed",
     "projectItems.showCompletedPhases": "Show completed phases",
+    "projectItems.addToCart": "Add to Cart",
+    "projectItems.viewDetails": "View Details",
+    "projectItems.projectPhases": "Project Phases",
+    "projectItems.totalBudget": "Total Budget",
+    "projectItems.add": "Add",
+    "projectItems.remove": "Remove",
+    "projectItems.availableItems": "Available Items",
     
     // Cart Sidebar
     "cart.inline.title": "Cart",
@@ -1052,6 +1059,13 @@ const translations = {
     "projectItems.details": "Details",
     "projectItems.completed": "Abgeschlossen",
     "projectItems.showCompletedPhases": "Abgeschlossene Phasen anzeigen",
+    "projectItems.addToCart": "In den Warenkorb",
+    "projectItems.viewDetails": "Details anzeigen",
+    "projectItems.projectPhases": "Projektphasen",
+    "projectItems.totalBudget": "Gesamtbudget",
+    "projectItems.add": "Hinzufügen",
+    "projectItems.remove": "Entfernen",
+    "projectItems.availableItems": "Verfügbare Items",
     
     // Cart Sidebar
     "cart.inline.title": "Warenkorb",
