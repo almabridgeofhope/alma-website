@@ -136,10 +136,10 @@ function cartReducer(state: CartState, action: CartAction): CartState {
               unitPrice: action.payload.amount, // For general donations, unitPrice = totalPrice
               // Update name if it's still the old name
               name: item.type === 'general-donation' && item.name === 'Allgemeine Spende' 
-                ? 'Ungebundene Spende' 
+                ? 'Wirkungsorientierte Spende' 
                 : item.name,
               description: item.type === 'general-donation' && item.name === 'Allgemeine Spende'
-                ? 'Ungebundene Spende für unsere Projekte'
+                ? 'Wirkungsorientierte Spende für unsere Projekte'
                 : item.description,
             }
           : item
@@ -210,7 +210,7 @@ const ShoppingCartContext = createContext<ShoppingCartContextType | undefined>(u
 
 export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(cartReducer, initialState);
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   
   // Helper functions to get translated item fields
   const getItemDisplayName = (item: ProjectItem): string => {
@@ -441,8 +441,8 @@ export const ShoppingCartProvider: React.FC<{ children: ReactNode }> = ({ childr
       addItem({
         id: generalDonationId,
         type: 'general-donation',
-        name: 'Ungebundene Spende',
-        description: 'Ungebundene Spende für unsere Projekte',
+        name: t("projectItems.unrestrictedDonation.title"),
+        description: t("projectItems.unrestrictedDonation.description"),
         unitPrice: amount,
         category: 'donation',
         isEditable: true,
