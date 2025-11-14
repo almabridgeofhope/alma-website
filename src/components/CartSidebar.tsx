@@ -402,9 +402,16 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ className, basePath = 
                 <p className="text-gray-600 mb-4">
                   {t("donation.cart.emptyDesc")}
                 </p>
-                <Button onClick={closeCart} variant="outline">
-                  {t("donation.cart.continueShopping")}
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Link to={basePath + "/donation"} onClick={closeCart} className="block">
+                    <Button className="w-full">
+                      {t("donation.cart.donateFreeAmount")}
+                    </Button>
+                  </Link>
+                  <Button onClick={closeCart} variant="outline">
+                    {t("donation.cart.continueShopping")}
+                  </Button>
+                </div>
               </div>
             </div>
           ) : (
@@ -517,6 +524,11 @@ export const CartInline: React.FC<{ basePath?: string; className?: string; onClo
               <p className="text-gray-600 mb-4">
                 {t("cart.inline.emptyDesc")}
               </p>
+              <Link to={basePath + "/donation"} onClick={handleClose} className="block">
+                <Button className="w-full">
+                  {t("donation.cart.donateFreeAmount")}
+                </Button>
+              </Link>
             </div>
           </div>
         ) : (

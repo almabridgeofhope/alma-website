@@ -870,36 +870,51 @@ export const ProjectItemsModal = ({
 
             {/* Action Section */}
             <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-600">
-                  {t("projectItems.inCartLabel")}
-                </span>
-                <span className="text-sm font-bold text-primary">
-                  {cartQuantity}
-                </span>
-              </div>
-              
-              <div className="flex items-center gap-2">
+              {cartQuantity > 0 ? (
+                /* Quantity Selector - when items are in cart */
+                <div className="flex items-center gap-3 w-full">
+                  <div className="flex items-center gap-1.5">
               <Button
                 size="sm"
-                  variant="outline"
+                      variant="outline"
                 onClick={() => removeItemPiece(item.itemId)}
-                disabled={cartQuantity === 0}
-                  className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-30"
+                      className="h-8 w-8 p-0"
               >
-                  <Minus className="w-4 h-4" />
+                      <Minus className="w-4 h-4" />
               </Button>
-              
+                    <div className="flex items-center justify-center min-w-[2rem]">
+                      <span className="text-sm font-semibold text-gray-900">
+                {cartQuantity}
+              </span>
+                    </div>
+                    {!isFullyComplete && (
               <Button
                 size="sm"
+                        variant="outline"
                 onClick={() => addItemPieceWithCartOpen(item)}
                 disabled={remainingPieces === 0}
-                  className="h-8 w-8 p-0 bg-primary hover:bg-primary/90 text-white disabled:opacity-30"
+                        className="h-8 w-8 p-0 disabled:opacity-30"
               >
-                  <Plus className="w-4 h-4" />
+                        <Plus className="w-4 h-4" />
               </Button>
+                    )}
             </div>
           </div>
+              ) : (
+                /* Add to Cart Button - when no items in cart */
+                !isFullyComplete && (
+                  <Button
+                    size="sm"
+                    onClick={() => addItemPieceWithCartOpen(item)}
+                    disabled={remainingPieces === 0}
+                    className="w-full h-9 bg-primary hover:bg-primary/90 text-white font-semibold disabled:opacity-30"
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-1.5" />
+                    {t("projectItems.addToCart")}
+                  </Button>
+                )
+              )}
+        </div>
         </div>
         </Card>
       );
@@ -1020,39 +1035,48 @@ export const ProjectItemsModal = ({
 
           {/* Cart Controls */}
           <div className="mt-auto pt-4 border-t border-gray-200">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <ShoppingCart className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-gray-600">
-                  {t("projectItems.inCartLabel")}
-              </span>
-                <span className="text-lg font-bold text-primary">
-                  {cartQuantity}
-                </span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
+            {cartQuantity > 0 ? (
+              /* Quantity Selector - when items are in cart */
+              <div className="flex items-center justify-center gap-3">
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => removeItemPiece(item.itemId)}
-                  disabled={cartQuantity === 0}
-                className="flex-1 h-9 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-30"
+                  className="h-9 w-9 p-0"
                 >
-                <Minus className="w-4 h-4 mr-1" />
-                {t("projectItems.remove") || "Remove"}
+                  <Minus className="w-4 h-4" />
                 </Button>
-                
+                <div className="flex items-center justify-center min-w-[2rem]">
+                  <span className="text-lg font-bold text-primary">
+                    {cartQuantity}
+                  </span>
+                </div>
+                {!isFullyComplete && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => addItemPieceWithCartOpen(item)}
+                  disabled={remainingPieces === 0}
+                    className="h-9 w-9 p-0 disabled:opacity-30"
+                >
+                    <Plus className="w-4 h-4" />
+                </Button>
+                )}
+              </div>
+            ) : (
+              /* Add to Cart Button - when no items in cart */
+              !isFullyComplete && (
                 <Button
                   size="sm"
                   onClick={() => addItemPieceWithCartOpen(item)}
                   disabled={remainingPieces === 0}
-                className="flex-1 h-9 bg-primary hover:bg-primary/90 text-white disabled:opacity-30"
+                  className="w-full h-9 bg-primary hover:bg-primary/90 text-white font-semibold disabled:opacity-30"
                 >
-                <Plus className="w-4 h-4 mr-1" />
-                {t("projectItems.add") || "Add"}
+                  <ShoppingCart className="w-4 h-4 mr-1.5" />
+                  {t("projectItems.addToCart")}
                 </Button>
-            </div>
+              )
+            )}
           </div>
         </Card>
       );
@@ -1370,9 +1394,9 @@ export const ProjectItemsModal = ({
                                 ) : (
                                   <div className="text-white">
                                     {getPhaseIcon(currentActivePhase.phase)}
-                                  </div>
-                                )}
                               </div>
+                            )}
+                          </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex flex-wrap items-center gap-2 mb-1">
                                   <h3 className="text-lg font-bold text-gray-900 break-words">
@@ -1389,22 +1413,22 @@ export const ProjectItemsModal = ({
                                   <span>•</span>
                                   <span className="font-semibold">{currentActivePhase.progress.toFixed(0)}% {t("projectItems.progress")}</span>
                                 </div>
-                              </div>
-                            </div>
-                            
+                          </div>
+                        </div>
+
                             {/* Progress Bar - Compact */}
                             <div className="flex flex-col items-end gap-1 flex-shrink-0 w-full sm:w-auto">
                               <div className="w-full sm:w-24 h-2 rounded-full bg-gray-200 overflow-hidden">
                                 <div className="h-full bg-gradient-to-r from-green-500 via-primary to-primary" 
                                   style={{ width: `${currentActivePhase.progress}%` }} 
                                 />
-                              </div>
+                          </div>
                               <div className="text-xs text-gray-500">
                                 {formatCurrency(currentActivePhase.spent + currentActivePhase.cartValue)} / {formatCurrency(currentActivePhase.budget)}
-                              </div>
-                            </div>
                           </div>
                         </div>
+                      </div>
+                    </div>
 
                         {/* One-Click Add Next Item - Prominent */}
                         {!currentActivePhase.isCompleted && (() => {
@@ -1419,35 +1443,42 @@ export const ProjectItemsModal = ({
                             <div className="p-4 bg-gradient-to-r from-orange-50 to-primary-light/20 border-b border-orange-200">
                               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                                 <div className="flex-1 min-w-0 w-full">
-                                  <div className="flex items-center gap-2 mb-1">
+                                  <div className="flex items-center gap-2 mb-2">
                                     <Sparkles className="w-4 h-4 text-orange-600 flex-shrink-0" />
                                     <span className="text-xs font-semibold text-orange-600 uppercase tracking-wide">
                                       {t("projectItems.nextItem") || "Nächstes Item"}
                                     </span>
                                   </div>
-                                  <h4 className="font-semibold text-gray-900 text-sm break-words">
+                                  <h4 className="font-semibold text-gray-900 text-base mb-2 break-words">
                                     {getItemDisplayName(nextItemInPhase)}
                                   </h4>
-                                  <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-gray-600">
-                                    <span>{formatCurrency(nextItemInPhase.unitCostEUR)} / {nextItemInPhase.unit}</span>
-                                    <span>•</span>
-                                    <span>
+                                  <div className="flex flex-wrap items-center gap-3 mb-2">
+                                    <div className="flex items-baseline gap-1.5">
+                                      <span className="text-2xl font-bold text-primary">
+                                        {formatCurrency(nextItemInPhase.unitCostEUR)}
+                                      </span>
+                                      <span className="text-xs text-gray-500">/ {nextItemInPhase.unit}</span>
+                                    </div>
+                                    <span className="text-gray-400">•</span>
+                                    <span className="text-xs text-gray-600">
                                       {nextItemInPhase.qtyFunded + getItemCartQuantity(nextItemInPhase.itemId)} / {nextItemInPhase.qtyNeededTotal}
                                     </span>
                                   </div>
                                 </div>
-                                <Button
-                                  size="sm"
-                                  onClick={() => {
-                                    addItemPieceWithCartOpen(nextItemInPhase);
-                                  }}
-                                  className="bg-orange-500 hover:bg-orange-600 text-white font-semibold w-full sm:w-auto"
-                                  disabled={nextItemInPhase.qtyNeededTotal - nextItemInPhase.qtyFunded - getItemCartQuantity(nextItemInPhase.itemId) === 0}
-                                >
-                                  <Plus className="w-4 h-4 mr-1.5" />
-                                  {t("projectItems.addOne") || "1x hinzufügen"}
-                                </Button>
-                              </div>
+                                <div className="flex flex-col items-end gap-2 flex-shrink-0 w-full sm:w-auto">
+                      <Button
+                        size="sm"
+                                    onClick={() => {
+                                      addItemPieceWithCartOpen(nextItemInPhase);
+                        }}
+                                    className="bg-orange-500 hover:bg-orange-600 text-white font-semibold w-full sm:w-auto px-4"
+                                    disabled={nextItemInPhase.qtyNeededTotal - nextItemInPhase.qtyFunded - getItemCartQuantity(nextItemInPhase.itemId) === 0}
+                      >
+                                    <ShoppingCart className="w-4 h-4 mr-1.5" />
+                                    {t("projectItems.addToCart")}
+                      </Button>
+                    </div>
+                </div>
                             </div>
                           ) : null;
                         })()}
@@ -1487,7 +1518,7 @@ export const ProjectItemsModal = ({
                                   return (
                                     <div
                                       key={item.itemId}
-                                      className={`p-3 rounded-lg border transition-all ${
+                                      className={`p-4 rounded-lg border transition-all ${
                                         isFullyComplete 
                                           ? 'bg-green-50/50 border-green-200' 
                                           : cartQuantity > 0 
@@ -1495,82 +1526,115 @@ export const ProjectItemsModal = ({
                                             : 'bg-white border-gray-200 hover:border-primary/30'
                                       }`}
                                     >
-                                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                                        <div className="flex-1 min-w-0 w-full sm:w-auto">
-                                          <div className="flex items-center gap-2 mb-1">
+                                      <div className="flex flex-col gap-3">
+                                        {/* Header: Name and Status */}
+                                        <div className="flex items-start justify-between gap-3">
+                                          <div className="flex items-start gap-2 flex-1 min-w-0">
                                             {isFullyComplete ? (
-                                              <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                                              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                                             ) : (
-                                              <Circle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                              <Circle className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                                             )}
-                                            <h5 className="font-medium text-sm text-gray-900 break-words">
-                                              {getItemDisplayName(item)}
-                                            </h5>
-                                          </div>
-                                          <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600 ml-6">
-                                            <span className="font-semibold text-primary">
-                                              {formatCurrency(item.unitCostEUR)}
-                                            </span>
-                                            <span>•</span>
-                                            <span>
-                                              {item.qtyFunded + cartQuantity} / {item.qtyNeededTotal} {item.unit}
-                                            </span>
-                                            {remainingPieces > 0 && (
-                                              <>
-                                                <span>•</span>
-                                                <span className="text-orange-600">
-                                                  {remainingPieces} {t("projectItems.stillNeeded")}
+                              <div className="flex-1 min-w-0">
+                                              <h5 className="font-semibold text-base text-gray-900 break-words mb-1">
+                                                {getItemDisplayName(item)}
+                                              </h5>
+                                              <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
+                                                <span>
+                                                  {item.qtyFunded + cartQuantity} / {item.qtyNeededTotal} {item.unit}
                                                 </span>
-                                              </>
+                                                {remainingPieces > 0 && (
+                                                  <>
+                                                    <span>•</span>
+                                                    <span className="text-orange-600 font-medium">
+                                                      {remainingPieces} {t("projectItems.stillNeeded")}
+                                                    </span>
+                                                  </>
                                             )}
                                           </div>
-                                          {progressPercent < 100 && (
-                                            <div className="ml-6 mt-1.5 w-full sm:w-32 h-1.5 rounded-full bg-gray-200 overflow-hidden">
-                                              <div 
-                                                className="h-full bg-primary transition-all"
-                                                style={{ width: `${progressPercent}%` }}
-                                              />
-                                            </div>
-                                          )}
-                                        </div>
+                                              </div>
+                                              </div>
+
+                                          {/* Price - Very Prominent */}
+                                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                                            <div className="text-right">
+                                              <div className="text-2xl font-bold text-primary">
+                                                {formatCurrency(item.unitCostEUR)}
+                                          </div>
+                                              <div className="text-xs text-gray-500">
+                                                {t("projectItems.perUnit")?.replace("{unit}", item.unit) || `pro ${item.unit}`}
+                                      </div>
+                                  </div>
+                                  </div>
+                                </div>
+
+                                {/* Progress Bar */}
+                                        {progressPercent < 100 && (
+                                          <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
+                                            <div 
+                                              className="h-full bg-primary transition-all"
+                                              style={{ width: `${progressPercent}%` }}
+                                            />
+                                  </div>
+                                            )}
                                         
                                         {/* Quick Add Button */}
-                                        {!isFullyComplete && (
-                                          <div className="flex items-center gap-2 flex-shrink-0 w-full sm:w-auto justify-end sm:justify-start">
-                                            {cartQuantity > 0 && (
-                                              <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => removeItemPiece(item.itemId)}
-                                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                                          {cartQuantity > 0 ? (
+                                            /* Quantity Selector - when items are in cart */
+                                            <div className="flex items-center gap-3 w-full">
+                                              <div className="flex items-center gap-1.5">
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  onClick={() => removeItemPiece(item.itemId)}
+                                                  className="h-8 w-8 p-0"
+                                                >
+                                                  <Minus className="w-4 h-4" />
+                                                </Button>
+                                                <div className="flex items-center justify-center min-w-[2rem]">
+                                                  <span className="text-sm font-semibold text-gray-900">
+                                                    {cartQuantity}
+                                                  </span>
+                                  </div>
+                                                {!isFullyComplete && (
+                                                  <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => addItemPieceWithCartOpen(item)}
+                                                    disabled={remainingPieces === 0}
+                                                    className="h-8 w-8 p-0 disabled:opacity-30"
+                                                  >
+                                                    <Plus className="w-4 h-4" />
+                                                  </Button>
+                                                )}
+                                </div>
+                              </div>
+                                          ) : (
+                                            /* Add to Cart Button - when no items in cart */
+                                            !isFullyComplete && (
+                              <Button
+                                size="sm"
+                                                onClick={() => addItemPieceWithCartOpen(item)}
+                                                disabled={remainingPieces === 0}
+                                                className="w-full h-9 bg-primary hover:bg-primary/90 text-white font-semibold disabled:opacity-30"
                                               >
-                                                <Minus className="w-3.5 h-3.5" />
-                                              </Button>
-                                            )}
-                                            <div className="text-xs font-semibold text-gray-700 min-w-[20px] text-center">
-                                              {cartQuantity}
-                                            </div>
-                                            <Button
-                                              size="sm"
-                                              onClick={() => addItemPieceWithCartOpen(item)}
-                                              disabled={remainingPieces === 0}
-                                              className="h-8 px-3 bg-primary hover:bg-primary/90 text-white disabled:opacity-30"
-                                            >
-                                              <Plus className="w-3.5 h-3.5 mr-1" />
-                                              {t("projectItems.add")}
-                                            </Button>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
+                                                <ShoppingCart className="w-4 h-4 mr-1.5" />
+                                                {t("projectItems.addToCart")}
+                              </Button>
+                                            )
+                                          )}
+                            </div>
+                                </div>
+                                  </div>
                                   );
                                 })}
-                            </div>
+                                  </div>
                           </CollapsibleContent>
                         </Collapsible>
-                      </Card>
-                                  </div>
-                  )}
+                          </Card>
+                      </div>
+                    )}
 
                   {/* Mobile Navigation Dots */}
                   {phaseGroups.length > 1 && (
@@ -1589,8 +1653,8 @@ export const ProjectItemsModal = ({
                           aria-label={`Go to phase ${index + 1}`}
                         />
                         ))}
-                      </div>
-                    )}
+                  </div>
+                )}
                   </div>
               </div>
             ) : (
