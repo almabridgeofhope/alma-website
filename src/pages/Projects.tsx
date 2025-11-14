@@ -352,16 +352,7 @@ const Projects = () => {
           <div className={`grid md:grid-cols-2 gap-0 ${!isEven ? 'md:grid-flow-dense' : ''}`}>
             {/* Image Section */}
             <div 
-              className={`relative overflow-hidden h-full min-h-[400px] md:min-h-[500px] ${!isEven ? 'md:col-start-2' : ''} ${projectCost ? 'cursor-pointer' : ''}`}
-              onClick={(e) => {
-                // Don't open modal if clicking on the info section at the bottom
-                if ((e.target as HTMLElement).closest('.pointer-events-auto')) {
-                  return;
-                }
-                if (projectCost) {
-                  setActiveCostProject(projectCost);
-                }
-              }}
+              className={`relative overflow-hidden h-full min-h-[400px] md:min-h-[500px] ${!isEven ? 'md:col-start-2' : ''}`}
             >
               <OptimizedImage
                 src={project.image} 
@@ -371,13 +362,6 @@ const Projects = () => {
                 lazy={true}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-800/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              {projectCost && (
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
-                  <div className="bg-white/90 backdrop-blur-sm rounded-full px-4 py-2 text-sm font-semibold text-slate-900 shadow-lg">
-                    {detailsLabel}
-                  </div>
-                </div>
-              )}
               <div className="absolute inset-x-0 bottom-0">
                 <div className="bg-gradient-to-t from-slate-800/85 via-slate-700/65 to-transparent px-4 sm:px-6 py-4 sm:py-5 text-white backdrop-blur-[2px] pointer-events-auto">
                   <div className="flex flex-col gap-3 sm:gap-4 z-10 relative">
@@ -475,7 +459,16 @@ const Projects = () => {
                         </div>
                       ) : projectCost ? (
                         <div className="min-h-[120px]">
-                          <div className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-4 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors">
+                          <div 
+                            className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-4 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors cursor-pointer hover:bg-white/95"
+                            onClick={(e) => {
+                              // Don't trigger if clicking on the button itself
+                              if ((e.target as HTMLElement).closest('button')) {
+                                return;
+                              }
+                              setActiveCostProject(projectCost);
+                            }}
+                          >
                         <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                           <div className="flex-1 min-w-[140px]">
                             <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
