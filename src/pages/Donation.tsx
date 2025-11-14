@@ -19,6 +19,7 @@ import PreloadImage from "@/components/PreloadImage";
 import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
+import { donationWebhookService } from "@/services/donationWebhookService";
 import heroImage from "@/assets/nature/nature_2.jpg";
 import communityImage from "@/assets/community/community_2.png";
 import { useSearchParams } from "react-router-dom";
@@ -344,7 +345,81 @@ const Donation = () => {
     setShowWarningDialog(true);
   };
 
-  const handleContinueDonation = () => {
+  // Helper function to process donation and send to webhook
+  const processDonation = async (paymentId?: string) => {
+    try {
+      console.log("=== Processing Donation ===");
+      console.log("Payment ID:", paymentId);
+      console.log("Cart items count:", cartState.items.length);
+      console.log("Cart items:", cartState.items);
+      console.log("Amount:", amount);
+      console.log("Custom amount:", customAmount);
+      
+      // Prepare donation items
+      let donationItems = [];
+      
+      if (cartState.items.length > 0) {
+        // Use cart items
+        console.log("✅ Using cart items for donation");
+        donationItems = donationWebhookService.formatCartItemsForWebhook(cartState.items);
+        console.log("Formatted donation items:", donationItems);
+      } else {
+        // No cart items - create a general donation
+        const finalAmount = parseFloat(amount || customAmount || "0");
+        console.log("📝 No cart items, creating general donation with amount:", finalAmount);
+        if (finalAmount > 0) {
+          donationItems = [{
+            type: 'general-donation' as const,
+            name: t("donation.form.unrestrictedDonation"),
+            unitPrice: finalAmount,
+            totalPrice: finalAmount,
+          }];
+        }
+      }
+
+      if (donationItems.length === 0) {
+        console.error("❌ No donation items to process");
+        return { ok: false, message: "No donation items" };
+      }
+
+      // Calculate total amount
+      const totalAmount = donationItems.reduce((sum, item) => sum + item.totalPrice, 0);
+      console.log("💰 Total donation amount:", totalAmount);
+
+      console.log("📤 Sending donation to webhook...");
+      // Send to webhook
+      const result = await donationWebhookService.sendDonation({
+        items: donationItems,
+        totalAmount: totalAmount,
+        donationType: donationType,
+        paymentMethod: paymentMethod,
+        donorEmail: formData.email || undefined,
+        donorName: formData.firstName && formData.lastName 
+          ? `${formData.firstName} ${formData.lastName}` 
+          : undefined,
+        paymentId: paymentId,
+      });
+
+      if (result.ok) {
+        console.log("✅ Donation successfully processed by webhook:", result);
+        console.log("📊 Items updated:", result.totalUpdated);
+        console.log("📋 Updates:", result.updates);
+        return result;
+      } else {
+        console.error("❌ Failed to process donation:", result.message);
+        // Don't throw - we still want to show success to user
+        // The donation was received, just the sheet update failed
+        return result;
+      }
+    } catch (error) {
+      console.error("❌ Error processing donation:", error);
+      // Don't throw - payment was successful, just webhook update failed
+      return { ok: false, message: error instanceof Error ? error.message : "Unknown error" };
+    }
+  };
+
+  const handleContinueDonation = async () => {
+    console.log("=== Continue Donation ===");
     setShowWarningDialog(false);
     
     // For monthly donations, always use selected amount (no cart items)
@@ -355,24 +430,109 @@ const Donation = () => {
           ? cartState.totalAmount.toString() 
           : (amount || customAmount));
     console.log("Final amount:", finalAmount);
+    console.log("Payment method:", paymentMethod);
     
     if (paymentMethod === "paypal") {
       console.log("PayPal payment selected - this should show PayPal buttons");
+      
+      // TEST MODE: For testing webhook without actual PayPal payment
+      // Remove this block when PayPal buttons are implemented
+      const TEST_MODE = import.meta.env.DEV; // Only in development
+      if (TEST_MODE) {
+        console.log("🧪 TEST MODE: Simulating PayPal payment completion");
+        setIsProcessingPayment(true);
+        // Simulate PayPal payment after a short delay
+        setTimeout(async () => {
+          console.log("🧪 TEST MODE: Simulating successful PayPal payment");
+          const testPaymentId = `TEST-${Date.now()}`;
+          const result = await processDonation(testPaymentId);
+          setIsProcessingPayment(false);
+          
+          if (result.ok) {
+            alert(t("donation.form.success") + " (TEST MODE)");
+            clearCart();
+            setAmount("");
+            setCustomAmount("");
+            setFormData({
+              firstName: "",
+              lastName: "",
+              email: "",
+              street: "",
+              postalCode: "",
+              city: "",
+              country: "",
+              comment: "",
+              wantsReceipt: false,
+              privacyConsent: false,
+            });
+          } else {
+            console.warn("Test donation received but sheet update failed:", result.message);
+            alert(t("donation.form.success") + " (TEST MODE - Update may be delayed)");
+          }
+        }, 1000);
+        return;
+      }
+      
       // PayPal payment will be handled by PayPal buttons
       setIsProcessingPayment(true);
       return;
     }
     
     // Handle other payment methods (SEPA, Credit Card)
-    console.log("Processing non-PayPal payment:", {
+    console.log("Processing non-PayPal payment (SEPA/Card):", {
       type: donationType,
       amount: finalAmount,
       paymentMethod,
       formData,
     });
 
-    // For now, show a success message for non-PayPal payments
-    alert(t("donation.form.success"));
+    // Process the donation via webhook
+    console.log("⏳ Processing donation via webhook...");
+    setIsProcessingPayment(true);
+    const result = await processDonation();
+    
+    setIsProcessingPayment(false);
+    
+    if (result.ok) {
+      alert(t("donation.form.success"));
+      // Clear shopping cart after successful payment
+      clearCart();
+      // Reset form
+      setAmount("");
+      setCustomAmount("");
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        street: "",
+        postalCode: "",
+        city: "",
+        country: "",
+        comment: "",
+        wantsReceipt: false,
+        privacyConsent: false,
+      });
+    } else {
+      // Payment was processed but webhook update failed
+      // Still show success to user, but log the error
+      console.warn("Donation received but sheet update failed:", result.message);
+      alert(t("donation.form.success") + " (Note: Update may be delayed)");
+      clearCart();
+      setAmount("");
+      setCustomAmount("");
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        street: "",
+        postalCode: "",
+        city: "",
+        country: "",
+        comment: "",
+        wantsReceipt: false,
+        privacyConsent: false,
+      });
+    }
   };
 
   // PayPal payment handlers
@@ -405,14 +565,27 @@ const Donation = () => {
   };
 
   const onPayPalApprove = (data: any, actions: any) => {
-    return actions.order.capture().then((details: any) => {
-      console.log("PayPal payment completed:", details);
+    return actions.order.capture().then(async (details: any) => {
+      console.log("=== PayPal Payment Completed ===");
+      console.log("PayPal details:", details);
       
-      // Here you would send the payment details to your backend
-      // to verify the payment and process the donation
+      // Get PayPal transaction ID
+      const paymentId = details.id || details.purchase_units?.[0]?.payments?.captures?.[0]?.id;
+      console.log("PayPal transaction ID:", paymentId);
       
-      alert(t("donation.form.success"));
+      // Process the donation via webhook
+      console.log("⏳ Processing donation via webhook...");
+      const result = await processDonation(paymentId);
+      
       setIsProcessingPayment(false);
+      
+      if (result.ok) {
+        alert(t("donation.form.success"));
+      } else {
+        // Payment was successful but webhook update failed
+        console.warn("PayPal payment successful but sheet update failed:", result.message);
+        alert(t("donation.form.success") + " (Note: Update may be delayed)");
+      }
       
       // Clear shopping cart after successful payment
       clearCart();
