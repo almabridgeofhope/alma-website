@@ -47,6 +47,7 @@ import {
   List,
   Grid3x3,
   Info,
+  Heart,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -66,7 +67,7 @@ export const ProjectItemsModal = ({
   onItemCostUpdate 
 }: ProjectItemsModalProps) => {
   const { t, language } = useLanguage();
-  const { addItem, isItemInCart, removeFromCart, addItemPiece, addItemMax, removeItemPiece, getItemCartQuantity, isItemFullyInCart, state: cartState, toggleCart, closeCart } = useShoppingCart();
+  const { addItem, isItemInCart, removeFromCart, addItemPiece, addItemMax, removeItemPiece, getItemCartQuantity, isItemFullyInCart, state: cartState, toggleCart, closeCart, addOrUpdateGeneralDonation } = useShoppingCart();
   
   // Helper functions to get translated item fields
   const getItemDisplayName = (item: ProjectItem): string => {
@@ -88,6 +89,14 @@ export const ProjectItemsModal = ({
       return item.blurbDe;
     }
     return item.blurb || '';
+  };
+  
+  const getItemUnit = (item: ProjectItem): string => {
+    // Always use "Stück" in German, otherwise use the original unit
+    if (language === 'de') {
+      return 'Stück';
+    }
+    return item.unit || '';
   };
   
   const getItemPhaseName = (item: ProjectItem): string => {
@@ -841,7 +850,7 @@ export const ProjectItemsModal = ({
                   {formatCurrency(item.unitCostEUR)}
               </div>
                 <div className="text-xs text-gray-500">
-                  {t("projectItems.perUnit").replace("{unit}", item.unit)}
+                  {t("projectItems.perUnit").replace("{unit}", getItemUnit(item))}
                 </div>
               </div>
             </div>
@@ -851,7 +860,7 @@ export const ProjectItemsModal = ({
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
                   <span className="text-gray-600">
-                    {item.qtyFunded + cartQuantity} / {item.qtyNeededTotal} {item.unit}
+                    {item.qtyFunded + cartQuantity} / {item.qtyNeededTotal} {getItemUnit(item)}
                   </span>
                   {remainingPieces > 0 && (
                     <span className="text-orange-600 font-medium">
@@ -903,15 +912,17 @@ export const ProjectItemsModal = ({
               ) : (
                 /* Add to Cart Button - when no items in cart */
                 !isFullyComplete && (
-                  <Button
-                    size="sm"
-                    onClick={() => addItemPieceWithCartOpen(item)}
-                    disabled={remainingPieces === 0}
-                    className="w-full h-9 bg-primary hover:bg-primary/90 text-white font-semibold disabled:opacity-30"
-                  >
-                    <ShoppingCart className="w-4 h-4 mr-1.5" />
-                    {t("projectItems.addToCart")}
-                  </Button>
+                  <div className="flex justify-end w-full">
+                    <Button
+                      size="sm"
+                      onClick={() => addItemPieceWithCartOpen(item)}
+                      disabled={remainingPieces === 0}
+                      className="h-9 px-4 bg-primary hover:bg-primary/90 text-white font-semibold disabled:opacity-30"
+                    >
+                      <ShoppingCart className="w-4 h-4 mr-1.5" />
+                      {t("projectItems.addToCart")}
+                    </Button>
+                  </div>
                 )
               )}
         </div>
@@ -1007,7 +1018,7 @@ export const ProjectItemsModal = ({
               {formatCurrency(item.unitCostEUR)}
             </div>
             <div className="text-xs text-gray-500">
-              {t("projectItems.perUnit").replace("{unit}", item.unit)}
+              {t("projectItems.perUnit").replace("{unit}", getItemUnit(item))}
             </div>
           </div>
 
@@ -1066,15 +1077,17 @@ export const ProjectItemsModal = ({
             ) : (
               /* Add to Cart Button - when no items in cart */
               !isFullyComplete && (
-                <Button
-                  size="sm"
-                  onClick={() => addItemPieceWithCartOpen(item)}
-                  disabled={remainingPieces === 0}
-                  className="w-full h-9 bg-primary hover:bg-primary/90 text-white font-semibold disabled:opacity-30"
-                >
-                  <ShoppingCart className="w-4 h-4 mr-1.5" />
-                  {t("projectItems.addToCart")}
-                </Button>
+                <div className="flex justify-end w-full">
+                  <Button
+                    size="sm"
+                    onClick={() => addItemPieceWithCartOpen(item)}
+                    disabled={remainingPieces === 0}
+                    className="h-9 px-4 bg-primary hover:bg-primary/90 text-white font-semibold disabled:opacity-30"
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-1.5" />
+                    {t("projectItems.addToCart")}
+                  </Button>
+                </div>
               )
             )}
           </div>
@@ -1177,10 +1190,11 @@ export const ProjectItemsModal = ({
             {viewMode === 'overview' ? (
               /* New Timeline-Based Phase Overview */
               <div className="space-y-6">
-                {/* Enhanced Next Important Item Highlight */}
+                {/* Enhanced Next Important Item Highlight with Flexible Donation Option */}
                 {nextImportantItem && (
                   <Card className="p-5 bg-gradient-to-br from-orange-50 via-orange-50/80 to-primary-light/20 border-2 border-orange-400 shadow-lg">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    {/* Primary Action: Next Important Item */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
                       <div className="flex-shrink-0">
                         <div className="w-14 h-14 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center shadow-md">
                           <Sparkles className="w-7 h-7 text-white" />
@@ -1188,9 +1202,18 @@ export const ProjectItemsModal = ({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
-                          <Badge className="bg-orange-500 text-white text-xs px-2 py-0.5">
-                            {t("projectItems.nextImportant")}
-                          </Badge>
+                          <Tooltip delayDuration={0}>
+                            <TooltipTrigger asChild>
+                              <Badge className="bg-orange-500 text-white text-xs px-2 py-0.5 cursor-help">
+                                {t("projectItems.nextImportant")}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent className="z-[9999] max-w-xs" side="top" sideOffset={5}>
+                              <p className="text-sm leading-relaxed">
+                                {t("projectItems.nextImportant.explanation")}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
                           <span className="text-xs text-gray-600">
                             {getPhaseNameTranslated(nextImportantItem.phase)}
                           </span>
@@ -1205,47 +1228,83 @@ export const ProjectItemsModal = ({
                               {t("projectItems.stillNeeded")} {nextImportantItem.qtyNeededTotal - nextImportantItem.qtyFunded - getItemCartQuantity(nextImportantItem.itemId)}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-lg font-bold text-primary">
-                              {formatCurrency(nextImportantItem.unitCostEUR)}
-                          </span>
-                            <span className="text-xs text-gray-500">/ {nextImportantItem.unit}</span>
                         </div>
-                      </div>
                         {getItemBlurb(nextImportantItem) && (
                           <p className="text-sm text-gray-600 mt-2 line-clamp-2">{getItemBlurb(nextImportantItem)}</p>
                         )}
                       </div>
-                      <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0 w-full sm:w-auto">
-                      <Button
-                        size="sm"
+                      <div className="flex flex-col items-end gap-2 flex-shrink-0 w-full sm:w-auto">
+                        {/* Price - Above cart button */}
+                        <div className="flex flex-col items-end gap-0.5">
+                          <div className="text-xl font-bold text-primary">
+                            {formatCurrency(nextImportantItem.unitCostEUR)}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {t("projectItems.perUnit")?.replace("{unit}", getItemUnit(nextImportantItem)) || `pro ${getItemUnit(nextImportantItem)}`}
+                          </div>
+                        </div>
+                        {/* Primary Action Button */}
+                        <Button
+                          size="sm"
                           onClick={() => {
                             const remaining = nextImportantItem.qtyNeededTotal - nextImportantItem.qtyFunded - getItemCartQuantity(nextImportantItem.itemId);
                             if (remaining > 0) {
                               addItemPieceWithCartOpen(nextImportantItem);
                             }
                           }}
-                          className="bg-orange-500 hover:bg-orange-600 text-white font-semibold"
+                          className="bg-orange-500 hover:bg-orange-600 text-white font-semibold w-full sm:w-auto shadow-sm"
                           disabled={nextImportantItem.qtyNeededTotal - nextImportantItem.qtyFunded - getItemCartQuantity(nextImportantItem.itemId) === 0}
                         >
                           <ShoppingCart className="w-4 h-4 mr-1.5" />
                           {t("projectItems.addToCart")}
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                        onClick={() => {
-                          navigateToDetails(nextImportantItem.phase);
-                          setTimeout(() => {
-                            const element = document.querySelector(`[data-item-id="${nextImportantItem.itemId}"]`);
-                            element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                          }, 100);
-                        }}
-                      >
-                          {t("projectItems.viewDetails")}
-                          <ChevronRight className="w-4 h-4 ml-1.5" />
-                      </Button>
                       </div>
+                    </div>
+
+                    {/* Divider with "or" text */}
+                    <div className="relative my-4">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-orange-200"></div>
+                      </div>
+                      <div className="relative flex justify-center text-xs">
+                        <span className="bg-gradient-to-br from-orange-50 to-orange-50/80 px-3 text-gray-500 font-medium">
+                          {t("projectItems.unrestrictedDonation.or")}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Secondary Action: Flexible Donation */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2">
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div className="w-10 h-10 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg flex items-center justify-center border border-primary/20">
+                            <Heart className="w-5 h-5 text-primary" />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h5 className="font-semibold text-sm text-gray-900 mb-1">
+                            {t("projectItems.unrestrictedDonation.title")}
+                          </h5>
+                          <p className="text-xs text-gray-600 leading-relaxed">
+                            {t("projectItems.unrestrictedDonation.description")}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          // Add general donation with initial amount of 0 (user will enter amount in cart)
+                          addOrUpdateGeneralDonation(0);
+                          // Open cart drawer
+                          setShowCartDrawer(true);
+                          // Don't close modal, let user see the cart
+                        }}
+                        className="h-9 px-4 bg-white hover:bg-primary-light/10 border-primary/30 text-primary font-semibold whitespace-nowrap shadow-sm flex-shrink-0"
+                      >
+                        <Heart className="w-4 h-4 mr-1.5" />
+                        {t("projectItems.unrestrictedDonation.title")}
+                      </Button>
                     </div>
                   </Card>
                 )}
@@ -1449,36 +1508,80 @@ export const ProjectItemsModal = ({
                                       {t("projectItems.nextItem") || "Nächstes Item"}
                                     </span>
                                   </div>
-                                  <h4 className="font-semibold text-gray-900 text-base mb-2 break-words">
-                                    {getItemDisplayName(nextItemInPhase)}
-                                  </h4>
-                                  <div className="flex flex-wrap items-center gap-3 mb-2">
-                                    <div className="flex items-baseline gap-1.5">
-                                      <span className="text-2xl font-bold text-primary">
-                                        {formatCurrency(nextItemInPhase.unitCostEUR)}
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <h4 className="font-semibold text-gray-900 text-base break-words">
+                                      {getItemDisplayName(nextItemInPhase)}
+                                    </h4>
+                                    {getItemBlurb(nextItemInPhase) && (
+                                      <Tooltip delayDuration={0}>
+                                        <TooltipTrigger asChild>
+                                          <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
+                                        </TooltipTrigger>
+                                        <TooltipContent 
+                                          className="max-w-xs z-[9999]" 
+                                          side="top"
+                                          sideOffset={5}
+                                        >
+                                          <p className="text-sm">{getItemBlurb(nextItemInPhase)}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    )}
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-3 text-sm">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-gray-700 font-semibold">{nextItemInPhase.qtyFunded + getItemCartQuantity(nextItemInPhase.itemId)}</span>
+                                      <span className="text-gray-400">/</span>
+                                      <span className="text-gray-700 font-semibold">{nextItemInPhase.qtyNeededTotal}</span>
+                                      <span className="text-gray-500 ml-2">
+                                        {t("projectItems.stillNeeded")} {nextItemInPhase.qtyNeededTotal - nextItemInPhase.qtyFunded - getItemCartQuantity(nextItemInPhase.itemId)}
                                       </span>
-                                      <span className="text-xs text-gray-500">/ {nextItemInPhase.unit}</span>
                                     </div>
-                                    <span className="text-gray-400">•</span>
-                                    <span className="text-xs text-gray-600">
-                                      {nextItemInPhase.qtyFunded + getItemCartQuantity(nextItemInPhase.itemId)} / {nextItemInPhase.qtyNeededTotal}
-                                    </span>
                                   </div>
                                 </div>
                                 <div className="flex flex-col items-end gap-2 flex-shrink-0 w-full sm:w-auto">
-                      <Button
-                        size="sm"
-                                    onClick={() => {
-                                      addItemPieceWithCartOpen(nextItemInPhase);
-                        }}
-                                    className="bg-orange-500 hover:bg-orange-600 text-white font-semibold w-full sm:w-auto px-4"
-                                    disabled={nextItemInPhase.qtyNeededTotal - nextItemInPhase.qtyFunded - getItemCartQuantity(nextItemInPhase.itemId) === 0}
-                      >
-                                    <ShoppingCart className="w-4 h-4 mr-1.5" />
-                                    {t("projectItems.addToCart")}
-                      </Button>
-                    </div>
-                </div>
+                                  {/* Price - Above cart button */}
+                                  <div className="flex flex-col items-end gap-0.5">
+                                    <div className="text-xl font-bold text-primary">
+                                      {formatCurrency(nextItemInPhase.unitCostEUR)}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      {t("projectItems.perUnit")?.replace("{unit}", getItemUnit(nextItemInPhase)) || `pro ${getItemUnit(nextItemInPhase)}`}
+                                    </div>
+                                  </div>
+                                  {/* Quantity Controls */}
+                                  {(() => {
+                                    const nextItemCartQuantity = getItemCartQuantity(nextItemInPhase.itemId);
+                                    const nextItemRemaining = nextItemInPhase.qtyNeededTotal - nextItemInPhase.qtyFunded - nextItemCartQuantity;
+                                    const nextItemIsFullyFunded = nextItemInPhase.qtyFunded >= nextItemInPhase.qtyNeededTotal;
+                                    
+                                    return !nextItemIsFullyFunded ? (
+                                      <div className="flex items-center gap-1">
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => removeItemPiece(nextItemInPhase.itemId)}
+                                          disabled={nextItemCartQuantity === 0}
+                                          className="h-7 w-7 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
+                                        >
+                                          <Minus className="w-3.5 h-3.5" />
+                                        </Button>
+                                        <span className="text-xs font-medium text-gray-600 min-w-[1.25rem] text-center">
+                                          {nextItemCartQuantity}
+                                        </span>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => addItemPieceWithCartOpen(nextItemInPhase)}
+                                          disabled={nextItemRemaining === 0}
+                                          className="h-7 w-7 p-0 text-gray-500 hover:text-primary hover:bg-primary/10 disabled:opacity-30"
+                                        >
+                                          <Plus className="w-3.5 h-3.5" />
+                                        </Button>
+                                      </div>
+                                    ) : null;
+                                  })()}
+                                </div>
+                              </div>
                             </div>
                           ) : null;
                         })()}
@@ -1493,10 +1596,19 @@ export const ProjectItemsModal = ({
                               <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                                   <span className="text-sm font-semibold text-gray-700">
-                                    {t("projectItems.allItems") || "Alle Items anzeigen"}
+                                    {t("projectItems.allItems") || "Items"}
                                   </span>
                                   <Badge variant="outline" className="text-xs">
-                                    {currentActivePhase.items.length}
+                                    {(() => {
+                                      const nextItemInPhase = currentActivePhase.items
+                                        .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                                        .find(i => {
+                                          const cq = getItemCartQuantity(i.itemId);
+                                          return !i.purchased && (i.qtyFunded + cq) < i.qtyNeededTotal;
+                                        });
+                                      // Subtract 1 if nextItemInPhase exists (it's shown separately)
+                                      return nextItemInPhase ? currentActivePhase.items.length - 1 : currentActivePhase.items.length;
+                                    })()}
                                   </Badge>
                                 </div>
                                 <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${
@@ -1506,130 +1618,140 @@ export const ProjectItemsModal = ({
                     </button>
                           </CollapsibleTrigger>
                           <CollapsibleContent>
-                            <div className="p-4 space-y-2 max-h-[400px] overflow-y-auto overflow-x-hidden">
+                            <div className="p-3 space-y-1.5 overflow-x-hidden">
                               {currentActivePhase.items
                                 .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                                .filter((item) => {
+                                  // Exclude the next item in phase from the list (it's shown separately above)
+                                  const cartQuantity = getItemCartQuantity(item.itemId);
+                                  const isNextItem = !item.purchased && (item.qtyFunded + cartQuantity) < item.qtyNeededTotal;
+                                  const nextItemInPhase = currentActivePhase.items
+                                    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                                    .find(i => {
+                                      const cq = getItemCartQuantity(i.itemId);
+                                      return !i.purchased && (i.qtyFunded + cq) < i.qtyNeededTotal;
+                                    });
+                                  return !nextItemInPhase || item.itemId !== nextItemInPhase.itemId;
+                                })
                                 .map((item) => {
                                   const cartQuantity = getItemCartQuantity(item.itemId);
-                                  const isFullyComplete = item.qtyFunded + cartQuantity >= item.qtyNeededTotal;
+                                  const isFullyFunded = item.qtyFunded >= item.qtyNeededTotal; // Only funded via Excel, not cart
+                                  const isFullyComplete = item.qtyFunded + cartQuantity >= item.qtyNeededTotal; // Visual state (green)
                                   const remainingPieces = item.qtyNeededTotal - item.qtyFunded - cartQuantity;
                                   const progressPercent = getProgressPercentage(item);
                                   
                                   return (
                                     <div
                                       key={item.itemId}
-                                      className={`p-4 rounded-lg border transition-all ${
+                                      className={`group relative p-3 rounded-lg border transition-all hover:shadow-sm ${
                                         isFullyComplete 
-                                          ? 'bg-green-50/50 border-green-200' 
+                                          ? 'bg-green-50/30 border-green-200/50' 
                                           : cartQuantity > 0 
-                                            ? 'bg-primary-light/20 border-primary/30' 
-                                            : 'bg-white border-gray-200 hover:border-primary/30'
+                                            ? 'bg-primary-light/10 border-primary/20' 
+                                            : 'bg-white border-gray-200 hover:border-gray-300'
                                       }`}
                                     >
-                                      <div className="flex flex-col gap-3">
-                                        {/* Header: Name and Status */}
-                                        <div className="flex items-start justify-between gap-3">
-                                          <div className="flex items-start gap-2 flex-1 min-w-0">
+                                      {/* Main Content Row */}
+                                      <div className="flex items-start justify-between gap-3 mb-2">
+                                        {/* Left: Name and Quantity Info */}
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-start gap-2 mb-1">
                                             {isFullyComplete ? (
-                                              <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                                              <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
                                             ) : (
-                                              <Circle className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                                              <Circle className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" />
                                             )}
-                              <div className="flex-1 min-w-0">
-                                              <h5 className="font-semibold text-base text-gray-900 break-words mb-1">
+                                            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                              <h5 className="font-medium text-sm text-gray-900 break-words leading-snug">
                                                 {getItemDisplayName(item)}
                                               </h5>
-                                              <div className="flex flex-wrap items-center gap-2 text-xs text-gray-600">
-                                                <span>
-                                                  {item.qtyFunded + cartQuantity} / {item.qtyNeededTotal} {item.unit}
-                                                </span>
-                                                {remainingPieces > 0 && (
-                                                  <>
-                                                    <span>•</span>
-                                                    <span className="text-orange-600 font-medium">
-                                                      {remainingPieces} {t("projectItems.stillNeeded")}
-                                                    </span>
-                                                  </>
-                                            )}
-                                          </div>
-                                              </div>
-                                              </div>
-
-                                          {/* Price - Very Prominent */}
-                                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                                            <div className="text-right">
-                                              <div className="text-2xl font-bold text-primary">
-                                                {formatCurrency(item.unitCostEUR)}
-                                          </div>
-                                              <div className="text-xs text-gray-500">
-                                                {t("projectItems.perUnit")?.replace("{unit}", item.unit) || `pro ${item.unit}`}
-                                      </div>
-                                  </div>
-                                  </div>
-                                </div>
-
-                                {/* Progress Bar */}
-                                        {progressPercent < 100 && (
-                                          <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
-                                            <div 
-                                              className="h-full bg-primary transition-all"
-                                              style={{ width: `${progressPercent}%` }}
-                                            />
-                                  </div>
-                                            )}
-                                        
-                                        {/* Quick Add Button */}
-                                        <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                                          {cartQuantity > 0 ? (
-                                            /* Quantity Selector - when items are in cart */
-                                            <div className="flex items-center gap-3 w-full">
-                                              <div className="flex items-center gap-1.5">
-                                                <Button
-                                                  size="sm"
-                                                  variant="outline"
-                                                  onClick={() => removeItemPiece(item.itemId)}
-                                                  className="h-8 w-8 p-0"
-                                                >
-                                                  <Minus className="w-4 h-4" />
-                                                </Button>
-                                                <div className="flex items-center justify-center min-w-[2rem]">
-                                                  <span className="text-sm font-semibold text-gray-900">
-                                                    {cartQuantity}
-                                                  </span>
-                                  </div>
-                                                {!isFullyComplete && (
-                                                  <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() => addItemPieceWithCartOpen(item)}
-                                                    disabled={remainingPieces === 0}
-                                                    className="h-8 w-8 p-0 disabled:opacity-30"
+                                              {getItemBlurb(item) && (
+                                                <Tooltip delayDuration={0}>
+                                                  <TooltipTrigger asChild>
+                                                    <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
+                                                  </TooltipTrigger>
+                                                  <TooltipContent 
+                                                    className="max-w-xs z-[9999]" 
+                                                    side="top"
+                                                    sideOffset={5}
                                                   >
-                                                    <Plus className="w-4 h-4" />
-                                                  </Button>
-                                                )}
-                                </div>
-                              </div>
-                                          ) : (
-                                            /* Add to Cart Button - when no items in cart */
-                                            !isFullyComplete && (
-                              <Button
-                                size="sm"
+                                                    <p className="text-sm">{getItemBlurb(item)}</p>
+                                                  </TooltipContent>
+                                                </Tooltip>
+                                              )}
+                                            </div>
+                                          </div>
+                                          
+                                          {/* Quantity and Progress Info */}
+                                          <div className="flex items-center gap-2 text-xs text-gray-500 ml-6">
+                                            <span>
+                                              {item.qtyFunded + cartQuantity} / {item.qtyNeededTotal} {getItemUnit(item)}
+                                            </span>
+                                            {remainingPieces > 0 && (
+                                              <>
+                                                <span className="text-gray-300">•</span>
+                                                <span className="text-orange-600 font-medium">
+                                                  {remainingPieces} {t("projectItems.stillNeeded")}
+                                                </span>
+                                              </>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {/* Right: Quantity Controls and Price */}
+                                        <div className="flex items-center gap-2 flex-shrink-0">
+                                          {/* Quantity Controls - Only hide if fully funded via Excel (not just cart) */}
+                                          {!isFullyFunded && (
+                                            <div className="flex items-center gap-1">
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => removeItemPiece(item.itemId)}
+                                                disabled={cartQuantity === 0}
+                                                className="h-7 w-7 p-0 text-gray-500 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
+                                              >
+                                                <Minus className="w-3.5 h-3.5" />
+                                              </Button>
+                                              <span className="text-xs font-medium text-gray-600 min-w-[1.25rem] text-center">
+                                                {cartQuantity}
+                                              </span>
+                                              <Button
+                                                size="sm"
+                                                variant="ghost"
                                                 onClick={() => addItemPieceWithCartOpen(item)}
                                                 disabled={remainingPieces === 0}
-                                                className="w-full h-9 bg-primary hover:bg-primary/90 text-white font-semibold disabled:opacity-30"
+                                                className="h-7 w-7 p-0 text-gray-500 hover:text-primary hover:bg-primary/10 disabled:opacity-30"
                                               >
-                                                <ShoppingCart className="w-4 h-4 mr-1.5" />
-                                                {t("projectItems.addToCart")}
-                              </Button>
-                                            )
+                                                <Plus className="w-3.5 h-3.5" />
+                                              </Button>
+                                            </div>
                                           )}
-                            </div>
-                                </div>
-                                  </div>
+                                          
+                                          {/* Price */}
+                                          <div className="flex flex-col items-end gap-0.5">
+                                            <div className="text-base font-bold text-primary">
+                                              {formatCurrency(item.unitCostEUR)}
+                                            </div>
+                                            <div className="text-xs text-gray-400">
+                                              {t("projectItems.perUnit")?.replace("{unit}", getItemUnit(item)) || `pro ${getItemUnit(item)}`}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Progress Bar - Visual Indicator */}
+                                      {progressPercent < 100 && (
+                                        <div className="w-full h-1 rounded-full bg-gray-100 overflow-hidden">
+                                          <div 
+                                            className="h-full bg-primary/60 transition-all"
+                                            style={{ width: `${progressPercent}%` }}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
                                   );
                                 })}
-                                  </div>
+                            </div>
                           </CollapsibleContent>
                         </Collapsible>
                           </Card>
@@ -1660,6 +1782,31 @@ export const ProjectItemsModal = ({
             ) : (
               /* Details View */
               <div className="space-y-2">
+              {/* Flexible Donation Option - Compact */}
+              <div className="flex items-center justify-between gap-3 p-3 bg-gradient-to-r from-primary-light/15 to-primary-light/5 rounded-lg border border-primary/20 mb-3">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <Heart className="w-4 h-4 text-primary flex-shrink-0" />
+                  <span className="text-xs text-gray-700">
+                    {t("projectItems.unrestrictedDonation.description")}
+                  </span>
+                </div>
+                <Link 
+                  to={`/dev/donation?project=${encodeURIComponent(projectCost.projectName)}`}
+                  onClick={() => {
+                    closeCart();
+                    onClose();
+                  }}
+                >
+                  <Button
+                    size="sm"
+                    className="h-8 px-3 bg-primary hover:bg-primary/90 text-white text-xs font-semibold whitespace-nowrap flex-shrink-0"
+                  >
+                    <Heart className="w-3 h-3 mr-1.5" />
+                    {t("projectItems.unrestrictedDonation.title")}
+                  </Button>
+                </Link>
+              </div>
+
               {/* Compact Filter Bar */}
               <div className="sticky top-0 z-20 bg-white border-b pb-2 -mx-4 sm:-mx-6 px-4 sm:px-6">
                 <div className="flex items-center justify-between gap-2">
