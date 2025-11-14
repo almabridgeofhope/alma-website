@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +30,7 @@ import { createPortal } from 'react-dom';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useProjectCosts } from '@/hooks/useProjectCosts';
 import { ProjectItem } from '@/services/clientGoogleSheetsService';
+import { Input } from '@/components/ui/input';
 
 interface CartSidebarProps {
   className?: string;
@@ -104,10 +105,11 @@ const getPhaseIcon = (phase: string) => {
 };
 
 const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({ item, onClose }) => {
-  const { updateQuantity, removeItem, formatCurrency, closeCart } = useShoppingCart();
+  const { updateQuantity, removeItem, formatCurrency, closeCart, updateAmount } = useShoppingCart();
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const { getProjectCost } = useProjectCosts();
+  const [amountInput, setAmountInput] = useState<string>(item.type === 'general-donation' ? (item.totalPrice > 0 ? item.totalPrice.toString() : '') : '');
   
   // Get translated name and description for items
   const getTranslatedName = (): string => {
@@ -179,6 +181,28 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
   const displayName = getTranslatedName();
   const displayDescription = getTranslatedDescription();
 
+  // Update amount input when item changes
+  useEffect(() => {
+    if (item.type === 'general-donation') {
+      setAmountInput(item.totalPrice > 0 ? item.totalPrice.toString() : '');
+    }
+  }, [item.totalPrice, item.type]);
+
+  // Handle amount change for general donations
+  const handleAmountChange = (value: string) => {
+    // Allow empty, numbers, and one decimal point
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setAmountInput(value);
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue) && numValue > 0) {
+        updateAmount(item.id, numValue);
+      } else if (value === '') {
+        // Set to 0 if empty
+        updateAmount(item.id, 0);
+      }
+    }
+  };
+
   const handleItemClick = (e: React.MouseEvent) => {
     // Don't navigate if clicking on buttons or controls
     if ((e.target as HTMLElement).closest('button')) {
@@ -230,7 +254,7 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
   };
 
   return (
-    <Card className="p-3 mb-2 cursor-pointer hover:bg-gray-50 transition-colors w-full" onClick={handleItemClick}>
+    <Card className={`p-3 mb-2 transition-colors w-full ${item.type === 'general-donation' ? '' : 'cursor-pointer hover:bg-gray-50'}`} onClick={item.type === 'general-donation' ? undefined : handleItemClick}>
       <div className="flex items-start gap-3">
         {/* Icon */}
         <div className="w-8 h-8 bg-gray-100 rounded-md flex items-center justify-center flex-shrink-0">
@@ -238,7 +262,7 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
         </div>
 
         {/* Content */}
-        <div className="flex-1 min-w-0 overflow-hidden">
+        <div className="flex-1 min-w-0 overflow-visible">
           <div className="flex items-center justify-between mb-1 gap-2">
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <h4 className="font-medium text-sm text-gray-900 truncate">
@@ -275,60 +299,106 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
                 </Tooltip>
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                removeItem(item.id);
-              }}
-              className="h-6 w-6 p-0 text-gray-400 hover:text-red-600 flex-shrink-0"
-            >
-              <Trash2 className="w-3 h-3" />
-            </Button>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1">
+          {item.type === 'general-donation' ? (
+            /* Amount Input for General Donations */
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <label className="text-xs text-gray-600 mb-1 block">
+                  {t("projectItems.unrestrictedDonation.amount")}
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder={t("projectItems.unrestrictedDonation.placeholder")}
+                  value={amountInput}
+                  onChange={(e) => handleAmountChange(e.target.value)}
+                  onBlur={() => {
+                    if (amountInput === '' || parseFloat(amountInput) <= 0) {
+                      setAmountInput('');
+                      updateAmount(item.id, 0);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      e.currentTarget.blur();
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.stopPropagation()}
+                  className="h-9 text-sm w-full"
+                  autoFocus={item.totalPrice === 0}
+                />
+              </div>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  updateQuantity(item.id, item.quantity - 1);
+                  removeItem(item.id);
                 }}
-                className="h-6 w-6 p-0"
+                className="h-9 w-9 p-0 text-gray-400 hover:text-red-600 flex-shrink-0 mt-6"
               >
-                <Minus className="w-3 h-3" />
-              </Button>
-              <span className="text-sm font-medium w-8 text-center">
-                {item.quantity}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (item.maxQuantity && item.quantity < item.maxQuantity) {
-                    updateQuantity(item.id, item.quantity + 1);
-                  }
-                }}
-                disabled={item.type === 'phase' && item.quantity >= 1 || (item.maxQuantity && item.quantity >= item.maxQuantity)}
-                className="h-6 w-6 p-0"
-              >
-                <Plus className="w-3 h-3" />
+                <Trash2 className="w-4 h-4" />
               </Button>
             </div>
+          ) : (
+            <div className="flex items-center justify-between">
+              <div className="text-left">
+                <div className="text-sm font-semibold text-gray-900">
+                  {formatCurrency(item.totalPrice)}
+                </div>
+                <div className="text-xs text-gray-600">
+                  {formatCurrency(item.unitPrice)} {t("cart.perPiece")}
+                </div>
+              </div>
 
-            <div className="text-right">
-              <div className="text-sm font-semibold text-gray-900">
-                {formatCurrency(item.totalPrice)}
-              </div>
-              <div className="text-xs text-gray-600">
-                {formatCurrency(item.unitPrice)} {t("cart.perPiece")}
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateQuantity(item.id, item.quantity - 1);
+                  }}
+                  className="h-6 w-6 p-0"
+                >
+                  <Minus className="w-3 h-3" />
+                </Button>
+                <span className="text-sm font-medium w-8 text-center">
+                  {item.quantity}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (item.maxQuantity && item.quantity < item.maxQuantity) {
+                      updateQuantity(item.id, item.quantity + 1);
+                    }
+                  }}
+                  disabled={item.type === 'phase' && item.quantity >= 1 || (item.maxQuantity && item.quantity >= item.maxQuantity)}
+                  className="h-6 w-6 p-0"
+                >
+                  <Plus className="w-3 h-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeItem(item.id);
+                  }}
+                  className="h-6 w-6 p-0 text-gray-400 hover:text-red-600 flex-shrink-0"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
               </div>
             </div>
-          </div>
+          )}
 
         </div>
       </div>
@@ -418,7 +488,7 @@ export const CartSidebar: React.FC<CartSidebarProps> = ({ className, basePath = 
             <>
               {/* Items List - native scrolling for better trackpad/touch support */}
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y p-4" style={{ WebkitOverflowScrolling: 'touch' as any, overscrollBehaviorY: 'contain', touchAction: 'pan-y' }}>
-                <div className="space-y-2 pr-2">
+                <div className="space-y-2 pr-2 overflow-visible">
                   {state.items.map((item) => (
                     <CartItemComponent key={item.id} item={item} />
                   ))}
@@ -534,7 +604,7 @@ export const CartInline: React.FC<{ basePath?: string; className?: string; onClo
         ) : (
           <>
             <div className="flex-1 min-h-0 overflow-y-auto p-4 overscroll-contain">
-              <div className="space-y-2 pr-1">
+              <div className="space-y-2 pr-1 overflow-visible">
                 {state.items.map((item) => (
                   <CartItemComponent key={item.id} item={item} onClose={onClose} />
                 ))}
