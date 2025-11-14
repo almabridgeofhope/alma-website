@@ -1303,7 +1303,7 @@ export const ProjectItemsModal = ({
                         className="h-9 px-4 bg-white hover:bg-primary-light/10 border-primary/30 text-primary font-semibold whitespace-nowrap shadow-sm flex-shrink-0"
                       >
                         <Heart className="w-4 h-4 mr-1.5" />
-                        {t("projectItems.unrestrictedDonation.title")}
+                        {t("projectItems.unrestrictedDonation.button")}
                       </Button>
                     </div>
                   </Card>
