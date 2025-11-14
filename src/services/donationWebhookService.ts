@@ -84,18 +84,21 @@ class DonationWebhookService {
           itemsCount: donationData.items.length,
           paymentMethod: donationData.paymentMethod
         });
-
-        // Use mode: 'no-cors' as fallback, but first try with cors
-        // Google Apps Script web apps handle CORS, but sometimes need this workaround
+        
+        // Google Apps Script web apps have CORS limitations
+        // Use form-encoded data to bypass CORS preflight
+        // This works better with Google Apps Script web apps
+        const formData = new URLSearchParams();
+        formData.append('data', JSON.stringify(donationData));
+        
         const response = await fetch(this.webhookUrl, {
           method: 'POST',
-          mode: 'cors', // Explicitly set CORS mode
+          mode: 'cors',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
           },
-          body: JSON.stringify(donationData),
+          body: formData.toString(),
         });
-
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(`HTTP ${response.status}: ${errorText}`);
