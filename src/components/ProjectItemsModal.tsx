@@ -818,9 +818,18 @@ export const ProjectItemsModal = ({
                         {getItemDisplayName(item)}
                       </h4>
                       {isNextImportant && (
-                        <Badge className="bg-orange-500 text-white text-xs px-2 py-0.5">
-                          {t("projectItems.nextImportant")}
-                        </Badge>
+                        <Tooltip delayDuration={0}>
+                          <TooltipTrigger asChild>
+                            <Badge className="bg-orange-500 text-white text-xs px-2 py-0.5 cursor-help">
+                              {t("projectItems.nextImportant")}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent className="z-[9999] max-w-xs" side="top" sideOffset={5}>
+                            <p className="text-sm leading-relaxed">
+                              {t("projectItems.nextImportant.explanation")}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
                 {getItemCategory(item) && (
@@ -980,10 +989,19 @@ export const ProjectItemsModal = ({
                       {getItemDisplayName(item)}
                     </h4>
                     {isNextImportant && (
-                      <Badge className="bg-orange-500 text-white text-xs px-2 py-1">
-                        <Sparkles className="w-3 h-3 mr-1" />
-                        {t("projectItems.nextImportant")}
-                      </Badge>
+                      <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild>
+                          <Badge className="bg-orange-500 text-white text-xs px-2 py-1 cursor-help">
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            {t("projectItems.nextImportant")}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent className="z-[9999] max-w-xs" side="top" sideOffset={5}>
+                          <p className="text-sm leading-relaxed">
+                            {t("projectItems.nextImportant.explanation")}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
                     )}
                   </div>
                   {getItemCategory(item) && (
@@ -1202,11 +1220,11 @@ export const ProjectItemsModal = ({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-2">
-                          <Tooltip delayDuration={0}>
+                          <Tooltip delayDuration={200}>
                             <TooltipTrigger asChild>
-                              <Badge className="bg-orange-500 text-white text-xs px-2 py-0.5 cursor-help">
+                              <button type="button" className="inline-flex items-center rounded-full border-0 bg-orange-500 text-white text-xs font-semibold px-2 py-0.5 cursor-help hover:bg-orange-600 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
                                 {t("projectItems.nextImportant")}
-                              </Badge>
+                              </button>
                             </TooltipTrigger>
                             <TooltipContent className="z-[9999] max-w-xs" side="top" sideOffset={5}>
                               <p className="text-sm leading-relaxed">
