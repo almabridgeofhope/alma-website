@@ -1210,21 +1210,21 @@ export const ProjectItemsModal = ({
               <div className="space-y-6">
                 {/* Enhanced Next Important Item Highlight with Flexible Donation Option */}
                 {nextImportantItem && (
-                  <Card className="p-5 bg-gradient-to-br from-orange-50 via-orange-50/80 to-primary-light/20 border-2 border-orange-400 shadow-lg">
+                  <Card className="p-4 sm:p-5 bg-gradient-to-br from-orange-50 via-orange-50/80 to-primary-light/20 border-2 border-orange-400 shadow-lg">
                     {/* Primary Action: Next Important Item */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 mb-3 sm:mb-4">
                       <div className="flex-shrink-0">
-                        <div className="w-14 h-14 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center shadow-md">
-                          <Sparkles className="w-7 h-7 text-white" />
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center shadow-md">
+                          <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
                           <Tooltip delayDuration={200}>
                             <TooltipTrigger asChild>
-                              <button type="button" className="inline-flex items-center rounded-full border-0 bg-orange-500 text-white text-xs font-semibold px-2 py-0.5 cursor-help hover:bg-orange-600 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">
+                              <Badge className="bg-orange-500 text-white text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 cursor-help">
                                 {t("projectItems.nextImportant")}
-                              </button>
+                              </Badge>
                             </TooltipTrigger>
                             <TooltipContent className="z-[9999] max-w-xs" side="top" sideOffset={5}>
                               <p className="text-sm leading-relaxed">
@@ -1232,27 +1232,27 @@ export const ProjectItemsModal = ({
                               </p>
                             </TooltipContent>
                           </Tooltip>
-                          <span className="text-xs text-gray-600">
+                          <span className="text-[10px] sm:text-xs text-gray-600">
                             {getPhaseNameTranslated(nextImportantItem.phase)}
                           </span>
                         </div>
-                        <h4 className="font-bold text-lg text-gray-900 mb-2">{getItemDisplayName(nextImportantItem)}</h4>
-                        <div className="flex flex-wrap items-center gap-4 text-sm">
-                          <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-base sm:text-lg text-gray-900 mb-1.5 sm:mb-2 leading-tight">{getItemDisplayName(nextImportantItem)}</h4>
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+                          <div className="flex items-center gap-1.5 sm:gap-2">
                             <span className="text-gray-700 font-semibold">{nextImportantItem.qtyFunded + getItemCartQuantity(nextImportantItem.itemId)}</span>
                             <span className="text-gray-400">/</span>
                             <span className="text-gray-700 font-semibold">{nextImportantItem.qtyNeededTotal}</span>
-                            <span className="text-gray-500 ml-2">
+                            <span className="text-gray-500 ml-1 sm:ml-2 text-xs">
                               {t("projectItems.stillNeeded")} {nextImportantItem.qtyNeededTotal - nextImportantItem.qtyFunded - getItemCartQuantity(nextImportantItem.itemId)}
                             </span>
                           </div>
                         </div>
                         {getItemBlurb(nextImportantItem) && (
-                          <p className="text-sm text-gray-600 mt-2 line-clamp-2">{getItemBlurb(nextImportantItem)}</p>
+                          <p className="text-xs sm:text-sm text-gray-600 mt-1.5 sm:mt-2 line-clamp-2 leading-relaxed">{getItemBlurb(nextImportantItem)}</p>
                         )}
                       </div>
-                      <div className="flex flex-col items-end gap-2 flex-shrink-0 w-full sm:w-auto">
-                        {/* Price - Above cart button */}
+                      {/* Desktop: Price and Button on the right */}
+                      <div className="hidden sm:flex flex-col items-end gap-2 flex-shrink-0">
                         <div className="flex flex-col items-end gap-0.5">
                           <div className="text-xl font-bold text-primary">
                             {formatCurrency(nextImportantItem.unitCostEUR)}
@@ -1261,7 +1261,6 @@ export const ProjectItemsModal = ({
                             {t("projectItems.perUnit")?.replace("{unit}", getItemUnit(nextImportantItem)) || `pro ${getItemUnit(nextImportantItem)}`}
                           </div>
                         </div>
-                        {/* Primary Action Button */}
                         <Button
                           size="sm"
                           onClick={() => {
@@ -1270,11 +1269,36 @@ export const ProjectItemsModal = ({
                               addItemPieceWithCartOpen(nextImportantItem);
                             }
                           }}
-                          className="bg-orange-500 hover:bg-orange-600 text-white font-semibold w-full sm:w-auto shadow-sm"
+                          className="bg-orange-500 hover:bg-orange-600 text-white font-semibold shadow-sm"
                           disabled={nextImportantItem.qtyNeededTotal - nextImportantItem.qtyFunded - getItemCartQuantity(nextImportantItem.itemId) === 0}
                         >
                           <ShoppingCart className="w-4 h-4 mr-1.5" />
                           {t("projectItems.addToCart")}
+                        </Button>
+                      </div>
+                      {/* Mobile: Price and Button Row */}
+                      <div className="flex sm:hidden items-center justify-between gap-3 w-full pt-2 border-t border-orange-200/50">
+                        <div className="flex flex-col gap-0.5">
+                          <div className="text-lg font-bold text-primary">
+                            {formatCurrency(nextImportantItem.unitCostEUR)}
+                          </div>
+                          <div className="text-[10px] text-gray-500">
+                            {t("projectItems.perUnit")?.replace("{unit}", getItemUnit(nextImportantItem)) || `pro ${getItemUnit(nextImportantItem)}`}
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const remaining = nextImportantItem.qtyNeededTotal - nextImportantItem.qtyFunded - getItemCartQuantity(nextImportantItem.itemId);
+                            if (remaining > 0) {
+                              addItemPieceWithCartOpen(nextImportantItem);
+                            }
+                          }}
+                          className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold flex-1 shadow-sm h-9"
+                          disabled={nextImportantItem.qtyNeededTotal - nextImportantItem.qtyFunded - getItemCartQuantity(nextImportantItem.itemId) === 0}
+                        >
+                          <ShoppingCart className="w-3.5 h-3.5 mr-1" />
+                          {language === 'de' ? 'Hinzufügen' : 'Add'}
                         </Button>
                       </div>
                     </div>
@@ -1318,10 +1342,11 @@ export const ProjectItemsModal = ({
                           setShowCartDrawer(true);
                           // Don't close modal, let user see the cart
                         }}
-                        className="h-9 px-4 bg-white hover:bg-primary-light/10 border-primary/30 text-primary font-semibold whitespace-nowrap shadow-sm flex-shrink-0"
+                        className="h-9 px-3 sm:px-4 bg-white hover:bg-primary-light/10 border-primary/30 text-primary text-xs sm:text-sm font-semibold whitespace-nowrap shadow-sm flex-shrink-0 w-full sm:w-auto"
                       >
-                        <Heart className="w-4 h-4 mr-1.5" />
-                        {t("projectItems.unrestrictedDonation.button")}
+                        <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
+                        <span className="sm:hidden">{language === 'de' ? 'Betrag' : 'Amount'}</span>
+                        <span className="hidden sm:inline">{t("projectItems.unrestrictedDonation.title")}</span>
                       </Button>
                     </div>
                   </Card>
@@ -1984,7 +2009,7 @@ export const ProjectItemsModal = ({
         {/* Floating CTA removed - now using footer cart link */}
 
         {/* Footer */}
-        <div className="grid grid-cols-3 items-center pt-4 pb-6 sm:pb-8 border-t px-4 sm:px-6 bg-white flex-shrink-0">
+        <div className="grid grid-cols-2 sm:grid-cols-3 items-center pt-4 pb-6 sm:pb-8 border-t px-4 sm:px-6 bg-white flex-shrink-0">
           {/* Left: Item Count */}
           <div className="text-sm text-muted-foreground">
             {viewMode === 'overview' 
@@ -1992,8 +2017,8 @@ export const ProjectItemsModal = ({
               : t("projectItems.itemsShown").replace("{shown}", filteredItems.length.toString()).replace("{total}", projectCost.totalItems.toString())}
           </div>
           
-          {/* Center: Budget Summary - always centered */}
-          <div className="flex items-center justify-center gap-6">
+          {/* Center: Budget Summary - always centered, hidden on mobile */}
+          <div className="hidden sm:flex items-center justify-center gap-6">
             <div className="text-center">
               <div className="text-sm font-bold text-green-600">
                 {viewMode === 'overview' 
