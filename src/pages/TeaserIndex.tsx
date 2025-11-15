@@ -5,8 +5,10 @@ import { ArrowRight, Heart, Users, Globe, Mail, Instagram } from "lucide-react";
 import logo from "@/assets/alma-logo.svg";
 import { useState } from "react";
 import NewsletterForm from "@/components/NewsletterForm";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const TeaserIndex = () => {
+  const { t, language } = useLanguage();
   const [email, setEmail] = useState("");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -19,15 +21,12 @@ const TeaserIndex = () => {
     
     try {
       // Einfache Lösung: E-Mail mit Newsletter-Anmeldung öffnen
-      const subject = encodeURIComponent('Newsletter Anmeldung');
-      const body = encodeURIComponent(`Ich möchte den Newsletter abonnieren.
-
-Meine E-Mail-Adresse: ${email}
-Datum: ${new Date().toLocaleDateString('de-DE')}
-
-Bitte fügen Sie mich zu Ihrer Newsletter-Liste hinzu.
-
-Vielen Dank!`);
+      const subject = encodeURIComponent(t("teaser.newsletter.email.subject"));
+      const date = new Date().toLocaleDateString(language === 'de' ? 'de-DE' : 'en-US');
+      const bodyText = t("teaser.newsletter.email.body")
+        .replace("{email}", email)
+        .replace("{date}", date);
+      const body = encodeURIComponent(bodyText);
       
       window.open(`mailto:info@almabridgeofhope.org?subject=${subject}&body=${body}`, '_blank');
       
@@ -60,7 +59,7 @@ Vielen Dank!`);
                 className="text-muted-foreground"
                 onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                About
+                {t("teaser.nav.about")}
               </Button>
               <Button
                 variant="ghost"
@@ -68,7 +67,7 @@ Vielen Dank!`);
                 className="text-muted-foreground"
                 onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                Contact
+                {t("teaser.nav.contact")}
               </Button>
             </div>
           </div>
@@ -82,14 +81,13 @@ Vielen Dank!`);
           
           <div className="relative z-10 text-center max-w-4xl px-6">
             <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight text-foreground">
-              Coming Soon
+              {t("teaser.comingSoon.title")}
             </h1>
             <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-foreground">
-              Alma Bridge of Hope
+              {t("teaser.comingSoon.subtitle")}
             </h2>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Wir arbeiten an einer vollständigen Website mit detaillierten Informationen 
-              zu unseren Projekten und aktuellen Neuigkeiten.
+              {t("teaser.comingSoon.description")}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -98,7 +96,7 @@ Vielen Dank!`);
                 size="lg"
                 onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                Mehr erfahren
+                {t("teaser.comingSoon.learnMore")}
               </Button>
             </div>
           </div>
@@ -108,11 +106,10 @@ Vielen Dank!`);
         <section className="py-12 bg-muted/30">
           <div className="max-w-4xl mx-auto px-6 text-center">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-              Bleib informiert
+              {t("teaser.newsletter.title")}
             </h2>
             <p className="text-base text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Folge uns auf Instagram für tägliche Einblicke oder melde dich für unseren Newsletter an, 
-              um nichts zu verpassen.
+              {t("teaser.newsletter.description")}
             </p>
             
             {/* Social Media & Newsletter Options */}
@@ -122,10 +119,9 @@ Vielen Dank!`);
                 <div className="w-20 h-20 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-all duration-300 shadow-lg">
                   <Instagram className="w-10 h-10 text-white" />
                 </div>
-                <h3 className="text-xl font-bold mb-2 text-foreground">Instagram</h3>
+                <h3 className="text-xl font-bold mb-2 text-foreground">{t("teaser.newsletter.instagram.title")}</h3>
                 <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                  Folge uns für tägliche Einblicke in unsere Projekte, 
-                  <br />Fotos aus Uganda und Updates von vor Ort
+                  {t("teaser.newsletter.instagram.description")}
                 </p>
                 <Button variant="outline" className="w-full">
                   @almabridgeofhope
@@ -137,15 +133,14 @@ Vielen Dank!`);
                 <div className="w-20 h-20 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-all duration-300 shadow-lg">
                   <Mail className="w-10 h-10 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold mb-2 text-foreground">Newsletter</h3>
+                <h3 className="text-xl font-bold mb-2 text-foreground">{t("teaser.newsletter.newsletter.title")}</h3>
                 <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                  Erhalte monatliche Updates über unsere Fortschritte, 
-                  <br />Projektberichte und Erfolgsgeschichten
+                  {t("teaser.newsletter.newsletter.description")}
                 </p>
                 
                 <NewsletterForm 
-                  placeholder="Deine E-Mail-Adresse"
-                  buttonLabel="Newsletter abonnieren"
+                  placeholder={t("teaser.newsletter.emailPlaceholder")}
+                  buttonLabel={t("teaser.newsletter.subscribe")}
                   source="teaser-index"
                 />
               </Card>
@@ -158,12 +153,10 @@ Vielen Dank!`);
           <div className="max-w-6xl mx-auto px-6">
             <div className="text-center mb-8">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-                Über Alma Bridge of Hope
+                {t("teaser.about.title")}
               </h2>
               <p className="text-base text-muted-foreground max-w-3xl mx-auto">
-                Wir sind eine gemeinnützige Organisation, die sich für nachhaltige Entwicklung 
-                und Gemeinschaftsaufbau in Uganda einsetzt. Unser Ziel ist es, Brücken der Hoffnung 
-                zwischen Deutschland und Uganda zu schaffen.
+                {t("teaser.about.description")}
               </p>
             </div>
             
@@ -172,9 +165,9 @@ Vielen Dank!`);
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Globe className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Grundversorgung</h3>
+                <h3 className="text-lg font-semibold mb-2">{t("teaser.about.utilities.title")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Sauberes Wasser und erneuerbare Energielösungen für abgelegene Gemeinden
+                  {t("teaser.about.utilities.description")}
                 </p>
               </Card>
               
@@ -182,9 +175,9 @@ Vielen Dank!`);
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Users className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Infrastruktur & Lokale Entwicklung</h3>
+                <h3 className="text-lg font-semibold mb-2">{t("teaser.about.infrastructure.title")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Nachhaltige Infrastruktur durch aktive Gemeinschaftsbeteiligung aufbauen
+                  {t("teaser.about.infrastructure.description")}
                 </p>
               </Card>
               
@@ -192,9 +185,9 @@ Vielen Dank!`);
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Heart className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Bildung & Training</h3>
+                <h3 className="text-lg font-semibold mb-2">{t("teaser.about.education.title")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Unterstützung von Bildungsinitiativen und Trainingsprogrammen für praktische Fähigkeiten
+                  {t("teaser.about.education.description")}
                 </p>
               </Card>
             </div>
@@ -206,11 +199,10 @@ Vielen Dank!`);
         <section id="contact" className="py-12 bg-muted/30">
           <div className="max-w-6xl mx-auto px-6 text-center">
             <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-              Kontakt
+              {t("teaser.contact.title")}
             </h2>
             <p className="text-base text-muted-foreground mb-6 max-w-2xl mx-auto">
-              Haben Sie Fragen oder möchten Sie mehr über unsere Arbeit erfahren? 
-              Wir freuen uns auf Ihre Nachricht.
+              {t("teaser.contact.description")}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -218,7 +210,7 @@ Vielen Dank!`);
                 size="lg"
                 onClick={() => window.open('mailto:info@almabridgeofhope.org', '_blank')}
               >
-                E-Mail senden
+                {t("teaser.contact.sendEmail")}
               </Button>
             </div>
           </div>
@@ -233,10 +225,10 @@ Vielen Dank!`);
               <img src={logo} alt="Alma Bridge of Hope" className="h-8 w-8 object-contain" />
             </div>
             <p className="text-sm text-muted-foreground mb-3">
-              Building bridges of hope across continents
+              {t("teaser.footer.tagline")}
             </p>
             <div className="text-xs text-muted-foreground">
-              © 2025 Alma Bridge of Hope. Alle Rechte vorbehalten.
+              {t("teaser.footer.copyright")}
             </div>
           </div>
         </div>
