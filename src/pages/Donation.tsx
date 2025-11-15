@@ -12,8 +12,6 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PayPalScriptProvider, PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js";
-import { loadStripe } from "@stripe/stripe-js";
-import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import OptimizedImage from "@/components/OptimizedImage";
@@ -28,10 +26,6 @@ import { useSearchParams } from "react-router-dom";
 
 // PayPal Configuration
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
-
-// Stripe Configuration
-const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
 
 // SEPA Bank Account Configuration
 const SEPA_BANK_ACCOUNT = {
@@ -119,84 +113,6 @@ const PayPalButtonWrapper = memo(({
 });
 
 PayPalButtonWrapper.displayName = "PayPalButtonWrapper";
-
-// Stripe Payment Component
-const StripePaymentForm = memo(({ 
-  amount, 
-  onSuccess, 
-  onError 
-}: { 
-  amount: number; 
-  onSuccess: (paymentId: string) => void; 
-  onError: (error: string) => void;
-}) => {
-  const { t } = useLanguage();
-  const stripe = useStripe();
-  const elements = useElements();
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!stripe || !elements) {
-      onError("Stripe not loaded");
-      return;
-    }
-
-    setIsProcessing(true);
-
-    try {
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        throw new Error("Card element not found");
-      }
-
-      // Create payment intent on your backend (you'll need to implement this)
-      // For now, we'll use a client-side approach with Stripe Checkout
-      // Note: For production, you should create payment intents on your backend
-      alert(t("donation.form.cardNote") + "\n\nNote: Stripe backend integration required for full functionality.");
-      onError("Backend integration required");
-    } catch (error) {
-      console.error("Stripe payment error:", error);
-      onError(error instanceof Error ? error.message : "Payment failed");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="p-4 border rounded-lg bg-muted/20">
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: '16px',
-                color: '#424770',
-                '::placeholder': {
-                  color: '#aab7c4',
-                },
-              },
-              invalid: {
-                color: '#9e2146',
-              },
-            },
-          }}
-        />
-      </div>
-      <Button 
-        type="submit" 
-        disabled={!stripe || isProcessing}
-        className="w-full"
-        size="lg"
-      >
-        {isProcessing ? t("donation.form.cardProcessing") : `${t("donation.form.donate")} €${amount.toFixed(2)}`}
-      </Button>
-    </form>
-  );
-});
-
-StripePaymentForm.displayName = "StripePaymentForm";
 
 const Donation = () => {
   const { t } = useLanguage();
@@ -619,8 +535,32 @@ const Donation = () => {
       return;
     }
     
-    // Handle other payment methods (SEPA, Credit Card)
-    console.log("Processing non-PayPal payment (SEPA/Card):", {
+    if (paymentMethod === "sepa") {
+      // Generate SEPA reference number
+      const donorName = `${formData.firstName} ${formData.lastName}`;
+      const amountNum = parseFloat(finalAmount);
+      const timestamp = new Date().toISOString();
+      const reference = generateSEPAReference(donorName, amountNum, timestamp);
+      setSepaReference(reference);
+      
+      // Process the donation via webhook (mark as pending until payment received)
+      console.log("⏳ Processing SEPA donation via webhook...");
+      setIsProcessingPayment(true);
+      const result = await processDonation(reference);
+      setIsProcessingPayment(false);
+      
+      if (result.ok) {
+        // Don't show success alert yet - user needs to complete transfer
+        // The SEPA details will be shown in the UI
+      } else {
+        console.warn("SEPA donation registration failed:", result.message);
+        alert("Error registering donation. Please try again.");
+      }
+      return;
+    }
+    
+    // Handle other payment methods
+    console.log("Processing payment:", {
       type: donationType,
       amount: finalAmount,
       paymentMethod,
@@ -674,6 +614,21 @@ const Donation = () => {
         privacyConsent: false,
       });
     }
+  };
+
+  const copySEPADetails = () => {
+    const finalAmount = donationType === "monthly"
+      ? (amount || customAmount)
+      : (cartState.items.length > 0 
+          ? cartState.totalAmount.toString() 
+          : (amount || customAmount));
+    
+    const details = `IBAN: ${SEPA_BANK_ACCOUNT.iban}\nBIC: ${SEPA_BANK_ACCOUNT.bic}\nAccount Holder: ${SEPA_BANK_ACCOUNT.accountHolder}\nAmount: €${finalAmount}\nReference: ${sepaReference}`;
+    
+    navigator.clipboard.writeText(details).then(() => {
+      setSepaDetailsCopied(true);
+      setTimeout(() => setSepaDetailsCopied(false), 2000);
+    });
   };
 
   // PayPal payment handlers - memoized to prevent unnecessary re-renders
@@ -1479,6 +1434,102 @@ const Donation = () => {
                         onError={onPayPalError}
                         onCancel={onPayPalCancel}
                       />
+                    </div>
+                  ) : paymentMethod === "sepa" ? (
+                    <div className="w-full space-y-4">
+                      {sepaReference ? (
+                        <Card className="p-6 bg-blue-50 border-blue-200">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-lg font-semibold text-foreground">{t("donation.form.sepaDetails")}</h3>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={copySEPADetails}
+                                className="flex items-center gap-2"
+                              >
+                                {sepaDetailsCopied ? (
+                                  <>
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    {t("donation.form.sepaCopied")}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="h-4 w-4" />
+                                    {t("donation.form.sepaCopy")}
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">IBAN:</span>
+                                <span className="font-mono font-semibold">{SEPA_BANK_ACCOUNT.iban}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">BIC:</span>
+                                <span className="font-mono font-semibold">{SEPA_BANK_ACCOUNT.bic}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">{t("donation.form.sepaReference")}:</span>
+                                <span className="font-mono font-semibold">{sepaReference}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Account Holder:</span>
+                                <span className="font-semibold">{SEPA_BANK_ACCOUNT.accountHolder}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-muted-foreground">Amount:</span>
+                                <span className="font-semibold text-primary">
+                                  {formatCurrency(
+                                    donationType === "monthly"
+                                      ? parseFloat(amount || customAmount || "0")
+                                      : (cartState.items.length > 0 
+                                          ? cartState.totalAmount 
+                                          : parseFloat(amount || customAmount || "0"))
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="pt-4 border-t">
+                              <p className="text-sm text-muted-foreground">{t("donation.form.sepaInstructions")}</p>
+                            </div>
+                            <div className="pt-2">
+                              <p className="text-sm text-muted-foreground">{t("donation.form.sepaNote")}</p>
+                            </div>
+                          </div>
+                        </Card>
+                      ) : (
+                        <Button 
+                          onClick={() => {
+                            console.log("Button clicked!");
+                            handleDonate();
+                          }}
+                          size="lg"
+                          className="w-full h-12"
+                          disabled={isProcessingPayment}
+                        >
+                          {donationType === "one-time" 
+                            ? t("donation.form.donate") 
+                            : t("donation.form.donate_monthly")}
+                        </Button>
+                      )}
+                    </div>
+                  ) : paymentMethod === "card" ? (
+                    <div className="w-full p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {t("donation.form.cardNote")}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Bitte verwende PayPal für Kreditkartenzahlungen. PayPal unterstützt auch Zahlungen ohne PayPal-Konto.
+                      </p>
+                      <Button 
+                        onClick={() => setPaymentMethod("paypal")}
+                        variant="outline"
+                        className="mt-4"
+                      >
+                        Zu PayPal wechseln
+                      </Button>
                     </div>
                   ) : (
                     <Button 
