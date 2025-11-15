@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,11 +12,13 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PayPalScriptProvider, PayPalButtons, usePayPalScriptReducer } from "@paypal/react-paypal-js";
+import { loadStripe } from "@stripe/stripe-js";
+import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import OptimizedImage from "@/components/OptimizedImage";
 import PreloadImage from "@/components/PreloadImage";
-import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush } from "lucide-react";
+import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush, Copy, CheckCircle2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { donationWebhookService } from "@/services/donationWebhookService";
@@ -27,6 +29,175 @@ import { useSearchParams } from "react-router-dom";
 // PayPal Configuration
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
 
+// Stripe Configuration
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
+
+// SEPA Bank Account Configuration
+const SEPA_BANK_ACCOUNT = {
+  iban: import.meta.env.VITE_SEPA_IBAN || "DE89 3704 0044 0532 0130 00", // Example - replace with your IBAN
+  bic: import.meta.env.VITE_SEPA_BIC || "COBADEFFXXX", // Example - replace with your BIC
+  accountHolder: import.meta.env.VITE_SEPA_ACCOUNT_HOLDER || "Alma Bridge of Hope e.V.", // Example - replace with your account holder name
+  bankName: import.meta.env.VITE_SEPA_BANK_NAME || "Commerzbank", // Example - replace with your bank name
+};
+
+// Generate SEPA reference number
+const generateSEPAReference = (donorName: string, amount: number, timestamp: string): string => {
+  const date = new Date(timestamp);
+  const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
+  const namePart = donorName.replace(/\s+/g, '').substring(0, 10).toUpperCase();
+  const amountPart = Math.floor(amount).toString().padStart(4, '0');
+  return `ALMA-${dateStr}-${namePart}-${amountPart}`;
+};
+
+// PayPal Button Wrapper Component - moved outside to prevent recreation on every render
+const PayPalButtonWrapper = memo(({ 
+  createOrder, 
+  onApprove, 
+  onError, 
+  onCancel,
+}: {
+  createOrder: (data: any, actions: any) => Promise<string>;
+  onApprove: (data: any, actions: any) => Promise<void>;
+  onError: (err: any) => void;
+  onCancel: () => void;
+}) => {
+  const { t } = useLanguage();
+  const [{ isPending, isResolved, isRejected }] = usePayPalScriptReducer();
+
+  if (isPending) {
+    return (
+      <div className="w-full flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-sm text-muted-foreground">Lade PayPal...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isRejected || !isResolved) {
+    console.error("PayPal SDK failed to load", { isRejected, isResolved });
+    return (
+      <div className="w-full p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <p className="text-sm text-yellow-800 mb-2">
+          {t("paypal.error.loadFailed")}
+        </p>
+        <Button 
+          onClick={() => window.location.reload()} 
+          variant="outline" 
+          size="sm"
+        >
+          Seite neu laden
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full">
+      <div className="mb-4 text-center text-sm text-muted-foreground">
+        {t("paypal.redirect")}
+      </div>
+      <div id="paypal-button-container" className="w-full min-h-[200px]">
+        <PayPalButtons
+          createOrder={createOrder}
+          onApprove={onApprove}
+          onError={onError}
+          onCancel={onCancel}
+          style={{
+            layout: "vertical",
+            color: "blue",
+            shape: "rect",
+            label: "paypal",
+            tagline: false,
+          }}
+        />
+      </div>
+    </div>
+  );
+});
+
+PayPalButtonWrapper.displayName = "PayPalButtonWrapper";
+
+// Stripe Payment Component
+const StripePaymentForm = memo(({ 
+  amount, 
+  onSuccess, 
+  onError 
+}: { 
+  amount: number; 
+  onSuccess: (paymentId: string) => void; 
+  onError: (error: string) => void;
+}) => {
+  const { t } = useLanguage();
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!stripe || !elements) {
+      onError("Stripe not loaded");
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) {
+        throw new Error("Card element not found");
+      }
+
+      // Create payment intent on your backend (you'll need to implement this)
+      // For now, we'll use a client-side approach with Stripe Checkout
+      // Note: For production, you should create payment intents on your backend
+      alert(t("donation.form.cardNote") + "\n\nNote: Stripe backend integration required for full functionality.");
+      onError("Backend integration required");
+    } catch (error) {
+      console.error("Stripe payment error:", error);
+      onError(error instanceof Error ? error.message : "Payment failed");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="p-4 border rounded-lg bg-muted/20">
+        <CardElement
+          options={{
+            style: {
+              base: {
+                fontSize: '16px',
+                color: '#424770',
+                '::placeholder': {
+                  color: '#aab7c4',
+                },
+              },
+              invalid: {
+                color: '#9e2146',
+              },
+            },
+          }}
+        />
+      </div>
+      <Button 
+        type="submit" 
+        disabled={!stripe || isProcessing}
+        className="w-full"
+        size="lg"
+      >
+        {isProcessing ? t("donation.form.cardProcessing") : `${t("donation.form.donate")} €${amount.toFixed(2)}`}
+      </Button>
+    </form>
+  );
+});
+
+StripePaymentForm.displayName = "StripePaymentForm";
+
 const Donation = () => {
   const { t } = useLanguage();
   const { state: cartState, updateQuantity, removeItem, clearCart, formatCurrency, addOrUpdateGeneralDonation, getGeneralDonation, updateAmount, closeCart } = useShoppingCart();
@@ -36,8 +207,7 @@ const Donation = () => {
     closeCart();
   }, [closeCart]);
   
-  // Debug: Check if component is rendering
-  console.log("Donation component is rendering");
+  // Component state
   const [searchParams] = useSearchParams();
   const [donationType, setDonationType] = useState<"one-time" | "monthly">("one-time");
   const [amount, setAmount] = useState<string>("");
@@ -66,6 +236,8 @@ const Donation = () => {
   const [editGeneralDonationValue, setEditGeneralDonationValue] = useState<string>("");
   const [addingGeneralDonation, setAddingGeneralDonation] = useState(false);
   const [newGeneralDonationAmount, setNewGeneralDonationAmount] = useState<string>("");
+  const [sepaReference, setSepaReference] = useState<string>("");
+  const [sepaDetailsCopied, setSepaDetailsCopied] = useState(false);
 
   // Auto-add general donation when URL param exists and cart has items
   useEffect(() => {
@@ -433,17 +605,17 @@ const Donation = () => {
     console.log("Payment method:", paymentMethod);
     
     if (paymentMethod === "paypal") {
-      console.log("PayPal payment selected - showing PayPal buttons");
+      console.log("PayPal payment selected - PayPal buttons are already visible");
       
       // Check if PayPal Client ID is configured
       if (!PAYPAL_CLIENT_ID) {
-        alert("PayPal ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator.");
+        alert(t("paypal.error.notConfigured"));
         console.error("PayPal Client ID not configured");
         return;
       }
       
-      // PayPal payment will be handled by PayPal buttons
-      setIsProcessingPayment(true);
+      // PayPal payment will be handled by PayPal buttons (they're already visible)
+      // No need to set isProcessingPayment or show buttons - they're already rendered
       return;
     }
     
@@ -504,8 +676,8 @@ const Donation = () => {
     }
   };
 
-  // PayPal payment handlers
-  const createPayPalOrder = (data: any, actions: any) => {
+  // PayPal payment handlers - memoized to prevent unnecessary re-renders
+  const createPayPalOrder = useCallback((data: any, actions: any) => {
     // For monthly donations, always use selected amount (no cart items)
     // For one-time donations, use cart total if items exist, otherwise use selected amount
     const finalAmount = donationType === "monthly"
@@ -527,11 +699,11 @@ const Donation = () => {
         brand_name: "Alma Bridge of Hope",
         landing_page: "NO_PREFERENCE",
         user_action: "PAY_NOW",
-        return_url: `${getBaseUrl()}/dev/donation?success=true`,
-        cancel_url: `${getBaseUrl()}/dev/donation?cancelled=true`,
+        return_url: `${window.location.origin}/#/dev/donation?success=true`,
+        cancel_url: `${window.location.origin}/#/dev/donation?cancelled=true`,
       },
     });
-  };
+  }, [donationType, amount, customAmount, cartState.items.length, cartState.totalAmount, t]);
 
   const onPayPalApprove = (data: any, actions: any) => {
     return actions.order.capture().then(async (details: any) => {
@@ -577,136 +749,21 @@ const Donation = () => {
     });
   };
 
-  const onPayPalError = (err: any) => {
+  const onPayPalError = useCallback((err: any) => {
     console.error("PayPal error:", err);
     alert(t("donation.form.error.payment"));
     setIsProcessingPayment(false);
-  };
+  }, [t]);
 
-  const onPayPalCancel = () => {
+  const onPayPalCancel = useCallback(() => {
     console.log("PayPal payment cancelled");
     setIsProcessingPayment(false);
-  };
+  }, []);
 
-  // PayPal Button Wrapper Component (must be inside PayPalScriptProvider)
-  const PayPalButtonWrapper = ({ 
-    createOrder, 
-    onApprove, 
-    onError, 
-    onCancel,
-    totalAmount,
-    donationType 
-  }: {
-    createOrder: (data: any, actions: any) => Promise<string>;
-    onApprove: (data: any, actions: any) => Promise<void>;
-    onError: (err: any) => void;
-    onCancel: () => void;
-    totalAmount: number;
-    donationType: string;
-  }) => {
-    const [{ isPending, isResolved, isRejected }] = usePayPalScriptReducer();
 
-    console.log("PayPal SDK Status:", { isPending, isResolved, isRejected });
-
-    if (isPending) {
-      return (
-        <div className="w-full flex items-center justify-center py-8">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-sm text-muted-foreground">Lade PayPal...</p>
-          </div>
-        </div>
-      );
-    }
-
-    if (isRejected || !isResolved) {
-      console.error("PayPal SDK failed to load", { isRejected, isResolved });
-      return (
-        <div className="w-full p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-sm text-yellow-800 mb-2">
-            PayPal konnte nicht geladen werden. Bitte versuchen Sie es erneut.
-          </p>
-          <Button 
-            onClick={() => window.location.reload()} 
-            variant="outline" 
-            size="sm"
-          >
-            Seite neu laden
-          </Button>
-        </div>
-      );
-    }
-
-    console.log("Rendering PayPal Buttons", { totalAmount, donationType });
-    
-    // Check if PayPal is actually available
-    if (typeof window !== 'undefined' && (window as any).paypal) {
-      const paypal = (window as any).paypal;
-      console.log("PayPal object:", {
-        hasPaypal: !!paypal,
-        hasButtons: !!paypal.Buttons,
-        keys: paypal ? Object.keys(paypal).slice(0, 10) : [],
-        version: paypal?.version,
-      });
-      
-      if (!paypal.Buttons) {
-        console.error("PayPal.Buttons is NOT available. PayPal object:", paypal);
-        console.error("This usually means:");
-        console.error("1. Client ID is invalid or not set");
-        console.error("2. PayPal SDK didn't load the buttons component");
-        console.error("3. Network issue loading PayPal SDK");
-      }
-    } else {
-      console.error("window.paypal is not available");
-    }
-    
-    return (
-      <div className="w-full">
-        <div className="mb-4 text-center text-sm text-muted-foreground">
-          Sie werden zu PayPal weitergeleitet, um Ihre Zahlung sicher abzuschließen.
-        </div>
-        <div id="paypal-button-container" className="w-full min-h-[200px]">
-          <PayPalButtons
-            createOrder={createOrder}
-            onApprove={onApprove}
-            onError={onError}
-            onCancel={onCancel}
-            style={{
-              layout: "vertical",
-              color: "blue",
-              shape: "rect",
-              label: "paypal",
-            }}
-            forceReRender={[totalAmount, donationType]}
-          />
-        </div>
-      </div>
-    );
-  };
-
-  // Determine base URL for PayPal return URLs
-  const getBaseUrl = () => {
-    if (import.meta.env.PROD) {
-      return "https://almabridgeofhope.org";
-    }
-    return window.location.origin;
-  };
-
-  // Debug: Log PayPal Client ID
-  console.log("PayPal Client ID configured:", !!PAYPAL_CLIENT_ID, PAYPAL_CLIENT_ID ? `${PAYPAL_CLIENT_ID.substring(0, 20)}...` : "NOT SET");
-
-  return (
-    <PayPalScriptProvider
-      options={{
-        clientId: PAYPAL_CLIENT_ID || "",
-        currency: "EUR",
-        intent: "capture",
-        components: "buttons",
-        "data-sdk-integration-source": "button-factory",
-      }}
-    >
-      <div className="min-h-screen">
-        <Navigation />
+  const content = (
+    <div className="min-h-screen">
+      <Navigation />
       
       <main className="pt-16">
         {/* 1. Hero Section */}
@@ -1414,15 +1471,15 @@ const Donation = () => {
                   </div>
 
                   {/* Payment Section */}
-                  {paymentMethod === "paypal" && isProcessingPayment && PAYPAL_CLIENT_ID ? (
-                    <PayPalButtonWrapper
-                      createOrder={createPayPalOrder}
-                      onApprove={onPayPalApprove}
-                      onError={onPayPalError}
-                      onCancel={onPayPalCancel}
-                      totalAmount={cartState.totalAmount}
-                      donationType={donationType}
-                    />
+                  {paymentMethod === "paypal" && PAYPAL_CLIENT_ID ? (
+                    <div className="w-full" key="paypal-buttons">
+                      <PayPalButtonWrapper
+                        createOrder={createPayPalOrder}
+                        onApprove={onPayPalApprove}
+                        onError={onPayPalError}
+                        onCancel={onPayPalCancel}
+                      />
+                    </div>
                   ) : (
                     <Button 
                       onClick={() => {
@@ -1655,8 +1712,28 @@ const Donation = () => {
         </AlertDialogContent>
       </AlertDialog>
     </div>
-    </PayPalScriptProvider>
   );
+
+  // Always wrap with PayPalScriptProvider if client ID is available
+  // This ensures the SDK is loaded once and stays loaded
+  if (PAYPAL_CLIENT_ID) {
+    return (
+      <PayPalScriptProvider
+        options={{
+          clientId: PAYPAL_CLIENT_ID,
+          currency: "EUR",
+          intent: "capture",
+          components: "buttons",
+          "enable-funding": "paypal",
+          "disable-funding": "card,credit,venmo,paylater",
+        }}
+      >
+        {content}
+      </PayPalScriptProvider>
+    );
+  }
+
+  return content;
 };
 
 export default Donation;
