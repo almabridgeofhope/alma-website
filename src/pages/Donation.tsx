@@ -90,10 +90,10 @@ const PayPalButtonWrapper = memo(({
 
   return (
     <div className="w-full">
-      <div className="mb-4 text-center text-sm text-muted-foreground">
+      <div className="mb-2 text-center text-sm text-muted-foreground">
         {t("paypal.redirect")}
       </div>
-      <div id="paypal-button-container" className="w-full min-h-[200px]">
+      <div id="paypal-button-container" className="w-full min-h-[50px]">
         <PayPalButtons
           createOrder={createOrder}
           onApprove={onApprove}
@@ -506,6 +506,33 @@ const Donation = () => {
     }
   };
 
+  const handlePaymentMethodClick = async (method: "paypal" | "sepa") => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setPaymentMethod(method);
+    
+    // For monthly donations, always use selected amount (no cart items)
+    // For one-time donations, use cart total if items exist, otherwise use selected amount
+    const finalAmount = donationType === "monthly"
+      ? (amount || customAmount)
+      : (cartState.items.length > 0 
+          ? cartState.totalAmount.toString() 
+          : (amount || customAmount));
+    
+    if (method === "paypal") {
+      // PayPal payment will be handled by PayPal buttons (they're already visible)
+      // No need to do anything else - buttons are already rendered
+      return;
+    }
+    
+    if (method === "sepa") {
+      // Show warning dialog first
+      setShowWarningDialog(true);
+    }
+  };
+
   const handleContinueDonation = async () => {
     console.log("=== Continue Donation ===");
     setShowWarningDialog(false);
@@ -519,21 +546,6 @@ const Donation = () => {
           : (amount || customAmount));
     console.log("Final amount:", finalAmount);
     console.log("Payment method:", paymentMethod);
-    
-    if (paymentMethod === "paypal") {
-      console.log("PayPal payment selected - PayPal buttons are already visible");
-      
-      // Check if PayPal Client ID is configured
-      if (!PAYPAL_CLIENT_ID) {
-        alert(t("paypal.error.notConfigured"));
-        console.error("PayPal Client ID not configured");
-        return;
-      }
-      
-      // PayPal payment will be handled by PayPal buttons (they're already visible)
-      // No need to set isProcessingPayment or show buttons - they're already rendered
-      return;
-    }
     
     if (paymentMethod === "sepa") {
       // Generate SEPA reference number
@@ -557,62 +569,6 @@ const Donation = () => {
         alert("Error registering donation. Please try again.");
       }
       return;
-    }
-    
-    // Handle other payment methods
-    console.log("Processing payment:", {
-      type: donationType,
-      amount: finalAmount,
-      paymentMethod,
-      formData,
-    });
-
-    // Process the donation via webhook
-    console.log("⏳ Processing donation via webhook...");
-    setIsProcessingPayment(true);
-    const result = await processDonation();
-    
-    setIsProcessingPayment(false);
-    
-    if (result.ok) {
-      alert(t("donation.form.success"));
-      // Clear shopping cart after successful payment
-      clearCart();
-      // Reset form
-      setAmount("");
-      setCustomAmount("");
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        street: "",
-        postalCode: "",
-        city: "",
-        country: "",
-        comment: "",
-        wantsReceipt: false,
-        privacyConsent: false,
-      });
-    } else {
-      // Payment was processed but webhook update failed
-      // Still show success to user, but log the error
-      console.warn("Donation received but sheet update failed:", result.message);
-      alert(t("donation.form.success") + " (Note: Update may be delayed)");
-      clearCart();
-      setAmount("");
-      setCustomAmount("");
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        street: "",
-        postalCode: "",
-        city: "",
-        country: "",
-        comment: "",
-        wantsReceipt: false,
-        privacyConsent: false,
-      });
     }
   };
 
@@ -1259,38 +1215,6 @@ const Donation = () => {
                     })()}
                   </div>
 
-                  {/* Payment Method */}
-                  <div>
-                    <Label className="text-base font-semibold">{t("donation.form.payment")}</Label>
-                    <RadioGroup 
-                      value={paymentMethod} 
-                      onValueChange={(value: "paypal" | "sepa" | "card") => setPaymentMethod(value)}
-                      className="space-y-3 mt-3"
-                    >
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                        <RadioGroupItem value="paypal" id="payment-paypal" />
-                        <Label htmlFor="payment-paypal" className="flex items-center gap-2 cursor-pointer">
-                          <CreditCard className="h-4 w-4" />
-                          {t("donation.form.paypal")}
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                        <RadioGroupItem value="sepa" id="sepa" />
-                        <Label htmlFor="sepa" className="flex items-center gap-2 cursor-pointer">
-                          <Banknote className="h-4 w-4" />
-                          {t("donation.form.sepa")}
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-muted/50">
-                        <RadioGroupItem value="card" id="card" />
-                        <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer">
-                          <CreditCard className="h-4 w-4" />
-                          {t("donation.form.card")}
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
                   {/* Personal Information */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-foreground">{t("donation.form.personalInfo")}</h3>
@@ -1425,128 +1349,106 @@ const Donation = () => {
                     </div>
                   </div>
 
-                  {/* Payment Section */}
-                  {paymentMethod === "paypal" && PAYPAL_CLIENT_ID ? (
-                    <div className="w-full" key="paypal-buttons">
-                      <PayPalButtonWrapper
-                        createOrder={createPayPalOrder}
-                        onApprove={onPayPalApprove}
-                        onError={onPayPalError}
-                        onCancel={onPayPalCancel}
-                      />
-                    </div>
-                  ) : paymentMethod === "sepa" ? (
-                    <div className="w-full space-y-4">
-                      {sepaReference ? (
-                        <Card className="p-6 bg-blue-50 border-blue-200">
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-lg font-semibold text-foreground">{t("donation.form.sepaDetails")}</h3>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={copySEPADetails}
-                                className="flex items-center gap-2"
-                              >
-                                {sepaDetailsCopied ? (
-                                  <>
-                                    <CheckCircle2 className="h-4 w-4" />
-                                    {t("donation.form.sepaCopied")}
-                                  </>
-                                ) : (
-                                  <>
-                                    <Copy className="h-4 w-4" />
-                                    {t("donation.form.sepaCopy")}
-                                  </>
-                                )}
-                              </Button>
-                            </div>
-                            <div className="space-y-2 text-sm">
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">IBAN:</span>
-                                <span className="font-mono font-semibold">{SEPA_BANK_ACCOUNT.iban}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">BIC:</span>
-                                <span className="font-mono font-semibold">{SEPA_BANK_ACCOUNT.bic}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">{t("donation.form.sepaReference")}:</span>
-                                <span className="font-mono font-semibold">{sepaReference}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Account Holder:</span>
-                                <span className="font-semibold">{SEPA_BANK_ACCOUNT.accountHolder}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Amount:</span>
-                                <span className="font-semibold text-primary">
-                                  {formatCurrency(
-                                    donationType === "monthly"
-                                      ? parseFloat(amount || customAmount || "0")
-                                      : (cartState.items.length > 0 
-                                          ? cartState.totalAmount 
-                                          : parseFloat(amount || customAmount || "0"))
-                                  )}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="pt-4 border-t">
-                              <p className="text-sm text-muted-foreground">{t("donation.form.sepaInstructions")}</p>
-                            </div>
-                            <div className="pt-2">
-                              <p className="text-sm text-muted-foreground">{t("donation.form.sepaNote")}</p>
-                            </div>
+                  {/* Payment Buttons */}
+                  {sepaReference ? (
+                    <Card className="p-6 bg-blue-50 border-blue-200">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-lg font-semibold text-foreground">{t("donation.form.sepaDetails")}</h3>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={copySEPADetails}
+                            className="flex items-center gap-2"
+                          >
+                            {sepaDetailsCopied ? (
+                              <>
+                                <CheckCircle2 className="h-4 w-4" />
+                                {t("donation.form.sepaCopied")}
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-4 w-4" />
+                                {t("donation.form.sepaCopy")}
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">IBAN:</span>
+                            <span className="font-mono font-semibold">{SEPA_BANK_ACCOUNT.iban}</span>
                           </div>
-                        </Card>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">BIC:</span>
+                            <span className="font-mono font-semibold">{SEPA_BANK_ACCOUNT.bic}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">{t("donation.form.sepaReference")}:</span>
+                            <span className="font-mono font-semibold">{sepaReference}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Account Holder:</span>
+                            <span className="font-semibold">{SEPA_BANK_ACCOUNT.accountHolder}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Amount:</span>
+                            <span className="font-semibold text-primary">
+                              {formatCurrency(
+                                donationType === "monthly"
+                                  ? parseFloat(amount || customAmount || "0")
+                                  : (cartState.items.length > 0 
+                                      ? cartState.totalAmount 
+                                      : parseFloat(amount || customAmount || "0"))
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="pt-4 border-t">
+                          <p className="text-sm text-muted-foreground">{t("donation.form.sepaInstructions")}</p>
+                        </div>
+                        <div className="pt-2">
+                          <p className="text-sm text-muted-foreground">{t("donation.form.sepaNote")}</p>
+                        </div>
+                      </div>
+                    </Card>
+                  ) : (
+                    <div className="space-y-1">
+                      {/* PayPal Button */}
+                      {PAYPAL_CLIENT_ID ? (
+                        <div className="w-full" key="paypal-buttons">
+                          <PayPalButtonWrapper
+                            createOrder={createPayPalOrder}
+                            onApprove={onPayPalApprove}
+                            onError={onPayPalError}
+                            onCancel={onPayPalCancel}
+                          />
+                        </div>
                       ) : (
                         <Button 
-                          onClick={() => {
-                            console.log("Button clicked!");
-                            handleDonate();
-                          }}
+                          onClick={() => handlePaymentMethodClick("paypal")}
                           size="lg"
                           className="w-full h-12"
                           disabled={isProcessingPayment}
+                          variant="default"
                         >
-                          {donationType === "one-time" 
-                            ? t("donation.form.donate") 
-                            : t("donation.form.donate_monthly")}
+                          <CreditCard className="h-5 w-5 mr-2" />
+                          {t("donation.form.paypal")}
                         </Button>
                       )}
-                    </div>
-                  ) : paymentMethod === "card" ? (
-                    <div className="w-full p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {t("donation.form.cardNote")}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Bitte verwende PayPal für Kreditkartenzahlungen. PayPal unterstützt auch Zahlungen ohne PayPal-Konto.
-                      </p>
+                      
+                      {/* SEPA Button */}
                       <Button 
-                        onClick={() => setPaymentMethod("paypal")}
+                        onClick={() => handlePaymentMethodClick("sepa")}
+                        size="lg"
+                        className="w-full h-12"
+                        disabled={isProcessingPayment}
                         variant="outline"
-                        className="mt-4"
                       >
-                        Zu PayPal wechseln
+                        <Banknote className="h-5 w-5 mr-2" />
+                        {t("donation.form.sepa")}
                       </Button>
                     </div>
-                  ) : (
-                    <Button 
-                      onClick={() => {
-                        console.log("Button clicked!");
-                        handleDonate();
-                      }}
-                      size="lg"
-                      className="w-full h-12"
-                      disabled={isProcessingPayment || (paymentMethod === "paypal" && !PAYPAL_CLIENT_ID)}
-                    >
-                      {paymentMethod === "paypal" && !PAYPAL_CLIENT_ID
-                        ? "PayPal nicht konfiguriert"
-                        : donationType === "one-time" 
-                          ? t("donation.form.donate") 
-                          : t("donation.form.donate_monthly")}
-                    </Button>
                   )}
                 </div>
               </Card>
@@ -1776,7 +1678,7 @@ const Donation = () => {
           intent: "capture",
           components: "buttons",
           "enable-funding": "paypal",
-          "disable-funding": "card,credit,venmo,paylater",
+          "disable-funding": "card,credit,venmo,paylater,sepa",
         }}
       >
         {content}
