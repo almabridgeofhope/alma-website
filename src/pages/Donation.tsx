@@ -22,17 +22,17 @@ import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { donationWebhookService } from "@/services/donationWebhookService";
 import heroImage from "@/assets/nature/nature_2.jpg";
 import communityImage from "@/assets/community/community_2.png";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 
 // PayPal Configuration
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
 
 // SEPA Bank Account Configuration
 const SEPA_BANK_ACCOUNT = {
-  iban: import.meta.env.VITE_SEPA_IBAN || "DE89 3704 0044 0532 0130 00", // Example - replace with your IBAN
-  bic: import.meta.env.VITE_SEPA_BIC || "COBADEFFXXX", // Example - replace with your BIC
-  accountHolder: import.meta.env.VITE_SEPA_ACCOUNT_HOLDER || "Alma Bridge of Hope e.V.", // Example - replace with your account holder name
-  bankName: import.meta.env.VITE_SEPA_BANK_NAME || "Commerzbank", // Example - replace with your bank name
+  iban: import.meta.env.VITE_SEPA_IBAN || "DE22672300004014594213",
+  bic: import.meta.env.VITE_SEPA_BIC || "MLPBDE61XXX", 
+  accountHolder: import.meta.env.VITE_SEPA_ACCOUNT_HOLDER || "Aaron Immanuel Hesser",
+  bankName: import.meta.env.VITE_SEPA_BANK_NAME || "MLP Banking"
 };
 
 // Generate SEPA reference number
@@ -142,6 +142,7 @@ const Donation = () => {
     comment: "",
     wantsReceipt: false,
     privacyConsent: false,
+    wantsNewsletter: false,
   });
 
   const predefinedAmounts = [10, 25, 50, 100];
@@ -506,70 +507,12 @@ const Donation = () => {
     }
   };
 
-  const handlePaymentMethodClick = async (method: "paypal" | "sepa") => {
+  const handlePaymentMethodClick = async () => {
     if (!validateForm()) {
       return;
     }
-
-    setPaymentMethod(method);
-    
-    // For monthly donations, always use selected amount (no cart items)
-    // For one-time donations, use cart total if items exist, otherwise use selected amount
-    const finalAmount = donationType === "monthly"
-      ? (amount || customAmount)
-      : (cartState.items.length > 0 
-          ? cartState.totalAmount.toString() 
-          : (amount || customAmount));
-    
-    if (method === "paypal") {
-      // PayPal payment will be handled by PayPal buttons (they're already visible)
-      // No need to do anything else - buttons are already rendered
-      return;
-    }
-    
-    if (method === "sepa") {
-      // Show warning dialog first
-      setShowWarningDialog(true);
-    }
-  };
-
-  const handleContinueDonation = async () => {
-    console.log("=== Continue Donation ===");
-    setShowWarningDialog(false);
-    
-    // For monthly donations, always use selected amount (no cart items)
-    // For one-time donations, use cart total if items exist, otherwise use selected amount
-    const finalAmount = donationType === "monthly"
-      ? (amount || customAmount)
-      : (cartState.items.length > 0 
-          ? cartState.totalAmount.toString() 
-          : (amount || customAmount));
-    console.log("Final amount:", finalAmount);
-    console.log("Payment method:", paymentMethod);
-    
-    if (paymentMethod === "sepa") {
-      // Generate SEPA reference number
-      const donorName = `${formData.firstName} ${formData.lastName}`;
-      const amountNum = parseFloat(finalAmount);
-      const timestamp = new Date().toISOString();
-      const reference = generateSEPAReference(donorName, amountNum, timestamp);
-      setSepaReference(reference);
-      
-      // Process the donation via webhook (mark as pending until payment received)
-      console.log("⏳ Processing SEPA donation via webhook...");
-      setIsProcessingPayment(true);
-      const result = await processDonation(reference);
-      setIsProcessingPayment(false);
-      
-      if (result.ok) {
-        // Don't show success alert yet - user needs to complete transfer
-        // The SEPA details will be shown in the UI
-      } else {
-        console.warn("SEPA donation registration failed:", result.message);
-        alert("Error registering donation. Please try again.");
-      }
-      return;
-    }
+    // PayPal payment will be handled by PayPal buttons (they're already visible)
+    // No need to do anything else - buttons are already rendered
   };
 
   const copySEPADetails = () => {
@@ -591,17 +534,32 @@ const Donation = () => {
   const createPayPalOrder = useCallback((data: any, actions: any) => {
     // For monthly donations, always use selected amount (no cart items)
     // For one-time donations, use cart total if items exist, otherwise use selected amount
-    const finalAmount = donationType === "monthly"
-      ? (amount || customAmount)
-      : (cartState.items.length > 0 
-          ? cartState.totalAmount.toString() 
-          : (amount || customAmount));
+    let finalAmount: number;
+    
+    if (donationType === "monthly") {
+      finalAmount = parseFloat(amount || customAmount || "0");
+    } else {
+      if (cartState.items.length > 0) {
+        finalAmount = cartState.totalAmount;
+      } else {
+        finalAmount = parseFloat(amount || customAmount || "0");
+      }
+    }
+    
+    // Ensure we have a valid amount (minimum 0.01 EUR)
+    if (isNaN(finalAmount) || finalAmount <= 0) {
+      console.error("Invalid amount for PayPal order:", finalAmount);
+      throw new Error("Invalid donation amount. Please enter a valid amount.");
+    }
+    
+    // Format amount to 2 decimal places for PayPal
+    const formattedAmount = finalAmount.toFixed(2);
     
     return actions.order.create({
       purchase_units: [{
         amount: {
           currency_code: "EUR",
-          value: finalAmount,
+          value: formattedAmount,
         },
         description: `${donationType === "one-time" ? t("donation.form.oneTime") : t("donation.form.monthly")} donation to Alma Bridge of Hope`,
         custom_id: `${donationType}-${Date.now()}`,
@@ -616,48 +574,136 @@ const Donation = () => {
     });
   }, [donationType, amount, customAmount, cartState.items.length, cartState.totalAmount, t]);
 
-  const onPayPalApprove = (data: any, actions: any) => {
-    return actions.order.capture().then(async (details: any) => {
-      console.log("=== PayPal Payment Completed ===");
-      console.log("PayPal details:", details);
-      
-      // Get PayPal transaction ID
-      const paymentId = details.id || details.purchase_units?.[0]?.payments?.captures?.[0]?.id;
-      console.log("PayPal transaction ID:", paymentId);
-      
-      // Process the donation via webhook
-      console.log("⏳ Processing donation via webhook...");
-      const result = await processDonation(paymentId);
-      
-      setIsProcessingPayment(false);
-      
-      if (result.ok) {
-        alert(t("donation.form.success"));
-      } else {
-        // Payment was successful but webhook update failed
-        console.warn("PayPal payment successful but sheet update failed:", result.message);
-        alert(t("donation.form.success") + " (Note: Update may be delayed)");
-      }
-      
-      // Clear shopping cart after successful payment
-      clearCart();
-      
-      // Reset form
-      setAmount("");
-      setCustomAmount("");
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        street: "",
-        postalCode: "",
-        city: "",
-        country: "",
-        comment: "",
-        wantsReceipt: false,
-        privacyConsent: false,
+  // Function to subscribe to newsletter
+  const subscribeToNewsletter = async (email: string) => {
+    const endpoint = import.meta.env.VITE_NEWSLETTER_ENDPOINT as string | undefined;
+    
+    if (!endpoint) {
+      console.warn("Newsletter endpoint not configured");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('email', email);
+      formData.append('source', 'donation-form');
+
+      await fetch(endpoint, {
+        method: "POST",
+        body: formData,
+        mode: 'no-cors',
       });
-    });
+      
+      console.log("Newsletter subscription successful for:", email);
+    } catch (err) {
+      console.error("Newsletter subscription failed:", err);
+      // Don't show error to user - donation was successful
+    }
+  };
+
+  const onPayPalApprove = (data: any, actions: any) => {
+    console.log("=== PayPal Payment Approved ===");
+    console.log("PayPal data:", data);
+    console.log("PayPal actions:", actions);
+    
+    // Check if this is a SEPA payment
+    // SEPA payments can be detected by checking the payment source or funding source
+    const paymentSource = data.paymentSource || data.payment_source;
+    const fundingSource = data.fundingSource || data.funding_source;
+    const isSEPAPayment = !!(paymentSource?.sepa_debit || fundingSource === 'sepa' || data.paymentMethod === 'sepa');
+    
+    console.log("Payment source:", paymentSource);
+    console.log("Funding source:", fundingSource);
+    console.log("Is SEPA payment:", isSEPAPayment);
+    
+    // For SEPA payments, try to capture but handle timeout/async nature
+    // SEPA payments may not be immediately capturable
+    const handlePayment = async () => {
+      try {
+        let details: any;
+        let paymentId: string;
+        
+        if (isSEPAPayment) {
+          // For SEPA, try to capture but it might take time
+          // Use order ID if capture is not immediately available
+          console.log("SEPA payment detected - attempting capture...");
+          
+          try {
+            // Try to capture with a timeout
+            details = await Promise.race([
+              actions.order.capture(),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error("Capture timeout")), 10000)
+              )
+            ]) as any;
+            
+            paymentId = details.id || details.purchase_units?.[0]?.payments?.captures?.[0]?.id || data.orderID;
+            console.log("SEPA payment captured:", paymentId);
+          } catch (captureError) {
+            // If capture times out or fails, use order ID
+            console.log("Capture not immediately available, using order ID");
+            paymentId = data.orderID;
+            details = { id: paymentId, status: 'PENDING' };
+          }
+        } else {
+          // For regular PayPal payments, capture normally
+          details = await actions.order.capture();
+          paymentId = details.id || details.purchase_units?.[0]?.payments?.captures?.[0]?.id;
+          console.log("PayPal payment captured:", paymentId);
+        }
+        
+        console.log("=== PayPal Payment Completed ===");
+        console.log("PayPal details:", details);
+        console.log("PayPal transaction ID:", paymentId);
+        
+        // Process the donation via webhook
+        console.log("⏳ Processing donation via webhook...");
+        const result = await processDonation(paymentId);
+        
+        setIsProcessingPayment(false);
+        
+        // Subscribe to newsletter if requested
+        if (formData.wantsNewsletter && formData.email) {
+          await subscribeToNewsletter(formData.email);
+        }
+        
+        if (result.ok) {
+          const successMessage = isSEPAPayment 
+            ? t("donation.form.success") + "\n\nHinweis: Die SEPA-Zahlung wird in den nächsten Tagen von Ihrem Konto abgebucht."
+            : t("donation.form.success");
+          alert(successMessage);
+        } else {
+          console.warn("Donation processing failed:", result.message);
+          alert(t("donation.form.success") + " (Note: Update may be delayed)");
+        }
+        
+        // Clear shopping cart after successful payment
+        clearCart();
+        
+        // Reset form
+        setAmount("");
+        setCustomAmount("");
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          street: "",
+          postalCode: "",
+          city: "",
+          country: "",
+          comment: "",
+          wantsReceipt: false,
+          privacyConsent: false,
+          wantsNewsletter: false,
+        });
+      } catch (error) {
+        console.error("Error processing PayPal payment:", error);
+        setIsProcessingPayment(false);
+        alert(t("donation.form.error.payment"));
+      }
+    };
+    
+    return handlePayment();
   };
 
   const onPayPalError = useCallback((err: any) => {
@@ -1344,112 +1390,60 @@ const Donation = () => {
                         className="mt-1"
                       />
                       <Label htmlFor="privacyConsent" className="text-sm leading-relaxed">
-                        {t("donation.form.privacyConsent")}
+                        {t("donation.form.privacyConsent")}{" "}
+                        <Link 
+                          to="/dev/privacy" 
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {t("donation.form.privacyPolicy")}
+                        </Link>{" "}
+                        {t("donation.form.privacyConsentEnd")}
                       </Label>
                     </div>
                   </div>
 
-                  {/* Payment Buttons */}
-                  {sepaReference ? (
-                    <Card className="p-6 bg-blue-50 border-blue-200">
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-semibold text-foreground">{t("donation.form.sepaDetails")}</h3>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={copySEPADetails}
-                            className="flex items-center gap-2"
-                          >
-                            {sepaDetailsCopied ? (
-                              <>
-                                <CheckCircle2 className="h-4 w-4" />
-                                {t("donation.form.sepaCopied")}
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="h-4 w-4" />
-                                {t("donation.form.sepaCopy")}
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">IBAN:</span>
-                            <span className="font-mono font-semibold">{SEPA_BANK_ACCOUNT.iban}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">BIC:</span>
-                            <span className="font-mono font-semibold">{SEPA_BANK_ACCOUNT.bic}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">{t("donation.form.sepaReference")}:</span>
-                            <span className="font-mono font-semibold">{sepaReference}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Account Holder:</span>
-                            <span className="font-semibold">{SEPA_BANK_ACCOUNT.accountHolder}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Amount:</span>
-                            <span className="font-semibold text-primary">
-                              {formatCurrency(
-                                donationType === "monthly"
-                                  ? parseFloat(amount || customAmount || "0")
-                                  : (cartState.items.length > 0 
-                                      ? cartState.totalAmount 
-                                      : parseFloat(amount || customAmount || "0"))
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="pt-4 border-t">
-                          <p className="text-sm text-muted-foreground">{t("donation.form.sepaInstructions")}</p>
-                        </div>
-                        <div className="pt-2">
-                          <p className="text-sm text-muted-foreground">{t("donation.form.sepaNote")}</p>
-                        </div>
+                  {/* Newsletter Subscription */}
+                  <div className="space-y-4">
+                    <div className="flex items-start space-x-2">
+                      <Checkbox
+                        id="wantsNewsletter"
+                        checked={formData.wantsNewsletter}
+                        onCheckedChange={(checked) => handleInputChange("wantsNewsletter", checked as boolean)}
+                        className="mt-1"
+                      />
+                      <Label htmlFor="wantsNewsletter" className="text-sm leading-relaxed">
+                        {t("donation.form.wantsNewsletter")}
+                      </Label>
+                    </div>
+                  </div>
+
+                  {/* Payment Buttons - PayPal with SEPA option */}
+                  <div className="w-full">
+                    {PAYPAL_CLIENT_ID ? (
+                      <div className="w-full" key="paypal-buttons">
+                        <PayPalButtonWrapper
+                          createOrder={createPayPalOrder}
+                          onApprove={onPayPalApprove}
+                          onError={onPayPalError}
+                          onCancel={onPayPalCancel}
+                        />
                       </div>
-                    </Card>
-                  ) : (
-                    <div className="space-y-1">
-                      {/* PayPal Button */}
-                      {PAYPAL_CLIENT_ID ? (
-                        <div className="w-full" key="paypal-buttons">
-                          <PayPalButtonWrapper
-                            createOrder={createPayPalOrder}
-                            onApprove={onPayPalApprove}
-                            onError={onPayPalError}
-                            onCancel={onPayPalCancel}
-                          />
-                        </div>
-                      ) : (
-                        <Button 
-                          onClick={() => handlePaymentMethodClick("paypal")}
-                          size="lg"
-                          className="w-full h-12"
-                          disabled={isProcessingPayment}
-                          variant="default"
-                        >
-                          <CreditCard className="h-5 w-5 mr-2" />
-                          {t("donation.form.paypal")}
-                        </Button>
-                      )}
-                      
-                      {/* SEPA Button */}
+                    ) : (
                       <Button 
-                        onClick={() => handlePaymentMethodClick("sepa")}
+                        onClick={handlePaymentMethodClick}
                         size="lg"
                         className="w-full h-12"
                         disabled={isProcessingPayment}
-                        variant="outline"
+                        variant="default"
                       >
-                        <Banknote className="h-5 w-5 mr-2" />
-                        {t("donation.form.sepa")}
+                        <CreditCard className="h-5 w-5 mr-2" />
+                        {t("donation.form.paypal")}
                       </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </Card>
             </div>
@@ -1658,7 +1652,7 @@ const Donation = () => {
             <AlertDialogCancel onClick={() => setShowWarningDialog(false)}>
               {t("donation.warning.cancel")}
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleContinueDonation}>
+            <AlertDialogAction onClick={() => setShowWarningDialog(false)}>
               {t("donation.warning.continue")}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1677,8 +1671,8 @@ const Donation = () => {
           currency: "EUR",
           intent: "capture",
           components: "buttons",
-          "enable-funding": "paypal",
-          "disable-funding": "card,credit,venmo,paylater,sepa",
+          "enable-funding": "paypal,sepa",
+          "disable-funding": "card,credit,venmo,paylater",
         }}
       >
         {content}
