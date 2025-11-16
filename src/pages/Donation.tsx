@@ -549,7 +549,23 @@ const Donation = () => {
       finalAmount = parseFloat(amount || customAmount || "0");
     } else {
       if (cartState.items.length > 0) {
+        // Use cart total, but validate it and fallback to calculating from items if needed
         finalAmount = cartState.totalAmount;
+        
+        // If totalAmount is invalid, calculate from items
+        if (isNaN(finalAmount) || finalAmount <= 0) {
+          const calculatedTotal = cartState.items.reduce((sum, item) => {
+            const itemTotal = item.totalPrice || (item.unitPrice * (item.quantity || 1));
+            return sum + (isNaN(itemTotal) ? 0 : itemTotal);
+          }, 0);
+          
+          if (!isNaN(calculatedTotal) && calculatedTotal > 0) {
+            finalAmount = calculatedTotal;
+          } else {
+            // Last resort: try to use amount/customAmount
+            finalAmount = parseFloat(amount || customAmount || "0");
+          }
+        }
       } else {
         finalAmount = parseFloat(amount || customAmount || "0");
       }
@@ -557,7 +573,21 @@ const Donation = () => {
     
     // Ensure we have a valid amount (minimum 0.01 EUR)
     if (isNaN(finalAmount) || finalAmount <= 0) {
-      console.error("Invalid amount for PayPal order:", finalAmount);
+      console.error("Invalid amount for PayPal order:", {
+        finalAmount,
+        donationType,
+        amount,
+        customAmount,
+        cartItemsCount: cartState.items.length,
+        cartTotalAmount: cartState.totalAmount,
+        cartItems: cartState.items.map(item => ({
+          id: item.id,
+          type: item.type,
+          totalPrice: item.totalPrice,
+          unitPrice: item.unitPrice,
+          quantity: item.quantity
+        }))
+      });
       throw new Error("Invalid donation amount. Please enter a valid amount.");
     }
     
@@ -581,7 +611,7 @@ const Donation = () => {
         cancel_url: `${window.location.origin}/#/dev/donation?cancelled=true`,
       },
     });
-  }, [donationType, amount, customAmount, cartState.items.length, cartState.totalAmount, t]);
+  }, [donationType, amount, customAmount, cartState.items, cartState.totalAmount, t]);
 
   // Function to subscribe to newsletter
   const subscribeToNewsletter = async (email: string) => {
