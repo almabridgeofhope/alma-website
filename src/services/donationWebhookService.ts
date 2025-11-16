@@ -20,6 +20,15 @@ export interface DonationData {
   donorName?: string;
   timestamp?: string;
   paymentId?: string; // PayPal transaction ID or SEPA reference
+  wantsReceipt?: boolean; // Whether donor wants a donation receipt (Spendenbescheid)
+  address?: {
+    street?: string;
+    postalCode?: string;
+    city?: string;
+    country?: string;
+  };
+  wantsNewsletter?: boolean; // Whether donor wants to receive news about projects
+  comment?: string; // Optional comment from donor
 }
 
 export interface WebhookResponse {

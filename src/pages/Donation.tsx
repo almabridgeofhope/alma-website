@@ -487,6 +487,15 @@ const Donation = () => {
           ? `${formData.firstName} ${formData.lastName}` 
           : undefined,
         paymentId: paymentId,
+        wantsReceipt: formData.wantsReceipt,
+        address: formData.wantsReceipt ? {
+          street: formData.street || undefined,
+          postalCode: formData.postalCode || undefined,
+          city: formData.city || undefined,
+          country: formData.country || undefined,
+        } : undefined,
+        wantsNewsletter: formData.wantsNewsletter,
+        comment: formData.comment || undefined,
       });
 
       if (result.ok) {
