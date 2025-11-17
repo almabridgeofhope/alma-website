@@ -433,6 +433,40 @@ const translations = {
     "donation.contact.email": "info@almabridgeofhope.org",
     "donation.contact.button": "Contact Us",
     
+    // Donation Success Page
+    "donation.success.title": "Thank You for Your Generous Donation!",
+    "donation.success.subtitle": "Your support makes a real difference in the lives of people in Namaliri.",
+    "donation.success.confirmation.title": "Donation Confirmed",
+    "donation.success.confirmation.message": "Your donation has been successfully processed.",
+    "donation.success.confirmation.amount": "Donation Amount",
+    "donation.success.confirmation.type": "Donation Type",
+    "donation.success.confirmation.transactionId": "Transaction ID",
+    "donation.success.confirmation.email": "A confirmation email with your donation receipt will be sent to your email address shortly.",
+    "donation.success.impact.title": "Your Impact",
+    "donation.success.impact.subtitle": "Here's how your donation is making a difference:",
+    "donation.success.impact.water.title": "Clean Water Access",
+    "donation.success.impact.water.desc": "Your donation helps provide clean, safe water to communities in need.",
+    "donation.success.impact.education.title": "Education & Training",
+    "donation.success.impact.education.desc": "Supporting educational programs that build skills and create opportunities.",
+    "donation.success.impact.community.title": "Community Development",
+    "donation.success.impact.community.desc": "Building sustainable infrastructure that empowers local communities.",
+    "donation.success.share.title": "Spread the Word",
+    "donation.success.share.subtitle": "Help us reach more people by sharing your support:",
+    "donation.success.share.copyLink": "Copy Link",
+    "donation.success.share.copied": "Link Copied!",
+    "donation.success.quote.text": "Every donation, no matter the size, helps us build bridges of hope that transform lives.",
+    "donation.success.quote.author": "– Alma Bridge of Hope Team",
+    "donation.success.nextSteps.title": "What's Next?",
+    "donation.success.nextSteps.subtitle": "Stay connected and see the impact of your support:",
+    "donation.success.nextSteps.newsletter.title": "Stay Updated",
+    "donation.success.nextSteps.newsletter.desc": "Subscribe to our newsletter to receive updates about our projects and impact.",
+    "donation.success.nextSteps.newsletter.button": "Subscribe to Newsletter",
+    "donation.success.nextSteps.projects.title": "See Our Projects",
+    "donation.success.nextSteps.projects.desc": "Explore our current projects and see how your donation is being used.",
+    "donation.success.nextSteps.projects.button": "View Projects",
+    "donation.success.nextSteps.donateAgain": "Make Another Donation",
+    "donation.success.nextSteps.home": "Back to Home",
+    
     // Donation Warning
     "donation.warning.title": "Testing Mode",
     "donation.warning.message": "This donation system is currently in testing mode and not fully set up yet. No actual payments will be processed. This is for demonstration purposes only.",
@@ -1058,6 +1092,40 @@ const translations = {
     "donation.contact.email": "info@almabridgeofhope.org",
     "donation.contact.button": "Kontakt aufnehmen",
     
+    // Donation Success Page
+    "donation.success.title": "Vielen Dank für deine großzügige Spende!",
+    "donation.success.subtitle": "Deine Unterstützung macht einen echten Unterschied im Leben der Menschen in Namaliri.",
+    "donation.success.confirmation.title": "Spende bestätigt",
+    "donation.success.confirmation.message": "Deine Spende wurde erfolgreich verarbeitet.",
+    "donation.success.confirmation.amount": "Spendenbetrag",
+    "donation.success.confirmation.type": "Spendenart",
+    "donation.success.confirmation.transactionId": "Transaktions-ID",
+    "donation.success.confirmation.email": "Eine Bestätigungs-E-Mail mit deiner Spendenquittung wird in Kürze an deine E-Mail-Adresse gesendet.",
+    "donation.success.impact.title": "Dein Impact",
+    "donation.success.impact.subtitle": "So macht deine Spende einen Unterschied:",
+    "donation.success.impact.water.title": "Zugang zu sauberem Wasser",
+    "donation.success.impact.water.desc": "Deine Spende hilft, sauberes, sicheres Wasser für bedürftige Gemeinden bereitzustellen.",
+    "donation.success.impact.education.title": "Bildung & Training",
+    "donation.success.impact.education.desc": "Unterstützung von Bildungsprogrammen, die Fähigkeiten aufbauen und Chancen schaffen.",
+    "donation.success.impact.community.title": "Gemeindeentwicklung",
+    "donation.success.impact.community.desc": "Aufbau nachhaltiger Infrastruktur, die lokale Gemeinden stärkt.",
+    "donation.success.share.title": "Verbreite die Nachricht",
+    "donation.success.share.subtitle": "Hilf uns, mehr Menschen zu erreichen, indem du deine Unterstützung teilst:",
+    "donation.success.share.copyLink": "Link kopieren",
+    "donation.success.share.copied": "Link kopiert!",
+    "donation.success.quote.text": "Jede Spende, egal wie groß, hilft uns, Brücken der Hoffnung zu bauen, die Leben verändern.",
+    "donation.success.quote.author": "– Alma Bridge of Hope Team",
+    "donation.success.nextSteps.title": "Was kommt als Nächstes?",
+    "donation.success.nextSteps.subtitle": "Bleib verbunden und sieh den Impact deiner Unterstützung:",
+    "donation.success.nextSteps.newsletter.title": "Bleib informiert",
+    "donation.success.nextSteps.newsletter.desc": "Abonniere unseren Newsletter, um Updates zu unseren Projekten und dem Impact zu erhalten.",
+    "donation.success.nextSteps.newsletter.button": "Newsletter abonnieren",
+    "donation.success.nextSteps.projects.title": "Sieh unsere Projekte",
+    "donation.success.nextSteps.projects.desc": "Erkunde unsere aktuellen Projekte und sieh, wie deine Spende verwendet wird.",
+    "donation.success.nextSteps.projects.button": "Projekte ansehen",
+    "donation.success.nextSteps.donateAgain": "Weitere Spende tätigen",
+    "donation.success.nextSteps.home": "Zur Startseite",
+    
     // Donation Warning
     "donation.warning.title": "Testmodus",
     "donation.warning.message": "Dieses Spendensystem befindet sich derzeit im Testmodus und ist noch nicht vollständig eingerichtet. Es werden keine tatsächlichen Zahlungen verarbeitet. Dies dient nur zu Demonstrationszwecken.",
@@ -1336,10 +1404,13 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
 
   // Memoized translation function
   const t = useCallback((key: string): string => {
-    const translation = translations[language][key as keyof typeof translations.en];
+    const langTranslations = translations[language];
+    const translation = langTranslations[key as keyof typeof langTranslations];
     if (!translation) {
       console.warn(`Translation missing for key: ${key} in language: ${language}`);
-      return key;
+      // Fallback to English if translation is missing
+      const enTranslation = translations.en[key as keyof typeof translations.en];
+      return enTranslation || key;
     }
     return translation;
   }, [language]);
