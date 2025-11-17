@@ -1613,6 +1613,12 @@ export const ProjectItemsModal = ({
                       return false;
                     }
                     
+                    // Case 3: Currently viewing a completed phase - no warning needed
+                    if (currentActivePhase && currentActivePhase.isCompleted) {
+                      console.log('❌ Currently viewing a completed phase - no warning needed');
+                      return false;
+                    }
+                    
                     // Get the maximum purchasable phase index
                     const purchasableIndicesArray = Array.from(purchasablePhaseIndices);
                     if (purchasableIndicesArray.length === 0) {
@@ -1623,6 +1629,7 @@ export const ProjectItemsModal = ({
                     console.log('maxPurchasableIndex:', maxPurchasableIndex);
                     console.log('activePhaseIndex:', activePhaseIndex);
                     console.log('Is active phase purchasable?', purchasablePhaseIndices.has(activePhaseIndex));
+                    console.log('Is active phase completed?', currentActivePhase?.isCompleted);
                     
                     // NEW: Only show warning if the user is currently viewing a NON-purchasable phase
                     // This way the warning only appears when relevant
