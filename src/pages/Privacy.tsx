@@ -58,6 +58,20 @@ const Privacy = () => {
                 </div>
               </section>
 
+              {/* Google Analytics */}
+              <section>
+                <h2 className="text-2xl font-semibold text-foreground mb-4">
+                  {t("privacy.analytics.title")}
+                </h2>
+                <div className="space-y-4 text-muted-foreground">
+                  <p>{t("privacy.analytics.description")}</p>
+                  <p>{t("privacy.analytics.data_collected")}</p>
+                  <p>{t("privacy.analytics.purpose")}</p>
+                  <p><strong>{t("privacy.analytics.legal_basis")}</strong> {t("privacy.analytics.legal_basis_text")}</p>
+                  <p>{t("privacy.analytics.more_info")} <a href="https://policies.google.com/privacy" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">{t("privacy.analytics.link_text")}</a>.</p>
+                </div>
+              </section>
+
               {/* PayPal Donations */}
               <section>
                 <h2 className="text-2xl font-semibold text-foreground mb-4">
