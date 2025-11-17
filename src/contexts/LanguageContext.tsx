@@ -285,9 +285,15 @@ const translations = {
     "privacy.analytics.data_collected": "Google Analytics uses cookies and similar technologies to analyze how visitors use our website. This includes information such as pages visited, time spent on pages, and navigation paths. Your IP address is anonymized before transmission to Google.",
     "privacy.analytics.purpose": "We use this data to understand how visitors interact with our website, which helps us improve our content and user experience.",
     "privacy.analytics.legal_basis": "Legal basis:",
-    "privacy.analytics.legal_basis_text": "Art. 6 para. 1 lit. f GDPR (legitimate interest in website optimization).",
+    "privacy.analytics.legal_basis_text": "Art. 6 para. 1 lit. a GDPR (consent).",
     "privacy.analytics.more_info": "For more information about how Google processes data, please see Google's privacy policy",
     "privacy.analytics.link_text": "here",
+    "privacy.analytics.consent": "We use Google Consent Mode v2 to ensure GDPR compliance. Analytics data is only collected after you have given your consent via our cookie banner. You can withdraw your consent at any time.",
+    "privacy.analytics.changeSettings": "Change Cookie Settings",
+    "cookieBanner.description": "We use cookies and similar technologies to analyze website usage. By clicking 'Accept', you consent to the use of analytics cookies. For more information, see our",
+    "cookieBanner.privacyLink": "Privacy Policy",
+    "cookieBanner.accept": "Accept All",
+    "cookieBanner.reject": "Reject All",
     "privacy.paypal.title": "Donation Processing via PayPal",
     "privacy.paypal.description": "For processing donation payments, we use PayPal (PayPal Europe S.à r.l. et Cie, S.C.A., Luxembourg).",
     "privacy.paypal.data_transfer": "When you donate via the PayPal button, personal data (e.g., name, email, payment information) is transmitted to PayPal.",
@@ -963,9 +969,15 @@ const translations = {
     "privacy.analytics.data_collected": "Google Analytics verwendet Cookies und ähnliche Technologien, um zu analysieren, wie Besucher unsere Website nutzen. Dies umfasst Informationen wie besuchte Seiten, Verweildauer auf Seiten und Navigationspfade. Deine IP-Adresse wird vor der Übertragung an Google anonymisiert.",
     "privacy.analytics.purpose": "Wir nutzen diese Daten, um zu verstehen, wie Besucher mit unserer Website interagieren, was uns hilft, unsere Inhalte und das Nutzererlebnis zu verbessern.",
     "privacy.analytics.legal_basis": "Rechtsgrundlage:",
-    "privacy.analytics.legal_basis_text": "Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der Website-Optimierung).",
+    "privacy.analytics.legal_basis_text": "Art. 6 Abs. 1 lit. a DSGVO (Einwilligung).",
     "privacy.analytics.more_info": "Weitere Informationen zur Datenverarbeitung durch Google findest du in der Datenschutzerklärung von Google",
     "privacy.analytics.link_text": "hier",
+    "privacy.analytics.consent": "Wir nutzen Google Consent Mode v2, um die DSGVO-Konformität sicherzustellen. Analysedaten werden nur nach deiner Einwilligung über unser Cookie-Banner erfasst. Du kannst deine Einwilligung jederzeit widerrufen.",
+    "privacy.analytics.changeSettings": "Cookie-Einstellungen ändern",
+    "cookieBanner.description": "Wir verwenden Cookies und ähnliche Technologien, um die Website-Nutzung zu analysieren. Durch Klicken auf 'Akzeptieren' stimmst du der Verwendung von Analyse-Cookies zu. Weitere Informationen findest du in unserer",
+    "cookieBanner.privacyLink": "Datenschutzerklärung",
+    "cookieBanner.accept": "Alle akzeptieren",
+    "cookieBanner.reject": "Alle ablehnen",
     "privacy.paypal.title": "Spendenabwicklung über PayPal",
     "privacy.paypal.description": "Zur Abwicklung von Spendenzahlungen nutzen wir PayPal (PayPal Europe S.à r.l. et Cie, S.C.A., Luxemburg).",
     "privacy.paypal.data_transfer": "Wenn du über den PayPal-Button spendest, werden personenbezogene Daten (z. B. Name, E-Mail, Zahlungsinformationen) an PayPal übermittelt.",
@@ -1425,13 +1437,17 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   // Memoized translation function
   const t = useCallback((key: string): string => {
     const langTranslations = translations[language];
+    // Check if key exists in translations (even if value is empty string)
+    const hasTranslation = key in langTranslations;
     const translation = langTranslations[key as keyof typeof langTranslations];
-    if (!translation) {
+    
+    if (!hasTranslation) {
       console.warn(`Translation missing for key: ${key} in language: ${language}`);
       // Fallback to English if translation is missing
       const enTranslation = translations.en[key as keyof typeof translations.en];
       return enTranslation || key;
     }
+    // Return translation even if it's an empty string (intentional)
     return translation;
   }, [language]);
 

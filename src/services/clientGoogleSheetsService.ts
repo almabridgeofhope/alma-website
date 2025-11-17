@@ -52,16 +52,7 @@ export class ClientGoogleSheetsService {
     // Spaltenreihenfolge: item_id, project, phase, phasede, category, categoryde, display_name, displaynamede, unit_cost_UGX, unit_cost_EUR, qty_needed_total, qty_funded, priority, blurb, blurbde, visibility, sort_order, funded
     this.range = import.meta.env.VITE_GOOGLE_SHEET_RANGE || 'A:R';
     
-    // Debug logging (only in development)
-    if (import.meta.env.DEV) {
-      console.log('Google Sheets Service initialized:', {
-        apiKeyConfigured: !!this.apiKey,
-        apiKeyLength: this.apiKey.length,
-        sheetId: this.sheetId,
-        range: this.range,
-        envVarExists: !!import.meta.env.VITE_GOOGLE_API_KEY
-      });
-    }
+    // Debug logging removed to reduce console noise
   }
 
   async getProjectCosts(): Promise<ProjectCost[]> {

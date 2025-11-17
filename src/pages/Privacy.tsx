@@ -1,6 +1,8 @@
 import { useLanguage } from "@/contexts/LanguageContext";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { showCookieBanner } from "@/components/CookieBanner";
+import { Button } from "@/components/ui/button";
 
 const Privacy = () => {
   const { t } = useLanguage();
@@ -68,7 +70,21 @@ const Privacy = () => {
                   <p>{t("privacy.analytics.data_collected")}</p>
                   <p>{t("privacy.analytics.purpose")}</p>
                   <p><strong>{t("privacy.analytics.legal_basis")}</strong> {t("privacy.analytics.legal_basis_text")}</p>
+                  <p>{t("privacy.analytics.consent")}</p>
                   <p>{t("privacy.analytics.more_info")} <a href="https://policies.google.com/privacy" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">{t("privacy.analytics.link_text")}</a>.</p>
+                  <div className="mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        showCookieBanner();
+                        // Scroll to top to show the banner
+                        window.scrollTo({ top: 0, behavior: "smooth" });
+                      }}
+                    >
+                      {t("privacy.analytics.changeSettings")}
+                    </Button>
+                  </div>
                 </div>
               </section>
 

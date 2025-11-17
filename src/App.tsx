@@ -8,6 +8,7 @@ import { ShoppingCartProvider } from "@/contexts/ShoppingCartContext";
 import { CartSidebar } from "@/components/CartSidebar";
 import Navigation from "@/components/Navigation";
 import ScrollToTop from "@/components/ScrollToTop";
+import CookieBanner from "@/components/CookieBanner";
 import Index from "./pages/Index";
 import Team from "./pages/Team";
 import Projects from "./pages/Projects";
@@ -37,6 +38,7 @@ const AppContent = () => {
   return (
     <>
       <ScrollToTop />
+      <CookieBanner />
       <Navigation />
       <Routes>
         <Route path="/" element={<Index />} />
@@ -66,7 +68,12 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          <BrowserRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
             <AppContent />
           </BrowserRouter>
         </TooltipProvider>

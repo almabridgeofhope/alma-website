@@ -52,12 +52,7 @@ class DonationWebhookService {
     // Get webhook URL from environment variable
     this.webhookUrl = import.meta.env.VITE_DONATION_WEBHOOK_URL || '';
     
-    if (import.meta.env.DEV) {
-      console.log('Donation Webhook Service initialized:', {
-        webhookUrlConfigured: !!this.webhookUrl,
-        webhookUrl: this.webhookUrl ? `${this.webhookUrl.substring(0, 50)}...` : 'not set'
-      });
-    }
+    // Debug logging removed to reduce console noise
   }
 
   /**

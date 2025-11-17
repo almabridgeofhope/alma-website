@@ -25,13 +25,29 @@
     <meta name="twitter:site" content="@almabridge" />
     <meta name="twitter:image" content="https://almabridge.org/og-image.jpg" />
 
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7N715MSVLZ"></script>
+    <!-- Google Consent Mode v2 - Initialize before gtag.js -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
+      
+      // Set default consent state to 'denied' for EEA users
+      // This ensures compliance with GDPR before user consent
+      gtag('consent', 'default', {
+        'analytics_storage': 'denied',
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'wait_for_update': 500
+      });
+    </script>
+    
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7N715MSVLZ"></script>
+    <script>
       gtag('js', new Date());
-      gtag('config', 'G-7N715MSVLZ');
+      gtag('config', 'G-7N715MSVLZ', {
+        'anonymize_ip': true
+      });
     </script>
   </head>
 
