@@ -1278,7 +1278,7 @@ export const ProjectItemsModal = ({
             />
             {/* Drawer - extends over full height of dialog */}
             <div className="absolute right-0 top-0 bottom-0 w-full sm:w-96 max-w-[90vw] bg-muted/40 border-l-2 border-border shadow-2xl z-50 flex flex-col min-h-0 transform transition-transform duration-300 ease-out translate-x-0">
-              <CartInline basePath="/dev" onClose={() => setShowCartDrawer(false)} className="rounded-none border-0 shadow-none h-full" />
+              <CartInline basePath="" onClose={() => setShowCartDrawer(false)} className="rounded-none border-0 shadow-none h-full" />
             </div>
           </>
         )}
@@ -1458,9 +1458,18 @@ export const ProjectItemsModal = ({
                       {phaseGroups.map((phaseGroup, index) => {
                         const isActive = index === activePhaseIndex;
                         const isCompleted = phaseGroup.isCompleted;
-                        const isPast = index < activePhaseIndex;
+                        // A phase is "past" if it's completed OR if it's before the active phase AND completed
+                        // But we should only mark as past if it's actually completed, not just before active
+                        const isPast = isCompleted && index < activePhaseIndex;
                         const phaseName = getPhaseNameTranslated(phaseGroup.phase);
                         const isPurchasable = purchasablePhaseIndices.has(index);
+                        
+                        // Determine if this phase should be grayed out (same logic as warnings)
+                        // Only gray out if: not completed, not purchasable, and after purchasable phases
+                        const shouldGrayOut = !isCompleted && !isPurchasable && 
+                          firstIncompletePhaseIndex !== -1 && 
+                          purchasablePhaseIndices.size > 0 && 
+                          index > Math.max(...Array.from(purchasablePhaseIndices));
                         
                         return (
                           <div key={phaseGroup.phase} className="flex items-center flex-shrink-0 min-w-[100px]">
@@ -1481,12 +1490,14 @@ export const ProjectItemsModal = ({
                                     w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all flex-shrink-0
                                     ${isCompleted 
                                       ? 'bg-green-500 border-green-600 shadow-lg' 
-                                      : isActive 
-                                        ? 'bg-primary border-primary shadow-lg ring-2 ring-primary/20' 
-                                        : isPast
-                                          ? 'bg-gray-300 border-gray-400'
-                                          : !isPurchasable
-                                            ? 'bg-gray-100 border-gray-200 opacity-60'
+                                      : shouldGrayOut
+                                        ? 'bg-gray-100 border-gray-200 opacity-60'
+                                        : isPurchasable
+                                          ? isActive
+                                            ? 'bg-primary border-primary shadow-lg ring-2 ring-primary/20'
+                                            : 'bg-primary/10 border-primary shadow-sm'
+                                          : isPast
+                                            ? 'bg-gray-300 border-gray-400'
                                             : 'bg-gray-200 border-gray-300'
                                     }
                                   `}>
@@ -1494,9 +1505,33 @@ export const ProjectItemsModal = ({
                                       <CheckCircle className="w-5 h-5 text-white" />
                                     ) : (
                                       <div className={`w-5 h-5 flex items-center justify-center ${
-                                        !isPurchasable ? 'text-gray-400 opacity-60' : 'text-white'
+                                        shouldGrayOut 
+                                          ? 'text-gray-400 opacity-60' 
+                                          : isPurchasable 
+                                            ? 'text-primary' 
+                                            : 'text-white'
                                       }`}>
-                                        {getPhaseIcon(phaseGroup.phase)}
+                                        {(() => {
+                                          const icon = getPhaseIcon(phaseGroup.phase);
+                                          // Clone the icon and override its color and size classes
+                                          if (icon && icon.props) {
+                                            const originalClassName = icon.props.className || '';
+                                            let iconColor = 'text-white';
+                                            if (shouldGrayOut) {
+                                              iconColor = 'text-gray-400';
+                                            } else if (isPurchasable) {
+                                              iconColor = 'text-primary';
+                                            }
+                                            const newClassName = originalClassName
+                                              .replace('text-primary', '')
+                                              .replace('w-8 h-8', 'w-5 h-5')
+                                              + ' ' + iconColor;
+                                            return React.cloneElement(icon, {
+                                              className: newClassName.trim()
+                                            });
+                                          }
+                                          return icon;
+                                        })()}
                                       </div>
                                     )}
                                   </div>
@@ -2059,7 +2094,7 @@ export const ProjectItemsModal = ({
                   </span>
                 </div>
                 <Link 
-                  to={`/dev/donation?project=${encodeURIComponent(projectCost.projectName)}`}
+                  to={`/donation?project=${encodeURIComponent(projectCost.projectName)}`}
                   onClick={() => {
                     closeCart();
                     onClose();
@@ -2291,7 +2326,7 @@ export const ProjectItemsModal = ({
                   </span>
                 </Button>
                 {showCartDrawer && (
-                  <Link to="/dev/donation" onClick={() => { closeCart(); setShowCartDrawer(false); }}>
+                  <Link to="/donation" onClick={() => { closeCart(); setShowCartDrawer(false); }}>
                     <Button 
                       size="sm"
                       variant="outline"
