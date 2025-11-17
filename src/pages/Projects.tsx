@@ -116,8 +116,8 @@ const Projects = () => {
   const anchorClasses = "text-primary underline underline-offset-4";
   const schoolAccessUrl = "/projects?section=school-access";
   const youngMobilityUrl = "/projects?section=young-mobility";
-  const anchorHref = `#/${schoolAccessUrl}`;
-  const mobilityAnchorHref = `#/${youngMobilityUrl}`;
+  const anchorHref = `/${schoolAccessUrl}`;
+  const mobilityAnchorHref = `/${youngMobilityUrl}`;
   const germanTarget = t("projects.mobility.target.de");
   const englishTarget = t("projects.mobility.target.en");
 

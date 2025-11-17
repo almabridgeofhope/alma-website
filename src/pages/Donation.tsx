@@ -693,8 +693,8 @@ const Donation = () => {
         brand_name: "Alma Bridge of Hope",
         landing_page: "LOGIN",
         user_action: "PAY_NOW",
-        return_url: `${window.location.origin}/#/donation?success=true`,
-        cancel_url: `${window.location.origin}/#/donation?cancelled=true`,
+        return_url: `${window.location.origin}/donation?success=true`,
+        cancel_url: `${window.location.origin}/donation?cancelled=true`,
       },
     });
   }, [donationType, amount, customAmount, cartState.items, cartState.totalAmount, t, language, formData]);
