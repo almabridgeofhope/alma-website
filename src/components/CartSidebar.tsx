@@ -224,8 +224,12 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
         closeCart();
       }
       
-      // Navigate to projects page with phase hash to show phase in overview
-      navigate(`/projects#${encodeURIComponent(item.phase)}`);
+      // Extract itemId from cart item id (format: "item-{itemId}")
+      const itemId = item.id.replace('item-', '');
+      
+      // Navigate to projects page with phase hash and itemId to scroll to specific item
+      // Use replace: false to trigger hash change detection in modal
+      navigate(`/projects?itemId=${encodeURIComponent(itemId)}#${encodeURIComponent(item.phase)}`, { replace: false });
     } else {
       // For items without phase, just navigate to projects
       navigate('/projects');
