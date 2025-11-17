@@ -48,9 +48,9 @@ export class ClientGoogleSheetsService {
     // Environment variables from .env(.local)
     this.apiKey = import.meta.env.VITE_GOOGLE_API_KEY || '';
     this.sheetId = import.meta.env.VITE_GOOGLE_SHEET_ID || '1qCbZyPujr6_iZVNWSnM5aqMOX0tzamDJO2vMOulV514';
-    // e.g. "Tabelle1!A:S" or "Sheet1!A:S". Falls nicht gesetzt, alle Spalten bis S (inkl. deutsche Übersetzungen).
-    // Spaltenreihenfolge: item_id, project, phase, phasede, category, categoryde, display_name, displaynamede, unit, unit_cost_UGX, unit_cost_EUR, qty_needed_total, qty_funded, priority, blurb, blurbde, image_url, visibility, sort_order
-    this.range = import.meta.env.VITE_GOOGLE_SHEET_RANGE || 'A:S';
+    // e.g. "Tabelle1!A:R" or "Sheet1!A:R". Falls nicht gesetzt, alle Spalten bis R (inkl. deutsche Übersetzungen).
+    // Spaltenreihenfolge: item_id, project, phase, phasede, category, categoryde, display_name, displaynamede, unit_cost_UGX, unit_cost_EUR, qty_needed_total, qty_funded, priority, blurb, blurbde, visibility, sort_order, funded
+    this.range = import.meta.env.VITE_GOOGLE_SHEET_RANGE || 'A:R';
     
     // Debug logging (only in development)
     if (import.meta.env.DEV) {
@@ -114,12 +114,13 @@ export class ClientGoogleSheetsService {
       }
 
       // Parse the detailed cost tracking data
-      // Structure: [item_id, project, phase, phasede, category, categoryde, display_name, displaynamede, unit, unit_cost_UGX, unit_cost_EUR, qty_needed_total, qty_funded, priority, blurb, blurbde, image_url, visibility, sort_order]
+      // Structure: [item_id, project, phase, phasede, category, categoryde, display_name, displaynamede, unit_cost_UGX, unit_cost_EUR, qty_needed_total, qty_funded, priority, blurb, blurbde, visibility, sort_order, funded]
       const allProjectItems: ProjectItem[] = rows.slice(1).map((row: any[]) => {
-        const unitCostEUR = parseFloat(row[10]?.toString().replace(',', '.') || '0');
-        const qtyNeededTotal = parseFloat(row[11]?.toString().replace(',', '.') || '0');
-        const qtyFunded = parseFloat(row[12]?.toString().replace(',', '.') || '0');
-        const visibility = row[17]?.toString().toLowerCase() || '';
+        const unitCostEUR = parseFloat(row[9]?.toString().replace(',', '.') || '0');
+        const qtyNeededTotal = parseFloat(row[10]?.toString().replace(',', '.') || '0');
+        const qtyFunded = parseFloat(row[11]?.toString().replace(',', '.') || '0');
+        const visibility = row[15]?.toString().toLowerCase() || '';
+        const funded = row[17]?.toString().toLowerCase() || '';
         
         return {
           itemId: row[0] || '',
@@ -127,24 +128,24 @@ export class ClientGoogleSheetsService {
           phase: row[2] || '',
           category: row[4] || '',
           displayName: row[6] || '',
-          unit: row[8] || '',
-          unitCostUGX: parseFloat(row[9]?.toString().replace(',', '.') || '0'),
+          unit: 'Stück', // Default unit since it's no longer in the table
+          unitCostUGX: parseFloat(row[8]?.toString().replace(',', '.') || '0'),
           unitCostEUR: unitCostEUR,
           qtyNeededTotal: qtyNeededTotal,
           qtyFunded: qtyFunded,
-          priority: row[13] || '',
-          blurb: row[14] || '',
-          imageUrl: row[16] || '',
+          priority: row[12] || '',
+          blurb: row[13] || '',
+          imageUrl: '', // No longer in table, set to empty
           visibility: visibility,
-          sortOrder: parseFloat(row[18]?.toString() || '0'),
-          purchased: qtyFunded >= qtyNeededTotal, // Item is purchased if fully funded
+          sortOrder: parseFloat(row[16]?.toString() || '0'),
+          purchased: funded === 'true' || funded === '1' || qtyFunded >= qtyNeededTotal, // Use funded column or fallback to quantity check
           totalCostEUR: unitCostEUR * qtyNeededTotal,
           fundedCostEUR: unitCostEUR * qtyFunded,
           // German translations (optional - fallback to English if not provided)
           phaseDe: row[3]?.toString().trim() || undefined,
           displayNameDe: row[7]?.toString().trim() || undefined,
           categoryDe: row[5]?.toString().trim() || undefined,
-          blurbDe: row[15]?.toString().trim() || undefined
+          blurbDe: row[14]?.toString().trim() || undefined
         };
       });
 
