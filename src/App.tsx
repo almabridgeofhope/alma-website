@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, Navigate, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ShoppingCartProvider } from "@/contexts/ShoppingCartContext";
 import { CartSidebar } from "@/components/CartSidebar";
@@ -22,6 +23,23 @@ import DonationSuccess from "./pages/DonationSuccess";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+// Component to handle 404 redirects from GitHub Pages
+const Handle404Redirect = () => {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Check if we have a stored redirect path from 404.html
+    const redirectPath = sessionStorage.getItem('404-redirect-path');
+    if (redirectPath) {
+      sessionStorage.removeItem('404-redirect-path');
+      // Navigate to the stored path
+      navigate(redirectPath, { replace: true });
+    }
+  }, [navigate]);
+  
+  return null;
+};
 
 // Redirect component for /dev/* routes
 const DevRedirect = () => {
@@ -74,6 +92,7 @@ const App = () => (
               v7_relativeSplatPath: true,
             }}
           >
+            <Handle404Redirect />
             <AppContent />
           </BrowserRouter>
         </TooltipProvider>

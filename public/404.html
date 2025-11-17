@@ -24,11 +24,57 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@almabridge" />
     <meta name="twitter:image" content="https://almabridge.org/og-image.jpg" />
+
+    <!-- Google Consent Mode v2 - Initialize before gtag.js -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      
+      // Set default consent state to 'denied' for EEA users
+      // This ensures compliance with GDPR before user consent
+      gtag('consent', 'default', {
+        'analytics_storage': 'denied',
+        'ad_storage': 'denied',
+        'ad_user_data': 'denied',
+        'ad_personalization': 'denied',
+        'wait_for_update': 500
+      });
+    </script>
+    
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7N715MSVLZ"></script>
+    <script>
+      gtag('js', new Date());
+      gtag('config', 'G-7N715MSVLZ', {
+        'anonymize_ip': true
+      });
+    </script>
+
+    <!-- SPA Routing Fix for GitHub Pages -->
+    <script>
+      // Single Page Apps for GitHub Pages
+      // This script redirects 404 pages to index.html while preserving the path
+      // The path is stored in sessionStorage and will be restored by the main app
+      (function() {
+        var path = window.location.pathname;
+        var search = window.location.search;
+        var hash = window.location.hash;
+        var fullPath = path + search + hash;
+        
+        // Store the original path in sessionStorage
+        sessionStorage.setItem('404-redirect-path', fullPath);
+        
+        // Redirect to index.html
+        window.location.replace('/index.html');
+      })();
+    </script>
   </head>
 
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="root">
+      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: Inter, sans-serif;">
+        <p>Redirecting...</p>
+      </div>
+    </div>
   </body>
 </html>
-
