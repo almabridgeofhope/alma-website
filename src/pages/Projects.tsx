@@ -352,7 +352,7 @@ const Projects = () => {
           <div className={`grid md:grid-cols-2 gap-0 ${!isEven ? 'md:grid-flow-dense' : ''}`}>
             {/* Image Section */}
             <div 
-              className={`relative overflow-hidden h-full min-h-[400px] md:min-h-[500px] ${!isEven ? 'md:col-start-2' : ''}`}
+              className={`relative overflow-hidden h-full min-h-[350px] md:min-h-[450px] ${!isEven ? 'md:col-start-2' : ''}`}
             >
               <OptimizedImage
                 src={project.image} 
@@ -363,8 +363,8 @@ const Projects = () => {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-800/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="absolute inset-x-0 bottom-0">
-                <div className="bg-gradient-to-t from-slate-800/85 via-slate-700/65 to-transparent px-4 sm:px-6 py-4 sm:py-5 text-white backdrop-blur-[2px] pointer-events-auto">
-                  <div className="flex flex-col gap-3 sm:gap-4 z-10 relative">
+                <div className="bg-gradient-to-t from-slate-800/85 via-slate-700/65 to-transparent px-4 sm:px-6 py-3 sm:py-4 text-white backdrop-blur-[2px] pointer-events-auto">
+                  <div className="flex flex-col gap-2 sm:gap-3 z-10 relative">
                     <div className="flex flex-wrap items-center gap-2">
                       {timelinePhases.map((phase, phaseIndex) => {
                         const isActive = phaseIndex === currentPhaseIndex;
@@ -419,8 +419,8 @@ const Projects = () => {
                     <div className="relative">
                       {costsLoading ? (
                         // Show empty cost container skeleton while loading
-                        <div className="min-h-[120px]">
-                          <div className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-4 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors animate-pulse">
+                        <div className="min-h-[100px]">
+                          <div className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-3 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors animate-pulse">
                             <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                               <div className="flex-1 min-w-[140px]">
                                 <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
@@ -441,7 +441,7 @@ const Projects = () => {
                                 <div className="h-5 bg-gray-200 rounded mt-1 w-20" />
                               </div>
                             </div>
-                            <div className="mt-4 flex flex-col gap-3">
+                            <div className="mt-3 flex flex-col gap-2">
                               <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500">
                                 <span>{costProgressLabel}</span>
                                 <div className="h-4 bg-gray-200 rounded w-12" />
@@ -458,9 +458,9 @@ const Projects = () => {
                           </div>
                         </div>
                       ) : projectCost ? (
-                        <div className="min-h-[120px]">
+                        <div className="min-h-[100px]">
                           <div 
-                            className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-4 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors cursor-pointer hover:bg-white/95"
+                            className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-3 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors cursor-pointer hover:bg-white/95"
                             onClick={(e) => {
                               // Don't trigger if clicking on the button itself
                               if ((e.target as HTMLElement).closest('button')) {
@@ -495,7 +495,7 @@ const Projects = () => {
                             </p>
                           </div>
                         </div>
-                        <div className="mt-4 flex flex-col gap-3">
+                        <div className="mt-3 flex flex-col gap-2">
                           <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500">
                             <span>{costProgressLabel}</span>
                             <span className="text-slate-900">{detailedProgressLabel}</span>
@@ -539,10 +539,10 @@ const Projects = () => {
             </div>
 
             {/* Content Section */}
-            <div className="p-4 sm:p-6 md:p-8 lg:p-10 flex flex-col justify-between">
+            <div className="p-4 sm:p-5 md:p-6 lg:p-8 flex flex-col justify-between">
               <div>
                 {/* Header with Icon */}
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-3">
                   <div className="p-3 bg-primary/10 rounded-xl group-hover:bg-primary/20 transition-colors duration-300">
                     <Icon className="w-8 h-8 text-primary" />
                   </div>
@@ -557,19 +557,19 @@ const Projects = () => {
                 </div>
                 
                 {/* Description */}
-                <p className="text-sm sm:text-base text-muted-foreground mb-6 leading-relaxed">
+                <p className="text-sm sm:text-base text-muted-foreground mb-4 leading-relaxed">
                   {project.descriptionNode ?? project.description}
                 </p>
 
                 {/* Two Column Layout: Goals & Impact */}
-                <div className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-6">
+                <div className="grid md:grid-cols-2 gap-4 sm:gap-6 mb-3">
                   {/* Goals */}
                   <div>
-                    <h4 className="text-base sm:text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <h4 className="text-base sm:text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
                       <span className="w-1 h-6 bg-primary rounded-full" />
                       {t("projects.goals")}
                     </h4>
-                    <ul className="space-y-2">
+                    <ul className="space-y-1.5">
                       {project.goals.map((goal, i) => (
                         <li key={i} className="flex items-start gap-2 text-xs sm:text-sm text-muted-foreground">
                           <span className="text-primary text-sm sm:text-lg mt-0.5 flex-shrink-0">•</span>
@@ -581,7 +581,7 @@ const Projects = () => {
 
                   {/* Impact */}
                   <div>
-                    <h4 className="text-base sm:text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <h4 className="text-base sm:text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
                       <span className="w-1 h-6 bg-primary rounded-full" />
                       {t("projects.impact_label")}
                     </h4>

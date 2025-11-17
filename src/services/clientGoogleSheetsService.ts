@@ -207,23 +207,27 @@ export class ClientGoogleSheetsService {
   async getProjectCostByName(projectName: string): Promise<ProjectCost | null> {
     const allCosts = await this.getProjectCosts();
     
+    // Normalize project name for comparison
+    const normalizedProjectName = projectName.toLowerCase().trim();
+    
     // Try exact match first
     let projectCost = allCosts.find(cost => 
-      cost.projectName.toLowerCase() === projectName.toLowerCase()
+      cost.projectName.toLowerCase().trim() === normalizedProjectName
     );
     
-    // If no exact match, try partial matches
+    // If no exact match, try partial matches (either direction)
     if (!projectCost) {
-      projectCost = allCosts.find(cost => 
-        cost.projectName.toLowerCase().includes(projectName.toLowerCase()) ||
-        projectName.toLowerCase().includes(cost.projectName.toLowerCase())
-      );
+      projectCost = allCosts.find(cost => {
+        const costNameLower = cost.projectName.toLowerCase().trim();
+        return costNameLower.includes(normalizedProjectName) ||
+               normalizedProjectName.includes(costNameLower);
+      });
     }
     
     // If still no match, try common project name mappings
     if (!projectCost) {
       const nameMappings: { [key: string]: string[] } = {
-        'community': ['community house', 'community', 'haus', 'house'],
+        'community': ['community house', 'community', 'haus', 'house', 'building the community', 'bau des community'],
         'well': ['brunnen', 'well', 'wasser', 'water'],
         'livestock': ['vieh', 'livestock', 'ziegen', 'goats', 'agriculture'],
         'mobility': ['bus', 'mobility', 'transport', 'verkehr'],
@@ -231,20 +235,23 @@ export class ClientGoogleSheetsService {
         'financial': ['financial', 'finanz', 'money', 'geld']
       };
       
-      const normalizedProjectName = projectName.toLowerCase();
       for (const [key, variations] of Object.entries(nameMappings)) {
+        // Check if the project name contains any variation
         if (variations.some(variation => normalizedProjectName.includes(variation))) {
-          projectCost = allCosts.find(cost => 
-            variations.some(variation => 
-              cost.projectName.toLowerCase().includes(variation)
-            )
-          );
+          // Find a cost that matches any of the variations
+          projectCost = allCosts.find(cost => {
+            const costNameLower = cost.projectName.toLowerCase().trim();
+            // Check if the cost name contains any of the variations
+            return variations.some(variation => 
+              costNameLower.includes(variation) || variation.includes(costNameLower)
+            );
+          });
           if (projectCost) break;
         }
       }
     }
     
-    console.log(`Looking for project "${projectName}", found:`, projectCost);
+    console.log(`Looking for project "${projectName}", found:`, projectCost ? projectCost.projectName : 'null');
     return projectCost || null;
   }
 }
