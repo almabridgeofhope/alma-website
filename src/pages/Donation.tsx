@@ -1041,7 +1041,9 @@ const Donation = () => {
                         </div>
                         <div className="text-right">
                           <div className="text-sm text-muted-foreground">{t("donation.form.total")}</div>
-                          <div className="text-xl font-bold text-primary">{formatCurrency(cartState.totalAmount)}</div>
+                          <div className="text-xl font-bold text-primary">
+                            {formatCurrency(cartState.totalAmount)}
+                          </div>
                         </div>
                       </div>
 
@@ -1340,7 +1342,9 @@ const Donation = () => {
                             <div className="p-4 bg-green-50 border border-green-200 rounded-md">
                               <div className="flex items-center justify-between">
                                 <span className="text-sm text-green-700 font-medium">{t("donation.form.totalAmount")}</span>
-                                <span className="text-xl font-bold text-green-700">{formatCurrency(cartState.totalAmount)}</span>
+                                <span className="text-xl font-bold text-green-700">
+                                  {formatCurrency(cartState.totalAmount)}
+                                </span>
                               </div>
                             </div>
                             {!addingGeneralDonation && !editingGeneralDonation && (
@@ -1797,6 +1801,14 @@ const Donation = () => {
                   </AccordionTrigger>
                   <AccordionContent className="text-muted-foreground">
                     {t("donation.faq.a4")}
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="item-5" className="border rounded-lg px-6">
+                  <AccordionTrigger className="text-left">
+                    {t("donation.faq.q5")}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">
+                    {t("donation.faq.a5")}
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
