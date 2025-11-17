@@ -480,7 +480,7 @@ const translations = {
     "projectItems.unrestrictedDonation.add": "Add to Cart",
     "projectItems.unrestrictedDonation.added": "Added",
     "projectItems.unrestrictedDonation.edit": "Edit Amount",
-    "projectItems.unrestrictedDonation.button": "Choose Amount",
+    "projectItems.unrestrictedDonation.button": "Choose free Amount",
     "projectItems.nextImportant.explanation": "This item is displayed based on the current construction phase and what needs to be implemented next. However, you can also support any other future item or make a flexible donation – we will then use your donation where it is most urgently needed.",
     "projectItems.addAllOpen": "Add all open items",
     "projectItems.addAllOpenTooltip": "Adds all {count} unfunded items of this phase to the cart",
@@ -497,6 +497,9 @@ const translations = {
     "projectItems.nextItem": "Next Item",
     "projectItems.addOne": "Add 1x",
     "projectItems.allItems": "Items",
+    "projectItems.phaseNotAvailable.title": "Phase not yet available",
+    "projectItems.phaseNotAvailable.description": "Only the next two donation phases are available for purchase. Later phases will become available as previous phases are completed.",
+    "projectItems.phaseNotAvailable.itemDisabled": "This item is in a later phase and will become available for donation once earlier phases are completed.",
     
     // Cart Sidebar
     "cart.inline.title": "Cart",
@@ -1141,7 +1144,7 @@ const translations = {
     "projectItems.unrestrictedDonation.add": "Zum Warenkorb",
     "projectItems.unrestrictedDonation.added": "Hinzugefügt",
     "projectItems.unrestrictedDonation.edit": "Betrag bearbeiten",
-    "projectItems.unrestrictedDonation.button": "Betrag wählen",
+    "projectItems.unrestrictedDonation.button": "Freien Betrag wählen",
     "projectItems.nextImportant.explanation": "Dieser Posten wird basierend auf dem aktuellen Bauabschnitt und dem, was als Nächstes umgesetzt werden muss, angezeigt. Du kannst aber auch jeden anderen späteren Posten unterstützen oder flexibel spenden – dann setzen wir deine Spende dort ein, wo sie gerade am dringendsten benötigt wird.",
     "projectItems.addAllOpen": "Alle offenen Items hinzufügen",
     "projectItems.addAllOpenTooltip": "Fügt alle {count} noch nicht finanzierten Items dieser Phase zum Warenkorb hinzu",
@@ -1158,6 +1161,9 @@ const translations = {
     "projectItems.nextItem": "Nächstes Item",
     "projectItems.addOne": "1x hinzufügen",
     "projectItems.allItems": "Items",
+    "projectItems.phaseNotAvailable.title": "Phase noch nicht verfügbar",
+    "projectItems.phaseNotAvailable.description": "Nur die nächsten zwei Spendenphasen sind kaufbar. Spätere Phasen werden verfügbar, sobald vorherige Phasen abgeschlossen sind.",
+    "projectItems.phaseNotAvailable.itemDisabled": "Dieses Item befindet sich in einer späteren Phase und wird verfügbar, sobald frühere Phasen abgeschlossen sind.",
     
     // Cart Sidebar
     "cart.inline.title": "Warenkorb",

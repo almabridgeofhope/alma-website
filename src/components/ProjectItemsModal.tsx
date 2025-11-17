@@ -447,6 +447,10 @@ export const ProjectItemsModal = ({
 
   // Ensure cart is visible when adding items
   const addItemPieceWithCartOpen = (item: ProjectItem) => {
+    // Only allow adding items from purchasable phases
+    if (!isItemPurchasable(item)) {
+      return;
+    }
     addItemPiece(item, projectCost.projectName);
     // Auto-open cart drawer when adding first item
     if (cartState.totalItems === 0) {
@@ -584,6 +588,10 @@ export const ProjectItemsModal = ({
   };
 
   const addPhaseToCart = (phaseGroup: any) => {
+    // Only allow adding phases that are purchasable
+    if (!isPhasePurchasable(phaseGroup.phase)) {
+      return;
+    }
     addItem({
       id: `phase-${phaseGroup.phase}`,
       type: 'phase',
@@ -643,6 +651,41 @@ export const ProjectItemsModal = ({
   // Separate active and completed phases
   const activePhases = phaseGroups.filter(phase => !phase.isCompleted);
   const completedPhases = phaseGroups.filter(phase => phase.isCompleted);
+  
+  // Find the first incomplete phase index (the current active phase)
+  const firstIncompletePhaseIndex = phaseGroups.findIndex(phase => !phase.isCompleted);
+  
+  // Determine which phases are purchasable: only the next 2 phases (including the current one)
+  // If all phases are completed, allow all phases
+  const getPurchasablePhaseIndices = (): Set<number> => {
+    const purchasableIndices = new Set<number>();
+    
+    if (firstIncompletePhaseIndex === -1) {
+      // All phases completed - allow all phases
+      phaseGroups.forEach((_, index) => purchasableIndices.add(index));
+    } else {
+      // Allow the first incomplete phase and the next 2 phases (max 2 phases total)
+      const maxPurchasableIndex = Math.min(firstIncompletePhaseIndex + 1, phaseGroups.length - 1);
+      for (let i = firstIncompletePhaseIndex; i <= maxPurchasableIndex; i++) {
+        purchasableIndices.add(i);
+      }
+    }
+    
+    return purchasableIndices;
+  };
+  
+  const purchasablePhaseIndices = getPurchasablePhaseIndices();
+  
+  // Helper function to check if a phase is purchasable
+  const isPhasePurchasable = (phase: string): boolean => {
+    const phaseIndex = phaseGroups.findIndex(pg => pg.phase === phase);
+    return phaseIndex !== -1 && purchasablePhaseIndices.has(phaseIndex);
+  };
+  
+  // Helper function to check if an item is purchasable
+  const isItemPurchasable = (item: ProjectItem): boolean => {
+    return isPhasePurchasable(item.phase);
+  };
   
   // Find the first incomplete phase index for initial active phase
   useEffect(() => {
@@ -781,6 +824,7 @@ export const ProjectItemsModal = ({
     const remainingPieces = item.qtyNeededTotal - item.qtyFunded - cartQuantity;
     const isCompact = viewStyle === 'compact';
     const progressPercent = getProgressPercentage(item);
+    const itemPurchasable = isItemPurchasable(item);
     
     if (isCompact) {
       // Modern compact card view - no longer table-like
@@ -792,6 +836,7 @@ export const ProjectItemsModal = ({
           className={`group p-4 transition-all hover:shadow-md ${
             isNextImportant ? 'ring-2 ring-orange-500 ring-offset-2 bg-gradient-to-r from-orange-50 to-orange-50/50 border-orange-300' : ''
           } ${
+            !itemPurchasable && !isFullyComplete ? 'bg-gray-50/50 border-gray-300 opacity-75' :
             isFullyComplete ? 'bg-green-50/80 border-green-200' : 
             cartQuantity > 0 ? 'bg-primary-light/20 border-primary/30' : 
             item.qtyFunded > 0 ? 'bg-green-50/30 border-green-200/50' : 
@@ -906,15 +951,24 @@ export const ProjectItemsModal = ({
               </span>
                     </div>
                     {!isFullyComplete && (
-              <Button
-                size="sm"
-                        variant="outline"
-                onClick={() => addItemPieceWithCartOpen(item)}
-                disabled={remainingPieces === 0}
-                        className="h-8 w-8 p-0 disabled:opacity-30"
-              >
-                        <Plus className="w-4 h-4" />
-              </Button>
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                            variant="outline"
+                    onClick={() => addItemPieceWithCartOpen(item)}
+                    disabled={remainingPieces === 0 || !itemPurchasable}
+                            className="h-8 w-8 p-0 disabled:opacity-30"
+                  >
+                            <Plus className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                {!itemPurchasable && !isFullyComplete && (
+                  <TooltipContent className="z-[9999] max-w-xs" side="top" sideOffset={5}>
+                    <p className="text-sm">{t("projectItems.phaseNotAvailable.itemDisabled")}</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
                     )}
             </div>
           </div>
@@ -922,15 +976,24 @@ export const ProjectItemsModal = ({
                 /* Add to Cart Button - when no items in cart */
                 !isFullyComplete && (
                   <div className="flex justify-end w-full">
-                    <Button
-                      size="sm"
-                      onClick={() => addItemPieceWithCartOpen(item)}
-                      disabled={remainingPieces === 0}
-                      className="h-9 px-4 bg-primary hover:bg-primary/90 text-white font-semibold disabled:opacity-30"
-                    >
-                      <ShoppingCart className="w-4 h-4 mr-1.5" />
-                      {t("projectItems.addToCart")}
-                    </Button>
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          onClick={() => addItemPieceWithCartOpen(item)}
+                          disabled={remainingPieces === 0 || !itemPurchasable}
+                          className="h-9 px-4 bg-primary hover:bg-primary/90 text-white font-semibold disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <ShoppingCart className="w-4 h-4 mr-1.5" />
+                          {t("projectItems.addToCart")}
+                        </Button>
+                      </TooltipTrigger>
+                      {!itemPurchasable && !isFullyComplete && (
+                        <TooltipContent className="z-[9999] max-w-xs" side="top" sideOffset={5}>
+                          <p className="text-sm">{t("projectItems.phaseNotAvailable.itemDisabled")}</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
                   </div>
                 )
               )}
@@ -962,6 +1025,7 @@ export const ProjectItemsModal = ({
           className={`p-5 transition-all hover:shadow-xl flex flex-col h-full border-2 ${
             isNextImportant ? 'ring-2 ring-orange-500 ring-offset-2 bg-gradient-to-br from-orange-50 to-orange-50/50 border-orange-400 shadow-lg' : ''
           } ${
+            !itemPurchasable && !isFullyComplete ? 'bg-gradient-to-br from-gray-50/50 to-gray-50/30 border-gray-300 opacity-75' :
             isFullyComplete ? 'bg-gradient-to-br from-green-50 to-green-50/50 border-green-300' : 
             cartQuantity > 0 ? 'bg-gradient-to-br from-primary-light/30 to-primary-light/10 border-primary/40' : 
             item.qtyFunded > 0 ? 'bg-gradient-to-br from-green-50/40 to-green-50/20 border-green-200' : 
@@ -1081,30 +1145,48 @@ export const ProjectItemsModal = ({
                   </span>
                 </div>
                 {!isFullyComplete && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => addItemPieceWithCartOpen(item)}
-                  disabled={remainingPieces === 0}
-                    className="h-9 w-9 p-0 disabled:opacity-30"
-                >
-                    <Plus className="w-4 h-4" />
-                </Button>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => addItemPieceWithCartOpen(item)}
+                      disabled={remainingPieces === 0 || !itemPurchasable}
+                        className="h-9 w-9 p-0 disabled:opacity-30"
+                    >
+                        <Plus className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  {!itemPurchasable && !isFullyComplete && (
+                    <TooltipContent className="z-[9999] max-w-xs" side="top" sideOffset={5}>
+                      <p className="text-sm">{t("projectItems.phaseNotAvailable.itemDisabled")}</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
                 )}
               </div>
             ) : (
               /* Add to Cart Button - when no items in cart */
               !isFullyComplete && (
                 <div className="flex justify-end w-full">
-                  <Button
-                    size="sm"
-                    onClick={() => addItemPieceWithCartOpen(item)}
-                    disabled={remainingPieces === 0}
-                    className="h-9 px-4 bg-primary hover:bg-primary/90 text-white font-semibold disabled:opacity-30"
-                  >
-                    <ShoppingCart className="w-4 h-4 mr-1.5" />
-                    {t("projectItems.addToCart")}
-                  </Button>
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        onClick={() => addItemPieceWithCartOpen(item)}
+                        disabled={remainingPieces === 0 || !itemPurchasable}
+                        className="h-9 px-4 bg-primary hover:bg-primary/90 text-white font-semibold disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <ShoppingCart className="w-4 h-4 mr-1.5" />
+                        {t("projectItems.addToCart")}
+                      </Button>
+                    </TooltipTrigger>
+                    {!itemPurchasable && !isFullyComplete && (
+                      <TooltipContent className="z-[9999] max-w-xs" side="top" sideOffset={5}>
+                        <p className="text-sm">{t("projectItems.phaseNotAvailable.itemDisabled")}</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
                 </div>
               )
             )}
@@ -1346,7 +1428,7 @@ export const ProjectItemsModal = ({
                       >
                         <Heart className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
                         <span className="sm:hidden">{language === 'de' ? 'Betrag' : 'Amount'}</span>
-                        <span className="hidden sm:inline">{t("projectItems.unrestrictedDonation.title")}</span>
+                        <span className="hidden sm:inline">{t("projectItems.unrestrictedDonation.button")}</span>
                       </Button>
                     </div>
                   </Card>
@@ -1378,6 +1460,7 @@ export const ProjectItemsModal = ({
                         const isCompleted = phaseGroup.isCompleted;
                         const isPast = index < activePhaseIndex;
                         const phaseName = getPhaseNameTranslated(phaseGroup.phase);
+                        const isPurchasable = purchasablePhaseIndices.has(index);
                         
                         return (
                           <div key={phaseGroup.phase} className="flex items-center flex-shrink-0 min-w-[100px]">
@@ -1402,13 +1485,17 @@ export const ProjectItemsModal = ({
                                         ? 'bg-primary border-primary shadow-lg ring-2 ring-primary/20' 
                                         : isPast
                                           ? 'bg-gray-300 border-gray-400'
-                                          : 'bg-gray-200 border-gray-300'
+                                          : !isPurchasable
+                                            ? 'bg-gray-100 border-gray-200 opacity-60'
+                                            : 'bg-gray-200 border-gray-300'
                                     }
                                   `}>
                                     {isCompleted ? (
                                       <CheckCircle className="w-5 h-5 text-white" />
                                     ) : (
-                                      <div className="w-5 h-5 flex items-center justify-center text-white">
+                                      <div className={`w-5 h-5 flex items-center justify-center ${
+                                        !isPurchasable ? 'text-gray-400 opacity-60' : 'text-white'
+                                      }`}>
                                         {getPhaseIcon(phaseGroup.phase)}
                                       </div>
                                     )}
@@ -1428,6 +1515,9 @@ export const ProjectItemsModal = ({
                                 {isCompleted && (
                                   <p className="text-xs text-gray-500 mt-1">{t("projectItems.completed")}</p>
                                 )}
+                                {!isCompleted && !isPurchasable && (
+                                  <p className="text-xs text-gray-500 mt-1">{t("projectItems.phaseNotAvailable.itemDisabled")}</p>
+                                )}
                                 </TooltipContent>
                               </Tooltip>
                             
@@ -1445,6 +1535,123 @@ export const ProjectItemsModal = ({
                       })}
                     </div>
                   </div>
+
+                  {/* Explanation for non-purchasable phases */}
+                  {(() => {
+                    // DEBUG: Log all relevant values
+                    console.log('=== WARNING DEBUG ===');
+                    console.log('viewMode:', viewMode);
+                    console.log('firstIncompletePhaseIndex:', firstIncompletePhaseIndex);
+                    console.log('purchasablePhaseIndices:', Array.from(purchasablePhaseIndices));
+                    console.log('phaseGroups.length:', phaseGroups.length);
+                    console.log('phaseGroups:', phaseGroups.map((pg, idx) => ({
+                      index: idx,
+                      phase: pg.phase,
+                      isCompleted: pg.isCompleted,
+                      progress: pg.progress,
+                      isPurchasable: purchasablePhaseIndices.has(idx)
+                    })));
+                    console.log('currentActivePhase index:', activePhaseIndex);
+                    console.log('currentActivePhase:', currentActivePhase?.phase, 'isPurchasable:', currentActivePhase ? purchasablePhaseIndices.has(activePhaseIndex) : 'N/A');
+                    
+                    // Only show warning in overview mode
+                    if (viewMode !== 'overview') {
+                      console.log('❌ Not in overview mode');
+                      return false;
+                    }
+                    
+                    // Case 1: All phases are completed - no warning needed
+                    if (firstIncompletePhaseIndex === -1) {
+                      console.log('❌ All phases completed');
+                      return false;
+                    }
+                    
+                    // Case 2: No purchasable phases (shouldn't happen, but safety check)
+                    if (purchasablePhaseIndices.size === 0) {
+                      console.log('❌ No purchasable phases');
+                      return false;
+                    }
+                    
+                    // Get the maximum purchasable phase index
+                    const purchasableIndicesArray = Array.from(purchasablePhaseIndices);
+                    if (purchasableIndicesArray.length === 0) {
+                      console.log('❌ Purchasable indices array is empty');
+                      return false;
+                    }
+                    const maxPurchasableIndex = Math.max(...purchasableIndicesArray);
+                    console.log('maxPurchasableIndex:', maxPurchasableIndex);
+                    console.log('activePhaseIndex:', activePhaseIndex);
+                    console.log('Is active phase purchasable?', purchasablePhaseIndices.has(activePhaseIndex));
+                    
+                    // NEW: Only show warning if the user is currently viewing a NON-purchasable phase
+                    // This way the warning only appears when relevant
+                    const isViewingPurchasablePhase = purchasablePhaseIndices.has(activePhaseIndex);
+                    if (isViewingPurchasablePhase) {
+                      console.log('❌ Currently viewing a purchasable phase - no warning needed');
+                      return false;
+                    }
+                    
+                    // Safety check: if maxPurchasableIndex is already the last phase, no warning needed
+                    if (maxPurchasableIndex >= phaseGroups.length - 1) {
+                      console.log('❌ Max purchasable index is last phase');
+                      return false;
+                    }
+                    
+                    // Now check: Are there any incomplete phases AFTER the last purchasable phase?
+                    // We iterate through all phases AFTER the last purchasable one
+                    // and check if any of them are incomplete (not completed)
+                    
+                    // Start checking from the phase AFTER the last purchasable one
+                    // We explicitly skip all purchasable phases and only check phases after them
+                    console.log(`Checking phases from index ${maxPurchasableIndex + 1} to ${phaseGroups.length - 1}`);
+                    for (let i = maxPurchasableIndex + 1; i < phaseGroups.length; i++) {
+                      // Double-check: this index should NOT be in purchasable phases
+                      if (purchasablePhaseIndices.has(i)) {
+                        console.log(`⚠️ Index ${i} is in purchasable phases (should not happen), skipping`);
+                        continue;
+                      }
+                      
+                      const phaseGroup = phaseGroups[i];
+                      
+                      // Safety check: phaseGroup must exist
+                      if (!phaseGroup) {
+                        console.log(`⚠️ PhaseGroup at index ${i} does not exist, skipping`);
+                        continue;
+                      }
+                      
+                      console.log(`Checking phase ${i} (${phaseGroup.phase}): isCompleted=${phaseGroup.isCompleted}, progress=${phaseGroup.progress}`);
+                      
+                      // Check if this phase is incomplete
+                      // A phase is incomplete if isCompleted is explicitly false
+                      // We use strict equality to avoid truthy/falsy issues
+                      if (phaseGroup.isCompleted === false) {
+                        console.log(`✅ Found incomplete phase at index ${i} - SHOWING WARNING`);
+                        return true;
+                      } else {
+                        console.log(`Phase ${i} is completed, continuing...`);
+                      }
+                    }
+                    
+                    // No incomplete phases found after purchasable phases
+                    console.log('❌ No incomplete phases found after purchasable phases');
+                    return false;
+                  })() && (
+                    <Card className="p-4 bg-blue-50/50 border-blue-200/50 mb-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <Info className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-blue-900 text-sm mb-1">
+                            {t("projectItems.phaseNotAvailable.title")}
+                          </h4>
+                          <p className="text-xs text-blue-700 leading-relaxed">
+                            {t("projectItems.phaseNotAvailable.description")}
+                          </p>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
 
                   {/* Active Phase Card - Redesigned with Expandable Items */}
                   {currentActivePhase && (
@@ -1611,15 +1818,24 @@ export const ProjectItemsModal = ({
                                         <span className="text-xs font-medium text-gray-600 min-w-[1.25rem] text-center">
                                           {nextItemCartQuantity}
                                         </span>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={() => addItemPieceWithCartOpen(nextItemInPhase)}
-                                          disabled={nextItemRemaining === 0}
-                                          className="h-7 w-7 p-0 text-gray-500 hover:text-primary hover:bg-primary/10 disabled:opacity-30"
-                                        >
-                                          <Plus className="w-3.5 h-3.5" />
-                                        </Button>
+                                        <Tooltip delayDuration={0}>
+                                          <TooltipTrigger asChild>
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              onClick={() => addItemPieceWithCartOpen(nextItemInPhase)}
+                                              disabled={nextItemRemaining === 0 || !isItemPurchasable(nextItemInPhase)}
+                                              className="h-7 w-7 p-0 text-gray-500 hover:text-primary hover:bg-primary/10 disabled:opacity-30"
+                                            >
+                                              <Plus className="w-3.5 h-3.5" />
+                                            </Button>
+                                          </TooltipTrigger>
+                                          {!isItemPurchasable(nextItemInPhase) && !nextItemIsFullyFunded && (
+                                            <TooltipContent className="z-[9999] max-w-xs" side="top" sideOffset={5}>
+                                              <p className="text-sm">{t("projectItems.phaseNotAvailable.itemDisabled")}</p>
+                                            </TooltipContent>
+                                          )}
+                                        </Tooltip>
                                       </div>
                                     ) : null;
                                   })()}
@@ -1758,15 +1974,24 @@ export const ProjectItemsModal = ({
                                               <span className="text-xs font-medium text-gray-600 min-w-[1.25rem] text-center">
                                                 {cartQuantity}
                                               </span>
-                                              <Button
-                                                size="sm"
-                                                variant="ghost"
-                                                onClick={() => addItemPieceWithCartOpen(item)}
-                                                disabled={remainingPieces === 0}
-                                                className="h-7 w-7 p-0 text-gray-500 hover:text-primary hover:bg-primary/10 disabled:opacity-30"
-                                              >
-                                                <Plus className="w-3.5 h-3.5" />
-                                              </Button>
+                                              <Tooltip delayDuration={0}>
+                                                <TooltipTrigger asChild>
+                                                  <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => addItemPieceWithCartOpen(item)}
+                                                    disabled={remainingPieces === 0 || !isItemPurchasable(item)}
+                                                    className="h-7 w-7 p-0 text-gray-500 hover:text-primary hover:bg-primary/10 disabled:opacity-30"
+                                                  >
+                                                    <Plus className="w-3.5 h-3.5" />
+                                                  </Button>
+                                                </TooltipTrigger>
+                                                {!isItemPurchasable(item) && !isFullyComplete && (
+                                                  <TooltipContent className="z-[9999] max-w-xs" side="top" sideOffset={5}>
+                                                    <p className="text-sm">{t("projectItems.phaseNotAvailable.itemDisabled")}</p>
+                                                  </TooltipContent>
+                                                )}
+                                              </Tooltip>
                                             </div>
                                           )}
                                           
@@ -1845,7 +2070,7 @@ export const ProjectItemsModal = ({
                     className="h-8 px-3 bg-primary hover:bg-primary/90 text-white text-xs font-semibold whitespace-nowrap flex-shrink-0"
                   >
                     <Heart className="w-3 h-3 mr-1.5" />
-                    {t("projectItems.unrestrictedDonation.title")}
+                    {t("projectItems.unrestrictedDonation.button")}
                   </Button>
                 </Link>
               </div>
