@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ShoppingCartProvider } from "@/contexts/ShoppingCartContext";
 import { CartSidebar } from "@/components/CartSidebar";
 import Navigation from "@/components/Navigation";
+import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import Team from "./pages/Team";
 import Projects from "./pages/Projects";
@@ -35,6 +36,7 @@ const AppContent = () => {
 
   return (
     <>
+      <ScrollToTop />
       <Navigation />
       <Routes>
         <Route path="/" element={<Index />} />
