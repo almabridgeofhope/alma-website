@@ -37,6 +37,7 @@ jobs:
         VITE_GOOGLE_SHEET_RANGE: ${{ secrets.VITE_GOOGLE_SHEET_RANGE }}
         VITE_PAYPAL_CLIENT_ID: ${{ secrets.VITE_PAYPAL_CLIENT_ID }}
         VITE_NEWSLETTER_ENDPOINT: ${{ secrets.VITE_NEWSLETTER_ENDPOINT }}
+        VITE_DONATION_WEBHOOK_URL: ${{ secrets.VITE_DONATION_WEBHOOK_URL }}
       run: npm run build
       
     - name: Setup Pages
