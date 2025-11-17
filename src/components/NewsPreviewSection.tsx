@@ -35,7 +35,7 @@ const NewsPreviewSection = () => {
     const dateSlug = article.date
     console.log('Converted date:', dateSlug);
     console.log('Full URL:', `/news/${dateSlug}`);
-    navigate(`/dev/news/${dateSlug}`);
+    navigate(`/news/${dateSlug}`);
     // Scroll to top after navigation
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -110,7 +110,7 @@ const NewsPreviewSection = () => {
         {/* View All News Button */}
         <div className="text-center">
           <Link 
-            to="/dev/news"
+            to="/news"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
             <Button size="lg">

@@ -18,14 +18,9 @@ import street from "@/assets/project/street.jpg";
 
 const MissionSection = () => {
   const { t } = useLanguage();
-  const location = useLocation();
   const [api, setApi] = useState<any>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
-  
-  // Check if we're on the /dev routes
-  const isDevRoute = location.pathname.startsWith('/dev');
-  const basePath = isDevRoute ? '/dev' : '';
 
   useEffect(() => {
     if (!api) {
@@ -189,7 +184,7 @@ const MissionSection = () => {
             
             <div className="flex flex-col sm:flex-row gap-4">
               <Link 
-                to={basePath + "/about"}
+                to="/about"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
                 <Button size="lg">
@@ -197,7 +192,7 @@ const MissionSection = () => {
                 </Button>
               </Link>
               <Link 
-                to={basePath + "/projects"}
+                to="/projects"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
                 <Button size="lg" variant="outline">

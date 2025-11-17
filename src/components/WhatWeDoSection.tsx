@@ -8,11 +8,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 const WhatWeDoSection = () => {
   const { t } = useLanguage();
-  const location = useLocation();
-  
-  // Check if we're on the /dev routes
-  const isDevRoute = location.pathname.startsWith('/dev');
-  const basePath = isDevRoute ? '/dev' : '';
   
   const initiatives = [
     {
@@ -73,7 +68,7 @@ const WhatWeDoSection = () => {
         
         <div className="text-center mt-12">
           <Link 
-            to={basePath + "/projects"}
+            to="/projects"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
             <Button size="lg">

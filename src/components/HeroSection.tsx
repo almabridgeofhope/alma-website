@@ -2,15 +2,10 @@ import heroImage from "@/assets/nature/land_3.jpg";
 import { useLanguage } from "@/contexts/LanguageContext";
 import PreloadImage from "@/components/PreloadImage";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const HeroSection = () => {
   const { t } = useLanguage();
-  const location = useLocation();
-  
-  // Check if we're on the /dev routes
-  const isDevRoute = location.pathname.startsWith('/dev');
-  const basePath = isDevRoute ? '/dev' : '';
   
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -35,7 +30,7 @@ const HeroSection = () => {
           {t("hero.subtitle")}
         </p>
         <Link 
-          to={basePath + "/donation"} 
+          to="/donation" 
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           className="inline-block"
         >

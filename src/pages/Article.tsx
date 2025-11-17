@@ -21,7 +21,7 @@ const Article = () => {
 
   const handleNavigate = useCallback(
     (targetDate: string) => {
-      navigate(`/dev/news/${targetDate}`);
+      navigate(`/news/${targetDate}`);
       window.scrollTo({ top: 0, behavior: "smooth" });
     },
     [navigate]
@@ -29,7 +29,7 @@ const Article = () => {
 
   const handleDonationNavigate = useCallback(() => {
     const query = selectedDonationAmount ? `?amount=${selectedDonationAmount}` : "";
-    navigate(`/dev/donation${query}`);
+    navigate(`/donation${query}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [navigate, selectedDonationAmount]);
 
@@ -71,7 +71,7 @@ const Article = () => {
               {t("news.article_not_found.subtitle")}
             </p>
             <Link 
-              to="/dev/news"
+              to="/news"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               <Button>
@@ -100,7 +100,7 @@ const Article = () => {
         <section className="pt-section pb-section bg-background">
           <div className="max-w-4xl mx-auto px-6">
             <Link 
-              to="/dev/news"
+              to="/news"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               <Button variant="ghost" className="mb-6">
@@ -462,7 +462,7 @@ const Article = () => {
         <section className="pb-section bg-muted/30">
           <div className="max-w-4xl mx-auto px-6 text-center">
             <Link 
-              to="/dev/news"
+              to="/news"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             >
               <Button size="lg">

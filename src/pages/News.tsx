@@ -39,7 +39,7 @@ const News = () => {
   const handleReadMore = (article: NewsArticle) => {
     // Navigate to individual article page using date
     console.log('Navigating to:', `/news/${article.date}`);
-    navigate(`/dev/news/${article.date}`);
+    navigate(`/news/${article.date}`);
   };
 
   return (

@@ -607,8 +607,8 @@ const Donation = () => {
         brand_name: "Alma Bridge of Hope",
         landing_page: "NO_PREFERENCE",
         user_action: "PAY_NOW",
-        return_url: `${window.location.origin}/#/dev/donation?success=true`,
-        cancel_url: `${window.location.origin}/#/dev/donation?cancelled=true`,
+        return_url: `${window.location.origin}/#/donation?success=true`,
+        cancel_url: `${window.location.origin}/#/donation?cancelled=true`,
       },
     });
   }, [donationType, amount, customAmount, cartState.items, cartState.totalAmount, t]);
@@ -1431,7 +1431,7 @@ const Donation = () => {
                       <Label htmlFor="privacyConsent" className="text-sm leading-relaxed">
                         {t("donation.form.privacyConsent")}{" "}
                         <Link 
-                          to="/dev/privacy" 
+                          to="/privacy" 
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-primary hover:underline"
@@ -1663,9 +1663,9 @@ const Donation = () => {
                   </a>
                 </Button>
                 <Button asChild size="lg">
-                  <a href="/contact">
+                  <Link to="/contact">
                     {t("donation.contact.button")}
-                  </a>
+                  </Link>
                 </Button>
               </div>
             </div>

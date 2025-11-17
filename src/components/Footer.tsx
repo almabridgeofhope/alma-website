@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/alma-logo.svg";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -11,11 +11,6 @@ const Footer = () => {
   const [email, setEmail] = useState("");
   const { toast } = useToast();
   const { t } = useLanguage();
-  const location = useLocation();
-  
-  // Check if we're on the /dev routes
-  const isDevRoute = location.pathname.startsWith('/dev');
-  const basePath = isDevRoute ? '/dev' : '';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,28 +49,28 @@ const Footer = () => {
             <h4 className="font-semibold text-foreground mb-4">{t("footer.nav.title")}</h4>
             <nav className="space-y-2">
               <Link 
-                to={basePath + "/"} 
+                to="/" 
                 className="block text-muted-foreground hover:text-primary transition-colors"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
                 {t("nav.home")}
               </Link>
               <Link 
-                to={basePath + "/projects"} 
+                to="/projects" 
                 className="block text-muted-foreground hover:text-primary transition-colors"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
                 {t("nav.projects")}
               </Link>
               <Link 
-                to={basePath + "/about"} 
+                to="/about" 
                 className="block text-muted-foreground hover:text-primary transition-colors"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
                 {t("nav.about")}
               </Link>
               <Link 
-                to={basePath + "/contact"} 
+                to="/contact" 
                 className="block text-muted-foreground hover:text-primary transition-colors"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
@@ -111,14 +106,14 @@ const Footer = () => {
             <p className="text-muted-foreground text-sm">{t("footer.copyright")}</p>
             <nav className="flex gap-6 text-sm">
               <Link 
-                to={basePath + "/impressum"} 
+                to="/impressum" 
                 className="text-muted-foreground hover:text-primary transition-colors"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
                 {t("footer.legal.impressum")}
               </Link>
               <Link 
-                to={basePath + "/privacy"} 
+                to="/privacy" 
                 className="text-muted-foreground hover:text-primary transition-colors"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >

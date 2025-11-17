@@ -179,7 +179,7 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
         conclusionCTA: article6ConclusionCtaText
           ? {
               text: article6ConclusionCtaText,
-              url: "/dev/projects?section=community-house",
+              url: "/projects?section=community-house",
               buttonLabel: article6ConclusionCtaButtonLabel || undefined,
             }
           : undefined,
@@ -276,7 +276,7 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
         conclusionCTA: conclusionCtaText
           ? {
               text: conclusionCtaText,
-              url: "/dev/projects",
+              url: "/projects",
               buttonLabel: conclusionCtaButtonLabel || undefined,
             }
           : undefined,

@@ -227,7 +227,7 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
       }
       
       // Navigate to projects page with phase hash and itemId as query param
-      navigate(`/dev/projects?itemId=${encodeURIComponent(itemId)}#${encodeURIComponent(item.phase)}`);
+      navigate(`/projects?itemId=${encodeURIComponent(itemId)}#${encodeURIComponent(item.phase)}`);
       
       // Scroll to item after modal opens - use a longer delay and retry mechanism
       let attempts = 0;
@@ -244,7 +244,7 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
       setTimeout(scrollToItem, 800);
     } else {
       // For items without phase, just navigate to projects
-      navigate('/dev/projects');
+      navigate('/projects');
       if (onClose) {
         onClose();
       } else {

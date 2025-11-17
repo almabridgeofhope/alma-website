@@ -114,10 +114,10 @@ const Projects = () => {
 
   const mobilityDescription = t("projects.mobility.description");
   const anchorClasses = "text-primary underline underline-offset-4";
-  const schoolAccessUrl = "/dev/projects?section=school-access";
-  const youngMobilityUrl = "/dev/projects?section=young-mobility";
-  const anchorHref = `#${schoolAccessUrl}`;
-  const mobilityAnchorHref = `#${youngMobilityUrl}`;
+  const schoolAccessUrl = "/projects?section=school-access";
+  const youngMobilityUrl = "/projects?section=young-mobility";
+  const anchorHref = `#/${schoolAccessUrl}`;
+  const mobilityAnchorHref = `#/${youngMobilityUrl}`;
   const germanTarget = t("projects.mobility.target.de");
   const englishTarget = t("projects.mobility.target.en");
 
@@ -721,7 +721,7 @@ const Projects = () => {
                 {t("projects.impact.subtitle")}
               </p>
               <Link 
-                to="/dev/donation"
+                to="/donation"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
                 <Button size="lg">

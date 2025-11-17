@@ -1,15 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Mail } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const ContactSection = () => {
   const { t } = useLanguage();
-  const location = useLocation();
-  
-  // Check if we're on the /dev routes
-  const isDevRoute = location.pathname.startsWith('/dev');
-  const basePath = isDevRoute ? '/dev' : '';
   
   return (
     <section id="contact" className="pt-section pb-section bg-background">
@@ -26,7 +21,7 @@ const ContactSection = () => {
 
             <div className="flex justify-center">
               <Link 
-                to={basePath + "/contact"}
+                to="/contact"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
                 <Button>
