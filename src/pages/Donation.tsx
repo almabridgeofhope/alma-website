@@ -16,13 +16,13 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import OptimizedImage from "@/components/OptimizedImage";
 import PreloadImage from "@/components/PreloadImage";
-import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush, Copy, CheckCircle2 } from "lucide-react";
+import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush, Copy, CheckCircle2, AlertCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { donationWebhookService } from "@/services/donationWebhookService";
 import heroImage from "@/assets/nature/nature_2.jpg";
 import communityImage from "@/assets/community/community_2.png";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 
 // PayPal Configuration
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
@@ -89,11 +89,11 @@ const PayPalButtonWrapper = memo(({
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       <div className="mb-2 text-center text-sm text-muted-foreground">
         {t("paypal.redirect")}
       </div>
-      <div id="paypal-button-container" className="w-full min-h-[50px]">
+      <div id="paypal-button-container" className="w-full min-h-[50px] relative">
         <PayPalButtons
           createOrder={createOrder}
           onApprove={onApprove}
@@ -115,8 +115,9 @@ const PayPalButtonWrapper = memo(({
 PayPalButtonWrapper.displayName = "PayPalButtonWrapper";
 
 const Donation = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { state: cartState, updateQuantity, removeItem, clearCart, formatCurrency, addOrUpdateGeneralDonation, getGeneralDonation, updateAmount, closeCart } = useShoppingCart();
+  const navigate = useNavigate();
   
   // Close cart sidebar if it's open when on donation page
   useEffect(() => {
@@ -128,9 +129,48 @@ const Donation = () => {
   const [donationType, setDonationType] = useState<"one-time" | "monthly">("one-time");
   const [amount, setAmount] = useState<string>("");
   const [customAmount, setCustomAmount] = useState<string>("");
+  
+  // Handle success redirect from PayPal return URL
+  useEffect(() => {
+    const success = searchParams.get("success");
+    if (success === "true") {
+      // Redirect to success page with donation details
+      // Note: We'll get the amount from the cart or form state
+      const finalAmount = cartState.items.length > 0 
+        ? cartState.totalAmount.toString() 
+        : (amount || customAmount || "");
+      
+      if (finalAmount) {
+        const params = new URLSearchParams({
+          amount: finalAmount,
+          type: donationType,
+        });
+        navigate(`/donation/success?${params.toString()}`);
+      } else {
+        // If no amount, just redirect to success page
+        navigate("/donation/success");
+      }
+    }
+  }, [searchParams, navigate, cartState.items.length, cartState.totalAmount, amount, customAmount, donationType]);
   const [paymentMethod, setPaymentMethod] = useState<"paypal" | "sepa" | "card">("paypal");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showWarningDialog, setShowWarningDialog] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  
+  // Helper functions to show dialogs
+  const showError = (message: string) => {
+    setErrorMessage(message);
+    setShowErrorDialog(true);
+  };
+  
+  const showSuccess = (message: string) => {
+    setSuccessMessage(message);
+    setShowSuccessDialog(true);
+  };
+  
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -369,25 +409,25 @@ const Donation = () => {
     // Required fields validation
     if (!finalAmount || parseFloat(finalAmount) <= 0) {
       console.log("Amount validation failed");
-      alert(t("donation.form.error.amount"));
+      showError(t("donation.form.error.amount"));
       return false;
     }
     
     if (!formData.firstName.trim()) {
       console.log("First name validation failed");
-      alert(t("donation.form.error.firstName"));
+      showError(t("donation.form.error.firstName"));
       return false;
     }
     
     if (!formData.lastName.trim()) {
       console.log("Last name validation failed");
-      alert(t("donation.form.error.lastName"));
+      showError(t("donation.form.error.lastName"));
       return false;
     }
     
     if (!formData.email.trim()) {
       console.log("Email validation failed");
-      alert(t("donation.form.error.email"));
+      showError(t("donation.form.error.email"));
       return false;
     }
     
@@ -395,7 +435,7 @@ const Donation = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       console.log("Email format validation failed");
-      alert(t("donation.form.error.emailInvalid"));
+      showError(t("donation.form.error.emailInvalid"));
       return false;
     }
     
@@ -403,14 +443,14 @@ const Donation = () => {
     if (formData.wantsReceipt) {
       if (!formData.street.trim() || !formData.postalCode.trim() || !formData.city.trim() || !formData.country.trim()) {
         console.log("Address validation failed");
-        alert(t("donation.form.error.address"));
+        showError(t("donation.form.error.address"));
         return false;
       }
     }
     
     if (!formData.privacyConsent) {
       console.log("Privacy consent validation failed");
-      alert(t("donation.form.error.privacy"));
+      showError(t("donation.form.error.privacy"));
       return false;
     }
     
@@ -600,18 +640,18 @@ const Donation = () => {
           currency_code: "EUR",
           value: formattedAmount,
         },
-        description: `${donationType === "one-time" ? t("donation.form.oneTime") : t("donation.form.monthly")} donation to Alma Bridge of Hope`,
+        description: `${donationType === "one-time" ? t("donation.form.onetime") : t("donation.form.monthly")} donation to Alma Bridge of Hope`,
         custom_id: `${donationType}-${Date.now()}`,
       }],
       application_context: {
         brand_name: "Alma Bridge of Hope",
-        landing_page: "NO_PREFERENCE",
+        landing_page: "LOGIN",
         user_action: "PAY_NOW",
         return_url: `${window.location.origin}/#/donation?success=true`,
         cancel_url: `${window.location.origin}/#/donation?cancelled=true`,
       },
     });
-  }, [donationType, amount, customAmount, cartState.items, cartState.totalAmount, t]);
+  }, [donationType, amount, customAmount, cartState.items, cartState.totalAmount, t, language]);
 
   // Function to subscribe to newsletter
   const subscribeToNewsletter = async (email: string) => {
@@ -706,15 +746,12 @@ const Donation = () => {
           await subscribeToNewsletter(formData.email);
         }
         
-        if (result.ok) {
-          const successMessage = isSEPAPayment 
-            ? t("donation.form.success") + "\n\nHinweis: Die SEPA-Zahlung wird in den nächsten Tagen von Ihrem Konto abgebucht."
-            : t("donation.form.success");
-          alert(successMessage);
-        } else {
-          console.warn("Donation processing failed:", result.message);
-          alert(t("donation.form.success") + " (Note: Update may be delayed)");
-        }
+        // Calculate final amount for redirect
+        const finalAmount = donationType === "monthly"
+          ? (amount || customAmount || "0")
+          : (cartState.items.length > 0 
+              ? cartState.totalAmount.toString() 
+              : (amount || customAmount || "0"));
         
         // Clear shopping cart after successful payment
         clearCart();
@@ -735,10 +772,37 @@ const Donation = () => {
           privacyConsent: false,
           wantsNewsletter: false,
         });
+        
+        // Redirect to success page with donation details
+        const params = new URLSearchParams({
+          amount: finalAmount,
+          type: donationType,
+        });
+        if (paymentId) {
+          params.set("paymentId", paymentId);
+        }
+        navigate(`/donation/success?${params.toString()}`);
       } catch (error) {
         console.error("Error processing PayPal payment:", error);
         setIsProcessingPayment(false);
-        alert(t("donation.form.error.payment"));
+        
+        // Create detailed error message - use translated message
+        let detailedError = t("donation.form.error.payment");
+        
+        // Always show helpful error details to help user fix the issue
+        if (error instanceof Error) {
+          detailedError += `\n\n${language === "de" ? "Fehlerdetails: " : "Error details: "}${error.message}`;
+        } else if (typeof error === "object" && error !== null) {
+          const errorObj = error as any;
+          if (errorObj.message) {
+            detailedError += `\n\n${language === "de" ? "Fehlerdetails: " : "Error details: "}${errorObj.message}`;
+          } else if (errorObj.error) {
+            // Some errors are nested
+            detailedError += `\n\n${language === "de" ? "Fehlerdetails: " : "Error details: "}${errorObj.error}`;
+          }
+        }
+        
+        showError(detailedError);
       }
     };
     
@@ -747,9 +811,46 @@ const Donation = () => {
 
   const onPayPalError = useCallback((err: any) => {
     console.error("PayPal error:", err);
-    alert(t("donation.form.error.payment"));
+    
+    // Create detailed error message - use translated message
+    let detailedError = t("donation.form.error.payment");
+    
+    // Always show helpful error details to help user fix the issue
+    if (err) {
+      let errorDetails = "";
+      
+      // Extract error details from PayPal error object
+      if (err.details && Array.isArray(err.details)) {
+        // PayPal API errors often have details array
+        const details = err.details
+          .map((d: any) => {
+            // Try to get user-friendly description
+            if (d.description) return d.description;
+            if (d.message) return d.message;
+            if (d.issue) return d.issue;
+            return null;
+          })
+          .filter(Boolean);
+        
+        if (details.length > 0) {
+          errorDetails = details.join(". ");
+        }
+      } else if (err.message) {
+        errorDetails = err.message;
+      } else if (typeof err === "string") {
+        errorDetails = err;
+      }
+      
+      // Add error details if available
+      if (errorDetails) {
+        detailedError += `\n\n${language === "de" ? "Fehlerdetails: " : "Error details: "}${errorDetails}`;
+      }
+    }
+    
+    setErrorMessage(detailedError);
+    setShowErrorDialog(true);
     setIsProcessingPayment(false);
-  }, [t]);
+  }, [t, language]);
 
   const onPayPalCancel = useCallback(() => {
     console.log("PayPal payment cancelled");
@@ -1460,15 +1561,26 @@ const Donation = () => {
                   </div>
 
                   {/* Payment Buttons - PayPal with SEPA option */}
-                  <div className="w-full">
+                  <div className="w-full relative">
                     {PAYPAL_CLIENT_ID ? (
-                      <div className="w-full" key="paypal-buttons">
+                      <div className="w-full relative" key="paypal-buttons">
                         <PayPalButtonWrapper
                           createOrder={createPayPalOrder}
                           onApprove={onPayPalApprove}
                           onError={onPayPalError}
                           onCancel={onPayPalCancel}
                         />
+                        {/* Overlay to disable PayPal buttons when dialog is open */}
+                        {(showSuccessDialog || showErrorDialog || showWarningDialog) && (
+                          <div 
+                            className="absolute inset-0 bg-background/90 backdrop-blur-sm z-[60] rounded-md flex items-center justify-center"
+                            style={{ 
+                              pointerEvents: 'auto',
+                              cursor: 'not-allowed'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )}
                       </div>
                     ) : (
                       <Button 
@@ -1697,12 +1809,75 @@ const Donation = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Success Dialog */}
+      <AlertDialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <AlertDialogContent className="sm:max-w-[500px]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-3 text-2xl">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
+                <CheckCircle className="h-7 w-7 text-green-600 dark:text-green-400" />
+              </div>
+              <span className="text-green-900 dark:text-green-100">
+                {language === "de" ? "Spende erfolgreich!" : "Donation Successful!"}
+              </span>
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-base leading-relaxed pt-4 whitespace-pre-line">
+              {successMessage}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              onClick={() => {
+                setShowSuccessDialog(false);
+                // Scroll to top after closing
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90"
+            >
+              {language === "de" ? "Verstanden" : "Got it"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Error Dialog */}
+      <AlertDialog open={showErrorDialog} onOpenChange={setShowErrorDialog}>
+        <AlertDialogContent className="sm:max-w-[550px]">
+          <AlertDialogHeader>
+            <div className="flex items-start gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
+                <AlertCircle className="h-7 w-7 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="flex-1 space-y-2">
+                <AlertDialogTitle className="text-xl font-semibold text-red-900 dark:text-red-100">
+                  {language === "de" ? "Fehler aufgetreten" : "An Error Occurred"}
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-base leading-relaxed text-foreground pt-2 whitespace-pre-line">
+                  {errorMessage}
+                </AlertDialogDescription>
+              </div>
+            </div>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction 
+              onClick={() => setShowErrorDialog(false)}
+              className="w-full sm:w-auto bg-primary hover:bg-primary/90"
+            >
+              {language === "de" ? "Verstanden" : "Got it"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 
   // Always wrap with PayPalScriptProvider if client ID is available
   // This ensures the SDK is loaded once and stays loaded
   if (PAYPAL_CLIENT_ID) {
+    // Map language to PayPal locale
+    const paypalLocale = language === "de" ? "de_DE" : "en_US";
+    
     return (
       <PayPalScriptProvider
         options={{
@@ -1710,6 +1885,7 @@ const Donation = () => {
           currency: "EUR",
           intent: "capture",
           components: "buttons",
+          locale: paypalLocale,
           "enable-funding": "paypal,sepa",
           "disable-funding": "card,credit,venmo,paylater",
         }}
