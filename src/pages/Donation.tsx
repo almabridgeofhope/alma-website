@@ -318,7 +318,8 @@ const Donation = () => {
     if (phaseLower.includes('water')) {
       return <Droplets className="w-4 h-4 text-gray-600" />;
     }
-    if (phaseLower.includes('interior') && phaseLower.includes('finishing')) {
+    if (phaseLower.includes('innenwände') || 
+        (phaseLower.includes('interior') && (phaseLower.includes('finishing') || phaseLower.includes('walls')))) {
       return <Paintbrush className="w-4 h-4 text-gray-600" />;
     }
     if (phaseLower.includes('electricity') || phaseLower.includes('lighting')) {

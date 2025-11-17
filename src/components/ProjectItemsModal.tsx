@@ -711,8 +711,9 @@ export const ProjectItemsModal = ({
       return <Sofa className="w-8 h-8 text-primary" />;
     }
     
-    // Interior walls & finishing - Innenwände & Außendekoration
-    if (phaseLower.includes('interior') && phaseLower.includes('walls') && phaseLower.includes('finishing')) {
+    // Interior walls - Innenwände (includes finishing)
+    if (phaseLower.includes('innenwände') || 
+        (phaseLower.includes('interior') && phaseLower.includes('walls'))) {
       return <Paintbrush className="w-8 h-8 text-primary" />;
     }
     
@@ -736,7 +737,8 @@ export const ProjectItemsModal = ({
     if (phaseLower.includes('water')) {
       return <Droplets className="w-8 h-8 text-primary" />;
     }
-    if (phaseLower.includes('interior') && phaseLower.includes('finishing')) {
+    if (phaseLower.includes('innenwände') || 
+        (phaseLower.includes('interior') && (phaseLower.includes('finishing') || phaseLower.includes('walls')))) {
       return <Paintbrush className="w-8 h-8 text-primary" />;
     }
     if (phaseLower.includes('electricity') || phaseLower.includes('lighting')) {
