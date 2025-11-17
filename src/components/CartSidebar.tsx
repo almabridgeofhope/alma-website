@@ -71,7 +71,8 @@ const getPhaseIcon = (phase: string) => {
   if (phaseLower.includes('interior') && phaseLower.includes('furniture')) {
     return <Sofa className="w-4 h-4 text-gray-600" />;
   }
-  if (phaseLower.includes('interior') && phaseLower.includes('walls') && phaseLower.includes('finishing')) {
+  if ((phaseLower.includes('interior') && phaseLower.includes('walls')) || 
+      phaseLower.includes('innenwände')) {
     return <Paintbrush className="w-4 h-4 text-gray-600" />;
   }
   if (phaseLower.includes('electricity') && phaseLower.includes('lighting')) {
@@ -214,11 +215,8 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
       return;
     }
     
-    // Navigate to projects page with phase hash and itemId to open modal and show the item
+    // Navigate to projects page with phase hash to show phase overview
     if (item.phase) {
-      // Extract itemId from cart item id (format: "item-{itemId}")
-      const itemId = item.id.replace('item-', '');
-      
       // Close cart drawer if open
       if (onClose) {
         onClose();
@@ -226,22 +224,8 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
         closeCart();
       }
       
-      // Navigate to projects page with phase hash and itemId as query param
-      navigate(`/projects?itemId=${encodeURIComponent(itemId)}#${encodeURIComponent(item.phase)}`);
-      
-      // Scroll to item after modal opens - use a longer delay and retry mechanism
-      let attempts = 0;
-      const maxAttempts = 10;
-      const scrollToItem = () => {
-        attempts++;
-        const element = document.querySelector(`[data-item-id="${itemId}"]`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else if (attempts < maxAttempts) {
-          setTimeout(scrollToItem, 200);
-        }
-      };
-      setTimeout(scrollToItem, 800);
+      // Navigate to projects page with phase hash to show phase in overview
+      navigate(`/projects#${encodeURIComponent(item.phase)}`);
     } else {
       // For items without phase, just navigate to projects
       navigate('/projects');

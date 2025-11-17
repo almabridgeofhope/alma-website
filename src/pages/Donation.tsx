@@ -297,7 +297,8 @@ const Donation = () => {
     if (phaseLower.includes('interior') && phaseLower.includes('furniture')) {
       return <Sofa className="w-4 h-4 text-gray-600" />;
     }
-    if (phaseLower.includes('interior') && phaseLower.includes('walls') && phaseLower.includes('finishing')) {
+    if ((phaseLower.includes('interior') && phaseLower.includes('walls')) || 
+        phaseLower.includes('innenwände')) {
       return <Paintbrush className="w-4 h-4 text-gray-600" />;
     }
     if (phaseLower.includes('electricity') && phaseLower.includes('lighting')) {
@@ -581,8 +582,52 @@ const Donation = () => {
 
   // PayPal payment handlers - memoized to prevent unnecessary re-renders
   const createPayPalOrder = useCallback((data: any, actions: any) => {
-    // For monthly donations, always use selected amount (no cart items)
-    // For one-time donations, use cart total if items exist, otherwise use selected amount
+    // Validate all required fields before creating PayPal order
+    const finalAmountStr = donationType === "monthly"
+      ? (amount || customAmount)
+      : (cartState.items.length > 0 
+          ? cartState.totalAmount.toString() 
+          : (amount || customAmount));
+    
+    // Validate amount
+    if (!finalAmountStr || parseFloat(finalAmountStr) <= 0) {
+      throw new Error(t("donation.form.error.amount"));
+    }
+    
+    // Validate first name
+    if (!formData.firstName.trim()) {
+      throw new Error(t("donation.form.error.firstName"));
+    }
+    
+    // Validate last name
+    if (!formData.lastName.trim()) {
+      throw new Error(t("donation.form.error.lastName"));
+    }
+    
+    // Validate email
+    if (!formData.email.trim()) {
+      throw new Error(t("donation.form.error.email"));
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      throw new Error(t("donation.form.error.emailInvalid"));
+    }
+    
+    // Validate address if receipt is requested
+    if (formData.wantsReceipt) {
+      if (!formData.street.trim() || !formData.postalCode.trim() || !formData.city.trim() || !formData.country.trim()) {
+        throw new Error(t("donation.form.error.address"));
+      }
+    }
+    
+    // Validate privacy consent
+    if (!formData.privacyConsent) {
+      throw new Error(t("donation.form.error.privacy"));
+    }
+    
+    // Calculate final amount for PayPal
     let finalAmount: number;
     
     if (donationType === "monthly") {
@@ -611,7 +656,7 @@ const Donation = () => {
       }
     }
     
-    // Ensure we have a valid amount (minimum 0.01 EUR)
+    // Final amount validation (should not happen if validation above worked, but double-check)
     if (isNaN(finalAmount) || finalAmount <= 0) {
       console.error("Invalid amount for PayPal order:", {
         finalAmount,
@@ -628,7 +673,7 @@ const Donation = () => {
           quantity: item.quantity
         }))
       });
-      throw new Error("Invalid donation amount. Please enter a valid amount.");
+      throw new Error(t("donation.form.error.amount"));
     }
     
     // Format amount to 2 decimal places for PayPal
@@ -651,7 +696,7 @@ const Donation = () => {
         cancel_url: `${window.location.origin}/#/donation?cancelled=true`,
       },
     });
-  }, [donationType, amount, customAmount, cartState.items, cartState.totalAmount, t, language]);
+  }, [donationType, amount, customAmount, cartState.items, cartState.totalAmount, t, language, formData]);
 
   // Function to subscribe to newsletter
   const subscribeToNewsletter = async (email: string) => {
