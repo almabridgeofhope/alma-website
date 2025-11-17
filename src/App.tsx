@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route, useLocation } from "react-router-dom";
+import { HashRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ShoppingCartProvider } from "@/contexts/ShoppingCartContext";
 import { CartSidebar } from "@/components/CartSidebar";
@@ -20,6 +20,14 @@ import DonationSuccess from "./pages/DonationSuccess";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+// Redirect component for /dev/* routes
+const DevRedirect = () => {
+  const location = useLocation();
+  // Remove /dev prefix from pathname
+  const newPath = location.pathname.replace(/^\/dev/, '') || '/';
+  return <Navigate to={newPath} replace />;
+};
 
 const AppContent = () => {
   const location = useLocation();
@@ -39,6 +47,8 @@ const AppContent = () => {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/donation" element={<Donation />} />
         <Route path="/donation/success" element={<DonationSuccess />} />
+        {/* Redirect all /dev/* routes to their non-dev equivalents */}
+        <Route path="/dev/*" element={<DevRedirect />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
