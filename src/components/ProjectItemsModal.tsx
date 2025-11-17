@@ -1507,9 +1507,11 @@ export const ProjectItemsModal = ({
                                       <div className={`w-5 h-5 flex items-center justify-center ${
                                         shouldGrayOut 
                                           ? 'text-gray-400 opacity-60' 
-                                          : isPurchasable 
-                                            ? 'text-primary' 
-                                            : 'text-white'
+                                          : isActive
+                                            ? 'text-white'
+                                            : isPurchasable 
+                                              ? 'text-primary' 
+                                              : 'text-white'
                                       }`}>
                                         {(() => {
                                           const icon = getPhaseIcon(phaseGroup.phase);
@@ -1519,7 +1521,11 @@ export const ProjectItemsModal = ({
                                             let iconColor = 'text-white';
                                             if (shouldGrayOut) {
                                               iconColor = 'text-gray-400';
+                                            } else if (isActive) {
+                                              // Active phase: white icon on blue background
+                                              iconColor = 'text-white';
                                             } else if (isPurchasable) {
+                                              // Purchasable but not active: blue icon
                                               iconColor = 'text-primary';
                                             }
                                             const newClassName = originalClassName
