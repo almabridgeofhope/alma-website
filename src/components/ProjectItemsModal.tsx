@@ -45,7 +45,6 @@ import {
   Filter,
   ArrowUpDown,
   List,
-  Grid3x3,
   Info,
   Heart,
 } from "lucide-react";
@@ -92,11 +91,11 @@ export const ProjectItemsModal = ({
   };
   
   const getItemUnit = (item: ProjectItem): string => {
-    // Always use "Stück" in German, otherwise use the original unit
+    // Always use "Stück" in German, otherwise use the original unit or fallback to "piece"
     if (language === 'de') {
       return 'Stück';
     }
-    return item.unit || '';
+    return item.unit || 'piece';
   };
   
   const getItemPhaseName = (item: ProjectItem): string => {
@@ -121,102 +120,60 @@ export const ProjectItemsModal = ({
   const navigate = useNavigate();
   
   const [selectedPhase, setSelectedPhase] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<'overview' | 'details'>('overview');
   const [expandedSections, setExpandedSections] = useState({
     funded: false
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<'name' | 'price' | 'progress' | 'remaining'>('remaining');
-  const [viewStyle, setViewStyle] = useState<'compact' | 'detailed'>('compact');
   const [filtersExpanded, setFiltersExpanded] = useState(true);
   const [showCompletedPhases, setShowCompletedPhases] = useState(false);
   const [activePhaseIndex, setActivePhaseIndex] = useState(0); // For timeline navigation
   const [expandedPhaseItems, setExpandedPhaseItems] = useState<string | null>(null); // Track which phase items are expanded
 
-  // Handle URL-based navigation using hash fragments
-  useEffect(() => {
-    const hash = decodeURIComponent(location.hash.replace('#', ''));
-    const phase = hash || 'all';
-    
-    if (phase && phase !== 'all') {
-      setViewMode('details');
-      setSelectedPhase(phase);
-    } else {
-      setViewMode('overview');
-      setSelectedPhase('all');
-    }
-  }, [location.hash]);
 
-  // Set initial URL when modal opens
+  // Track if modal was just opened to handle cart navigation differently
+  const isInitialOpenRef = React.useRef(false);
+  // Track if hash change is from external source (cart click) - should scroll
+  const isExternalHashChangeRef = React.useRef(false);
+  
+  // Set initial URL when modal opens - don't override hash from cart
   useEffect(() => {
     if (isOpen) {
-      // Always ensure we default to overview when opening
-      navigate(`${location.pathname}#all`, { replace: true });
+      // Only set isInitialOpenRef if it's not already set (first time opening)
+      if (!isInitialOpenRef.current) {
+        isInitialOpenRef.current = true;
+        // Check if hash is provided from external source (cart click)
+        const currentHash = location.hash.replace('#', '');
+        const params = new URLSearchParams(location.search);
+        const itemId = params.get('itemId');
+        
+        console.log('[Scroll Debug] Modal opened with:', { currentHash, itemId, isOpen });
+        
+        if (currentHash && currentHash !== 'all' && itemId) {
+          // Hash from cart with itemId - mark as external navigation (should scroll)
+          console.log('[Scroll Debug] Marking as external hash change from cart');
+          isExternalHashChangeRef.current = true;
+          // Reset previousHash so Effect 1 recognizes this as a change
+          previousHashRef.current = '';
+        } else if (!currentHash || currentHash === 'all') {
+          // No hash - normal modal open, set to 'all'
+          navigate(`${location.pathname}#all`, { replace: true });
+          previousHashRef.current = '#all';
+        }
+      }
+    } else if (!isOpen) {
+      // Modal closed - reset all refs
+      isInitialOpenRef.current = false;
+      isExternalHashChangeRef.current = false;
+      isInternalNavigationRef.current = false;
+      // Reset scroll state when modal closes
+      setPendingScrollTarget(null);
+      scrollAttemptsRef.current = 0;
+      previousHashRef.current = '';
     }
-  }, [isOpen, location.pathname, navigate]);
+  }, [isOpen, location.pathname, location.hash, location.search, navigate]);
 
-  // Handle swipe gestures for modal navigation
-  useEffect(() => {
-    if (!isOpen) return;
-
-    let startX = 0;
-    let startY = 0;
-    let isTracking = false;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 1) {
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-        isTracking = true;
-      }
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isTracking) return;
-      
-      const currentX = e.touches[0].clientX;
-      const currentY = e.touches[0].clientY;
-      const deltaX = currentX - startX;
-      const deltaY = currentY - startY;
-      
-      // Detect left swipe (back gesture) - swipe left to go back
-      if (deltaX < -50 && Math.abs(deltaY) < 100 && viewMode === 'details') {
-        navigateToOverview();
-        isTracking = false;
-      }
-    };
-
-    const handleTouchEnd = () => {
-      isTracking = false;
-    };
-
-    // Add touch event listeners to the modal
-    const modalElement = document.querySelector('[role="dialog"]');
-    if (modalElement) {
-      modalElement.addEventListener('touchstart', handleTouchStart, { passive: true });
-      modalElement.addEventListener('touchmove', handleTouchMove, { passive: true });
-      modalElement.addEventListener('touchend', handleTouchEnd, { passive: true });
-    }
-    
-    return () => {
-      if (modalElement) {
-        modalElement.removeEventListener('touchstart', handleTouchStart);
-        modalElement.removeEventListener('touchmove', handleTouchMove);
-        modalElement.removeEventListener('touchend', handleTouchEnd);
-      }
-    };
-  }, [isOpen, viewMode]);
-
-  // Helper function to navigate to details view
-  const navigateToDetails = (phase: string) => {
-    navigate(`${location.pathname}#${encodeURIComponent(phase)}`, { replace: false });
-  };
-
-  // Helper function to navigate back to overview
-  const navigateToOverview = () => {
-    navigate(`${location.pathname}#all`, { replace: false });
-  };
 
   // Ensure overlay cart is closed when opening modal to avoid backdrop-only state
   useEffect(() => {
@@ -241,37 +198,285 @@ export const ProjectItemsModal = ({
       phases.push(item.phase);
     }
   }
-  
-  // Keep selectedPhase in sync with location.hash (overview/details)
+
+  // Track if we're navigating internally to prevent useEffect from overriding manual clicks
+  const isInternalNavigationRef = React.useRef(false);
+  // Track previous hash to detect external changes
+  const previousHashRef = React.useRef<string>('');
+  // Track highlighted item from cart
+  const [highlightedItemId, setHighlightedItemId] = React.useState<string | null>(null);
+  // Ref for the scroll container
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  // Track pending scroll target (itemId to scroll to)
+  const [pendingScrollTarget, setPendingScrollTarget] = React.useState<{ itemId: string; phase: string } | null>(null);
+  // Track scroll attempts to prevent infinite retries
+  const scrollAttemptsRef = React.useRef(0);
+  // Trigger retry by updating this state
+  const [scrollRetryTrigger, setScrollRetryTrigger] = React.useState(0);
+
+  // Effect 1: Handle hash-based phase selection (separate from scrolling)
   useEffect(() => {
     if (!isOpen) return;
-    const hash = decodeURIComponent(location.hash.replace('#', '')) || 'all';
-    setSelectedPhase(hash);
-    setViewMode(hash === 'all' ? 'overview' : 'details');
-    // Reset filters when switching phases
-    if (hash !== 'all') {
-      setSearchQuery("");
-      setSelectedCategory("all");
+    
+    // Skip if this is an internal navigation
+    if (isInternalNavigationRef.current) {
+      isInternalNavigationRef.current = false;
+      previousHashRef.current = location.hash;
+      return;
     }
-
-    // Check if there's an itemId in query params and scroll to it
+    
+    const hash = decodeURIComponent(location.hash.replace('#', '')) || 'all';
     const params = new URLSearchParams(location.search);
     const itemId = params.get('itemId');
-    if (itemId && hash !== 'all') {
-      // Wait for the view to update, then scroll to item
-      setTimeout(() => {
-        const element = document.querySelector(`[data-item-id="${itemId}"]`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // Remove itemId from URL after scrolling
-          const newParams = new URLSearchParams(location.search);
-          newParams.delete('itemId');
-          const newSearch = newParams.toString();
-          navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}${location.hash}`, { replace: true });
-        }
-      }, 300);
+    
+    // Determine if this is an external hash change (cart click)
+    // Check if modal was just opened with hash and itemId (from cart)
+    const isModalOpenWithCartItem = isInitialOpenRef.current && hash !== 'all' && !!itemId;
+    
+    // If modal opened with cart item, reset previousHash to ensure hash change is detected
+    if (isModalOpenWithCartItem && previousHashRef.current === location.hash) {
+      previousHashRef.current = '';
     }
-  }, [isOpen, location.hash, location.search, navigate, location.pathname]);
+    
+    const previousHash = decodeURIComponent(previousHashRef.current.replace('#', '')) || 'all';
+    
+    // Only treat as external change if:
+    // 1. Explicitly marked as external (from cart click)
+    // 2. Modal opened with cart item (has itemId) AND this is the first time we're processing it
+    // 3. Hash changed AND not from internal navigation AND has itemId (cart click while modal open)
+    // Note: isInitialOpenRef is only true on the very first render after modal opens
+    const isExternalChange = !!isExternalHashChangeRef.current || 
+      (isModalOpenWithCartItem && isInitialOpenRef.current) ||
+      (hash !== previousHash && hash !== 'all' && !isInitialOpenRef.current && !!itemId && !isInternalNavigationRef.current);
+    
+    console.log('[Scroll Debug] Effect 1 - Hash change:', {
+      hash,
+      previousHash,
+      itemId,
+      isExternalChange,
+      isInitialOpen: isInitialOpenRef.current,
+      isExternalHashChangeRef: isExternalHashChangeRef.current,
+      isModalOpenWithCartItem
+    });
+    
+    // Find phase index for current hash
+    const phaseIndex = phases.findIndex(p => p === hash);
+    
+    // Always update phase index if hash is valid and different from current
+    if (hash !== 'all' && phaseIndex !== -1) {
+      const shouldUpdatePhase = phaseIndex !== activePhaseIndex;
+      
+      if (shouldUpdatePhase) {
+        console.log('[Scroll Debug] Phase index found:', phaseIndex, 'for hash:', hash);
+        setActivePhaseIndex(phaseIndex);
+      }
+      
+      // If external change with itemId, set up scroll target FIRST
+      // This must happen before expanding phase to ensure proper coordination
+      if (isExternalChange && itemId) {
+        console.log('[Scroll Debug] Setting scroll target:', { itemId, phase: hash });
+        setPendingScrollTarget({ itemId, phase: hash });
+        setHighlightedItemId(itemId);
+        scrollAttemptsRef.current = 0; // Reset attempts for new target
+        setScrollRetryTrigger(0); // Reset retry trigger
+        // Remove highlight after 3 seconds
+        setTimeout(() => setHighlightedItemId(null), 3000);
+        // Effect 2 will expand the phase
+        // Mark that we've processed this external change
+        isExternalHashChangeRef.current = false;
+      } else {
+        // Internal navigation (user clicked phase) - expand phase immediately
+        // Only expand if not already expanded to avoid unnecessary re-renders
+        if (expandedPhaseItems !== hash) {
+          console.log('[Scroll Debug] Expanding phase (internal):', hash, '(was:', expandedPhaseItems, ')');
+          setExpandedPhaseItems(hash);
+        }
+      }
+    } else if (hash === 'all' && activePhaseIndex !== 0) {
+      setActivePhaseIndex(0);
+    }
+    
+    // Update previous hash
+    previousHashRef.current = location.hash;
+    
+    // Reset isInitialOpenRef after processing completes
+    // This ensures phase clicks work correctly after modal has been open
+    if (isInitialOpenRef.current) {
+      if (!itemId || !isExternalChange) {
+        // If no itemId or not an external change, reset immediately
+        // This handles normal modal opens and internal navigation
+        isInitialOpenRef.current = false;
+      } else if (itemId && isExternalChange) {
+        // If we're processing an external change with itemId, reset after scroll completes
+        // This is handled in Effect 3 when scroll completes
+        // Don't reset here to allow scroll to complete
+      }
+    }
+    
+    // Note: isExternalHashChangeRef is reset inside the if block above to prevent loops
+  }, [isOpen, location.hash, location.search, phases]);
+
+  // Effect 2: Expand phase when scroll target is set
+  useEffect(() => {
+    if (pendingScrollTarget) {
+      console.log('[Scroll Debug] Effect 2 - Expanding phase:', pendingScrollTarget.phase);
+      setExpandedPhaseItems(pendingScrollTarget.phase);
+      // Also ensure activePhaseIndex is set correctly
+      const phaseIndex = phases.findIndex(p => p === pendingScrollTarget.phase);
+      if (phaseIndex !== -1) {
+        setActivePhaseIndex(phaseIndex);
+      }
+    }
+  }, [pendingScrollTarget, phases]);
+
+  // Effect 3: Scroll to item when phase is expanded and scroll target exists
+  useEffect(() => {
+    if (!pendingScrollTarget || !scrollContainerRef.current) {
+      if (!pendingScrollTarget) {
+        console.log('[Scroll Debug] Effect 3 - No pending scroll target');
+      } else {
+        console.log('[Scroll Debug] Effect 3 - Scroll container not ready');
+      }
+      scrollAttemptsRef.current = 0;
+      return;
+    }
+    
+    const { itemId, phase } = pendingScrollTarget;
+    
+    console.log('[Scroll Debug] Effect 3 - Attempting scroll:', {
+      itemId,
+      phase,
+      expandedPhaseItems,
+      attempts: scrollAttemptsRef.current,
+      scrollContainerReady: !!scrollContainerRef.current
+    });
+    
+    // Check if phase is expanded - wait for it
+    if (expandedPhaseItems !== phase) {
+      // Wait for phase to expand - but don't reset attempts, just wait
+      console.log('[Scroll Debug] Waiting for phase expansion. Current:', expandedPhaseItems, 'Target:', phase);
+      // Don't increment attempts while waiting for expansion
+      if (scrollAttemptsRef.current === 0) {
+        scrollAttemptsRef.current = 1; // Start counting only after expansion
+      }
+      return;
+    }
+    
+    // Increment attempts
+    scrollAttemptsRef.current += 1;
+    
+    // Max attempts: 20 (about 2 seconds with delays)
+    if (scrollAttemptsRef.current > 20) {
+      // Give up after max attempts
+      console.warn(`[Scroll Debug] Could not find item ${itemId} after ${scrollAttemptsRef.current} attempts`);
+      
+      // Debug: Check what items are actually in the DOM
+      const allItems = document.querySelectorAll('[data-item-id]');
+      console.log('[Scroll Debug] Available items in DOM:', Array.from(allItems).map(el => el.getAttribute('data-item-id')));
+      
+      setPendingScrollTarget(null);
+      scrollAttemptsRef.current = 0;
+      
+      // Clean up URL
+      const params = new URLSearchParams(location.search);
+      params.delete('itemId');
+      const newSearch = params.toString();
+      navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}${location.hash}`, { replace: true });
+      return;
+    }
+    
+    // Use requestAnimationFrame to ensure DOM is updated
+    const rafId = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const itemElement = document.querySelector(`[data-item-id="${itemId}"]`);
+        const scrollContainer = scrollContainerRef.current;
+        
+        console.log('[Scroll Debug] Looking for item:', {
+          selector: `[data-item-id="${itemId}"]`,
+          found: !!itemElement,
+          scrollContainerFound: !!scrollContainer,
+          attempt: scrollAttemptsRef.current
+        });
+        
+        if (itemElement && scrollContainer) {
+          console.log('[Scroll Debug] Item found! Scrolling...');
+          
+          // Use scrollIntoView with scroll container as the viewport
+          // First, ensure the item is in the viewport of the scroll container
+          const containerRect = scrollContainer.getBoundingClientRect();
+          const itemRect = itemElement.getBoundingClientRect();
+          
+          // Check if item is already visible in container
+          const isItemVisible = itemRect.top >= containerRect.top && 
+                               itemRect.bottom <= containerRect.bottom;
+          
+          if (!isItemVisible) {
+            // Calculate position relative to scroll container
+            const scrollTop = scrollContainer.scrollTop;
+            const itemOffsetTop = itemRect.top - containerRect.top + scrollTop;
+            const containerHeight = scrollContainer.clientHeight;
+            const itemHeight = itemRect.height;
+            const targetScrollTop = itemOffsetTop - (containerHeight / 2) + (itemHeight / 2);
+            
+            console.log('[Scroll Debug] Scroll calculation:', {
+              scrollTop,
+              itemOffsetTop,
+              containerHeight,
+              itemHeight,
+              targetScrollTop,
+              isItemVisible
+            });
+            
+            // Scroll in the container
+            scrollContainer.scrollTo({
+              top: Math.max(0, targetScrollTop),
+              behavior: 'smooth'
+            });
+          } else {
+            console.log('[Scroll Debug] Item already visible, no scroll needed');
+          }
+          
+          // Add highlight class with animation
+          itemElement.classList.add('ring-4', 'ring-orange-500', 'ring-offset-2', 'transition-all', 'animate-pulse');
+          
+          // Remove highlight class after animation
+          setTimeout(() => {
+            itemElement.classList.remove('ring-4', 'ring-orange-500', 'ring-offset-2', 'animate-pulse');
+          }, 3000);
+          
+          // Clean up: remove itemId from URL and clear scroll target
+          const params = new URLSearchParams(location.search);
+          params.delete('itemId');
+          const newSearch = params.toString();
+          navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}${location.hash}`, { replace: true });
+          
+          setPendingScrollTarget(null);
+          scrollAttemptsRef.current = 0;
+          // Reset external hash change flag since we've processed the scroll
+          isExternalHashChangeRef.current = false;
+          // Reset isInitialOpenRef after scroll completes so phase clicks work
+          isInitialOpenRef.current = false;
+          console.log('[Scroll Debug] Scroll completed successfully!');
+        } else if (!itemElement) {
+          console.log('[Scroll Debug] Item not found, retrying...');
+          // Item not found yet, retry after a short delay
+          const timeoutId = setTimeout(() => {
+            // Trigger retry by updating retry trigger
+            setScrollRetryTrigger(prev => prev + 1);
+          }, 100);
+          
+          return () => {
+            clearTimeout(timeoutId);
+            cancelAnimationFrame(rafId);
+          };
+        }
+      });
+    });
+    
+    return () => {
+      cancelAnimationFrame(rafId);
+    };
+  }, [pendingScrollTarget, expandedPhaseItems, scrollRetryTrigger, navigate, location.pathname, location.hash, location.search]);
 
   // Filter items by phase, search query, and category
   const filteredItems = projectCost.items.filter(item => {
@@ -689,7 +894,7 @@ export const ProjectItemsModal = ({
   
   // Find the first incomplete phase index for initial active phase
   useEffect(() => {
-    if (viewMode === 'overview' && phaseGroups.length > 0) {
+    if (phaseGroups.length > 0) {
       const firstIncompleteIndex = phaseGroups.findIndex(phase => !phase.isCompleted);
       if (firstIncompleteIndex >= 0) {
         setActivePhaseIndex(firstIncompleteIndex);
@@ -698,35 +903,37 @@ export const ProjectItemsModal = ({
         setActivePhaseIndex(phaseGroups.length - 1);
       }
     }
-  }, [viewMode, phaseGroups.length]);
+  }, [phaseGroups.length]);
 
   // Auto-scroll timeline to active phase
   const timelineRef = React.useRef<HTMLDivElement>(null);
   const activePhaseCardRef = React.useRef<HTMLDivElement>(null);
   
-  useEffect(() => {
-    if (viewMode === 'overview' && timelineRef.current && phaseGroups.length > 0) {
-      const activeElement = timelineRef.current.children[activePhaseIndex] as HTMLElement;
-      if (activeElement) {
-        setTimeout(() => {
-          activeElement.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'nearest', 
-            inline: 'center' 
-          });
-        }, 100);
-      }
-    }
-  }, [activePhaseIndex, viewMode, phaseGroups.length]);
+  // Removed auto-scroll timeline - only scroll on explicit user actions
 
   // Scroll to active phase card when phase is clicked
   const handlePhaseClick = (index: number) => {
-    setActivePhaseIndex(index);
     const clickedPhase = phaseGroups[index];
-    // Auto-expand items when clicking on a phase
-    if (clickedPhase && !clickedPhase.isCompleted) {
-      setExpandedPhaseItems(clickedPhase.phase);
-    }
+    if (!clickedPhase) return;
+    
+    // Mark as internal navigation to prevent Effect 1 from treating it as external
+    isInternalNavigationRef.current = true;
+    
+    // Reset isInitialOpenRef since user is actively navigating
+    // This ensures phase clicks work correctly after cart navigation
+    isInitialOpenRef.current = false;
+    
+    // Always expand phase when clicking on it (even if already active)
+    setExpandedPhaseItems(clickedPhase.phase);
+    
+    // Remove itemId from URL if present (from previous cart click)
+    const params = new URLSearchParams(location.search);
+    params.delete('itemId');
+    const newSearch = params.toString();
+    
+    // Update URL hash - this will trigger Effect 1 which will update activePhaseIndex
+    navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}#${encodeURIComponent(clickedPhase.phase)}`, { replace: false });
+    
     // Scroll to the active phase card after a short delay
     setTimeout(() => {
       if (activePhaseCardRef.current) {
@@ -744,27 +951,47 @@ export const ProjectItemsModal = ({
   
   // Auto-expand items when phase changes
   useEffect(() => {
-    if (viewMode === 'overview' && currentActivePhase && !currentActivePhase.isCompleted) {
+    if (currentActivePhase && !currentActivePhase.isCompleted) {
       setExpandedPhaseItems(currentActivePhase.phase);
     }
-  }, [activePhaseIndex, viewMode, currentActivePhase]);
+  }, [activePhaseIndex, currentActivePhase]);
   
-  // Navigation functions for timeline
+  // Navigation functions for timeline - use URL-based navigation
   const goToNextPhase = () => {
     if (activePhaseIndex < phaseGroups.length - 1) {
-      setActivePhaseIndex(activePhaseIndex + 1);
+      const nextPhase = phaseGroups[activePhaseIndex + 1];
+      if (nextPhase) {
+        isInternalNavigationRef.current = true;
+        // Reset isInitialOpenRef since user is actively navigating
+        isInitialOpenRef.current = false;
+        // Remove itemId from URL if present
+        const params = new URLSearchParams(location.search);
+        params.delete('itemId');
+        const newSearch = params.toString();
+        navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}#${encodeURIComponent(nextPhase.phase)}`, { replace: false });
+      }
     }
   };
   
   const goToPreviousPhase = () => {
     if (activePhaseIndex > 0) {
-      setActivePhaseIndex(activePhaseIndex - 1);
+      const prevPhase = phaseGroups[activePhaseIndex - 1];
+      if (prevPhase) {
+        isInternalNavigationRef.current = true;
+        // Reset isInitialOpenRef since user is actively navigating
+        isInitialOpenRef.current = false;
+        // Remove itemId from URL if present
+        const params = new URLSearchParams(location.search);
+        params.delete('itemId');
+        const newSearch = params.toString();
+        navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}#${encodeURIComponent(prevPhase.phase)}`, { replace: false });
+      }
     }
   };
   
-  // Enhanced swipe for phase navigation in overview
+  // Enhanced swipe for phase navigation
   useEffect(() => {
-    if (!isOpen || viewMode !== 'overview') return;
+    if (!isOpen) return;
 
     let startX = 0;
     let startY = 0;
@@ -788,10 +1015,25 @@ export const ProjectItemsModal = ({
       
       // Swipe left = next phase, swipe right = previous phase
       if (Math.abs(deltaX) > 50 && Math.abs(deltaY) < 100) {
+        // Reset isInitialOpenRef since user is actively navigating
+        isInitialOpenRef.current = false;
+        // Remove itemId from URL if present
+        const params = new URLSearchParams(location.search);
+        params.delete('itemId');
+        const newSearch = params.toString();
+        
         if (deltaX < 0 && activePhaseIndex < phaseGroups.length - 1) {
-          setActivePhaseIndex(activePhaseIndex + 1);
+          const nextPhase = phaseGroups[activePhaseIndex + 1];
+          if (nextPhase) {
+            isInternalNavigationRef.current = true;
+            navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}#${encodeURIComponent(nextPhase.phase)}`, { replace: false });
+          }
         } else if (deltaX > 0 && activePhaseIndex > 0) {
-          setActivePhaseIndex(activePhaseIndex - 1);
+          const prevPhase = phaseGroups[activePhaseIndex - 1];
+          if (prevPhase) {
+            isInternalNavigationRef.current = true;
+            navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}#${encodeURIComponent(prevPhase.phase)}`, { replace: false });
+          }
         }
         isTracking = false;
       }
@@ -815,25 +1057,26 @@ export const ProjectItemsModal = ({
         modalElement.removeEventListener('touchend', handleTouchEnd);
       }
     };
-  }, [isOpen, viewMode, activePhaseIndex, phaseGroups.length]);
+  }, [isOpen, activePhaseIndex, phaseGroups.length]);
 
   const renderItemCard = (item: ProjectItem, isNextImportant: boolean = false) => {
     const cartQuantity = getItemCartQuantity(item.itemId);
     const isFullyInCart = isItemFullyInCart(item);
     const isFullyComplete = item.qtyFunded + cartQuantity >= item.qtyNeededTotal;
     const remainingPieces = item.qtyNeededTotal - item.qtyFunded - cartQuantity;
-    const isCompact = viewStyle === 'compact';
     const progressPercent = getProgressPercentage(item);
     const itemPurchasable = isItemPurchasable(item);
+    const isHighlighted = highlightedItemId === item.itemId;
     
-    if (isCompact) {
-      // Modern compact card view - no longer table-like
-      const tooltipContent = renderItemTooltip(item);
-      const itemContent = (
+    // Always use compact card view
+    const tooltipContent = renderItemTooltip(item);
+    const itemContent = (
         <Card
           key={item.itemId} 
           data-item-id={item.itemId}
           className={`group p-4 transition-all hover:shadow-md ${
+            isHighlighted ? 'ring-4 ring-orange-500 ring-offset-2 bg-orange-50/50 animate-pulse' : ''
+          } ${
             isNextImportant ? 'ring-2 ring-orange-500 ring-offset-2 bg-gradient-to-r from-orange-50 to-orange-50/50 border-orange-300' : ''
           } ${
             !itemPurchasable && !isFullyComplete ? 'bg-gray-50/50 border-gray-300 opacity-75' :
@@ -1015,199 +1258,6 @@ export const ProjectItemsModal = ({
       }
 
       return itemContent;
-    } else {
-      // Enhanced grid view - modern card design
-      const tooltipContent = renderItemTooltip(item);
-      const cardContent = (
-        <Card 
-          key={item.itemId} 
-          data-item-id={item.itemId}
-          className={`p-5 transition-all hover:shadow-xl flex flex-col h-full border-2 ${
-            isNextImportant ? 'ring-2 ring-orange-500 ring-offset-2 bg-gradient-to-br from-orange-50 to-orange-50/50 border-orange-400 shadow-lg' : ''
-          } ${
-            !itemPurchasable && !isFullyComplete ? 'bg-gradient-to-br from-gray-50/50 to-gray-50/30 border-gray-300 opacity-75' :
-            isFullyComplete ? 'bg-gradient-to-br from-green-50 to-green-50/50 border-green-300' : 
-            cartQuantity > 0 ? 'bg-gradient-to-br from-primary-light/30 to-primary-light/10 border-primary/40' : 
-            item.qtyFunded > 0 ? 'bg-gradient-to-br from-green-50/40 to-green-50/20 border-green-200' : 
-            'bg-white border-gray-200 hover:border-primary/30'
-          }`}
-        >
-          {/* Header Section */}
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <div className="flex-1 min-w-0">
-          <div className="flex items-start gap-2 mb-2">
-                <div className="flex-shrink-0 mt-1">
-                  {isFullyComplete ? (
-                    <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
-                      <CheckCircle className="w-6 h-6 text-white" />
-                    </div>
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                      {getStatusIcon(item)}
-                    </div>
-                  )}
-            </div>
-            <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <h4 className="font-bold text-gray-900 text-lg leading-tight">
-                      {getItemDisplayName(item)}
-                    </h4>
-                    {isNextImportant && (
-                      <Tooltip delayDuration={0}>
-                        <TooltipTrigger asChild>
-                          <Badge className="bg-orange-500 text-white text-xs px-2 py-1 cursor-help">
-                            <Sparkles className="w-3 h-3 mr-1" />
-                            {t("projectItems.nextImportant")}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent className="z-[9999] max-w-xs" side="top" sideOffset={5}>
-                          <p className="text-sm leading-relaxed">
-                            {t("projectItems.nextImportant.explanation")}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </div>
-                  {getItemCategory(item) && (
-                    <Badge variant="outline" className="text-xs px-2 py-1 mb-2">
-                      {getItemCategory(item)}
-                    </Badge>
-                  )}
-                {getItemBlurb(item) && (
-                  <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
-                        <p className="text-sm text-gray-600 line-clamp-2 cursor-help">
-                          {getItemBlurb(item)}
-                        </p>
-                    </TooltipTrigger>
-                    <TooltipContent 
-                      className="max-w-xs z-[9999]" 
-                      side="top"
-                      sideOffset={5}
-                    >
-                      <p className="text-sm">{getItemBlurb(item)}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Price Section - Prominent */}
-          <div className="mb-4 p-3 bg-white/60 rounded-lg border border-gray-200">
-            <div className="text-2xl font-bold text-primary mb-1">
-              {formatCurrency(item.unitCostEUR)}
-            </div>
-            <div className="text-xs text-gray-500">
-              {t("projectItems.perUnit").replace("{unit}", getItemUnit(item))}
-            </div>
-          </div>
-
-          {/* Progress Section */}
-          <div className="mb-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="font-semibold text-gray-700">
-                  {item.qtyFunded + cartQuantity} / {item.qtyNeededTotal}
-                </span>
-                {remainingPieces > 0 && (
-                  <span className="text-orange-600 font-medium">
-                    • {remainingPieces} {t("projectItems.stillNeeded")}
-                  </span>
-                )}
-              </div>
-              <span className="text-base font-bold text-gray-900">
-                {progressPercent.toFixed(0)}%
-              </span>
-            </div>
-            <div className="w-full">
-              {renderProgressBar(item, "h-3")}
-            </div>
-          </div>
-
-          {/* Cart Controls */}
-          <div className="mt-auto pt-4 border-t border-gray-200">
-            {cartQuantity > 0 ? (
-              /* Quantity Selector - when items are in cart */
-              <div className="flex items-center justify-center gap-3">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => removeItemPiece(item.itemId)}
-                  className="h-9 w-9 p-0"
-                >
-                  <Minus className="w-4 h-4" />
-                </Button>
-                <div className="flex items-center justify-center min-w-[2rem]">
-                  <span className="text-lg font-bold text-primary">
-                    {cartQuantity}
-                  </span>
-                </div>
-                {!isFullyComplete && (
-                <Tooltip delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => addItemPieceWithCartOpen(item)}
-                      disabled={remainingPieces === 0 || !itemPurchasable}
-                        className="h-9 w-9 p-0 disabled:opacity-30"
-                    >
-                        <Plus className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  {!itemPurchasable && !isFullyComplete && (
-                    <TooltipContent className="z-[9999] max-w-xs" side="top" sideOffset={5}>
-                      <p className="text-sm">{t("projectItems.phaseNotAvailable.itemDisabled")}</p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-                )}
-              </div>
-            ) : (
-              /* Add to Cart Button - when no items in cart */
-              !isFullyComplete && (
-                <div className="flex justify-end w-full">
-                  <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="sm"
-                        onClick={() => addItemPieceWithCartOpen(item)}
-                        disabled={remainingPieces === 0 || !itemPurchasable}
-                        className="h-9 px-4 bg-primary hover:bg-primary/90 text-white font-semibold disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <ShoppingCart className="w-4 h-4 mr-1.5" />
-                        {t("projectItems.addToCart")}
-                      </Button>
-                    </TooltipTrigger>
-                    {!itemPurchasable && !isFullyComplete && (
-                      <TooltipContent className="z-[9999] max-w-xs" side="top" sideOffset={5}>
-                        <p className="text-sm">{t("projectItems.phaseNotAvailable.itemDisabled")}</p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                </div>
-              )
-            )}
-          </div>
-        </Card>
-      );
-
-      // Wrap with tooltip if there's info to show
-      if (tooltipContent) {
-        return (
-          <Tooltip key={item.itemId} delayDuration={0}>
-            <TooltipTrigger asChild>
-              {cardContent}
-            </TooltipTrigger>
-            {tooltipContent}
-          </Tooltip>
-        );
-      }
-
-      return cardContent;
-    }
   };
 
   return (
@@ -1227,17 +1277,6 @@ export const ProjectItemsModal = ({
               <Package className="w-5 h-5 text-primary flex-shrink-0" />
               <div className="flex items-center gap-2 flex-1 min-w-0">
                 <span className="truncate">{projectCost.projectName}</span>
-                {viewMode === 'details' && selectedPhase !== 'all' && (
-                  <>
-                    <span className="text-gray-400">•</span>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <div className="w-4 h-4 bg-gray-100 rounded flex items-center justify-center">
-                        {getPhaseIcon(selectedPhase)}
-                      </div>
-                      <span className="text-sm text-gray-600 whitespace-nowrap">{getPhaseNameTranslated(selectedPhase)}</span>
-                    </div>
-                  </>
-                )}
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
                     <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help flex-shrink-0" />
@@ -1254,17 +1293,6 @@ export const ProjectItemsModal = ({
                 </Tooltip>
               </div>
             </DialogTitle>
-            {viewMode === 'details' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={navigateToOverview}
-                className="flex items-center gap-1.5 h-8 flex-shrink-0"
-              >
-                <ChevronRight className="w-3.5 h-3.5 rotate-180" />
-                <span className="text-xs">{t("projectItems.back")}</span>
-              </Button>
-            )}
           </div>
         </DialogHeader>
 
@@ -1286,10 +1314,12 @@ export const ProjectItemsModal = ({
         {/* Content Area */}
         <div className="relative flex-1 min-h-0 overflow-hidden">
           {/* Main Content */}
-          <div className="min-w-0 h-full overflow-y-auto overflow-x-hidden px-4 sm:px-6 pb-4 relative">
-            {viewMode === 'overview' ? (
-              /* New Timeline-Based Phase Overview */
-              <div className="space-y-6">
+          <div 
+            ref={scrollContainerRef}
+            className="min-w-0 h-full overflow-y-auto overflow-x-hidden px-4 sm:px-6 pb-4 relative"
+          >
+            {/* Timeline-Based Phase Overview */}
+            <div className="space-y-6">
                 {/* Enhanced Next Important Item Highlight with Flexible Donation Option */}
                 {nextImportantItem && (
                   <Card className="p-4 sm:p-5 bg-gradient-to-br from-orange-50 via-orange-50/80 to-primary-light/20 border-2 border-orange-400 shadow-lg">
@@ -1579,27 +1609,6 @@ export const ProjectItemsModal = ({
 
                   {/* Explanation for non-purchasable phases */}
                   {(() => {
-                    // DEBUG: Log all relevant values
-                    console.log('=== WARNING DEBUG ===');
-                    console.log('viewMode:', viewMode);
-                    console.log('firstIncompletePhaseIndex:', firstIncompletePhaseIndex);
-                    console.log('purchasablePhaseIndices:', Array.from(purchasablePhaseIndices));
-                    console.log('phaseGroups.length:', phaseGroups.length);
-                    console.log('phaseGroups:', phaseGroups.map((pg, idx) => ({
-                      index: idx,
-                      phase: pg.phase,
-                      isCompleted: pg.isCompleted,
-                      progress: pg.progress,
-                      isPurchasable: purchasablePhaseIndices.has(idx)
-                    })));
-                    console.log('currentActivePhase index:', activePhaseIndex);
-                    console.log('currentActivePhase:', currentActivePhase?.phase, 'isPurchasable:', currentActivePhase ? purchasablePhaseIndices.has(activePhaseIndex) : 'N/A');
-                    
-                    // Only show warning in overview mode
-                    if (viewMode !== 'overview') {
-                      console.log('❌ Not in overview mode');
-                      return false;
-                    }
                     
                     // Case 1: All phases are completed - no warning needed
                     if (firstIncompletePhaseIndex === -1) {
@@ -1613,12 +1622,6 @@ export const ProjectItemsModal = ({
                       return false;
                     }
                     
-                    // Case 3: Currently viewing a completed phase - no warning needed
-                    if (currentActivePhase && currentActivePhase.isCompleted) {
-                      console.log('❌ Currently viewing a completed phase - no warning needed');
-                      return false;
-                    }
-                    
                     // Get the maximum purchasable phase index
                     const purchasableIndicesArray = Array.from(purchasablePhaseIndices);
                     if (purchasableIndicesArray.length === 0) {
@@ -1629,13 +1632,20 @@ export const ProjectItemsModal = ({
                     console.log('maxPurchasableIndex:', maxPurchasableIndex);
                     console.log('activePhaseIndex:', activePhaseIndex);
                     console.log('Is active phase purchasable?', purchasablePhaseIndices.has(activePhaseIndex));
-                    console.log('Is active phase completed?', currentActivePhase?.isCompleted);
                     
                     // NEW: Only show warning if the user is currently viewing a NON-purchasable phase
                     // This way the warning only appears when relevant
                     const isViewingPurchasablePhase = purchasablePhaseIndices.has(activePhaseIndex);
                     if (isViewingPurchasablePhase) {
                       console.log('❌ Currently viewing a purchasable phase - no warning needed');
+                      return false;
+                    }
+                    
+                    // Check if the currently viewed phase is completed
+                    // If viewing a completed phase, no warning needed (even if it's not purchasable)
+                    const currentPhase = phaseGroups[activePhaseIndex];
+                    if (currentPhase && currentPhase.isCompleted) {
+                      console.log('❌ Currently viewing a completed phase - no warning needed');
                       return false;
                     }
                     
@@ -1729,6 +1739,7 @@ export const ProjectItemsModal = ({
                       )}
 
                       <Card 
+                        data-phase={currentActivePhase.phase}
                         className={`transition-all duration-300 ${
                           currentActivePhase.isCompleted 
                             ? 'bg-gradient-to-br from-green-50 to-green-100/50 border-2 border-green-300' 
@@ -1950,7 +1961,10 @@ export const ProjectItemsModal = ({
                                   return (
                                     <div
                                       key={item.itemId}
+                                      data-item-id={item.itemId}
                                       className={`group relative p-3 rounded-lg border transition-all hover:shadow-sm ${
+                                        highlightedItemId === item.itemId ? 'ring-4 ring-orange-500 ring-offset-2 bg-orange-50/50 animate-pulse' : ''
+                                      } ${
                                         isFullyComplete 
                                           ? 'bg-green-50/30 border-green-200/50' 
                                           : cartQuantity > 0 
@@ -2094,187 +2108,7 @@ export const ProjectItemsModal = ({
                   </div>
                 )}
                   </div>
-              </div>
-            ) : (
-              /* Details View */
-              <div className="space-y-2">
-              {/* Flexible Donation Option - Compact */}
-              <div className="flex items-center justify-between gap-3 p-3 bg-gradient-to-r from-primary-light/15 to-primary-light/5 rounded-lg border border-primary/20 mb-3">
-                <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <Heart className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span className="text-xs text-gray-700">
-                    {t("projectItems.unrestrictedDonation.description")}
-                  </span>
-                </div>
-                <Link 
-                  to={`/donation?project=${encodeURIComponent(projectCost.projectName)}`}
-                  onClick={() => {
-                    closeCart();
-                    onClose();
-                  }}
-                >
-                  <Button
-                    size="sm"
-                    className="h-8 px-3 bg-primary hover:bg-primary/90 text-white text-xs font-semibold whitespace-nowrap flex-shrink-0"
-                  >
-                    <Heart className="w-3 h-3 mr-1.5" />
-                    {t("projectItems.unrestrictedDonation.button")}
-                  </Button>
-                </Link>
-              </div>
-
-              {/* Compact Filter Bar */}
-              <div className="sticky top-0 z-20 bg-white border-b pb-2 -mx-4 sm:-mx-6 px-4 sm:px-6">
-                <div className="flex items-center justify-between gap-2">
-                  {/* Item Count */}
-                  <div className="text-xs text-gray-500">
-                    {searchQuery 
-                      ? t("projectItems.itemsFiltered").replace("{count}", filteredItems.length.toString())
-                      : `${filteredItems.length} ${t("projectItems.items")}`}
-                  </div>
-
-                  {/* Filter Toggle & View Style */}
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <div className="flex items-center gap-1 border rounded-md p-0.5">
-                      <Button
-                        size="sm"
-                        variant={viewStyle === 'compact' ? 'default' : 'ghost'}
-                        onClick={() => setViewStyle('compact')}
-                        className="h-7 px-2"
-                      >
-                        <List className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={viewStyle === 'detailed' ? 'default' : 'ghost'}
-                        onClick={() => setViewStyle('detailed')}
-                        className="h-7 px-2"
-                      >
-                        <Grid3x3 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setFiltersExpanded(!filtersExpanded)}
-                      className="h-7 px-2"
-                    >
-                      <Filter className="w-3.5 h-3.5" />
-                      {filtersExpanded ? <ChevronDown className="w-3.5 h-3.5 ml-1" /> : <ChevronRight className="w-3.5 h-3.5 ml-1" />}
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Collapsible Search & Filter Bar */}
-                {filtersExpanded && (
-                  <div className="flex flex-wrap items-center gap-2 pt-2 border-t">
-                    {/* Search */}
-                    <div className="relative flex-1 min-w-[180px]">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                      <Input
-                        placeholder={t("projectItems.search")}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-8 h-8 text-sm"
-                      />
-                    </div>
-
-                    {/* Category Filter */}
-                    {categories.length > 0 && (
-                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                        <SelectTrigger className="w-[130px] h-8 text-xs">
-                          <Filter className="w-3 h-3 mr-1.5" />
-                          <SelectValue placeholder={t("projectItems.category")} />
-                        </SelectTrigger>
-                        <SelectContent className="z-[70]">
-                          <SelectItem value="all">{t("projectItems.allCategories")}</SelectItem>
-                          {categories.map(cat => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-
-                    {/* Sort */}
-                    <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
-                      <SelectTrigger className="w-[120px] h-8 text-xs">
-                        <ArrowUpDown className="w-3 h-3 mr-1.5" />
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="z-[70]">
-                        <SelectItem value="remaining">{t("projectItems.sort.priority")}</SelectItem>
-                        <SelectItem value="name">{t("projectItems.sort.name")}</SelectItem>
-                        <SelectItem value="price">{t("projectItems.sort.price")}</SelectItem>
-                        <SelectItem value="progress">{t("projectItems.sort.progress")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
-              
-              {/* Funded Items - Collapsed by default */}
-              {fundedItems.length > 0 && (
-                <div className="space-y-3">
-                  <button
-                    onClick={() => toggleSection('funded')}
-                    className="sticky top-[60px] z-10 w-full text-left text-sm font-semibold text-green-700 mb-2 flex items-center justify-between hover:bg-green-50 px-4 sm:px-6 py-3 rounded-lg transition-colors bg-green-50/80 backdrop-blur-sm border-2 border-green-200 shadow-sm"
-                  >
-                    <div className="flex items-center gap-2">
-                      {expandedSections.funded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                      <CheckCircle className="w-5 h-5" />
-                      <span>{t("projectItems.fullyFunded")}</span>
-                      <Badge variant="secondary" className="ml-2 text-xs px-2 py-1 bg-green-100 text-green-700">
-                        {fundedItems.length}
-                      </Badge>
-                    </div>
-                  </button>
-                  {expandedSections.funded && (
-                    <div className={viewStyle === 'compact' 
-                      ? 'grid grid-cols-1 gap-3' 
-                      : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
-                    }>
-                      {fundedItems.map(item => renderItemCard(item, false))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Active Items - Combined Partially Funded & Unfunded - No Toggle */}
-              {(partiallyFundedItems.length > 0 || unfundedItems.length > 0) && (
-                <div className="space-y-4">
-                  {(partiallyFundedItems.length > 0 || unfundedItems.length > 0) && (
-                    <div className="flex items-center gap-2 mb-2">
-                      <Target className="w-5 h-5 text-primary" />
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {t("projectItems.availableItems") || "Available Items"}
-                      </h3>
-                      <Badge variant="outline" className="ml-2">
-                        {partiallyFundedItems.length + unfundedItems.length}
-                      </Badge>
-                    </div>
-                  )}
-                  <div className={viewStyle === 'compact' 
-                    ? 'grid grid-cols-1 gap-3' 
-                    : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
-                  }>
-                  {[...partiallyFundedItems, ...unfundedItems].map(item => {
-                    const isNextImportant = nextImportantItem?.itemId === item.itemId;
-                    return renderItemCard(item, isNextImportant);
-                  })}
-                  </div>
-                </div>
-              )}
-
-              {/* No items found */}
-              {filteredItems.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
-                  <Package className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                  <p>{t("projectItems.noItemsFound")}</p>
-                  <p className="text-sm">{t("projectItems.tryOtherFilters")}</p>
-                </div>
-              )}
             </div>
-          )}
           </div>
 
         </div>
@@ -2285,39 +2119,26 @@ export const ProjectItemsModal = ({
         <div className="grid grid-cols-2 sm:grid-cols-3 items-center pt-4 pb-6 sm:pb-8 border-t px-4 sm:px-6 bg-white flex-shrink-0">
           {/* Left: Item Count */}
           <div className="text-sm text-muted-foreground">
-            {viewMode === 'overview' 
-              ? t("projectItems.itemsTotal").replace("{count}", projectCost.totalItems.toString())
-              : t("projectItems.itemsShown").replace("{shown}", filteredItems.length.toString()).replace("{total}", projectCost.totalItems.toString())}
+            {t("projectItems.itemsTotal").replace("{count}", projectCost.totalItems.toString())}
           </div>
           
           {/* Center: Budget Summary - always centered, hidden on mobile */}
           <div className="hidden sm:flex items-center justify-center gap-6">
             <div className="text-center">
               <div className="text-sm font-bold text-green-600">
-                {viewMode === 'overview' 
-                  ? formatCurrency(projectCost.items.reduce((sum, item) => sum + (item.fundedCostEUR || 0), 0))
-                  : formatCurrency(filteredItems.reduce((sum, item) => sum + (item.fundedCostEUR || 0), 0))
-                }
+                {formatCurrency(projectCost.items.reduce((sum, item) => sum + (item.fundedCostEUR || 0), 0))}
               </div>
               <div className="text-xs text-gray-600">{t("projectItems.paid")}</div>
             </div>
             <div className="text-center">
               <div className="text-sm font-bold text-orange-600">
-                {viewMode === 'overview'
-                  ? formatCurrency(projectCost.totalBudget - projectCost.items.reduce((sum, item) => sum + (item.fundedCostEUR || 0), 0))
-                  : formatCurrency(filteredItems.reduce((sum, item) => sum + (item.totalCostEUR || 0), 0) - filteredItems.reduce((sum, item) => sum + (item.fundedCostEUR || 0), 0))
-                }
+                {formatCurrency(projectCost.totalBudget - projectCost.items.reduce((sum, item) => sum + (item.fundedCostEUR || 0), 0))}
               </div>
               <div className="text-xs text-gray-600">{t("projectItems.pending")}</div>
             </div>
             <div className="text-center">
               <div className="text-sm font-bold text-primary">
-                {viewMode === 'overview'
-                  ? ((projectCost.items.reduce((sum, item) => sum + (item.fundedCostEUR || 0), 0) / projectCost.totalBudget) * 100).toFixed(1)
-                  : filteredItems.reduce((sum, item) => sum + (item.totalCostEUR || 0), 0) > 0 
-                    ? ((filteredItems.reduce((sum, item) => sum + (item.fundedCostEUR || 0), 0) / filteredItems.reduce((sum, item) => sum + (item.totalCostEUR || 0), 0)) * 100).toFixed(1)
-                    : '0.0'
-                }%
+                {((projectCost.items.reduce((sum, item) => sum + (item.fundedCostEUR || 0), 0) / projectCost.totalBudget) * 100).toFixed(1)}%
               </div>
               <div className="text-xs text-gray-600">{t("projectItems.progress")}</div>
             </div>
