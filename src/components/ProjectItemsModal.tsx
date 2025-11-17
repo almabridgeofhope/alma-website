@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -1109,7 +1109,7 @@ export const ProjectItemsModal = ({
                       </h4>
                       {isNextImportant && (
                         <Tooltip delayDuration={0}>
-                          <TooltipTrigger asChild>
+                          <TooltipTrigger>
                             <Badge className="bg-orange-500 text-white text-xs px-2 py-0.5 cursor-help">
                               {t("projectItems.nextImportant")}
                             </Badge>
@@ -1263,8 +1263,9 @@ export const ProjectItemsModal = ({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
+    <TooltipProvider delayDuration={0}>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent 
         className={`z-[60] h-[85vh] flex flex-col p-0 transition-all duration-300 max-w-7xl bg-white touch-pan-y overscroll-none`}
         onPointerDownOutside={(e) => {
           // Prevent closing when clicking on cart
@@ -1334,8 +1335,8 @@ export const ProjectItemsModal = ({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                          <Tooltip delayDuration={200}>
-                            <TooltipTrigger asChild>
+                          <Tooltip delayDuration={0}>
+                            <TooltipTrigger>
                               <Badge className="bg-orange-500 text-white text-[10px] sm:text-xs font-semibold px-1.5 sm:px-2 py-0.5 cursor-help">
                                 {t("projectItems.nextImportant")}
                               </Badge>
@@ -2179,5 +2180,6 @@ export const ProjectItemsModal = ({
         </div>
       </DialogContent>
     </Dialog>
+    </TooltipProvider>
   );
 };
