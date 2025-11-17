@@ -5,6 +5,7 @@ import communityLocationImage from "@/assets/community/community-location.png";
 import natureLandscapeImage from "@/assets/nature/land_10.jpg";
 import wellProjectImage from "@/assets/project/well.jpg";
 import busProjectImage from "@/assets/project/bus.png";
+import gruendungsversammlungImage from "@/assets/team/Gründungsversammlung.png";
 
 export interface ArticleSection {
   title: string;
@@ -137,7 +138,7 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
       author: t("news.article6.author"),
       date: "2025-11-15",
       category: t("news.categories.organization"),
-      image: communityImage,
+      image: gruendungsversammlungImage,
       featured: true,
       body: {
         introduction: splitToArray(
