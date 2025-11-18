@@ -157,9 +157,14 @@ export const ProjectItemsModal = ({
           // Reset previousHash so Effect 1 recognizes this as a change
           previousHashRef.current = '';
         } else if (!currentHash || currentHash === 'all') {
-          // No hash - normal modal open, set to 'all'
-          navigate(`${location.pathname}#all`, { replace: true });
-          previousHashRef.current = '#all';
+          // No hash - normal modal open, set to 'all' only if not already set
+          // Use requestAnimationFrame to avoid conflicts with other effects
+          requestAnimationFrame(() => {
+            if (location.hash !== '#all') {
+              navigate(`${location.pathname}#all`, { replace: true });
+              previousHashRef.current = '#all';
+            }
+          });
         }
       }
     } else if (!isOpen) {
@@ -218,10 +223,17 @@ export const ProjectItemsModal = ({
   useEffect(() => {
     if (!isOpen) return;
     
-    // Skip if this is an internal navigation
+    // Skip if this is an internal navigation (user clicked phase)
+    // This prevents Effect 1 from overriding manual phase clicks
     if (isInternalNavigationRef.current) {
       isInternalNavigationRef.current = false;
       previousHashRef.current = location.hash;
+      // Still update expanded phase to match hash if needed
+      const hash = decodeURIComponent(location.hash.replace('#', '')) || 'all';
+      const phaseIndex = phases.findIndex(p => p === hash);
+      if (phaseIndex !== -1 && phaseIndex !== activePhaseIndex) {
+        setActivePhaseIndex(phaseIndex);
+      }
       return;
     }
     
@@ -268,7 +280,13 @@ export const ProjectItemsModal = ({
       
       if (shouldUpdatePhase) {
         console.log('[Scroll Debug] Phase index found:', phaseIndex, 'for hash:', hash);
-        setActivePhaseIndex(phaseIndex);
+        // Use functional update to ensure we're using the latest state
+        setActivePhaseIndex(prevIndex => {
+          if (prevIndex !== phaseIndex) {
+            return phaseIndex;
+          }
+          return prevIndex;
+        });
       }
       
       // If external change with itemId, set up scroll target FIRST
@@ -284,11 +302,11 @@ export const ProjectItemsModal = ({
         // Effect 2 will expand the phase
         // Mark that we've processed this external change
         isExternalHashChangeRef.current = false;
-      } else {
-        // Internal navigation (user clicked phase) - expand phase immediately
-        // Only expand if not already expanded to avoid unnecessary re-renders
+      } else if (!isExternalChange) {
+        // External hash change without itemId (e.g., direct link or browser back)
+        // Expand phase immediately
         if (expandedPhaseItems !== hash) {
-          console.log('[Scroll Debug] Expanding phase (internal):', hash, '(was:', expandedPhaseItems, ')');
+          console.log('[Scroll Debug] Expanding phase (external hash):', hash);
           setExpandedPhaseItems(hash);
         }
       }
@@ -314,6 +332,8 @@ export const ProjectItemsModal = ({
     }
     
     // Note: isExternalHashChangeRef is reset inside the if block above to prevent loops
+    // Note: We don't include activePhaseIndex or expandedPhaseItems in dependencies to avoid loops
+    // These are read from state inside the effect, which is safe because we only update them conditionally
   }, [isOpen, location.hash, location.search, phases]);
 
   // Effect 2: Expand phase when scroll target is set
@@ -918,75 +938,104 @@ export const ProjectItemsModal = ({
     const clickedPhase = phaseGroups[index];
     if (!clickedPhase) return;
     
-    // Mark as internal navigation to prevent Effect 1 from treating it as external
+    // CRITICAL: Set refs BEFORE any state updates to prevent race conditions
     isInternalNavigationRef.current = true;
-    
-    // Reset isInitialOpenRef since user is actively navigating
-    // This ensures phase clicks work correctly after cart navigation
     isInitialOpenRef.current = false;
     
-    // Always expand phase when clicking on it (even if already active)
+    // Update state immediately (synchronous) - this ensures UI updates instantly
+    setActivePhaseIndex(index);
     setExpandedPhaseItems(clickedPhase.phase);
+    
+    // Clear any pending scroll targets from previous navigation
+    setPendingScrollTarget(null);
     
     // Remove itemId from URL if present (from previous cart click)
     const params = new URLSearchParams(location.search);
     params.delete('itemId');
     const newSearch = params.toString();
     
-    // Update URL hash - this will trigger Effect 1 which will update activePhaseIndex
-    navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}#${encodeURIComponent(clickedPhase.phase)}`, { replace: false });
-    
-    // Scroll to the active phase card after a short delay
-    setTimeout(() => {
-      if (activePhaseCardRef.current) {
-        activePhaseCardRef.current.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start',
-          inline: 'nearest'
-        });
-      }
-    }, 150);
+    // Update URL hash AFTER state update - this syncs URL with state, not the other way around
+    // Use requestAnimationFrame to ensure state updates have been processed
+    requestAnimationFrame(() => {
+      navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}#${encodeURIComponent(clickedPhase.phase)}`, { replace: false });
+      
+      // Scroll to the active phase card after DOM updates
+      requestAnimationFrame(() => {
+        if (activePhaseCardRef.current) {
+          activePhaseCardRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start',
+            inline: 'nearest'
+          });
+        }
+      });
+    });
   };
   
   // Get current active phase
   const currentActivePhase = phaseGroups[activePhaseIndex] || phaseGroups[0];
   
-  // Auto-expand items when phase changes
+  // Auto-expand items when phase changes (only if not already expanded)
+  // This handles cases where phase changes via URL hash (browser back/forward)
   useEffect(() => {
     if (currentActivePhase && !currentActivePhase.isCompleted) {
-      setExpandedPhaseItems(currentActivePhase.phase);
+      // Only expand if not already expanded and not from internal navigation
+      // Internal navigation already sets expandedPhaseItems in handlePhaseClick
+      if (expandedPhaseItems !== currentActivePhase.phase && !isInternalNavigationRef.current) {
+        setExpandedPhaseItems(currentActivePhase.phase);
+      }
     }
-  }, [activePhaseIndex, currentActivePhase]);
+  }, [activePhaseIndex, currentActivePhase, expandedPhaseItems]);
   
-  // Navigation functions for timeline - use URL-based navigation
+  // Navigation functions for timeline - update state first, then sync URL
   const goToNextPhase = () => {
     if (activePhaseIndex < phaseGroups.length - 1) {
-      const nextPhase = phaseGroups[activePhaseIndex + 1];
+      const nextIndex = activePhaseIndex + 1;
+      const nextPhase = phaseGroups[nextIndex];
       if (nextPhase) {
+        // Set refs first to prevent race conditions
         isInternalNavigationRef.current = true;
-        // Reset isInitialOpenRef since user is actively navigating
         isInitialOpenRef.current = false;
-        // Remove itemId from URL if present
+        
+        // Update state immediately
+        setActivePhaseIndex(nextIndex);
+        setExpandedPhaseItems(nextPhase.phase);
+        setPendingScrollTarget(null);
+        
+        // Sync URL after state update
         const params = new URLSearchParams(location.search);
         params.delete('itemId');
         const newSearch = params.toString();
-        navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}#${encodeURIComponent(nextPhase.phase)}`, { replace: false });
+        
+        requestAnimationFrame(() => {
+          navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}#${encodeURIComponent(nextPhase.phase)}`, { replace: false });
+        });
       }
     }
   };
   
   const goToPreviousPhase = () => {
     if (activePhaseIndex > 0) {
-      const prevPhase = phaseGroups[activePhaseIndex - 1];
+      const prevIndex = activePhaseIndex - 1;
+      const prevPhase = phaseGroups[prevIndex];
       if (prevPhase) {
+        // Set refs first to prevent race conditions
         isInternalNavigationRef.current = true;
-        // Reset isInitialOpenRef since user is actively navigating
         isInitialOpenRef.current = false;
-        // Remove itemId from URL if present
+        
+        // Update state immediately
+        setActivePhaseIndex(prevIndex);
+        setExpandedPhaseItems(prevPhase.phase);
+        setPendingScrollTarget(null);
+        
+        // Sync URL after state update
         const params = new URLSearchParams(location.search);
         params.delete('itemId');
         const newSearch = params.toString();
-        navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}#${encodeURIComponent(prevPhase.phase)}`, { replace: false });
+        
+        requestAnimationFrame(() => {
+          navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}#${encodeURIComponent(prevPhase.phase)}`, { replace: false });
+        });
       }
     }
   };
@@ -1017,24 +1066,41 @@ export const ProjectItemsModal = ({
       
       // Swipe left = next phase, swipe right = previous phase
       if (Math.abs(deltaX) > 50 && Math.abs(deltaY) < 100) {
-        // Reset isInitialOpenRef since user is actively navigating
         isInitialOpenRef.current = false;
-        // Remove itemId from URL if present
-        const params = new URLSearchParams(location.search);
-        params.delete('itemId');
-        const newSearch = params.toString();
         
         if (deltaX < 0 && activePhaseIndex < phaseGroups.length - 1) {
-          const nextPhase = phaseGroups[activePhaseIndex + 1];
+          const nextIndex = activePhaseIndex + 1;
+          const nextPhase = phaseGroups[nextIndex];
           if (nextPhase) {
             isInternalNavigationRef.current = true;
-            navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}#${encodeURIComponent(nextPhase.phase)}`, { replace: false });
+            setActivePhaseIndex(nextIndex);
+            setExpandedPhaseItems(nextPhase.phase);
+            setPendingScrollTarget(null);
+            
+            const params = new URLSearchParams(location.search);
+            params.delete('itemId');
+            const newSearch = params.toString();
+            
+            requestAnimationFrame(() => {
+              navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}#${encodeURIComponent(nextPhase.phase)}`, { replace: false });
+            });
           }
         } else if (deltaX > 0 && activePhaseIndex > 0) {
-          const prevPhase = phaseGroups[activePhaseIndex - 1];
+          const prevIndex = activePhaseIndex - 1;
+          const prevPhase = phaseGroups[prevIndex];
           if (prevPhase) {
             isInternalNavigationRef.current = true;
-            navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}#${encodeURIComponent(prevPhase.phase)}`, { replace: false });
+            setActivePhaseIndex(prevIndex);
+            setExpandedPhaseItems(prevPhase.phase);
+            setPendingScrollTarget(null);
+            
+            const params = new URLSearchParams(location.search);
+            params.delete('itemId');
+            const newSearch = params.toString();
+            
+            requestAnimationFrame(() => {
+              navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}#${encodeURIComponent(prevPhase.phase)}`, { replace: false });
+            });
           }
         }
         isTracking = false;
@@ -2163,16 +2229,19 @@ export const ProjectItemsModal = ({
                   </span>
                 </Button>
                 {showCartDrawer && (
-                  <Link to="/donation" onClick={() => { closeCart(); setShowCartDrawer(false); }}>
-                    <Button 
-                      size="sm"
-                      variant="outline"
-                      className="flex items-center gap-2 bg-white hover:bg-gray-50 border-gray-300"
-                    >
-                      {t("projectItems.donateNow")}
-                      <ArrowRight className="w-4 h-4" />
-                    </Button>
-                  </Link>
+                  <Button 
+                    size="sm"
+                    variant="outline"
+                    className="flex items-center gap-2 bg-white hover:bg-gray-50 border-gray-300"
+                    onClick={() => {
+                      closeCart();
+                      setShowCartDrawer(false);
+                      navigate("/donation");
+                    }}
+                  >
+                    {t("projectItems.donateNow")}
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
                 )}
               </>
             )}
