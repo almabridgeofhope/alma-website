@@ -1833,7 +1833,24 @@ const Donation = () => {
                   </a>
                 </Button>
                 <Button asChild size="lg">
-                  <Link to="/contact">
+                  <Link 
+                    to="/contact"
+                    onClick={(e) => {
+                      // Prevent default to handle manually
+                      e.preventDefault();
+                      e.stopPropagation();
+                      
+                      const targetPath = "/contact";
+                      console.log("[Donation] Contact Link clicked, navigating to", targetPath);
+                      
+                      // Clear any stale redirect paths
+                      sessionStorage.removeItem('404-redirect-path');
+                      
+                      // Use window.location as primary method since React Router seems unreliable
+                      // This ensures navigation always works
+                      window.location.href = targetPath;
+                    }}
+                  >
                     {t("donation.contact.button")}
                   </Link>
                 </Button>

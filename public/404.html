@@ -56,16 +56,32 @@
       // This script redirects 404 pages to index.html while preserving the path
       // The path is stored in sessionStorage and will be restored by the main app
       (function() {
-        var path = window.location.pathname;
-        var search = window.location.search;
-        var hash = window.location.hash;
-        var fullPath = path + search + hash;
-        
-        // Store the original path in sessionStorage
-        sessionStorage.setItem('404-redirect-path', fullPath);
-        
-        // Redirect to index.html
-        window.location.replace('/index.html');
+        // Only redirect if we're not already on index.html
+        if (window.location.pathname !== '/index.html' && window.location.pathname !== '/') {
+          var path = window.location.pathname;
+          var search = window.location.search;
+          var hash = window.location.hash;
+          var fullPath = path + search + hash;
+          
+          // Store the original path in sessionStorage
+          sessionStorage.setItem('404-redirect-path', fullPath);
+          
+          // Use replace to avoid adding to history
+          window.location.replace('/index.html' + search + hash);
+        } else {
+          // If we're already on index.html, check for stored path
+          var storedPath = sessionStorage.getItem('404-redirect-path');
+          if (storedPath) {
+            sessionStorage.removeItem('404-redirect-path');
+            // Let React Router handle the navigation
+            // Just ensure we're ready
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', function() {
+                // React Router will handle this via Handle404Redirect component
+              });
+            }
+          }
+        }
       })();
     </script>
   </head>

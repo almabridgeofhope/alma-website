@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, Navigate, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ShoppingCartProvider } from "@/contexts/ShoppingCartContext";
 import { CartSidebar } from "@/components/CartSidebar";
@@ -24,19 +24,68 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Component to handle 404 redirects from GitHub Pages
+// Component to handle 404 redirects from GitHub Pages and browser history
 const Handle404Redirect = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const hasHandledRedirect = React.useRef(false);
   
   useEffect(() => {
-    // Check if we have a stored redirect path from 404.html
-    const redirectPath = sessionStorage.getItem('404-redirect-path');
-    if (redirectPath) {
-      sessionStorage.removeItem('404-redirect-path');
-      // Navigate to the stored path
-      navigate(redirectPath, { replace: true });
+    // Only handle redirect on initial mount or when we're on index.html (from 404.html redirect)
+    const isFrom404 = window.location.pathname === '/index.html' || 
+                      window.location.pathname === '/' && sessionStorage.getItem('404-redirect-path');
+    
+    if (!hasHandledRedirect.current && isFrom404) {
+      // Check if we have a stored redirect path from 404.html
+      const redirectPath = sessionStorage.getItem('404-redirect-path');
+      if (redirectPath) {
+        const currentPath = location.pathname + location.search + location.hash;
+        if (redirectPath !== currentPath) {
+          console.log('[Handle404Redirect] Redirecting from 404.html to:', redirectPath);
+          sessionStorage.removeItem('404-redirect-path');
+          hasHandledRedirect.current = true;
+          // Navigate to the stored path
+          try {
+            navigate(redirectPath, { replace: true });
+          } catch (error) {
+            console.error('Navigation error:', error);
+            // Fallback: force page reload if navigation fails
+            window.location.href = redirectPath;
+          }
+        } else {
+          // Path matches, just clear the stored path
+          sessionStorage.removeItem('404-redirect-path');
+          hasHandledRedirect.current = true;
+        }
+        return;
+      }
     }
-  }, [navigate]);
+    
+    // Handle browser back/forward navigation issues
+    // Only listen to popstate events, not regular navigation
+    const handlePopState = (event: PopStateEvent) => {
+      // Small delay to let React Router process the navigation first
+      setTimeout(() => {
+        const currentPath = window.location.pathname;
+        // Only handle if we're on index.html but React Router thinks we're elsewhere
+        if ((currentPath === '/index.html' || currentPath === '/') && currentPath !== location.pathname) {
+          const storedPath = sessionStorage.getItem('404-redirect-path');
+          if (storedPath) {
+            console.log('[Handle404Redirect] PopState redirect to:', storedPath);
+            sessionStorage.removeItem('404-redirect-path');
+            try {
+              navigate(storedPath, { replace: true });
+            } catch (error) {
+              console.error('Navigation error on popstate:', error);
+            }
+          }
+        }
+      }, 50);
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [navigate]); // Remove location from dependencies to prevent re-running on every route change
   
   return null;
 };
@@ -52,6 +101,11 @@ const DevRedirect = () => {
 const AppContent = () => {
   const location = useLocation();
   const isDonationPage = location.pathname === '/donation';
+
+  // Debug: Log route changes
+  useEffect(() => {
+    console.log('[AppContent] Route changed to:', location.pathname);
+  }, [location.pathname]);
 
   return (
     <>
@@ -87,10 +141,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter
-            future={{
-              v7_startTransition: true,
-              v7_relativeSplatPath: true,
-            }}
+            basename="/"
           >
             <Handle404Redirect />
             <AppContent />
