@@ -44,8 +44,8 @@ const generateSEPAReference = (donorName: string, amount: number, timestamp: str
   return `ALMA-${dateStr}-${namePart}-${amountPart}`;
 };
 
-// PayPal Button Wrapper Component - moved outside to prevent recreation on every render
-const PayPalButtonWrapper = memo(({ 
+// PayPal Button Component - uses PayPalScriptReducer hook (must be inside PayPalScriptProvider)
+const PayPalButtonsComponent = memo(({ 
   createOrder, 
   onApprove, 
   onError, 
@@ -112,6 +112,55 @@ const PayPalButtonWrapper = memo(({
   );
 });
 
+PayPalButtonsComponent.displayName = "PayPalButtonsComponent";
+
+// PayPal Button Wrapper with PayPalScriptProvider - wraps only the PayPal buttons
+// This is the component that should be used in the Donation component
+const PayPalButtonWrapper = memo(({ 
+  createOrder, 
+  onApprove, 
+  onError, 
+  onCancel,
+  language,
+}: {
+  createOrder: (data: any, actions: any) => Promise<string>;
+  onApprove: (data: any, actions: any) => Promise<void>;
+  onError: (err: any) => void;
+  onCancel: () => void;
+  language: string;
+}) => {
+  if (!PAYPAL_CLIENT_ID) {
+    return (
+      <div className="w-full p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <p className="text-sm text-yellow-800">PayPal Client ID nicht konfiguriert</p>
+      </div>
+    );
+  }
+
+  const paypalLocale = language === "de" ? "de_DE" : "en_US";
+
+  return (
+    <PayPalScriptProvider
+      options={{
+        clientId: PAYPAL_CLIENT_ID,
+        currency: "EUR",
+        intent: "capture",
+        components: "buttons",
+        locale: paypalLocale,
+        "enable-funding": "paypal,sepa",
+        "disable-funding": "card,credit,venmo,paylater",
+      }}
+    >
+      <PayPalButtonsComponent
+        createOrder={createOrder}
+        onApprove={onApprove}
+        onError={onError}
+        onCancel={onCancel}
+      />
+    </PayPalScriptProvider>
+  );
+});
+
 PayPalButtonWrapper.displayName = "PayPalButtonWrapper";
 
 const Donation = () => {
@@ -123,6 +172,10 @@ const Donation = () => {
   useEffect(() => {
     closeCart();
   }, [closeCart]);
+
+  // Note: We removed the global link click interceptor because PayPalScriptProvider
+  // is now only wrapping the PayPal buttons, not the entire page.
+  // This allows React Router to work normally for navigation and browser back/forward.
   
   // Component state
   const [searchParams] = useSearchParams();
@@ -1619,6 +1672,7 @@ const Donation = () => {
                           onApprove={onPayPalApprove}
                           onError={onPayPalError}
                           onCancel={onPayPalCancel}
+                          language={language}
                         />
                         {/* Overlay to disable PayPal buttons when dialog is open */}
                         {(showSuccessDialog || showErrorDialog || showWarningDialog) && (
@@ -1832,27 +1886,34 @@ const Donation = () => {
                     {t("donation.contact.email")}
                   </a>
                 </Button>
-                <Button asChild size="lg">
-                  <Link 
-                    to="/contact"
-                    onClick={(e) => {
-                      // Prevent default to handle manually
-                      e.preventDefault();
-                      e.stopPropagation();
-                      
-                      const targetPath = "/contact";
-                      console.log("[Donation] Contact Link clicked, navigating to", targetPath);
-                      
-                      // Clear any stale redirect paths
-                      sessionStorage.removeItem('404-redirect-path');
-                      
-                      // Use window.location as primary method since React Router seems unreliable
-                      // This ensures navigation always works
-                      window.location.href = targetPath;
-                    }}
-                  >
-                    {t("donation.contact.button")}
-                  </Link>
+                <Button 
+                  size="lg"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    console.log('[Donation] Contact button clicked');
+                    console.log('[Donation] Current location:', window.location.href);
+                    console.log('[Donation] Current pathname:', window.location.pathname);
+                    
+                    // Clear any stale redirect paths
+                    sessionStorage.removeItem('404-redirect-path');
+                    
+                    // On donation page, React Router navigation seems unreliable
+                    // Use window.location.replace() for guaranteed navigation without history entry
+                    // This ensures the page actually navigates, not just changes URL
+                    try {
+                      console.log('[Donation] Attempting navigation with window.location.replace');
+                      window.location.replace('/contact');
+                      console.log('[Donation] window.location.replace() called');
+                    } catch (error) {
+                      console.error('[Donation] Navigation error:', error);
+                      // Fallback: try window.location.href
+                      window.location.href = '/contact';
+                    }
+                  }}
+                >
+                  {t("donation.contact.button")}
                 </Button>
               </div>
             </div>
@@ -1947,29 +2008,8 @@ const Donation = () => {
     </div>
   );
 
-  // Always wrap with PayPalScriptProvider if client ID is available
-  // This ensures the SDK is loaded once and stays loaded
-  if (PAYPAL_CLIENT_ID) {
-    // Map language to PayPal locale
-    const paypalLocale = language === "de" ? "de_DE" : "en_US";
-    
-    return (
-      <PayPalScriptProvider
-        options={{
-          clientId: PAYPAL_CLIENT_ID,
-          currency: "EUR",
-          intent: "capture",
-          components: "buttons",
-          locale: paypalLocale,
-          "enable-funding": "paypal,sepa",
-          "disable-funding": "card,credit,venmo,paylater",
-        }}
-      >
-        {content}
-      </PayPalScriptProvider>
-    );
-  }
-
+  // Return content directly - PayPalScriptProvider is now only wrapping the PayPal buttons
+  // This prevents interference with React Router navigation and browser back/forward
   return content;
 };
 
