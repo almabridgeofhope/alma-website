@@ -173,9 +173,8 @@ const Donation = () => {
     closeCart();
   }, [closeCart]);
 
-  // Note: We removed the global link click interceptor because PayPalScriptProvider
-  // is now only wrapping the PayPal buttons, not the entire page.
-  // This allows React Router to work normally for navigation and browser back/forward.
+  // Note: Navigation links are now handled directly in the Navigation component
+  // using explicit onClick handlers when on the donation page to bypass PayPal SDK interception.
   
   // Component state
   const [searchParams] = useSearchParams();
