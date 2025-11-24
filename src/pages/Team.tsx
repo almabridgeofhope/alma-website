@@ -59,10 +59,10 @@ const Team = () => {
       name: t("team.eileen.name"),
       image: eileenImage,
     },
-    // {
-    //   name: t("team.hansen.name"),
-    //   image: hansenImage,
-    // },
+    {
+      name: t("team.hansen.name"),
+      image: hansenImage,
+    },
     {
       name: t("team.max.name"),
       image: maxImage,
