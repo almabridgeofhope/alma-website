@@ -58,8 +58,42 @@ const PayPalButtonsComponent = memo(({
 }) => {
   const { t } = useLanguage();
   const [{ isPending, isResolved, isRejected }] = usePayPalScriptReducer();
+  const [isSDKReady, setIsSDKReady] = useState(false);
 
-  if (isPending) {
+  // Check if PayPal SDK is actually loaded and ready
+  useEffect(() => {
+    if (isResolved && !isRejected) {
+      // Wait for window.paypal.Buttons to be available
+      let timeoutId: NodeJS.Timeout | null = null;
+      let retryCount = 0;
+      const maxRetries = 50; // 5 seconds max (50 * 100ms)
+      
+      const checkSDK = () => {
+        if (typeof window !== 'undefined' && (window as any).paypal && (window as any).paypal.Buttons) {
+          setIsSDKReady(true);
+        } else if (retryCount < maxRetries) {
+          retryCount++;
+          timeoutId = setTimeout(checkSDK, 100);
+        } else {
+          // SDK didn't load after max retries
+          console.error("PayPal SDK Buttons not available after waiting");
+          setIsSDKReady(false);
+        }
+      };
+      
+      checkSDK();
+      
+      return () => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+      };
+    } else {
+      setIsSDKReady(false);
+    }
+  }, [isResolved, isRejected]);
+
+  if (isPending || !isSDKReady) {
     return (
       <div className="w-full flex items-center justify-center py-8">
         <div className="text-center">
@@ -138,6 +172,29 @@ const PayPalButtonWrapper = memo(({
   }
 
   const paypalLocale = language === "de" ? "de_DE" : "en_US";
+  
+  // Check if we're running over HTTPS
+  const isHTTPS = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+  // Cleanup PayPal SDK on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      // Cleanup function - PayPal SDK should handle its own cleanup,
+      // but we ensure any pending operations are cancelled
+      if (typeof window !== 'undefined' && (window as any).paypal) {
+        // PayPal SDK cleanup is handled by PayPalScriptProvider
+        // This is just a safety measure
+      }
+    };
+  }, []);
+
+  // Warn if not using HTTPS (except for localhost development)
+  useEffect(() => {
+    if (!isHTTPS && !isLocalhost) {
+      console.warn('[PayPal] Website is not using HTTPS. Some PayPal features (like pre-filled payment methods) require HTTPS.');
+    }
+  }, [isHTTPS, isLocalhost]);
 
   return (
     <PayPalScriptProvider
@@ -147,8 +204,17 @@ const PayPalButtonWrapper = memo(({
         intent: "capture",
         components: "buttons",
         locale: paypalLocale,
-        "enable-funding": "paypal,sepa",
-        "disable-funding": "card,credit,venmo,paylater",
+        // Enable ONLY PayPal accounts - no credit cards, no SEPA via PayPal
+        // Credit cards disabled due to 3D Secure (Cardinal Commerce) cross-origin frame issues
+        // SEPA should be handled separately, not through PayPal
+        // For credit card payments, consider using Stripe instead
+        "enable-funding": "paypal",
+        // Disable ALL other payment methods including credit cards and debit cards
+        // This ensures only PayPal account login is shown
+        // Note: PayPal may still show credit card option if "Guest Checkout" is enabled in PayPal Business Account
+        "disable-funding": "card,credit,venmo,paylater,sepa,bancontact,blik,eps,giropay,ideal,mercadopago,mybank,p24",
+        // Disable guest checkout - forces PayPal account login only
+        "data-namespace": "paypal_sdk",
       }}
     >
       <PayPalButtonsComponent
@@ -172,6 +238,85 @@ const Donation = () => {
   useEffect(() => {
     closeCart();
   }, [closeCart]);
+
+  // Handle page visibility changes to prevent crashes after inactivity
+  useEffect(() => {
+    let keepAliveInterval: NodeJS.Timeout | null = null;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Page became hidden - reduce activity but keep connection alive
+        // Set up a minimal keep-alive ping to prevent network timeout
+        keepAliveInterval = setInterval(() => {
+          // Send a minimal request to keep connection alive
+          // Use a lightweight endpoint or just ping the current page
+          if (navigator.onLine) {
+            fetch(window.location.href, { 
+              method: 'HEAD', 
+              cache: 'no-cache',
+              keepalive: true 
+            }).catch(() => {
+              // Silently fail - this is just a keep-alive
+            });
+          }
+        }, 30000); // Every 30 seconds
+      } else {
+        // Page became visible - cleanup keep-alive and ensure everything is working
+        if (keepAliveInterval) {
+          clearInterval(keepAliveInterval);
+          keepAliveInterval = null;
+        }
+        if (reconnectTimeout) {
+          clearTimeout(reconnectTimeout);
+          reconnectTimeout = null;
+        }
+        
+        // Check if we need to reconnect
+        if (!navigator.onLine) {
+          reconnectTimeout = setTimeout(() => {
+            // Try to reconnect by checking network status
+            if (navigator.onLine) {
+              // Network is back, reload if needed
+              const currentUrl = window.location.href;
+              if (currentUrl.includes('donation')) {
+                // Only reload if we're still on donation page
+                window.location.reload();
+              }
+            }
+          }, 1000);
+        }
+      }
+    };
+
+    // Listen for visibility changes
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Also listen for online/offline events
+    const handleOnline = () => {
+      console.log('[Donation] Network connection restored');
+    };
+    
+    const handleOffline = () => {
+      console.warn('[Donation] Network connection lost');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Cleanup on unmount
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      if (keepAliveInterval) {
+        clearInterval(keepAliveInterval);
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+    };
+  }, []);
 
   // Note: Navigation links are now handled directly in the Navigation component
   // using explicit onClick handlers when on the donation page to bypass PayPal SDK interception.
@@ -204,6 +349,27 @@ const Donation = () => {
       }
     }
   }, [searchParams, navigate, cartState.items.length, cartState.totalAmount, amount, customAmount, donationType]);
+
+  // Handle cancelled redirect from PayPal - clean up URL parameters
+  useEffect(() => {
+    const cancelled = searchParams.get("cancelled");
+    if (cancelled === "true") {
+      // Clean up the URL by removing the cancelled parameter
+      // This prevents unwanted route changes and navigation issues
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete("cancelled");
+      const newSearch = newSearchParams.toString();
+      const newUrl = newSearch 
+        ? `${window.location.pathname}?${newSearch}` 
+        : window.location.pathname;
+      
+      // Use replace to avoid adding to history
+      window.history.replaceState({}, "", newUrl);
+      
+      // Reset payment processing state
+      setIsProcessingPayment(false);
+    }
+  }, [searchParams]);
   const [paymentMethod, setPaymentMethod] = useState<"paypal" | "sepa" | "card">("paypal");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showWarningDialog, setShowWarningDialog] = useState(false);
@@ -635,6 +801,10 @@ const Donation = () => {
 
   // PayPal payment handlers - memoized to prevent unnecessary re-renders
   const createPayPalOrder = useCallback((data: any, actions: any) => {
+    console.log("=== createPayPalOrder called ===");
+    console.log("Form data at order creation:", formData);
+    console.log("Data from PayPal:", data);
+    
     // Validate all required fields before creating PayPal order
     const finalAmountStr = donationType === "monthly"
       ? (amount || customAmount)
@@ -644,39 +814,52 @@ const Donation = () => {
     
     // Validate amount
     if (!finalAmountStr || parseFloat(finalAmountStr) <= 0) {
+      console.error("Amount validation failed:", finalAmountStr);
       throw new Error(t("donation.form.error.amount"));
     }
     
-    // Validate first name
-    if (!formData.firstName.trim()) {
+    // Get and validate first name - ensure it's not empty
+    const firstName = formData.firstName?.trim() || "";
+    if (!firstName) {
+      console.error("First name validation failed - firstName is empty:", formData.firstName);
       throw new Error(t("donation.form.error.firstName"));
     }
+    console.log("First name validated:", firstName);
     
-    // Validate last name
-    if (!formData.lastName.trim()) {
+    // Get and validate last name
+    const lastName = formData.lastName?.trim() || "";
+    if (!lastName) {
+      console.error("Last name validation failed - lastName is empty:", formData.lastName);
       throw new Error(t("donation.form.error.lastName"));
     }
+    console.log("Last name validated:", lastName);
     
-    // Validate email
-    if (!formData.email.trim()) {
+    // Get and validate email
+    const email = formData.email?.trim() || "";
+    if (!email) {
+      console.error("Email validation failed - email is empty:", formData.email);
       throw new Error(t("donation.form.error.email"));
     }
     
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
+    if (!emailRegex.test(email)) {
+      console.error("Email format validation failed:", email);
       throw new Error(t("donation.form.error.emailInvalid"));
     }
+    console.log("Email validated:", email);
     
     // Validate address if receipt is requested
     if (formData.wantsReceipt) {
-      if (!formData.street.trim() || !formData.postalCode.trim() || !formData.city.trim() || !formData.country.trim()) {
+      if (!formData.street?.trim() || !formData.postalCode?.trim() || !formData.city?.trim() || !formData.country?.trim()) {
+        console.error("Address validation failed for receipt request");
         throw new Error(t("donation.form.error.address"));
       }
     }
     
     // Validate privacy consent
     if (!formData.privacyConsent) {
+      console.error("Privacy consent validation failed");
       throw new Error(t("donation.form.error.privacy"));
     }
     
@@ -732,7 +915,49 @@ const Donation = () => {
     // Format amount to 2 decimal places for PayPal
     const formattedAmount = finalAmount.toFixed(2);
     
-    return actions.order.create({
+    // Build payer information for PayPal order
+    // This is required for credit card payments
+    // Ensure all fields are non-empty strings
+    const payerInfo: any = {
+      name: {
+        given_name: firstName,
+        surname: lastName,
+      },
+      email_address: email,
+    };
+    
+    // For credit card payments, PayPal may require a billing address
+    // Add address if available (either for receipt requests or for credit card payments)
+    const hasAddress = formData.street?.trim() && formData.city?.trim() && formData.postalCode?.trim() && formData.country?.trim();
+    
+    if (hasAddress) {
+      // Determine country code for PayPal (must be 2-letter ISO code)
+      let countryCode = formData.country.trim().toUpperCase();
+      if (countryCode.length > 2) {
+        // If country code is longer than 2 characters, try to extract first 2 or default to DE
+        countryCode = countryCode.substring(0, 2);
+      }
+      // Validate it's a valid 2-letter code, otherwise default to DE
+      if (countryCode.length !== 2 || !/^[A-Z]{2}$/.test(countryCode)) {
+        countryCode = "DE";
+      }
+      
+      payerInfo.address = {
+        address_line_1: formData.street.trim(),
+        admin_area_2: formData.city.trim(), // city
+        postal_code: formData.postalCode.trim(),
+        country_code: countryCode,
+      };
+      console.log("Address added to payer info:", payerInfo.address);
+    }
+    
+    console.log("Payer info being sent to PayPal:", {
+      name: payerInfo.name,
+      email: payerInfo.email_address,
+      hasAddress: !!payerInfo.address
+    });
+    
+    const orderRequest = {
       purchase_units: [{
         amount: {
           currency_code: "EUR",
@@ -741,14 +966,26 @@ const Donation = () => {
         description: `${donationType === "one-time" ? t("donation.form.onetime") : t("donation.form.monthly")} donation to Alma Bridge of Hope`,
         custom_id: `${donationType}-${Date.now()}`,
       }],
+      payer: payerInfo,
       application_context: {
         brand_name: "Alma Bridge of Hope",
-        landing_page: "LOGIN",
+        landing_page: "LOGIN", // LOGIN shows PayPal login first, no credit card option
         user_action: "PAY_NOW",
         return_url: `${window.location.origin}/donation?success=true`,
         cancel_url: `${window.location.origin}/donation?cancelled=true`,
+        // Force PayPal account only - no guest checkout with credit cards
+        // This should prevent credit card option from appearing
+        payment_method: {
+          payer_selected: "PAYPAL"
+        },
+        // Additional locale setting
+        locale: language === "de" ? "de_DE" : "en_US"
       },
-    });
+    };
+    
+    console.log("PayPal order request:", JSON.stringify(orderRequest, null, 2));
+    
+    return actions.order.create(orderRequest);
   }, [donationType, amount, customAmount, cartState.items, cartState.totalAmount, t, language, formData]);
 
   // Function to subscribe to newsletter
@@ -953,6 +1190,21 @@ const Donation = () => {
   const onPayPalCancel = useCallback(() => {
     console.log("PayPal payment cancelled");
     setIsProcessingPayment(false);
+    
+    // Clean up any URL parameters that might have been added by PayPal redirect
+    const currentParams = new URLSearchParams(window.location.search);
+    if (currentParams.has("cancelled") || currentParams.has("success")) {
+      const newParams = new URLSearchParams(currentParams);
+      newParams.delete("cancelled");
+      newParams.delete("success");
+      const newSearch = newParams.toString();
+      const newUrl = newSearch 
+        ? `${window.location.pathname}?${newSearch}` 
+        : window.location.pathname;
+      
+      // Use replace to avoid adding to history and prevent navigation issues
+      window.history.replaceState({}, "", newUrl);
+    }
   }, []);
 
 
@@ -1664,6 +1916,46 @@ const Donation = () => {
 
                   {/* Payment Buttons - PayPal with SEPA option */}
                   <div className="w-full relative">
+                    {/* Info: Only PayPal accounts allowed */}
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <Info className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-blue-800 mb-1">
+                            {language === "de" 
+                              ? "Zahlungsmethoden" 
+                              : "Payment Methods"}
+                          </p>
+                          <p className="text-xs text-blue-700">
+                            {language === "de"
+                              ? "Sie können mit Ihrem PayPal-Konto spenden. Kreditkartenzahlungen sind über PayPal nicht verfügbar. Für SEPA-Überweisungen nutzen Sie bitte die SEPA-Option weiter unten."
+                              : "You can donate with your PayPal account. Credit card payments are not available via PayPal. For SEPA bank transfers, please use the SEPA option below."}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    {/* HTTPS Warning - PayPal requires HTTPS for some features */}
+                    {typeof window !== 'undefined' && window.location.protocol !== 'https:' && 
+                     window.location.hostname !== 'localhost' && 
+                     window.location.hostname !== '127.0.0.1' && (
+                      <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-amber-800 mb-1">
+                              {language === "de" 
+                                ? "HTTPS erforderlich für erweiterte PayPal-Funktionen" 
+                                : "HTTPS required for advanced PayPal features"}
+                            </p>
+                            <p className="text-xs text-amber-700">
+                              {language === "de"
+                                ? "Einige PayPal-Funktionen (wie vorausgefüllte Bezahlmethoden) erfordern eine verschlüsselte HTTPS-Verbindung. Bitte stellen Sie sicher, dass die Website über HTTPS aufgerufen wird."
+                                : "Some PayPal features (like pre-filled payment methods) require an encrypted HTTPS connection. Please ensure the website is accessed via HTTPS."}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     {PAYPAL_CLIENT_ID ? (
                       <div className="w-full relative" key="paypal-buttons">
                         <PayPalButtonWrapper

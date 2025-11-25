@@ -107,6 +107,80 @@ const AppContent = () => {
     console.log('[AppContent] Route changed to:', location.pathname);
   }, [location.pathname]);
 
+  // Global keep-alive mechanism to prevent network timeouts
+  useEffect(() => {
+    let keepAliveInterval: NodeJS.Timeout | null = null;
+    let lastActivityTime = Date.now();
+
+    // Track user activity
+    const updateActivity = () => {
+      lastActivityTime = Date.now();
+    };
+
+    // Listen for user activity
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    events.forEach(event => {
+      document.addEventListener(event, updateActivity, { passive: true });
+    });
+
+    // Keep-alive mechanism - only when page is visible and user is inactive
+    const startKeepAlive = () => {
+      if (keepAliveInterval) return; // Already running
+
+      keepAliveInterval = setInterval(() => {
+        const timeSinceActivity = Date.now() - lastActivityTime;
+        const isInactive = timeSinceActivity > 60000; // 1 minute of inactivity
+        const isVisible = !document.hidden;
+
+        // Only send keep-alive if page is visible and user has been inactive
+        if (isVisible && isInactive && navigator.onLine) {
+          // Send a lightweight HEAD request to keep connection alive
+          fetch(window.location.origin, {
+            method: 'HEAD',
+            cache: 'no-cache',
+            keepalive: true,
+            signal: AbortSignal.timeout(5000), // 5 second timeout
+          }).catch(() => {
+            // Silently fail - this is just a keep-alive
+          });
+        }
+      }, 30000); // Check every 30 seconds
+    };
+
+    // Start keep-alive when page becomes visible
+    if (!document.hidden) {
+      startKeepAlive();
+    }
+
+    // Handle visibility changes
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // Stop keep-alive when page is hidden
+        if (keepAliveInterval) {
+          clearInterval(keepAliveInterval);
+          keepAliveInterval = null;
+        }
+      } else {
+        // Restart keep-alive when page becomes visible
+        startKeepAlive();
+        lastActivityTime = Date.now(); // Reset activity time
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Cleanup
+    return () => {
+      events.forEach(event => {
+        document.removeEventListener(event, updateActivity);
+      });
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (keepAliveInterval) {
+        clearInterval(keepAliveInterval);
+      }
+    };
+  }, []);
+
   return (
     <>
       <ScrollToTop />
