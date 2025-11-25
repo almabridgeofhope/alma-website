@@ -399,6 +399,7 @@ const translations = {
     "donation.form.sepaInstructions": "Please include the reference number in your bank transfer so we can match your donation.",
     "donation.form.cardNote": "You will be redirected to complete your payment securely.",
     "donation.form.cardProcessing": "Processing payment...",
+    "donation.form.creditCardNote": "Note: Credit card payments are currently not supported. Please use PayPal or SEPA bank transfer.",
     "donation.form.personalInfo": "Personal Information",
     "donation.form.addressInfo": "Address Information",
     "donation.form.addressNote": "Required for tax-deductible donation receipt",
@@ -435,7 +436,7 @@ const translations = {
     "donation.quote.author": "– Aaron Hesser, Alma Bridge of Hope",
     "donation.faq.title": "Frequently Asked Questions",
     "donation.faq.q1": "How can I donate?",
-    "donation.faq.a1": "You can donate online through our secure donation form. We accept PayPal, SEPA bank transfer, or credit card. In the coming weeks, regular bank transfers to our association account will also be possible.",
+    "donation.faq.a1": "You can donate online through our secure donation form. We accept PayPal and SEPA bank transfer. Note: Credit card payments are currently not supported. In the coming weeks, regular bank transfers to our association account will also be possible.",
     "donation.faq.q2": "Will I receive a donation receipt?",
     "donation.faq.a2": "Yes, you will receive a donation receipt at the end of the year for tax purposes. For immediate receipts, please contact us at info@almabridgeofhope.org.",
     "donation.faq.q3": "How is my donation used?",
@@ -1110,7 +1111,7 @@ const translations = {
     "donation.quote.author": "– Aaron Hesser, Alma Bridge of Hope",
     "donation.faq.title": "Häufig gestellte Fragen",
     "donation.faq.q1": "Wie kann ich spenden?",
-    "donation.faq.a1": "Du kannst eine Spende online über unser sicheres Spendenformular durchführen. Wir akzeptieren PayPal, SEPA-Überweisung oder Kreditkarte. In einigen Wochen werden auch reguläre Überweisungen an unser Vereinskonto möglich sein.",
+    "donation.faq.a1": "Du kannst eine Spende online über unser sicheres Spendenformular durchführen. Wir akzeptieren PayPal und SEPA-Überweisung. Hinweis: Kreditkartenzahlungen werden derzeit nicht unterstützt. In einigen Wochen werden auch reguläre Überweisungen an unser Vereinskonto möglich sein.",
     "donation.faq.q2": "Erhalte ich eine Spendenquittung?",
     "donation.faq.a2": "Ja, du erhältst am Jahresende eine Spendenquittung für steuerliche Zwecke. Für sofortige Quittungen kontaktiere uns bitte unter info@almabridgeofhope.org.",
     "donation.faq.q3": "Wie wird meine Spende verwendet?",
@@ -1174,6 +1175,7 @@ const translations = {
     "donation.form.sepaInstructions": "Bitte gib die Referenznummer bei deiner Überweisung an, damit wir deine Spende zuordnen können.",
     "donation.form.cardNote": "Du wirst weitergeleitet, um deine Zahlung sicher abzuschließen.",
     "donation.form.cardProcessing": "Zahlung wird verarbeitet...",
+    "donation.form.creditCardNote": "Hinweis: Kreditkartenzahlungen werden derzeit nicht unterstützt. Bitte verwende PayPal oder SEPA-Überweisung.",
     
     // Project Items Modal
     "projectItems.funded": "bereits finanziert",

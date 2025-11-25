@@ -204,7 +204,7 @@ const Donation = () => {
       }
     }
   }, [searchParams, navigate, cartState.items.length, cartState.totalAmount, amount, customAmount, donationType]);
-  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "sepa" | "card">("paypal");
+  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "sepa">("paypal");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showWarningDialog, setShowWarningDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -1659,6 +1659,16 @@ const Donation = () => {
                       <Label htmlFor="wantsNewsletter" className="text-sm leading-relaxed">
                         {t("donation.form.wantsNewsletter")}
                       </Label>
+                    </div>
+                  </div>
+
+                  {/* Payment Method Note */}
+                  <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        {t("donation.form.creditCardNote")}
+                      </p>
                     </div>
                   </div>
 
