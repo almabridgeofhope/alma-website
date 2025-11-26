@@ -151,8 +151,8 @@ const PayPalButtonWrapper = memo(({
         intent: "capture",
         components: "buttons",
         locale: paypalLocale,
-        "enable-funding": "paypal,sepa",
-        "disable-funding": "card,credit,venmo,paylater",
+        "enable-funding": "paypal",
+        "disable-funding": "card,credit,venmo,paylater,sepa",
       }}
     >
       <PayPalButtonsComponent
@@ -295,7 +295,7 @@ const Donation = () => {
       }
     }
   }, [searchParams, navigate, cartState.items.length, cartState.totalAmount, amount, customAmount, donationType]);
-  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "stripe-card" | "stripe-sepa" | "sepa">("paypal");
+  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "stripe-card" | "stripe-sepa">("paypal");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showWarningDialog, setShowWarningDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -1762,7 +1762,7 @@ const Donation = () => {
                       <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
                         <RadioGroupItem value="paypal" id="payment-paypal" />
                         <Label htmlFor="payment-paypal" className="flex-1 cursor-pointer">
-                          {language === "de" ? "PayPal / SEPA Lastschrift" : "PayPal / SEPA Direct Debit"}
+                          PayPal
                         </Label>
                       </div>
                       {STRIPE_PUBLISHABLE_KEY && (
@@ -1776,31 +1776,23 @@ const Donation = () => {
                           <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
                             <RadioGroupItem value="stripe-sepa" id="payment-stripe-sepa" />
                             <Label htmlFor="payment-stripe-sepa" className="flex-1 cursor-pointer">
-                              {language === "de" ? "SEPA Lastschrift (Stripe)" : "SEPA Direct Debit (Stripe)"}
+                              {language === "de" ? "SEPA Lastschrift" : "SEPA Direct Debit"}
                             </Label>
                           </div>
                         </>
                       )}
-                      <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
-                        <RadioGroupItem value="sepa" id="payment-sepa" />
-                        <Label htmlFor="payment-sepa" className="flex-1 cursor-pointer">
-                          {language === "de" ? "SEPA Überweisung (Manuell)" : "SEPA Bank Transfer (Manual)"}
-                        </Label>
-                      </div>
                     </RadioGroup>
                   </div>
 
                   {/* Payment Method Info */}
-                  {paymentMethod !== "sepa" && (
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                        <p className="text-sm text-blue-800 dark:text-blue-200">
-                          {t("donation.form.creditCardNote")}
-                        </p>
-                      </div>
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        {t("donation.form.creditCardNote")}
+                      </p>
                     </div>
-                  )}
+                  </div>
 
                   {/* Payment UI - Conditional based on selected method */}
                   <div className="w-full relative">
@@ -1902,39 +1894,6 @@ const Donation = () => {
                           return true;
                         }}
                       />
-                    )}
-
-                    {/* Manual SEPA Bank Transfer */}
-                    {paymentMethod === "sepa" && (
-                      <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
-                        <div className="space-y-3">
-                          <div>
-                            <Label className="text-sm font-medium">
-                              {language === "de" ? "SEPA Bankverbindung" : "SEPA Bank Account"}
-                            </Label>
-                            <div className="mt-2 space-y-2 text-sm">
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">IBAN:</span>
-                                <span className="font-mono font-medium">{SEPA_BANK_ACCOUNT.iban}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">BIC:</span>
-                                <span className="font-mono font-medium">{SEPA_BANK_ACCOUNT.bic}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">
-                                  {language === "de" ? "Kontoinhaber:" : "Account Holder:"}
-                                </span>
-                                <span className="font-medium">{SEPA_BANK_ACCOUNT.accountHolder}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-muted-foreground">Bank:</span>
-                                <span className="font-medium">{SEPA_BANK_ACCOUNT.bankName}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
                     )}
                   </div>
                 </div>
