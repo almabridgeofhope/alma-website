@@ -67,8 +67,7 @@ class StripeService {
       // Google Apps Script web apps have CORS limitations
       // Use form-encoded data to bypass CORS preflight
       // This works better with Google Apps Script web apps
-      const formData = new URLSearchParams();
-      formData.append('data', JSON.stringify({
+      const requestPayload = {
         amount: Math.round(request.amount * 100), // Convert to cents
         currency: request.currency || 'eur',
         payment_method_types: request.paymentMethodTypes || ['card'],
@@ -77,7 +76,12 @@ class StripeService {
         customer_name: request.customerName,
         success_url: successUrl,
         cancel_url: cancelUrl,
-      }));
+      };
+      
+      console.log('📦 Request payload:', requestPayload);
+      
+      const formData = new URLSearchParams();
+      formData.append('data', JSON.stringify(requestPayload));
 
       // Google Apps Script Web Apps only have /exec endpoint
       // Don't append /create-checkout-session to the URL
