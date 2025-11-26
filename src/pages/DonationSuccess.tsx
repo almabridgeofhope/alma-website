@@ -1,18 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import PreloadImage from "@/components/PreloadImage";
 import NewsletterForm from "@/components/NewsletterForm";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useShoppingCart } from "@/contexts/ShoppingCartContext";
+import { stripeService, StripeSessionDetails } from "@/services/stripeService";
+import { donationWebhookService } from "@/services/donationWebhookService";
 import { 
   CheckCircle, 
   Heart, 
   Mail, 
   Home, 
-  CheckCircle2
+  CheckCircle2,
+  Loader2,
+  AlertCircle
 } from "lucide-react";
 import heroImage from "@/assets/nature/nature_2.jpg";
 
@@ -20,37 +26,154 @@ const DonationSuccess = () => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { formatCurrency } = useShoppingCart();
   const [showNewsletterForm, setShowNewsletterForm] = useState(false);
   
-  // Get donation details from URL params
-  const amount = searchParams.get("amount");
-  const paymentId = searchParams.get("paymentId");
+  // Get parameters from URL
+  const sessionId = searchParams.get("session_id");
   const donationType = searchParams.get("type") || "one-time";
+  const estimatedAmount = searchParams.get("estimated_amount");
+  
+  // Legacy support: direct amount/paymentId (from old PayPal flow or fallback)
+  const legacyAmount = searchParams.get("amount");
+  const legacyPaymentId = searchParams.get("paymentId");
+  
+  // State for async session loading
+  const [isLoadingSession, setIsLoadingSession] = useState(!!sessionId);
+  const [sessionDetails, setSessionDetails] = useState<StripeSessionDetails | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  
+  // Final display values
+  const displayAmount = sessionDetails 
+    ? (sessionDetails.amount_total / 100) 
+    : (legacyAmount ? parseFloat(legacyAmount) : (estimatedAmount ? parseFloat(estimatedAmount) : null));
+  const displayPaymentId = sessionDetails?.id || legacyPaymentId || sessionId;
   
   // Scroll to top on mount
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
-  // Redirect if no amount (invalid access)
+  // Load session details asynchronously (OPTIMISTIC LOADING)
+  const loadSessionDetails = useCallback(async () => {
+    if (!sessionId) return;
+    
+    console.log("🔄 Loading Stripe session details asynchronously...");
+    setIsLoadingSession(true);
+    setLoadError(null);
+    
+    try {
+      const details = await stripeService.getSessionDetails(sessionId);
+      console.log("✅ Session details loaded:", details);
+      setSessionDetails(details);
+      
+      // Verify payment was successful
+      if (details.payment_status !== 'paid') {
+        console.warn("⚠️ Payment status is not 'paid':", details.payment_status);
+        setLoadError(language === "de" 
+          ? "Zahlung wurde noch nicht abgeschlossen." 
+          : "Payment not yet completed.");
+        return;
+      }
+      
+      // Process webhook in background (non-blocking)
+      processWebhook(details).catch(error => {
+        console.error("❌ Webhook processing failed (non-critical):", error);
+        // Don't show error to user - payment was successful
+      });
+      
+    } catch (error) {
+      console.error("❌ Failed to load session details:", error);
+      setLoadError(language === "de" 
+        ? "Details konnten nicht geladen werden. Die Zahlung war jedoch erfolgreich." 
+        : "Could not load details. However, your payment was successful.");
+      // Don't block the success page - payment was successful
+    } finally {
+      setIsLoadingSession(false);
+    }
+  }, [sessionId, language]);
+  
+  // Process webhook in background
+  const processWebhook = async (details: StripeSessionDetails) => {
+    console.log("📤 Processing donation webhook...");
+    
+    try {
+      const finalAmount = details.amount_total / 100;
+      const customerEmail = details.customer_details?.email || details.customer_email || '';
+      const customerName = details.customer_details?.name || '';
+      const customerAddress = details.customer_details?.address;
+      
+      const stripePaymentMethod: 'stripe-card' | 'stripe-sepa' = 
+        details.metadata?.paymentMethodType === 'sepa_debit' ? 'stripe-sepa' : 'stripe-card';
+      
+      // Create donation items from metadata or use general donation
+      const donationItems = [{
+        type: 'general-donation' as const,
+        name: language === "de" ? "Allgemeine Spende" : "General Donation",
+        unitPrice: finalAmount,
+        quantity: 1,
+        totalPrice: finalAmount,
+      }];
+      
+      const donationData = {
+        items: donationItems,
+        totalAmount: finalAmount,
+        donationType: donationType as "one-time" | "monthly",
+        paymentMethod: stripePaymentMethod,
+        donorEmail: customerEmail || undefined,
+        donorName: customerName || undefined,
+        timestamp: new Date().toISOString(),
+        paymentId: details.id,
+        wantsReceipt: details.metadata?.wantsReceipt === 'true',
+        address: customerAddress ? {
+          street: customerAddress.line1 || undefined,
+          postalCode: customerAddress.postal_code || undefined,
+          city: customerAddress.city || undefined,
+          country: customerAddress.country || undefined,
+        } : undefined,
+        wantsNewsletter: details.metadata?.wantsNewsletter === 'true',
+        comment: details.metadata?.comment || undefined,
+      };
+      
+      const webhookResponse = await donationWebhookService.sendDonation(donationData);
+      
+      if (!webhookResponse.ok) {
+        console.warn('⚠️ Webhook failed (non-critical):', webhookResponse);
+      } else {
+        console.log('✅ Donation logged successfully');
+      }
+    } catch (error) {
+      console.error('❌ Webhook processing error:', error);
+      throw error; // Re-throw for caller to handle
+    }
+  };
+  
+  // Load session details on mount
   useEffect(() => {
-    if (!amount && !paymentId) {
-      // If no donation info, redirect to donation page after a short delay
+    if (sessionId) {
+      loadSessionDetails();
+    }
+  }, [sessionId, loadSessionDetails]);
+
+  // Redirect if no valid parameters (invalid access)
+  useEffect(() => {
+    const hasValidParams = sessionId || legacyAmount || legacyPaymentId || estimatedAmount;
+    if (!hasValidParams) {
+      console.warn("⚠️ No valid donation parameters, redirecting to donation page...");
       const timer = setTimeout(() => {
         navigate("/donation");
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [amount, paymentId, navigate]);
+  }, [sessionId, legacyAmount, legacyPaymentId, estimatedAmount, navigate]);
 
-  const formatAmount = (amt: string | null) => {
-    if (!amt) return "";
-    const num = parseFloat(amt);
-    if (isNaN(num)) return amt;
+  const formatAmount = (amt: number | null) => {
+    if (amt === null || amt === undefined) return "";
+    if (isNaN(amt)) return "";
     return new Intl.NumberFormat(language === "de" ? "de-DE" : "en-US", {
       style: "currency",
       currency: "EUR",
-    }).format(num);
+    }).format(amt);
   };
 
   return (
@@ -79,10 +202,18 @@ const DonationSuccess = () => {
             <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed mb-8">
               {t("donation.success.subtitle")}
             </p>
-            {amount && (
+            {displayAmount !== null && (
               <div className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
                 <Heart className="h-5 w-5 text-red-400" />
-                <span className="text-2xl font-bold">{formatAmount(amount)}</span>
+                {isLoadingSession && !sessionDetails ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span className="text-2xl font-bold">{formatAmount(displayAmount)}</span>
+                    <span className="text-sm opacity-75">({t("donation.success.loading")})</span>
+                  </div>
+                ) : (
+                  <span className="text-2xl font-bold">{formatAmount(displayAmount)}</span>
+                )}
               </div>
             )}
           </div>
@@ -108,12 +239,19 @@ const DonationSuccess = () => {
                 </div>
 
                 <div className="space-y-4 mb-8">
-                  {amount && (
+                  {/* Amount */}
+                  {displayAmount !== null && (
                     <div className="flex justify-between items-center p-4 bg-muted/30 rounded-lg">
                       <span className="text-muted-foreground">{t("donation.success.confirmation.amount")}</span>
-                      <span className="text-xl font-bold text-primary">{formatAmount(amount)}</span>
+                      {isLoadingSession && !sessionDetails ? (
+                        <Skeleton className="h-7 w-24" />
+                      ) : (
+                        <span className="text-xl font-bold text-primary">{formatAmount(displayAmount)}</span>
+                      )}
                     </div>
                   )}
+                  
+                  {/* Donation Type */}
                   {donationType && (
                     <div className="flex justify-between items-center p-4 bg-muted/30 rounded-lg">
                       <span className="text-muted-foreground">{t("donation.success.confirmation.type")}</span>
@@ -122,13 +260,44 @@ const DonationSuccess = () => {
                       </span>
                     </div>
                   )}
-                  {paymentId && (
-                    <div className="flex justify-between items-center p-4 bg-muted/30 rounded-lg">
+                  
+                  {/* Transaction ID */}
+                  {displayPaymentId && (
+                    <div className="flex flex-col gap-2 p-4 bg-muted/30 rounded-lg">
                       <span className="text-muted-foreground">{t("donation.success.confirmation.transactionId")}</span>
-                      <span className="font-mono text-sm">{paymentId}</span>
+                      {isLoadingSession && !sessionDetails ? (
+                        <Skeleton className="h-4 w-full" />
+                      ) : (
+                        <span className="font-mono text-xs break-all">{displayPaymentId}</span>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Customer Email (if available from session) */}
+                  {sessionDetails?.customer_details?.email && (
+                    <div className="flex flex-col gap-2 p-4 bg-muted/30 rounded-lg">
+                      <span className="text-muted-foreground">{t("donation.success.confirmation.email_address") || "Email"}</span>
+                      <span className="text-sm">{sessionDetails.customer_details.email}</span>
                     </div>
                   )}
                 </div>
+                
+                {/* Loading Error (non-critical) */}
+                {loadError && (
+                  <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800 flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm text-yellow-900 dark:text-yellow-100 font-medium">
+                        {loadError}
+                      </p>
+                      <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                        {language === "de" 
+                          ? "Sie erhalten eine Bestätigungs-E-Mail in Kürze." 
+                          : "You will receive a confirmation email shortly."}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                   <p className="text-sm text-blue-900 dark:text-blue-100">
