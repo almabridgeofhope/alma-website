@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, memo } from "react";
+import { useEffect, useState, useCallback, memo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -459,39 +459,6 @@ const Donation = () => {
     }
   }, [searchParams]);
 
-  // Handle Stripe Checkout redirect
-  useEffect(() => {
-    const stripeStatus = searchParams.get("stripe");
-    const sessionId = searchParams.get("session_id");
-    
-    if (stripeStatus === "success" && sessionId) {
-      // Process successful Stripe payment
-      onStripeSuccess(sessionId);
-      
-      // Clean up URL
-      const newSearchParams = new URLSearchParams(searchParams);
-      newSearchParams.delete("stripe");
-      newSearchParams.delete("session_id");
-      const newSearch = newSearchParams.toString();
-      const newUrl = newSearch 
-        ? `${window.location.pathname}?${newSearch}` 
-        : window.location.pathname;
-      window.history.replaceState({}, "", newUrl);
-    } else if (stripeStatus === "cancelled") {
-      // Handle cancelled Stripe payment
-      setIsProcessingPayment(false);
-      showError(language === "de" ? "Zahlung wurde abgebrochen." : "Payment was cancelled.");
-      
-      // Clean up URL
-      const newSearchParams = new URLSearchParams(searchParams);
-      newSearchParams.delete("stripe");
-      const newSearch = newSearchParams.toString();
-      const newUrl = newSearch 
-        ? `${window.location.pathname}?${newSearch}` 
-        : window.location.pathname;
-      window.history.replaceState({}, "", newUrl);
-    }
-  }, [searchParams, language]);
   const [paymentMethod, setPaymentMethod] = useState<"paypal" | "sepa" | "card" | "stripe-card" | "stripe-sepa">("paypal");
   const [stripeClientSecret, setStripeClientSecret] = useState<string | null>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -1335,65 +1302,90 @@ const Donation = () => {
     console.log("=== Stripe Payment Successful ===");
     console.log("Checkout Session ID:", sessionId);
     
-    try {
-      // Process the donation via webhook (using session ID as payment ID)
-      const result = await processDonation(sessionId);
-      
-      setIsProcessingPayment(false);
-      
-      // Subscribe to newsletter if requested
-      if (formData.wantsNewsletter && formData.email) {
-        await subscribeToNewsletter(formData.email);
-      }
-      
-      // Calculate final amount for redirect
-      const finalAmount = donationType === "monthly"
-        ? (amount || customAmount || "0")
-        : (cartState.items.length > 0 
-            ? cartState.totalAmount.toString() 
-            : (amount || customAmount || "0"));
-      
-      // Clear shopping cart after successful payment
-      clearCart();
-      
-      // Reset form
-      setAmount("");
-      setCustomAmount("");
-      setFormData({
-        firstName: "",
-        lastName: "",
-        email: "",
-        street: "",
-        postalCode: "",
-        city: "",
-        country: "",
-        comment: "",
-        wantsReceipt: false,
-        privacyConsent: false,
-        wantsNewsletter: false,
-      });
-      
-      // Redirect to success page
-      const params = new URLSearchParams({
-        amount: finalAmount,
-        type: donationType,
-      });
-      if (sessionId) {
-        params.set("paymentId", sessionId);
-      }
-      navigate(`/donation/success?${params.toString()}`);
-    } catch (error) {
-      console.error("Error processing Stripe payment:", error);
-      setIsProcessingPayment(false);
-      showError(t("donation.form.error.payment"));
-    }
-  }, [donationType, amount, customAmount, cartState.items, cartState.totalAmount, formData, navigate, clearCart, t]);
+    // ⚡ OPTIMISTIC REDIRECT: Redirect immediately to success page
+    // Session details and webhook processing will happen asynchronously on the success page
+    // This provides instant feedback to the user (best practice for UX)
+    
+    // Calculate estimated amount from form data (for display while loading)
+    const estimatedAmount = donationType === "monthly"
+      ? parseFloat(amount || customAmount || "0")
+      : (cartState.items.length > 0 
+          ? cartState.totalAmount 
+          : parseFloat(amount || customAmount || "0"));
+    
+    // Pass session_id to success page for async processing
+    const params = new URLSearchParams({
+      session_id: sessionId,
+      type: donationType,
+      // Include estimated amount for optimistic display (will be replaced with actual amount)
+      ...(estimatedAmount > 0 && { estimated_amount: estimatedAmount.toString() }),
+    });
+    
+    // Clear cart immediately for instant feedback
+    clearCart();
+    
+    // Reset form state
+    setAmount("");
+    setCustomAmount("");
+    
+    const successUrl = `/donation/success?${params.toString()}`;
+    console.log("🚀 Instant redirect to success page:", successUrl);
+    
+    // Use window.location.href for immediate redirect
+    window.location.href = successUrl;
+  }, [donationType, amount, customAmount, cartState.items, cartState.totalAmount, clearCart]);
 
   const onStripeError = useCallback((error: string) => {
     console.error("Stripe payment error:", error);
     setIsProcessingPayment(false);
     showError(error || t("donation.form.error.payment"));
   }, [t]);
+
+  // Ref to prevent duplicate Stripe payment processing
+  const stripeProcessedRef = useRef<Set<string>>(new Set());
+
+  // Handle Stripe Checkout redirect - MUST be after onStripeSuccess is defined
+  useEffect(() => {
+    const stripeStatus = searchParams.get("stripe");
+    const sessionId = searchParams.get("session_id");
+    
+    // Only run if we have a stripe status parameter
+    if (!stripeStatus) {
+      return;
+    }
+    
+    // Check if we've already processed this session to prevent duplicate processing
+    const uniqueKey = `${stripeStatus}-${sessionId || 'none'}`;
+    if (stripeProcessedRef.current.has(uniqueKey)) {
+      console.log("⏭️ Already processed this redirect, skipping...");
+      return;
+    }
+    
+    console.log("🔍 Stripe redirect detected:", { stripeStatus, sessionId });
+    
+    // Mark as processed immediately
+    stripeProcessedRef.current.add(uniqueKey);
+    
+    if (stripeStatus === "success" && sessionId) {
+      console.log("✅ Processing Stripe payment success...");
+      
+      // Clean URL immediately to prevent re-triggering
+      window.history.replaceState({}, "", '/donation');
+      
+      // Process successful Stripe payment (this will navigate with window.location.href)
+      onStripeSuccess(sessionId);
+      
+    } else if (stripeStatus === "cancelled") {
+      console.log("❌ Stripe payment cancelled");
+      
+      // Clean URL immediately
+      window.history.replaceState({}, "", '/donation');
+      
+      // Show error
+      setIsProcessingPayment(false);
+      showError(language === "de" ? "Zahlung wurde abgebrochen." : "Payment was cancelled.");
+    }
+  }, [searchParams, onStripeSuccess, showError, setIsProcessingPayment, language]);
 
   // Calculate final amount for payment
   const getFinalAmount = useCallback((): number => {
@@ -2225,6 +2217,7 @@ const Donation = () => {
                           donationType,
                           donorEmail: formData.email,
                           donorName: `${formData.firstName} ${formData.lastName}`,
+                          paymentMethodType: paymentMethod === "stripe-card" ? 'card' : 'sepa_debit',
                         }}
                       />
                     )}

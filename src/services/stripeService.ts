@@ -15,6 +15,27 @@ export interface CreateCheckoutSessionResponse {
   url: string; // Redirect URL to Stripe Checkout
 }
 
+export interface StripeSessionDetails {
+  id: string;
+  amount_total: number; // Amount in cents
+  currency: string;
+  customer_email: string | null;
+  payment_status: 'paid' | 'unpaid' | 'no_payment_required';
+  metadata: Record<string, string>;
+  customer_details?: {
+    email?: string;
+    name?: string;
+    address?: {
+      city?: string | null;
+      country?: string | null;
+      line1?: string | null;
+      line2?: string | null;
+      postal_code?: string | null;
+      state?: string | null;
+    };
+  };
+}
+
 class StripeService {
   private backendUrl: string | null = null;
 
@@ -39,8 +60,9 @@ class StripeService {
 
     try {
       const baseUrl = window.location.origin;
-      const successUrl = `${baseUrl}/#/donation?stripe=success&session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${baseUrl}/#/donation?stripe=cancelled`;
+      // Use BrowserRouter format (no hash)
+      const successUrl = `${baseUrl}/donation?stripe=success&session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${baseUrl}/donation?stripe=cancelled`;
 
       // Google Apps Script web apps have CORS limitations
       // Use form-encoded data to bypass CORS preflight
@@ -101,6 +123,52 @@ class StripeService {
       };
     } catch (error) {
       console.error('Stripe service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Retrieve Stripe Session Details
+   * Used after successful payment to get transaction details
+   */
+  async getSessionDetails(sessionId: string): Promise<StripeSessionDetails> {
+    if (!this.backendUrl) {
+      throw new Error('Stripe backend URL not configured. Please set VITE_STRIPE_BACKEND_URL environment variable.');
+    }
+
+    try {
+      // Use GET request with query parameters
+      const url = `${this.backendUrl}?action=get-session&session_id=${encodeURIComponent(sessionId)}`;
+      console.log("📡 Fetching session details from:", url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        mode: 'cors',
+      });
+
+      console.log("📥 Response status:", response.status, response.statusText);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Failed to retrieve session details:', errorText);
+        throw new Error(`Failed to retrieve session details: ${response.status} - ${errorText}`);
+      }
+
+      const responseText = await response.text();
+      console.log("📄 Response text (first 200 chars):", responseText.substring(0, 200));
+      
+      const data = JSON.parse(responseText);
+      console.log("📦 Parsed response data:", data);
+      
+      if (!data.ok || !data.session) {
+        console.error('❌ Invalid session details response:', data);
+        throw new Error('Invalid session details response');
+      }
+
+      console.log("✅ Session details successfully retrieved:", data.session.id);
+      return data.session as StripeSessionDetails;
+    } catch (error) {
+      console.error('❌ Error retrieving session details:', error);
       throw error;
     }
   }
