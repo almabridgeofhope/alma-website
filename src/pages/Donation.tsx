@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, memo, useRef, lazy, Suspense, Component, ErrorInfo, ReactNode } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +29,7 @@ import { useSearchParams, Link, useNavigate } from "react-router-dom";
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
 
 // Stripe Configuration
-const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "pk_live_51SXIiUC5GpL2aLrdLFk8lxA5tp0O9rgotIrioALA9VhlRYArh2SZB5O6Nh3aITKaya2AObuwVQFGYuN1UGtEYq2v00R2HbS8Sq";
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
 // SEPA Bank Account Configuration
 const SEPA_BANK_ACCOUNT = {
@@ -167,7 +167,7 @@ const PayPalButtonWrapper = memo(({
 
 PayPalButtonWrapper.displayName = "PayPalButtonWrapper";
 
-// Stripe Checkout Button - Simple redirect-based solution
+// Stripe Checkout Button Component
 const StripeCheckoutButton = memo(({
   amount,
   onRedirect,
@@ -229,8 +229,8 @@ const StripeCheckoutButton = memo(({
   return (
     <div className="space-y-4">
       {errorMessage && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-800">{errorMessage}</p>
+        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-sm text-red-800 dark:text-red-200">{errorMessage}</p>
         </div>
       )}
       <Button
@@ -241,7 +241,7 @@ const StripeCheckoutButton = memo(({
       >
         {isProcessing
           ? (language === "de" ? "Wird weitergeleitet..." : "Redirecting...")
-          : (language === "de" ? `€${amount.toFixed(2)} mit Stripe zahlen` : `Pay €${amount.toFixed(2)} with Stripe`)}
+          : (language === "de" ? `€${amount.toFixed(2)} spenden` : `Donate €${amount.toFixed(2)}`)}
       </Button>
       <p className="text-xs text-muted-foreground text-center">
         {language === "de" 
@@ -253,58 +253,6 @@ const StripeCheckoutButton = memo(({
 });
 
 StripeCheckoutButton.displayName = "StripeCheckoutButton";
-
-// Error Boundary for PayPal SDK
-class PayPalErrorBoundary extends Component<
-  { children: ReactNode; language: string },
-  { hasError: boolean; error: Error | null }
-> {
-  constructor(props: { children: ReactNode; language: string }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('PayPal SDK Error:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
-            <div>
-              <h4 className="text-sm font-semibold text-amber-900 mb-1">
-                {this.props.language === "de" 
-                  ? "PayPal vorübergehend nicht verfügbar" 
-                  : "PayPal temporarily unavailable"}
-              </h4>
-              <p className="text-sm text-amber-800 mb-2">
-                {this.props.language === "de"
-                  ? "PayPal kann momentan nicht geladen werden. Bitte verwenden Sie eine alternative Zahlungsmethode wie Kreditkarte oder SEPA Lastschrift."
-                  : "PayPal cannot be loaded at the moment. Please use an alternative payment method such as credit card or SEPA direct debit."}
-              </p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    return this.props.children;
-  }
-}
-
-// PayPal Lazy Loading Wrapper - Only loads PayPal SDK when selected
-const PayPalWrapper = lazy(() => 
-  Promise.resolve({
-    default: PayPalButtonWrapper
-  })
-);
 
 const Donation = () => {
   const { t, language } = useLanguage();
@@ -347,7 +295,7 @@ const Donation = () => {
       }
     }
   }, [searchParams, navigate, cartState.items.length, cartState.totalAmount, amount, customAmount, donationType]);
-  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "stripe-card" | "stripe-sepa" | "sepa">("stripe-card");
+  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "stripe-card" | "stripe-sepa" | "sepa">("paypal");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showWarningDialog, setShowWarningDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -1098,23 +1046,6 @@ const Donation = () => {
     setIsProcessingPayment(false);
   }, []);
 
-  // Stripe Handlers
-  const onStripeError = useCallback((error: string) => {
-    setIsProcessingPayment(false);
-    showError(error || t("donation.form.error.payment"));
-  }, [t]);
-
-  const getFinalAmount = (): number => {
-    if (donationType === "monthly") {
-      return parseFloat(amount || customAmount || "0");
-    } else {
-      if (cartState.items.length > 0) {
-        return cartState.totalAmount;
-      } else {
-        return parseFloat(amount || customAmount || "0");
-      }
-    }
-  };
 
   const content = (
     <div className="min-h-screen">
@@ -1827,60 +1758,84 @@ const Donation = () => {
                     <Label className="text-base font-semibold">
                       {language === "de" ? "Zahlungsmethode" : "Payment Method"}
                     </Label>
-                    <RadioGroup 
-                      value={paymentMethod} 
-                      onValueChange={(value: "paypal" | "stripe-card" | "stripe-sepa" | "sepa") => {
-                        setPaymentMethod(value);
-                      }}
-                      className="space-y-3"
-                    >
+                    <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as typeof paymentMethod)}>
+                      <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
+                        <RadioGroupItem value="paypal" id="payment-paypal" />
+                        <Label htmlFor="payment-paypal" className="flex-1 cursor-pointer">
+                          {language === "de" ? "PayPal / SEPA Lastschrift" : "PayPal / SEPA Direct Debit"}
+                        </Label>
+                      </div>
                       {STRIPE_PUBLISHABLE_KEY && (
                         <>
-                          <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                            <RadioGroupItem value="stripe-card" id="stripe-card" />
-                            <Label htmlFor="stripe-card" className="flex-1 cursor-pointer flex items-center gap-2">
-                              <CreditCard className="w-4 h-4" />
-                              <span>{language === "de" ? "Kreditkarte" : "Credit Card"}</span>
+                          <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
+                            <RadioGroupItem value="stripe-card" id="payment-stripe-card" />
+                            <Label htmlFor="payment-stripe-card" className="flex-1 cursor-pointer">
+                              {language === "de" ? "Kreditkarte" : "Credit Card"}
                             </Label>
                           </div>
-                          <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                            <RadioGroupItem value="stripe-sepa" id="stripe-sepa" />
-                            <Label htmlFor="stripe-sepa" className="flex-1 cursor-pointer flex items-center gap-2">
-                              <Banknote className="w-4 h-4" />
-                              <span>{language === "de" ? "SEPA Lastschrift" : "SEPA Direct Debit"}</span>
+                          <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
+                            <RadioGroupItem value="stripe-sepa" id="payment-stripe-sepa" />
+                            <Label htmlFor="payment-stripe-sepa" className="flex-1 cursor-pointer">
+                              {language === "de" ? "SEPA Lastschrift (Stripe)" : "SEPA Direct Debit (Stripe)"}
                             </Label>
                           </div>
                         </>
                       )}
-                      {PAYPAL_CLIENT_ID && (
-                        <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                          <RadioGroupItem value="paypal" id="paypal" />
-                          <Label htmlFor="paypal" className="flex-1 cursor-pointer flex items-center gap-2">
-                            <CreditCard className="w-4 h-4" />
-                            <span>PayPal</span>
-                          </Label>
-                        </div>
-                      )}
-                      <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                        <RadioGroupItem value="sepa" id="sepa" />
-                        <Label htmlFor="sepa" className="flex-1 cursor-pointer flex items-center gap-2">
-                          <Banknote className="w-4 h-4" />
-                          <span>{language === "de" ? "SEPA Überweisung" : "SEPA Bank Transfer"}</span>
+                      <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
+                        <RadioGroupItem value="sepa" id="payment-sepa" />
+                        <Label htmlFor="payment-sepa" className="flex-1 cursor-pointer">
+                          {language === "de" ? "SEPA Überweisung (Manuell)" : "SEPA Bank Transfer (Manual)"}
                         </Label>
                       </div>
                     </RadioGroup>
                   </div>
 
+                  {/* Payment Method Info */}
+                  {paymentMethod !== "sepa" && (
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-blue-800 dark:text-blue-200">
+                          {t("donation.form.creditCardNote")}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Payment UI - Conditional based on selected method */}
                   <div className="w-full relative">
-                    {/* Stripe Payments */}
-                    {(paymentMethod === "stripe-card" || paymentMethod === "stripe-sepa") && STRIPE_PUBLISHABLE_KEY && (
+                    {/* PayPal - Keep original implementation that works */}
+                    {paymentMethod === "paypal" && PAYPAL_CLIENT_ID && (
+                      <div className="w-full relative" key="paypal-buttons">
+                        <PayPalButtonWrapper
+                          createOrder={createPayPalOrder}
+                          onApprove={onPayPalApprove}
+                          onError={onPayPalError}
+                          onCancel={onPayPalCancel}
+                          language={language}
+                        />
+                        {/* Overlay to disable PayPal buttons when dialog is open */}
+                        {(showSuccessDialog || showErrorDialog || showWarningDialog) && (
+                          <div 
+                            className="absolute inset-0 bg-background/90 backdrop-blur-sm z-[60] rounded-md flex items-center justify-center"
+                            style={{ 
+                              pointerEvents: 'auto',
+                              cursor: 'not-allowed'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    {/* Stripe Card Payment */}
+                    {paymentMethod === "stripe-card" && STRIPE_PUBLISHABLE_KEY && (
                       <StripeCheckoutButton
-                        amount={getFinalAmount()}
+                        amount={parseFloat(amount || customAmount || "0")}
                         onRedirect={() => setIsProcessingPayment(true)}
-                        onError={onStripeError}
+                        onError={(error) => showError(error)}
                         language={language}
-                        paymentMethodTypes={paymentMethod === "stripe-card" ? ['card'] : ['sepa_debit']}
+                        paymentMethodTypes={['card']}
                         formData={{
                           firstName: formData.firstName,
                           lastName: formData.lastName,
@@ -1891,33 +1846,65 @@ const Donation = () => {
                           donorEmail: formData.email,
                           donorName: `${formData.firstName} ${formData.lastName}`,
                         }}
-                        onValidate={validateForm}
+                        onValidate={() => {
+                          // Basic validation
+                          if (!formData.firstName || !formData.lastName || !formData.email) {
+                            showError(t("donation.form.error.missingFields"));
+                            return false;
+                          }
+                          if (!formData.privacyConsent) {
+                            showError(t("donation.form.error.privacyConsent"));
+                            return false;
+                          }
+                          const finalAmount = parseFloat(amount || customAmount || "0");
+                          if (finalAmount <= 0) {
+                            showError(t("donation.form.error.missingAmount"));
+                            return false;
+                          }
+                          return true;
+                        }}
                       />
                     )}
 
-                    {/* PayPal - Lazy loaded only when selected with Error Boundary */}
-                    {paymentMethod === "paypal" && PAYPAL_CLIENT_ID && (
-                      <PayPalErrorBoundary language={language}>
-                        <Suspense fallback={
-                          <div className="w-full p-8 text-center">
-                            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-r-transparent"></div>
-                            <p className="mt-2 text-sm text-muted-foreground">
-                              {language === "de" ? "PayPal wird geladen..." : "Loading PayPal..."}
-                            </p>
-                          </div>
-                        }>
-                          <PayPalWrapper
-                            createOrder={createPayPalOrder}
-                            onApprove={onPayPalApprove}
-                            onError={onPayPalError}
-                            onCancel={onPayPalCancel}
-                            language={language}
-                          />
-                        </Suspense>
-                      </PayPalErrorBoundary>
+                    {/* Stripe SEPA Payment */}
+                    {paymentMethod === "stripe-sepa" && STRIPE_PUBLISHABLE_KEY && (
+                      <StripeCheckoutButton
+                        amount={parseFloat(amount || customAmount || "0")}
+                        onRedirect={() => setIsProcessingPayment(true)}
+                        onError={(error) => showError(error)}
+                        language={language}
+                        paymentMethodTypes={['sepa_debit']}
+                        formData={{
+                          firstName: formData.firstName,
+                          lastName: formData.lastName,
+                          email: formData.email,
+                        }}
+                        metadata={{
+                          donationType,
+                          donorEmail: formData.email,
+                          donorName: `${formData.firstName} ${formData.lastName}`,
+                        }}
+                        onValidate={() => {
+                          // Basic validation
+                          if (!formData.firstName || !formData.lastName || !formData.email) {
+                            showError(t("donation.form.error.missingFields"));
+                            return false;
+                          }
+                          if (!formData.privacyConsent) {
+                            showError(t("donation.form.error.privacyConsent"));
+                            return false;
+                          }
+                          const finalAmount = parseFloat(amount || customAmount || "0");
+                          if (finalAmount <= 0) {
+                            showError(t("donation.form.error.missingAmount"));
+                            return false;
+                          }
+                          return true;
+                        }}
+                      />
                     )}
 
-                    {/* SEPA Bank Transfer */}
+                    {/* Manual SEPA Bank Transfer */}
                     {paymentMethod === "sepa" && (
                       <div className="space-y-4 p-4 border rounded-lg bg-muted/20">
                         <div className="space-y-3">
@@ -1946,36 +1933,7 @@ const Donation = () => {
                               </div>
                             </div>
                           </div>
-                          <div>
-                            <Label className="text-sm font-medium">
-                              {language === "de" ? "Verwendungszweck:" : "Reference:"}
-                            </Label>
-                            <div className="mt-2 p-3 bg-background border rounded-lg">
-                              <p className="font-mono text-sm">{sepaReference || generateSEPAReference(
-                                `${formData.firstName} ${formData.lastName}`,
-                                getFinalAmount(),
-                                new Date().toISOString()
-                              )}</p>
-                            </div>
-                          </div>
                         </div>
-                        <Button
-                          onClick={() => {
-                            const finalAmount = getFinalAmount();
-                            const reference = generateSEPAReference(
-                              `${formData.firstName} ${formData.lastName}`,
-                              finalAmount,
-                              new Date().toISOString()
-                            );
-                            setSepaReference(reference);
-                            handleDonate();
-                          }}
-                          size="lg"
-                          className="w-full"
-                          disabled={isProcessingPayment || !validateForm()}
-                        >
-                          {language === "de" ? "Spende bestätigen" : "Confirm Donation"}
-                        </Button>
                       </div>
                     )}
                   </div>
@@ -2294,3 +2252,4 @@ const Donation = () => {
 };
 
 export default Donation;
+
