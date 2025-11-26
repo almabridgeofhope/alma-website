@@ -90,6 +90,54 @@ function successResponse(data) {
 // ========== STRIPE API FUNCTIONS ==========
 
 /**
+ * Create or retrieve a Stripe Customer
+ */
+function createOrGetStripeCustomer(email, name) {
+  const stripeSecretKey = getStripeSecretKey();
+  
+  if (!email) {
+    return null; // No email provided, skip customer creation
+  }
+  
+  const url = 'https://api.stripe.com/v1/customers';
+  
+  const formParams = [];
+  formParams.push('email=' + encodeURIComponent(email));
+  
+  if (name) {
+    formParams.push('name=' + encodeURIComponent(name));
+  }
+  
+  const options = {
+    method: 'post',
+    headers: {
+      'Authorization': 'Bearer ' + stripeSecretKey,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    payload: formParams.join('&'),
+  };
+  
+  try {
+    console.log('Creating Stripe Customer:', email, name);
+    const response = UrlFetchApp.fetch(url, options);
+    const responseCode = response.getResponseCode();
+    const responseText = response.getContentText();
+    
+    if (responseCode !== 200) {
+      console.error('Failed to create customer:', responseCode, responseText);
+      return null; // Continue without customer
+    }
+    
+    const customer = JSON.parse(responseText);
+    console.log('Customer created:', customer.id);
+    return customer.id;
+  } catch (error) {
+    console.error('Error creating customer:', error);
+    return null; // Continue without customer
+  }
+}
+
+/**
  * Create Stripe Checkout Session
  * Uses Stripe REST API directly (no library needed)
  */
@@ -132,12 +180,23 @@ function createStripeCheckoutSession(amount, currency, paymentMethodTypes, succe
     });
   }
   
-  // Customer email
+  // Create or get customer to prefill email and name
+  let customerId = null;
   if (customerEmail) {
-    formParams.push('customer_email=' + encodeURIComponent(customerEmail));
+    customerId = createOrGetStripeCustomer(customerEmail, customerName);
   }
   
-  // Customer name (add to metadata if not present)
+  // Use customer ID if available (this will prefill email and name)
+  if (customerId) {
+    formParams.push('customer=' + encodeURIComponent(customerId));
+    console.log('Using Stripe Customer:', customerId);
+  } else if (customerEmail) {
+    // Fallback: use customer_email (only prefills email, not name)
+    formParams.push('customer_email=' + encodeURIComponent(customerEmail));
+    console.log('Using customer_email only:', customerEmail);
+  }
+  
+  // Save customer name to metadata for later retrieval
   if (customerName && !metadata.customer_name) {
     formParams.push('metadata[customer_name]=' + encodeURIComponent(customerName));
   }
@@ -214,6 +273,43 @@ function createStripeCheckoutSession(amount, currency, paymentMethodTypes, succe
  */
 function doOptions() {
   return jsonResponse({}, 200);
+}
+
+/**
+ * Retrieve Stripe Session Details
+ * GET Endpoint: ?action=get-session&session_id=cs_xxx
+ */
+function getStripeSessionDetails(sessionId) {
+  const stripeSecretKey = getStripeSecretKey();
+  const url = `https://api.stripe.com/v1/checkout/sessions/${sessionId}`;
+  
+  const options = {
+    method: 'get',
+    headers: {
+      'Authorization': 'Bearer ' + stripeSecretKey,
+    },
+  };
+  
+  try {
+    console.log('Retrieving Stripe session:', sessionId);
+    const response = UrlFetchApp.fetch(url, options);
+    const responseCode = response.getResponseCode();
+    const responseText = response.getContentText();
+    
+    console.log('Stripe Session Response Code:', responseCode);
+    
+    if (responseCode !== 200) {
+      console.error('Stripe API Error:', responseCode, responseText);
+      throw new Error(`Failed to retrieve session: ${responseCode}`);
+    }
+    
+    const session = JSON.parse(responseText);
+    console.log('Session retrieved successfully:', session.id, 'Status:', session.payment_status);
+    return session;
+  } catch (error) {
+    console.error('Error retrieving session:', error);
+    throw error;
+  }
 }
 
 /**
@@ -351,32 +447,56 @@ function doPost(e) {
 }
 
 /**
- * GET Handler (for testing)
+ * GET Handler (for testing and retrieving session details)
  */
 function doGet(e) {
-  return jsonResponse({
-    ok: true,
-    message: 'Stripe Backend is running',
-    endpoints: {
-      'POST /create-checkout-session': 'Create a Stripe Checkout Session',
-    },
-    example: {
-      method: 'POST',
-      url: 'YOUR_WEB_APP_URL',
-      body: {
-        amount: 1000, // 10.00 EUR in cents
-        currency: 'eur',
-        payment_method_types: ['card'],
-        success_url: 'https://yourdomain.com/donation?stripe=success&session_id={CHECKOUT_SESSION_ID}',
-        cancel_url: 'https://yourdomain.com/donation?stripe=cancelled',
-        metadata: {
-          donationType: 'one-time',
-          donorEmail: 'test@example.com',
-        },
-        customer_email: 'customer@example.com',
-        customer_name: 'John Doe',
+  try {
+    const params = e.parameter || {};
+    const action = params.action;
+    const sessionId = params.session_id;
+    
+    // If action is get-session, retrieve session details
+    if (action === 'get-session' && sessionId) {
+      console.log('GET request: Retrieving session', sessionId);
+      const session = getStripeSessionDetails(sessionId);
+      return successResponse({
+        session: session,
+        ok: true,
+      });
+    }
+    
+    // Default: return API info
+    return jsonResponse({
+      ok: true,
+      message: 'Stripe Backend is running',
+      endpoints: {
+        'POST /create-checkout-session': 'Create a Stripe Checkout Session',
+        'GET /?action=get-session&session_id=cs_xxx': 'Retrieve Stripe Session Details',
       },
-    },
-  });
+      example: {
+        method: 'POST',
+        url: 'YOUR_WEB_APP_URL',
+        body: {
+          amount: 1000, // 10.00 EUR in cents
+          currency: 'eur',
+          payment_method_types: ['card'],
+          success_url: 'https://yourdomain.com/donation?stripe=success&session_id={CHECKOUT_SESSION_ID}',
+          cancel_url: 'https://yourdomain.com/donation?stripe=cancelled',
+          metadata: {
+            donationType: 'one-time',
+            donorEmail: 'test@example.com',
+          },
+          customer_email: 'customer@example.com',
+          customer_name: 'John Doe',
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Error in doGet:', error);
+    return errorResponse(
+      'Failed to process GET request: ' + (error.message || error.toString()),
+      500
+    );
+  }
 }
 
