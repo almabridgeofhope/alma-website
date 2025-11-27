@@ -1,5 +1,28 @@
 name: Deploy React App to GitHub Pages
 
+# ====================================
+# REQUIRED GITHUB SECRETS:
+# ====================================
+# VITE_PAYPAL_CLIENT_ID          - PayPal LIVE Client ID
+# VITE_PAYPAL_BACKEND_URL        - PayPal Apps Script URL
+# VITE_STRIPE_PUBLISHABLE_KEY    - Stripe LIVE Publishable Key (pk_live_...)
+# VITE_STRIPE_BACKEND_URL        - Stripe Apps Script URL
+# VITE_GOOGLE_API_KEY            - Google Sheets API Key
+# VITE_GOOGLE_SHEET_ID           - Google Sheet ID
+# VITE_DONATION_WEBHOOK_URL      - Donation Webhook Apps Script URL
+#
+# OPTIONAL SECRETS:
+# VITE_GOOGLE_SHEET_RANGE        - Sheet range (defaults if not set)
+# VITE_NEWSLETTER_ENDPOINT       - Newsletter signup endpoint
+# VITE_SEPA_IBAN                 - Bank IBAN for SEPA donations
+# VITE_SEPA_BIC                  - Bank BIC
+# VITE_SEPA_ACCOUNT_HOLDER       - Account holder name
+# VITE_SEPA_BANK_NAME            - Bank name
+#
+# NOTE: VITE_STAGE is hardcoded to 'prod' below - DO NOT add as secret
+# See GITHUB_SECRETS_CHECKLIST.md for detailed setup instructions
+# ====================================
+
 on:
   push:
     branches: [ main ]
@@ -32,14 +55,20 @@ jobs:
       
     - name: Build
       env:
+        VITE_STAGE: prod
         VITE_GOOGLE_API_KEY: ${{ secrets.VITE_GOOGLE_API_KEY }}
         VITE_GOOGLE_SHEET_ID: ${{ secrets.VITE_GOOGLE_SHEET_ID }}
         VITE_GOOGLE_SHEET_RANGE: ${{ secrets.VITE_GOOGLE_SHEET_RANGE }}
         VITE_PAYPAL_CLIENT_ID: ${{ secrets.VITE_PAYPAL_CLIENT_ID }}
+        VITE_PAYPAL_BACKEND_URL: ${{ secrets.VITE_PAYPAL_BACKEND_URL }}
         VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
         VITE_STRIPE_BACKEND_URL: ${{ secrets.VITE_STRIPE_BACKEND_URL }}
         VITE_NEWSLETTER_ENDPOINT: ${{ secrets.VITE_NEWSLETTER_ENDPOINT }}
         VITE_DONATION_WEBHOOK_URL: ${{ secrets.VITE_DONATION_WEBHOOK_URL }}
+        VITE_SEPA_IBAN: ${{ secrets.VITE_SEPA_IBAN }}
+        VITE_SEPA_BIC: ${{ secrets.VITE_SEPA_BIC }}
+        VITE_SEPA_ACCOUNT_HOLDER: ${{ secrets.VITE_SEPA_ACCOUNT_HOLDER }}
+        VITE_SEPA_BANK_NAME: ${{ secrets.VITE_SEPA_BANK_NAME }}
       run: npm run build
       
     - name: Setup Pages
