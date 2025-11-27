@@ -979,34 +979,16 @@ const Donation = () => {
           await subscribeToNewsletter(formData.email);
         }
         
-        // Calculate final amount for redirect
+        // Calculate final amount for redirect BEFORE clearing state
         const finalAmount = donationType === "monthly"
           ? (amount || customAmount || "0")
           : (cartState.items.length > 0 
               ? cartState.totalAmount.toString() 
               : (amount || customAmount || "0"));
         
-        // Clear shopping cart after successful payment
-        clearCart();
+        console.log("💰 PayPal: Navigating to success page with amount:", finalAmount);
         
-        // Reset form
-        setAmount("");
-        setCustomAmount("");
-        setFormData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          street: "",
-          postalCode: "",
-          city: "",
-          country: "",
-          comment: "",
-          wantsReceipt: false,
-          privacyConsent: false,
-          wantsNewsletter: false,
-        });
-        
-        // Redirect to success page with donation details
+        // Redirect to success page with donation details (BEFORE clearing state)
         const params = new URLSearchParams({
           amount: finalAmount,
           type: donationType,
@@ -1014,7 +996,14 @@ const Donation = () => {
         if (paymentId) {
           params.set("paymentId", paymentId);
         }
-        navigate(`/donation/success?${params.toString()}`);
+        
+        // Navigate using window.location for reliable page transition
+        const successUrl = `/donation/success?${params.toString()}`;
+        console.log("🚀 Navigating to:", successUrl);
+        
+        // Use window.location.href for full page navigation
+        // This ensures the page actually changes instead of just updating the URL
+        window.location.href = successUrl;
       } catch (error) {
         console.error("Error processing PayPal payment:", error);
         setIsProcessingPayment(false);

@@ -158,9 +158,17 @@ const DonationSuccess = () => {
   // Redirect if no valid parameters (invalid access)
   useEffect(() => {
     const hasValidParams = sessionId || legacyAmount || legacyPaymentId || estimatedAmount;
+    console.log("🔍 DonationSuccess params check:", {
+      sessionId,
+      legacyAmount,
+      legacyPaymentId,
+      estimatedAmount,
+      hasValidParams
+    });
     if (!hasValidParams) {
-      console.warn("⚠️ No valid donation parameters, redirecting to donation page...");
+      console.warn("⚠️ No valid donation parameters, redirecting to donation page in 3 seconds...");
       const timer = setTimeout(() => {
+        console.log("⏰ Redirect timer fired, navigating to /donation");
         navigate("/donation");
       }, 3000);
       return () => clearTimeout(timer);
