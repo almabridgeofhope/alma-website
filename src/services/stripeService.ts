@@ -61,7 +61,8 @@ class StripeService {
     try {
       const baseUrl = window.location.origin;
       // Use BrowserRouter format (no hash)
-      const successUrl = `${baseUrl}/donation?stripe=success&session_id={CHECKOUT_SESSION_ID}`;
+      // Redirect directly to success page with session_id
+      const successUrl = `${baseUrl}/donation/success?session_id={CHECKOUT_SESSION_ID}`;
       const cancelUrl = `${baseUrl}/donation?stripe=cancelled`;
 
       // Google Apps Script web apps have CORS limitations

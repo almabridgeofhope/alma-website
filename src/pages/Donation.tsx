@@ -272,10 +272,33 @@ const Donation = () => {
   const [donationType, setDonationType] = useState<"one-time" | "monthly">("one-time");
   const [amount, setAmount] = useState<string>("");
   const [customAmount, setCustomAmount] = useState<string>("");
+  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "stripe-card" | "stripe-sepa">("paypal");
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showWarningDialog, setShowWarningDialog] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
   
-  // Handle success redirect from PayPal return URL
+  // Helper functions to show dialogs
+  const showError = useCallback((message: string) => {
+    setErrorMessage(message);
+    setShowErrorDialog(true);
+  }, []);
+  
+  const showSuccess = useCallback((message: string) => {
+    setSuccessMessage(message);
+    setShowSuccessDialog(true);
+  }, []);
+  
+  // Handle success and cancellation redirects from PayPal and Stripe return URLs
   useEffect(() => {
     const success = searchParams.get("success");
+    const cancelled = searchParams.get("cancelled");
+    const stripeStatus = searchParams.get("stripe");
+    const sessionId = searchParams.get("session_id");
+
+    // Handle PayPal success redirect
     if (success === "true") {
       // Redirect to success page with donation details
       // Note: We'll get the amount from the cart or form state
@@ -293,26 +316,47 @@ const Donation = () => {
         // If no amount, just redirect to success page
         navigate("/donation/success");
       }
+      return;
     }
-  }, [searchParams, navigate, cartState.items.length, cartState.totalAmount, amount, customAmount, donationType]);
-  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "stripe-card" | "stripe-sepa">("paypal");
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [showWarningDialog, setShowWarningDialog] = useState(false);
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [showErrorDialog, setShowErrorDialog] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string>("");
-  const [errorMessage, setErrorMessage] = useState<string>("");
-  
-  // Helper functions to show dialogs
-  const showError = (message: string) => {
-    setErrorMessage(message);
-    setShowErrorDialog(true);
-  };
-  
-  const showSuccess = (message: string) => {
-    setSuccessMessage(message);
-    setShowSuccessDialog(true);
-  };
+    
+    // Handle PayPal/Stripe cancellation
+    if (cancelled === "true" || stripeStatus === "cancelled") {
+      // Clear the URL parameters and show info message
+      navigate("/donation", { replace: true });
+      showError(
+        language === "de" 
+          ? "Die Zahlung wurde abgebrochen. Sie können es erneut versuchen."
+          : "Payment was cancelled. You can try again."
+      );
+      return;
+    }
+    
+    // Handle Stripe success redirect
+    if (stripeStatus === "success" && sessionId) {
+      // Retrieve session details from Stripe to get the amount
+      stripeService.getSessionDetails(sessionId)
+        .then((session) => {
+          const finalAmount = (session.amount_total / 100).toFixed(2); // Convert from cents to euros
+          const donationType = session.metadata?.donationType || "one-time";
+          
+          const params = new URLSearchParams({
+            amount: finalAmount,
+            type: donationType,
+            sessionId: sessionId,
+          });
+          
+          // Clear cart after successful payment
+          clearCart();
+          
+          navigate(`/donation/success?${params.toString()}`);
+        })
+        .catch((error) => {
+          console.error("Failed to retrieve Stripe session details:", error);
+          // Still redirect to success page even if we can't get details
+          navigate("/donation/success");
+        });
+    }
+  }, [searchParams, navigate, cartState.items.length, cartState.totalAmount, amount, customAmount, donationType, clearCart, language, showError]);
   
   const [formData, setFormData] = useState({
     firstName: "",
@@ -1763,8 +1807,8 @@ const Donation = () => {
                         <RadioGroupItem value="paypal" id="payment-paypal" />
                         <Label htmlFor="payment-paypal" className="flex-1 cursor-pointer">
                           PayPal
-                        </Label>
-                      </div>
+                          </Label>
+                        </div>
                       {STRIPE_PUBLISHABLE_KEY && (
                         <>
                           <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
@@ -1813,7 +1857,13 @@ const Donation = () => {
                     {/* Stripe Card Payment */}
                     {paymentMethod === "stripe-card" && STRIPE_PUBLISHABLE_KEY && (
                       <StripeCheckoutButton
-                        amount={parseFloat(amount || customAmount || "0")}
+                        amount={
+                          donationType === "monthly"
+                            ? parseFloat(amount || customAmount || "0")
+                            : (cartState.items.length > 0 
+                                ? cartState.totalAmount 
+                                : parseFloat(amount || customAmount || "0"))
+                        }
                         onRedirect={() => setIsProcessingPayment(true)}
                         onError={(error) => showError(error)}
                         language={language}
@@ -1830,15 +1880,27 @@ const Donation = () => {
                         }}
                         onValidate={() => {
                           // Basic validation
-                          if (!formData.firstName || !formData.lastName || !formData.email) {
-                            showError(t("donation.form.error.missingFields"));
+                          if (!formData.firstName){
+                            showError(t("donation.form.error.firstName"));
+                            return false;
+                          }
+                          if (!formData.lastName) {
+                            showError(t("donation.form.error.lastName"));
+                            return false;
+                          }
+                          if (!formData.email) {
+                            showError(t("donation.form.error.email"));
                             return false;
                           }
                           if (!formData.privacyConsent) {
-                            showError(t("donation.form.error.privacyConsent"));
+                            showError(t("donation.form.error.privacy"));
                             return false;
                           }
-                          const finalAmount = parseFloat(amount || customAmount || "0");
+                          const finalAmount = donationType === "monthly"
+                            ? parseFloat(amount || customAmount || "0")
+                            : (cartState.items.length > 0 
+                                ? cartState.totalAmount 
+                                : parseFloat(amount || customAmount || "0"));
                           if (finalAmount <= 0) {
                             showError(t("donation.form.error.missingAmount"));
                             return false;
@@ -1851,7 +1913,13 @@ const Donation = () => {
                     {/* Stripe SEPA Payment */}
                     {paymentMethod === "stripe-sepa" && STRIPE_PUBLISHABLE_KEY && (
                       <StripeCheckoutButton
-                        amount={parseFloat(amount || customAmount || "0")}
+                        amount={
+                          donationType === "monthly"
+                            ? parseFloat(amount || customAmount || "0")
+                            : (cartState.items.length > 0 
+                                ? cartState.totalAmount 
+                                : parseFloat(amount || customAmount || "0"))
+                        }
                         onRedirect={() => setIsProcessingPayment(true)}
                         onError={(error) => showError(error)}
                         language={language}
@@ -1868,15 +1936,27 @@ const Donation = () => {
                         }}
                         onValidate={() => {
                           // Basic validation
-                          if (!formData.firstName || !formData.lastName || !formData.email) {
-                            showError(t("donation.form.error.missingFields"));
+                          if (!formData.firstName) {
+                            showError(t("donation.form.error.firstName"));
+                            return false;
+                          }
+                          if (!formData.lastName) {
+                            showError(t("donation.form.error.lastName"));
+                            return false;
+                          }
+                          if (!formData.email) {
+                            showError(t("donation.form.error.email"));
                             return false;
                           }
                           if (!formData.privacyConsent) {
-                            showError(t("donation.form.error.privacyConsent"));
+                            showError(t("donation.form.error.privacy"));
                             return false;
                           }
-                          const finalAmount = parseFloat(amount || customAmount || "0");
+                          const finalAmount = donationType === "monthly"
+                            ? parseFloat(amount || customAmount || "0")
+                            : (cartState.items.length > 0 
+                                ? cartState.totalAmount 
+                                : parseFloat(amount || customAmount || "0"));
                           if (finalAmount <= 0) {
                             showError(t("donation.form.error.missingAmount"));
                             return false;
