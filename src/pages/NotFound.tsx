@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,13 +14,40 @@ const NotFound = () => {
   const location = useLocation();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const [shouldRender, setShouldRender] = React.useState(true);
 
   useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
+    // Don't show 404 if we're in the middle of a redirect from 404.html
+    const redirectPath = sessionStorage.getItem('404-redirect-path');
+    const currentPathname = window.location.pathname;
+    
+    // If we're on /index.html and have a redirect path, don't render the 404 page
+    if ((currentPathname === '/index.html' || currentPathname === '/') && redirectPath) {
+      setShouldRender(false);
+      // Clear after a short delay to allow redirect to complete
+      const timer = setTimeout(() => {
+        setShouldRender(true);
+      }, 200);
+      return () => clearTimeout(timer);
+    } else {
+      setShouldRender(true);
+    }
   }, [location.pathname]);
+
+  useEffect(() => {
+    // Only log error if we're actually showing the 404 page
+    if (shouldRender && location.pathname !== '/index.html') {
+      console.error(
+        "404 Error: User attempted to access non-existent route:",
+        location.pathname
+      );
+    }
+  }, [location.pathname, shouldRender]);
+
+  // Don't render if we're in the middle of a redirect
+  if (!shouldRender) {
+    return null;
+  }
 
   const featuredArticles: NewsArticle[] = getNewsArticles(t).slice(0, 3);
 

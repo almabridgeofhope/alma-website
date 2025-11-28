@@ -31,43 +31,33 @@ const Handle404Redirect = () => {
   const hasHandledRedirect = React.useRef(false);
   
   useEffect(() => {
-    // Only handle redirect on initial mount or when we're on index.html (from 404.html redirect)
-    const isFrom404 = window.location.pathname === '/index.html' || 
-                      window.location.pathname === '/' && sessionStorage.getItem('404-redirect-path');
+    // Handle redirect immediately on mount or route change
+    const redirectPath = sessionStorage.getItem('404-redirect-path');
+    const currentPathname = window.location.pathname;
     
-    if (!hasHandledRedirect.current && isFrom404) {
-      // Check if we have a stored redirect path from 404.html
-      const redirectPath = sessionStorage.getItem('404-redirect-path');
-      if (redirectPath) {
-        const currentPath = location.pathname + location.search + location.hash;
-        if (redirectPath !== currentPath) {
-          console.log('[Handle404Redirect] Redirecting from 404.html to:', redirectPath);
-          sessionStorage.removeItem('404-redirect-path');
-          hasHandledRedirect.current = true;
-          // Navigate to the stored path
-          try {
-            navigate(redirectPath, { replace: true });
-          } catch (error) {
-            console.error('Navigation error:', error);
-            // Fallback: force page reload if navigation fails
-            window.location.href = redirectPath;
-          }
-        } else {
-          // Path matches, just clear the stored path
-          sessionStorage.removeItem('404-redirect-path');
-          hasHandledRedirect.current = true;
-        }
+    // If we're on /index.html and have a redirect path, navigate immediately
+    if ((currentPathname === '/index.html' || currentPathname === '/') && redirectPath) {
+      const targetPath = redirectPath.split('?')[0]; // Remove query string for comparison
+      const currentRoute = location.pathname;
+      
+      if (targetPath !== currentRoute && targetPath !== currentPathname) {
+        console.log('[Handle404Redirect] Redirecting from 404.html to:', redirectPath);
+        sessionStorage.removeItem('404-redirect-path');
+        hasHandledRedirect.current = true;
+        // Navigate immediately
+        navigate(redirectPath, { replace: true });
         return;
+      } else {
+        // Path already matches, just clear the stored path
+        sessionStorage.removeItem('404-redirect-path');
+        hasHandledRedirect.current = true;
       }
     }
     
     // Handle browser back/forward navigation issues
-    // Only listen to popstate events, not regular navigation
     const handlePopState = (event: PopStateEvent) => {
-      // Small delay to let React Router process the navigation first
       setTimeout(() => {
         const currentPath = window.location.pathname;
-        // Only handle if we're on index.html but React Router thinks we're elsewhere
         if ((currentPath === '/index.html' || currentPath === '/') && currentPath !== location.pathname) {
           const storedPath = sessionStorage.getItem('404-redirect-path');
           if (storedPath) {
@@ -85,7 +75,7 @@ const Handle404Redirect = () => {
     
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [navigate]); // Remove location from dependencies to prevent re-running on every route change
+  }, [navigate, location.pathname]);
   
   return null;
 };
@@ -137,6 +127,8 @@ const AppContent = () => {
       <Navigation />
       <Routes>
         <Route path="/" element={<Index />} />
+        {/* Redirect /index.html to / to prevent 404 flash */}
+        <Route path="/index.html" element={<Navigate to="/" replace />} />
         <Route path="/about" element={<Team />} />
         <Route path="/projects" element={<Projects />} />
         <Route path="/news" element={<News />} />
