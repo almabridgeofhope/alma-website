@@ -103,7 +103,7 @@ const translations = {
     "projects.cost.details": "View details",
     "projects.cost.error": "Failed to load costs: {error}",
     "projects.mobility.target.de": "um Kinder sicher zu Partnerschulen zu bringen",
-    "projects.mobility.target.en": "School Access Project",
+    "projects.mobility.target.en": "Education Sponsorship Project",
     "projects.sponsorship.target": "Young Mobility Project",
     "projects.community.title": "Building the Community House",
     "projects.community.teaser": "The heart of our initiative",
@@ -127,7 +127,7 @@ const translations = {
     // Young Mobility Project
     "projects.mobility.title": "Young Mobility Project",
     "projects.mobility.teaser": "Driving education and shared community impact",
-    "projects.mobility.description": "With our community bus, we provide driving lessons for young adults in Namaliri – giving them the skills to become licensed drivers and improve their job opportunities. The bus is also used within our School Access Project, where it safely transports children to partner schools. This way, one shared resource supports two goals: creating education access and empowering local youth.",
+    "projects.mobility.description": "With our community bus, we provide driving lessons for young adults in Namaliri – giving them the skills to become licensed drivers and improve their job opportunities. The bus is also used within our Education Sponsorship Project, where it safely transports children to partner schools. This way, one shared resource supports two goals: creating education access and empowering local youth.",
     "projects.mobility.goal1": "Provide professional driving lessons for young adults in Namaliri",
     "projects.mobility.goal2": "Improve job opportunities and mobility within the community",
     "projects.mobility.goal3": "Use shared community resources (bus, local trainers) sustainably across projects",
@@ -136,7 +136,7 @@ const translations = {
     "projects.mobility.button": "Support Project 🚗",
     
     // Education Sponsorship Project
-    "projects.sponsorship.title": "School Access Project",
+    "projects.sponsorship.title": "Education Sponsorship Project",
     "projects.sponsorship.teaser": "Making education accessible through sponsorship and shared transport",
     "projects.sponsorship.description": "Many children in Namaliri face barriers to education — either because school fees are unaffordable or the nearest school is too far away. Through this project, we fund education sponsorships and provide safe daily transport using our community bus, which also serves the Young Mobility Project.",
     "projects.sponsorship.goal1": "Provide education for children whose families cannot afford school fees",
@@ -789,7 +789,7 @@ const translations = {
     "projects.cost.details": "Details anzeigen",
     "projects.cost.error": "Kosten konnten nicht geladen werden: {error}",
     "projects.mobility.target.de": "um Kinder sicher zu Partnerschulen zu bringen",
-    "projects.mobility.target.en": "School Access Project",
+    "projects.mobility.target.en": "Education Sponsorship Project",
     "projects.sponsorship.target": "Young Mobility Project",
     "projects.community.title": "Bau des Community House",
     "projects.community.teaser": "Das Herzstück unserer Initiative",
@@ -813,7 +813,7 @@ const translations = {
     // Young Mobility Project
     "projects.mobility.title": "Mobilität & berufliche Qualifikation",
     "projects.mobility.teaser": "Fahrausbildung und gemeinschaftlicher Mehrwert",
-    "projects.mobility.description": "Mit unserem Gemeinschaftsbus bieten wir jungen Erwachsenen in Namaliri Fahrstunden an – so erwerben sie ihren Führerschein und verbessern ihre Jobchancen. Gleichzeitig nutzen wir den Bus im School Access Project, um Kinder sicher zu Partnerschulen zu bringen. Eine gemeinsame Ressource unterstützt so zwei Ziele: Bildung ermöglichen und Jugendliche vor Ort stärken.",
+    "projects.mobility.description": "Mit unserem Gemeinschaftsbus bieten wir jungen Erwachsenen in Namaliri Fahrstunden an – so erwerben sie ihren Führerschein und verbessern ihre Jobchancen. Gleichzeitig nutzen wir den Bus im Schulpatenschaft-Projekt, um Kinder sicher zu Partnerschulen zu bringen. Eine gemeinsame Ressource unterstützt so zwei Ziele: Bildung ermöglichen und Jugendliche vor Ort stärken.",
     "projects.mobility.goal1": "Professionelle Fahrstunden für junge Erwachsene in Namaliri anbieten",
     "projects.mobility.goal2": "Beschäftigungschancen und Mobilität in der Gemeinschaft verbessern",
     "projects.mobility.goal3": "Gemeinschaftliche Ressourcen (Bus, lokale Trainer:innen) nachhaltig projektübergreifend nutzen",
@@ -822,7 +822,7 @@ const translations = {
     "projects.mobility.button": "Projekt unterstützen 🚗",
     
     // Education Sponsorship Project
-    "projects.sponsorship.title": "Schul- & Bildungszugang",
+    "projects.sponsorship.title": "Schulpatenschaft",
     "projects.sponsorship.teaser": "Bildung durch Patenschaften und geteilten Transport zugänglich machen",
     "projects.sponsorship.description": "Viele Kinder in Namaliri stoßen auf Bildungsbarrieren – entweder weil die Schulgebühren unerschwinglich sind oder die nächste Schule zu weit entfernt ist. Mit diesem Projekt finanzieren wir Bildungspatenschaften und bieten täglichen sicheren Transport mit unserem Gemeinschaftsbus an, der auch im Young Mobility Project eingesetzt wird.",
     "projects.sponsorship.goal1": "Bildung für Kinder ermöglichen, deren Familien sich Schulgebühren nicht leisten können",
