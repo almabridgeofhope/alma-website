@@ -498,9 +498,23 @@ function doOptions() {
 /**
  * Retrieve Stripe Session Details
  * GET Endpoint: ?action=get-session&session_id=cs_xxx
+ * Automatically detects stage from session ID (cs_live_ = prod, cs_test_ = local)
  */
-function getStripeSessionDetails(sessionId) {
-  const stripeSecretKey = getStripeSecretKey();
+function getStripeSessionDetails(sessionId, stage = null) {
+  // Auto-detect stage from session ID if not provided
+  if (!stage) {
+    if (sessionId && sessionId.startsWith('cs_live_')) {
+      stage = 'prod';
+    } else if (sessionId && sessionId.startsWith('cs_test_')) {
+      stage = 'local';
+    } else {
+      // Default to prod for unknown session IDs (safer for production)
+      stage = 'prod';
+      console.warn('Could not determine stage from session ID, defaulting to prod');
+    }
+  }
+  
+  const stripeSecretKey = getStripeSecretKey(stage);
   const url = `https://api.stripe.com/v1/checkout/sessions/${sessionId}`;
   
   const options = {
@@ -512,6 +526,7 @@ function getStripeSessionDetails(sessionId) {
   
   try {
     console.log('Retrieving Stripe session:', sessionId);
+    console.log('Detected stage:', stage);
     const response = UrlFetchApp.fetch(url, options);
     const responseCode = response.getResponseCode();
     const responseText = response.getContentText();
@@ -520,7 +535,16 @@ function getStripeSessionDetails(sessionId) {
     
     if (responseCode !== 200) {
       console.error('Stripe API Error:', responseCode, responseText);
-      throw new Error(`Failed to retrieve session: ${responseCode}`);
+      let errorMessage = `Failed to retrieve session: ${responseCode}`;
+      try {
+        const errorData = JSON.parse(responseText);
+        if (errorData.error && errorData.error.message) {
+          errorMessage += ' - ' + errorData.error.message;
+        }
+      } catch (e) {
+        errorMessage += ' - ' + responseText.substring(0, 200);
+      }
+      throw new Error(errorMessage);
     }
     
     const session = JSON.parse(responseText);
@@ -528,6 +552,8 @@ function getStripeSessionDetails(sessionId) {
     return session;
   } catch (error) {
     console.error('Error retrieving session:', error);
+    console.error('Session ID:', sessionId);
+    console.error('Stage used:', stage);
     throw error;
   }
 }
