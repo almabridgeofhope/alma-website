@@ -315,6 +315,25 @@ const Donation = () => {
     setSuccessMessage(message);
     setShowSuccessDialog(true);
   }, []);
+
+  // Helper function to get the current donation amount
+  const getCurrentAmount = useCallback((): string => {
+    if (donationType === "monthly") {
+      return amount || customAmount || "";
+    } else {
+      // For one-time donations, prefer cart total if items exist
+      if (cartState.items.length > 0) {
+        return cartState.totalAmount.toString();
+      }
+      return amount || customAmount || "";
+    }
+  }, [donationType, amount, customAmount, cartState.items.length, cartState.totalAmount]);
+
+  // Helper function to check if a valid amount is selected
+  const hasValidAmount = useCallback((): boolean => {
+    const currentAmount = getCurrentAmount();
+    return currentAmount !== "" && !isNaN(parseFloat(currentAmount)) && parseFloat(currentAmount) > 0;
+  }, [getCurrentAmount]);
   
   // Handle success and cancellation redirects from PayPal and Stripe return URLs
   useEffect(() => {
@@ -796,11 +815,7 @@ const Donation = () => {
   // PayPal payment handlers - memoized to prevent unnecessary re-renders
   const createPayPalOrder = useCallback((data: any, actions: any) => {
     // Validate all required fields before creating PayPal order
-    const finalAmountStr = donationType === "monthly"
-      ? (amount || customAmount)
-      : (cartState.items.length > 0 
-          ? cartState.totalAmount.toString() 
-          : (amount || customAmount));
+    const finalAmountStr = getCurrentAmount();
     
     // Validate amount
     if (!finalAmountStr || parseFloat(finalAmountStr) <= 0) {
@@ -909,7 +924,7 @@ const Donation = () => {
         cancel_url: `${window.location.origin}/donation?cancelled=true`,
       },
     });
-  }, [donationType, amount, customAmount, cartState.items, cartState.totalAmount, t, language, formData]);
+  }, [getCurrentAmount, t, language, formData]);
 
   // Function to subscribe to newsletter
   const subscribeToNewsletter = async (email: string) => {
@@ -1118,9 +1133,9 @@ const Donation = () => {
   // Create PayPal subscription using backend to generate dynamic subscription plan
   const createPayPalSubscription = useCallback(async (data: any, actions: any) => {
     console.log("=== Creating PayPal Subscription ===");
-    
+
     // Validate all required fields before creating PayPal subscription
-    const finalAmountStr = amount || customAmount;
+    const finalAmountStr = getCurrentAmount();
     
     // Validate amount
     if (!finalAmountStr || parseFloat(finalAmountStr) <= 0) {
@@ -1213,7 +1228,7 @@ const Donation = () => {
       console.error("Error creating PayPal subscription:", error);
       throw error;
     }
-  }, [amount, customAmount, formData, t, language]);
+  }, [getCurrentAmount, formData, t, language, showError]);
 
   const onPayPalCancel = useCallback(() => {
     console.log("PayPal payment cancelled");
@@ -2016,13 +2031,7 @@ const Donation = () => {
                     {/* Stripe Card Payment */}
                     {paymentMethod === "stripe-card" && STRIPE_PUBLISHABLE_KEY && (
                       <StripeCheckoutButton
-                        amount={
-                          donationType === "monthly"
-                            ? parseFloat(amount || customAmount || "0")
-                            : (cartState.items.length > 0 
-                                ? cartState.totalAmount 
-                                : parseFloat(amount || customAmount || "0"))
-                        }
+                        amount={parseFloat(getCurrentAmount() || "0")}
                         onRedirect={() => setIsProcessingPayment(true)}
                         onError={(error) => showError(error)}
                         language={language}
@@ -2073,13 +2082,7 @@ const Donation = () => {
                     {/* Stripe SEPA Payment */}
                     {paymentMethod === "stripe-sepa" && STRIPE_PUBLISHABLE_KEY && (
                       <StripeCheckoutButton
-                        amount={
-                          donationType === "monthly"
-                            ? parseFloat(amount || customAmount || "0")
-                            : (cartState.items.length > 0 
-                                ? cartState.totalAmount 
-                                : parseFloat(amount || customAmount || "0"))
-                        }
+                        amount={parseFloat(getCurrentAmount() || "0")}
                         onRedirect={() => setIsProcessingPayment(true)}
                         onError={(error) => showError(error)}
                         language={language}
