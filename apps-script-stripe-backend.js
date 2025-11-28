@@ -28,29 +28,34 @@
 
 // ========== CONFIGURATION ==========
 // Diese Werte werden aus Script Properties gelesen
-const STRIPE_SECRET_KEY_TEST = 'sk_test_...'; // Wird aus Script Properties gelesen
-const STRIPE_SECRET_KEY_LIVE = 'sk_live_...'; // Wird aus Script Properties gelesen
-const USE_LIVE_MODE = false; // Setzen Sie auf true für Production
-
 // ========== HELPER FUNCTIONS ==========
 
 /**
- * Get Stripe Secret Key from Script Properties
+ * Get Stripe Secret Key from Script Properties based on stage
+ * @param {string} stage - 'local' for test mode, 'prod' for live mode
  */
-function getStripeSecretKey() {
+function getStripeSecretKey(stage = 'local') {
   const properties = PropertiesService.getScriptProperties();
-  const isLive = properties.getProperty('USE_LIVE_MODE') === 'true' || USE_LIVE_MODE;
   
   let secretKey;
-  if (isLive) {
-    secretKey = properties.getProperty('STRIPE_SECRET_KEY_LIVE') || STRIPE_SECRET_KEY_LIVE;
+  if (stage === 'prod') {
+    // Production/Live key
+    secretKey = properties.getProperty('STRIPE_LIVE_SECRET_KEY');
+    
+    if (!secretKey || secretKey.startsWith('sk_...') || secretKey.length < 20) {
+      throw new Error('Stripe LIVE Secret Key not configured. Please set STRIPE_LIVE_SECRET_KEY in Script Properties.');
+    }
+    
+    console.log('Using Stripe LIVE mode');
   } else {
-    secretKey = properties.getProperty('STRIPE_SECRET_KEY_TEST') || STRIPE_SECRET_KEY_TEST;
-  }
-  
-  // Validate key format
-  if (!secretKey || secretKey.startsWith('sk_...') || secretKey.length < 20) {
-    throw new Error('Stripe Secret Key not configured. Please set STRIPE_SECRET_KEY_TEST or STRIPE_SECRET_KEY_LIVE in Script Properties.');
+    // Test key (default)
+    secretKey = properties.getProperty('STRIPE_TEST_SECRET_KEY');
+    
+    if (!secretKey || secretKey.startsWith('sk_...') || secretKey.length < 20) {
+      throw new Error('Stripe TEST Secret Key not configured. Please set STRIPE_TEST_SECRET_KEY in Script Properties.');
+    }
+    
+    console.log('Using Stripe TEST mode');
   }
   
   return secretKey;
@@ -138,14 +143,14 @@ function createOrGetStripeCustomer(email, name) {
 }
 
 /**
- * Create Stripe Checkout Session
+ * Create Stripe Checkout Session (One-time payment)
  * Uses Stripe REST API directly (no library needed)
  */
-function createStripeCheckoutSession(amount, currency, paymentMethodTypes, successUrl, cancelUrl, metadata = {}, customerEmail = null, customerName = null) {
-  const stripeSecretKey = getStripeSecretKey();
+function createStripeCheckoutSession(amount, currency, paymentMethodTypes, successUrl, cancelUrl, metadata = {}, customerEmail = null, customerName = null, stage = 'local') {
+  const stripeSecretKey = getStripeSecretKey(stage);
   
   if (!stripeSecretKey || stripeSecretKey.startsWith('sk_...')) {
-    throw new Error('Stripe Secret Key not configured. Please set STRIPE_SECRET_KEY_TEST or STRIPE_SECRET_KEY_LIVE in Script Properties.');
+    throw new Error('Stripe Secret Key not configured. Please set STRIPE_TEST_SECRET_KEY or STRIPE_LIVE_SECRET_KEY in Script Properties.');
   }
 
   const url = 'https://api.stripe.com/v1/checkout/sessions';
@@ -262,6 +267,144 @@ function createStripeCheckoutSession(amount, currency, paymentMethodTypes, succe
         throw new Error('Google Apps Script error: ' + errorStr);
       }
       throw new Error('Failed to create checkout session: ' + errorStr);
+    }
+  }
+}
+
+/**
+ * Create Stripe Subscription Checkout Session (Recurring payment)
+ * Creates a subscription with monthly recurring billing
+ */
+function createStripeSubscriptionSession(amount, currency, paymentMethodTypes, successUrl, cancelUrl, metadata = {}, customerEmail = null, customerName = null, stage = 'local') {
+  const stripeSecretKey = getStripeSecretKey(stage);
+  
+  if (!stripeSecretKey || stripeSecretKey.startsWith('sk_...')) {
+    throw new Error('Stripe Secret Key not configured. Please set STRIPE_TEST_SECRET_KEY or STRIPE_LIVE_SECRET_KEY in Script Properties.');
+  }
+
+  const url = 'https://api.stripe.com/v1/checkout/sessions';
+  
+  // Build form-encoded payload for Stripe API
+  const formParams = [];
+  
+  // Mode - subscription for recurring payments
+  formParams.push('mode=subscription');
+  
+  // Line items with recurring price data
+  formParams.push('line_items[0][price_data][currency]=' + encodeURIComponent(currency || 'eur'));
+  formParams.push('line_items[0][price_data][product_data][name]=' + encodeURIComponent('Monthly Donation'));
+  formParams.push('line_items[0][price_data][unit_amount]=' + Math.round(amount));
+  formParams.push('line_items[0][price_data][recurring][interval]=month');
+  formParams.push('line_items[0][price_data][recurring][interval_count]=1');
+  formParams.push('line_items[0][quantity]=1');
+  
+  // Payment method types (array)
+  const pmTypes = Array.isArray(paymentMethodTypes) ? paymentMethodTypes : [paymentMethodTypes];
+  pmTypes.forEach((pmt, index) => {
+    formParams.push(`payment_method_types[${index}]=${encodeURIComponent(pmt)}`);
+  });
+  
+  // URLs
+  formParams.push('success_url=' + encodeURIComponent(successUrl));
+  formParams.push('cancel_url=' + encodeURIComponent(cancelUrl));
+  
+  // Subscription-specific settings
+  // Allow customers to update payment method
+  formParams.push('payment_method_collection=always');
+  
+  // Metadata (nested object)
+  const subscriptionMetadata = {
+    ...metadata,
+    subscription_type: 'monthly_donation',
+    donation_type: 'monthly'
+  };
+  
+  Object.keys(subscriptionMetadata).forEach((key, index) => {
+    formParams.push(`metadata[${key}]=${encodeURIComponent(subscriptionMetadata[key])}`);
+    // Also add to subscription_data metadata
+    formParams.push(`subscription_data[metadata][${key}]=${encodeURIComponent(subscriptionMetadata[key])}`);
+  });
+  
+  // Create or get customer (required for subscriptions)
+  let customerId = null;
+  if (customerEmail) {
+    customerId = createOrGetStripeCustomer(customerEmail, customerName);
+  }
+  
+  // Customer is required for subscriptions
+  if (customerId) {
+    formParams.push('customer=' + encodeURIComponent(customerId));
+    console.log('Using Stripe Customer for subscription:', customerId);
+  } else if (customerEmail) {
+    // Fallback: use customer_email (Stripe will create customer)
+    formParams.push('customer_email=' + encodeURIComponent(customerEmail));
+    console.log('Using customer_email for subscription:', customerEmail);
+  } else {
+    console.warn('No customer email provided for subscription - Stripe will prompt for it');
+  }
+
+  const options = {
+    method: 'post',
+    headers: {
+      'Authorization': 'Bearer ' + stripeSecretKey,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    payload: formParams.join('&'),
+  };
+
+  try {
+    console.log('Calling Stripe API for subscription:', url);
+    console.log('Payload length:', formParams.join('&').length);
+    
+    const response = UrlFetchApp.fetch(url, options);
+    const responseCode = response.getResponseCode();
+    const responseText = response.getContentText();
+    
+    console.log('Stripe Subscription API Response Code:', responseCode);
+    console.log('Stripe Subscription API Response (first 500 chars):', responseText.substring(0, 500));
+    
+    if (responseCode !== 200) {
+      console.error('Stripe Subscription API Error:', responseCode, responseText);
+      let errorMessage = `Stripe Subscription API Error: ${responseCode}`;
+      try {
+        const errorData = JSON.parse(responseText);
+        if (errorData.error) {
+          if (errorData.error.message) {
+            errorMessage += ' - ' + errorData.error.message;
+          }
+          if (errorData.error.type) {
+            errorMessage += ' (Type: ' + errorData.error.type + ')';
+          }
+        } else if (errorData.message) {
+          errorMessage += ' - ' + errorData.message;
+        } else {
+          errorMessage += ' - ' + responseText.substring(0, 200);
+        }
+      } catch (e) {
+        errorMessage += ' - ' + responseText.substring(0, 200);
+      }
+      throw new Error(errorMessage);
+    }
+    
+    const parsedResponse = JSON.parse(responseText);
+    console.log('Stripe Subscription API Success - Session ID:', parsedResponse.id);
+    console.log('Subscription will be created upon successful payment');
+    return parsedResponse;
+  } catch (error) {
+    console.error('Error creating subscription session:', error);
+    console.error('Error type:', typeof error);
+    console.error('Error string:', String(error));
+    
+    // Re-throw with more context
+    if (error instanceof Error) {
+      throw error;
+    } else {
+      // Handle Google Apps Script specific errors
+      const errorStr = String(error);
+      if (errorStr.includes('Exception')) {
+        throw new Error('Google Apps Script error: ' + errorStr);
+      }
+      throw new Error('Failed to create subscription session: ' + errorStr);
     }
   }
 }
@@ -393,19 +536,47 @@ function doPost(e) {
       return errorResponse('cancel_url is required.');
     }
     
-    // Create checkout session
+    // Determine if this is a subscription (recurring) or one-time payment
+    const isSubscription = requestData.is_subscription === true || 
+                          requestData.isSubscription === true ||
+                          (requestData.metadata && requestData.metadata.donationType === 'monthly');
+    
+    // Get stage (local=test, prod=live)
+    const stage = requestData.stage || 'local';
+    
+    console.log('Payment type:', isSubscription ? 'Subscription (recurring)' : 'One-time payment');
+    console.log('Stage:', stage);
+    
+    // Create checkout session (subscription or one-time)
     let checkoutSession;
     try {
-      checkoutSession = createStripeCheckoutSession(
-        requestData.amount,
-        requestData.currency || 'eur',
-        requestData.payment_method_types,
-        requestData.success_url,
-        requestData.cancel_url,
-        requestData.metadata || {},
-        requestData.customer_email || null,
-        requestData.customer_name || null
-      );
+      if (isSubscription) {
+        console.log('Creating subscription checkout session...');
+        checkoutSession = createStripeSubscriptionSession(
+          requestData.amount,
+          requestData.currency || 'eur',
+          requestData.payment_method_types,
+          requestData.success_url,
+          requestData.cancel_url,
+          requestData.metadata || {},
+          requestData.customer_email || null,
+          requestData.customer_name || null,
+          stage
+        );
+      } else {
+        console.log('Creating one-time payment checkout session...');
+        checkoutSession = createStripeCheckoutSession(
+          requestData.amount,
+          requestData.currency || 'eur',
+          requestData.payment_method_types,
+          requestData.success_url,
+          requestData.cancel_url,
+          requestData.metadata || {},
+          requestData.customer_email || null,
+          requestData.customer_name || null,
+          stage
+        );
+      }
     } catch (stripeError) {
       console.error('Stripe API call failed:', stripeError);
       console.error('Error details:', JSON.stringify(stripeError, null, 2));

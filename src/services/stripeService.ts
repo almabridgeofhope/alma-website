@@ -8,6 +8,7 @@ export interface CreateCheckoutSessionRequest {
   metadata?: Record<string, string>;
   customerEmail?: string;
   customerName?: string;
+  isSubscription?: boolean; // true for monthly recurring payments
 }
 
 export interface CreateCheckoutSessionResponse {
@@ -38,10 +39,14 @@ export interface StripeSessionDetails {
 
 class StripeService {
   private backendUrl: string | null = null;
+  private stage: string;
 
   constructor() {
-    // Check if backend URL is configured
+    // Check if backend URL and stage are configured
     this.backendUrl = import.meta.env.VITE_STRIPE_BACKEND_URL || null;
+    this.stage = import.meta.env.VITE_STAGE || 'local'; // Default to local/test
+    
+    console.log(`Stripe Service initialized with stage: ${this.stage}`);
   }
 
   /**
@@ -77,6 +82,8 @@ class StripeService {
         customer_name: request.customerName,
         success_url: successUrl,
         cancel_url: cancelUrl,
+        is_subscription: request.isSubscription || false, // Flag for recurring payments
+        stage: this.stage, // Pass stage (local=test, prod=live)
       };
       
       console.log('📦 Request payload:', requestPayload);

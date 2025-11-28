@@ -21,6 +21,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { donationWebhookService } from "@/services/donationWebhookService";
 import { stripeService } from "@/services/stripeService";
+import { paypalService } from "@/services/paypalService";
 import heroImage from "@/assets/nature/nature_2.jpg";
 import communityImage from "@/assets/community/community_2.png";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
@@ -51,11 +52,13 @@ const generateSEPAReference = (donorName: string, amount: number, timestamp: str
 // PayPal Button Component - uses PayPalScriptReducer hook (must be inside PayPalScriptProvider)
 const PayPalButtonsComponent = memo(({ 
   createOrder, 
+  createSubscription,
   onApprove, 
   onError, 
   onCancel,
 }: {
-  createOrder: (data: any, actions: any) => Promise<string>;
+  createOrder?: (data: any, actions: any) => Promise<string>;
+  createSubscription?: (data: any, actions: any) => Promise<string>;
   onApprove: (data: any, actions: any) => Promise<void>;
   onError: (err: any) => void;
   onCancel: () => void;
@@ -92,25 +95,34 @@ const PayPalButtonsComponent = memo(({
     );
   }
 
+  // PayPal SDK requires ONLY one of createOrder or createSubscription, not both
+  const buttonProps: any = {
+    onApprove,
+    onError,
+    onCancel,
+    style: {
+      layout: "vertical",
+      color: "blue",
+      shape: "rect",
+      label: "paypal",
+      tagline: false,
+    },
+  };
+
+  // Add the appropriate create function based on payment type
+  if (createSubscription) {
+    buttonProps.createSubscription = createSubscription;
+  } else if (createOrder) {
+    buttonProps.createOrder = createOrder;
+  }
+
   return (
     <div className="w-full relative">
       <div className="mb-2 text-center text-sm text-muted-foreground">
         {t("paypal.redirect")}
       </div>
       <div id="paypal-button-container" className="w-full min-h-[50px] relative">
-        <PayPalButtons
-          createOrder={createOrder}
-          onApprove={onApprove}
-          onError={onError}
-          onCancel={onCancel}
-          style={{
-            layout: "vertical",
-            color: "blue",
-            shape: "rect",
-            label: "paypal",
-            tagline: false,
-          }}
-        />
+        <PayPalButtons {...buttonProps} />
       </div>
     </div>
   );
@@ -120,14 +132,17 @@ PayPalButtonsComponent.displayName = "PayPalButtonsComponent";
 
 // PayPal Button Wrapper with PayPalScriptProvider - wraps only the PayPal buttons
 // This is the component that should be used in the Donation component
+// Supports both one-time payments and subscriptions (via backend)
 const PayPalButtonWrapper = memo(({ 
-  createOrder, 
+  createOrder,
+  createSubscription,
   onApprove, 
   onError, 
   onCancel,
   language,
 }: {
-  createOrder: (data: any, actions: any) => Promise<string>;
+  createOrder?: (data: any, actions: any) => Promise<string>;
+  createSubscription?: (data: any, actions: any) => Promise<string>;
   onApprove: (data: any, actions: any) => Promise<void>;
   onError: (err: any) => void;
   onCancel: () => void;
@@ -142,21 +157,28 @@ const PayPalButtonWrapper = memo(({
   }
 
   const paypalLocale = language === "de" ? "de_DE" : "en_US";
+  
+  // Determine intent based on payment type
+  const isSubscription = !!createSubscription;
+  const intent = isSubscription ? "subscription" : "capture";
+  const vault = isSubscription ? true : undefined;
 
   return (
     <PayPalScriptProvider
       options={{
         clientId: PAYPAL_CLIENT_ID,
         currency: "EUR",
-        intent: "capture",
+        intent: intent,
         components: "buttons",
         locale: paypalLocale,
         "enable-funding": "paypal",
         "disable-funding": "card,credit,venmo,paylater,sepa",
+        vault: vault as any,
       }}
     >
       <PayPalButtonsComponent
         createOrder={createOrder}
+        createSubscription={createSubscription}
         onApprove={onApprove}
         onError={onError}
         onCancel={onCancel}
@@ -177,6 +199,7 @@ const StripeCheckoutButton = memo(({
   formData,
   metadata,
   onValidate,
+  isSubscription,
 }: {
   amount: number;
   onRedirect: () => void;
@@ -190,6 +213,7 @@ const StripeCheckoutButton = memo(({
   };
   metadata?: Record<string, string>;
   onValidate: () => boolean;
+  isSubscription?: boolean;
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -210,6 +234,7 @@ const StripeCheckoutButton = memo(({
         metadata: metadata || {},
         customerEmail: formData.email,
         customerName: `${formData.firstName} ${formData.lastName}`,
+        isSubscription: isSubscription || false,
       });
 
       if (!url || typeof url !== 'string' || !url.startsWith('http')) {
@@ -290,6 +315,25 @@ const Donation = () => {
     setSuccessMessage(message);
     setShowSuccessDialog(true);
   }, []);
+
+  // Helper function to get the current donation amount
+  const getCurrentAmount = useCallback((): string => {
+    if (donationType === "monthly") {
+      return amount || customAmount || "";
+    } else {
+      // For one-time donations, prefer cart total if items exist
+      if (cartState.items.length > 0) {
+        return cartState.totalAmount.toString();
+      }
+      return amount || customAmount || "";
+    }
+  }, [donationType, amount, customAmount, cartState.items.length, cartState.totalAmount]);
+
+  // Helper function to check if a valid amount is selected
+  const hasValidAmount = useCallback((): boolean => {
+    const currentAmount = getCurrentAmount();
+    return currentAmount !== "" && !isNaN(parseFloat(currentAmount)) && parseFloat(currentAmount) > 0;
+  }, [getCurrentAmount]);
   
   // Handle success and cancellation redirects from PayPal and Stripe return URLs
   useEffect(() => {
@@ -771,11 +815,7 @@ const Donation = () => {
   // PayPal payment handlers - memoized to prevent unnecessary re-renders
   const createPayPalOrder = useCallback((data: any, actions: any) => {
     // Validate all required fields before creating PayPal order
-    const finalAmountStr = donationType === "monthly"
-      ? (amount || customAmount)
-      : (cartState.items.length > 0 
-          ? cartState.totalAmount.toString() 
-          : (amount || customAmount));
+    const finalAmountStr = getCurrentAmount();
     
     // Validate amount
     if (!finalAmountStr || parseFloat(finalAmountStr) <= 0) {
@@ -884,7 +924,7 @@ const Donation = () => {
         cancel_url: `${window.location.origin}/donation?cancelled=true`,
       },
     });
-  }, [donationType, amount, customAmount, cartState.items, cartState.totalAmount, t, language, formData]);
+  }, [getCurrentAmount, t, language, formData]);
 
   // Function to subscribe to newsletter
   const subscribeToNewsletter = async (email: string) => {
@@ -918,24 +958,39 @@ const Donation = () => {
     console.log("PayPal data:", data);
     console.log("PayPal actions:", actions);
     
-    // Check if this is a SEPA payment
+    // Check if this is a subscription or an order
+    const isSubscription = !!data.subscriptionID;
+    console.log("Is subscription:", isSubscription);
+    console.log("Subscription ID:", data.subscriptionID);
+    console.log("Order ID:", data.orderID);
+    
+    // Check if this is a SEPA payment (only for orders)
     // SEPA payments can be detected by checking the payment source or funding source
     const paymentSource = data.paymentSource || data.payment_source;
     const fundingSource = data.fundingSource || data.funding_source;
-    const isSEPAPayment = !!(paymentSource?.sepa_debit || fundingSource === 'sepa' || data.paymentMethod === 'sepa');
+    const isSEPAPayment = !isSubscription && !!(paymentSource?.sepa_debit || fundingSource === 'sepa' || data.paymentMethod === 'sepa');
     
     console.log("Payment source:", paymentSource);
     console.log("Funding source:", fundingSource);
     console.log("Is SEPA payment:", isSEPAPayment);
     
-    // For SEPA payments, try to capture but handle timeout/async nature
-    // SEPA payments may not be immediately capturable
+    // Handle both subscriptions and orders
     const handlePayment = async () => {
       try {
         let details: any;
         let paymentId: string;
         
-        if (isSEPAPayment) {
+        if (isSubscription) {
+          // For subscriptions, we don't capture - subscription is already created
+          console.log("Subscription created successfully");
+          paymentId = data.subscriptionID;
+          details = { 
+            id: paymentId, 
+            status: 'ACTIVE',
+            subscription_id: data.subscriptionID
+          };
+          console.log("PayPal subscription ID:", paymentId);
+        } else if (isSEPAPayment) {
           // For SEPA, try to capture but it might take time
           // Use order ID if capture is not immediately available
           console.log("SEPA payment detected - attempting capture...");
@@ -1073,6 +1128,107 @@ const Donation = () => {
     setShowErrorDialog(true);
     setIsProcessingPayment(false);
   }, [t, language]);
+
+  // PayPal subscription creation handler for monthly donations
+  // Create PayPal subscription using backend to generate dynamic subscription plan
+  const createPayPalSubscription = useCallback(async (data: any, actions: any) => {
+    console.log("=== Creating PayPal Subscription ===");
+
+    // Validate all required fields before creating PayPal subscription
+    const finalAmountStr = getCurrentAmount();
+    
+    // Validate amount
+    if (!finalAmountStr || parseFloat(finalAmountStr) <= 0) {
+      throw new Error(t("donation.form.error.amount"));
+    }
+    
+    // Validate first name
+    if (!formData.firstName.trim()) {
+      throw new Error(t("donation.form.error.firstName"));
+    }
+    
+    // Validate last name
+    if (!formData.lastName.trim()) {
+      throw new Error(t("donation.form.error.lastName"));
+    }
+    
+    // Validate email
+    if (!formData.email.trim()) {
+      throw new Error(t("donation.form.error.email"));
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      throw new Error(t("donation.form.error.emailInvalid"));
+    }
+    
+    // Validate address if receipt is requested
+    if (formData.wantsReceipt) {
+      if (!formData.street.trim() || !formData.postalCode.trim() || !formData.city.trim() || !formData.country.trim()) {
+        throw new Error(t("donation.form.error.address"));
+      }
+    }
+    
+    // Validate privacy consent
+    if (!formData.privacyConsent) {
+      throw new Error(t("donation.form.error.privacy"));
+    }
+    
+    const finalAmount = parseFloat(finalAmountStr);
+    
+    // Final amount validation
+    if (isNaN(finalAmount) || finalAmount <= 0) {
+      console.error("Invalid amount for PayPal subscription:", { finalAmount, finalAmountStr });
+      throw new Error(t("donation.form.error.amount"));
+    }
+    
+    console.log("Creating PayPal subscription plan via backend with amount:", finalAmount, "EUR");
+    
+    try {
+      // Call backend to create a subscription plan with this specific amount
+      const planResult = await paypalService.createSubscriptionPlan({
+        amount: finalAmount,
+        currency: "EUR",
+        donorEmail: formData.email,
+        donorName: `${formData.firstName} ${formData.lastName}`,
+        metadata: {
+          donationType: 'monthly',
+          wantsReceipt: formData.wantsReceipt ? 'true' : 'false',
+        }
+      });
+      
+      if (!planResult.ok || !planResult.plan_id) {
+        throw new Error(planResult.message || planResult.error || "Failed to create subscription plan");
+      }
+      
+      console.log("Subscription plan created successfully:", planResult.plan_id);
+      
+      // Create the subscription using the plan ID
+      return actions.subscription.create({
+        plan_id: planResult.plan_id,
+        subscriber: {
+          name: {
+            given_name: formData.firstName,
+            surname: formData.lastName,
+          },
+          email_address: formData.email,
+        },
+        application_context: {
+          brand_name: "Alma Bridge of Hope",
+          locale: language === "de" ? "de-DE" : "en-US",
+          shipping_preference: "NO_SHIPPING",
+          user_action: "SUBSCRIBE_NOW",
+          return_url: `${window.location.origin}/donation?success=true&subscription=true`,
+          cancel_url: `${window.location.origin}/donation?cancelled=true`,
+        },
+        custom_id: `monthly-subscription-${Date.now()}`,
+      });
+    } catch (error) {
+      console.error("Error creating PayPal subscription:", error);
+      throw error;
+    }
+  }, [getCurrentAmount, formData, t, language, showError]);
 
   const onPayPalCancel = useCallback(() => {
     console.log("PayPal payment cancelled");
@@ -1819,16 +1975,45 @@ const Donation = () => {
 
                   {/* Payment UI - Conditional based on selected method */}
                   <div className="w-full relative">
-                    {/* PayPal - Keep original implementation that works */}
+                    {/* PayPal - Support both one-time and recurring payments */}
                     {paymentMethod === "paypal" && PAYPAL_CLIENT_ID && (
                       <div className="w-full relative" key="paypal-buttons">
-                        <PayPalButtonWrapper
-                          createOrder={createPayPalOrder}
-                          onApprove={onPayPalApprove}
-                          onError={onPayPalError}
-                          onCancel={onPayPalCancel}
-                          language={language}
-                        />
+                        {donationType === "monthly" && !paypalService.isConfigured() ? (
+                          <div className="w-full p-6 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-lg">
+                            <div className="flex items-start gap-3">
+                              <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                              <div className="space-y-2">
+                                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                                  {language === "de" 
+                                    ? "PayPal-Backend nicht konfiguriert" 
+                                    : "PayPal backend not configured"}
+                                </p>
+                                <p className="text-sm text-blue-800 dark:text-blue-200">
+                                  {language === "de"
+                                    ? "Für monatliche PayPal-Spenden muss das Backend konfiguriert sein. Bitte verwenden Sie Stripe oder kontaktieren Sie uns."
+                                    : "For monthly PayPal donations, the backend must be configured. Please use Stripe or contact us."}
+                                </p>
+                                <Button
+                                  onClick={() => setPaymentMethod("stripe-card")}
+                                  variant="outline"
+                                  size="sm"
+                                  className="mt-2 bg-white dark:bg-gray-900 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/50"
+                                >
+                                  {language === "de" ? "Zu Stripe wechseln" : "Switch to Stripe"}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <PayPalButtonWrapper
+                            createOrder={donationType === "one-time" ? createPayPalOrder : undefined}
+                            createSubscription={donationType === "monthly" ? createPayPalSubscription : undefined}
+                            onApprove={onPayPalApprove}
+                            onError={onPayPalError}
+                            onCancel={onPayPalCancel}
+                            language={language}
+                          />
+                        )}
                         {/* Overlay to disable PayPal buttons when dialog is open */}
                         {(showSuccessDialog || showErrorDialog || showWarningDialog) && (
                           <div 
@@ -1846,13 +2031,7 @@ const Donation = () => {
                     {/* Stripe Card Payment */}
                     {paymentMethod === "stripe-card" && STRIPE_PUBLISHABLE_KEY && (
                       <StripeCheckoutButton
-                        amount={
-                          donationType === "monthly"
-                            ? parseFloat(amount || customAmount || "0")
-                            : (cartState.items.length > 0 
-                                ? cartState.totalAmount 
-                                : parseFloat(amount || customAmount || "0"))
-                        }
+                        amount={parseFloat(getCurrentAmount() || "0")}
                         onRedirect={() => setIsProcessingPayment(true)}
                         onError={(error) => showError(error)}
                         language={language}
@@ -1867,6 +2046,7 @@ const Donation = () => {
                           donorEmail: formData.email,
                           donorName: `${formData.firstName} ${formData.lastName}`,
                         }}
+                        isSubscription={donationType === "monthly"}
                         onValidate={() => {
                           // Basic validation
                           if (!formData.firstName){
@@ -1902,13 +2082,7 @@ const Donation = () => {
                     {/* Stripe SEPA Payment */}
                     {paymentMethod === "stripe-sepa" && STRIPE_PUBLISHABLE_KEY && (
                       <StripeCheckoutButton
-                        amount={
-                          donationType === "monthly"
-                            ? parseFloat(amount || customAmount || "0")
-                            : (cartState.items.length > 0 
-                                ? cartState.totalAmount 
-                                : parseFloat(amount || customAmount || "0"))
-                        }
+                        amount={parseFloat(getCurrentAmount() || "0")}
                         onRedirect={() => setIsProcessingPayment(true)}
                         onError={(error) => showError(error)}
                         language={language}
@@ -1923,6 +2097,7 @@ const Donation = () => {
                           donorEmail: formData.email,
                           donorName: `${formData.firstName} ${formData.lastName}`,
                         }}
+                        isSubscription={donationType === "monthly"}
                         onValidate={() => {
                           // Basic validation
                           if (!formData.firstName) {
