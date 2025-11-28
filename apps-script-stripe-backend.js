@@ -96,9 +96,12 @@ function successResponse(data) {
 
 /**
  * Create or retrieve a Stripe Customer
+ * @param {string} email - Customer email
+ * @param {string} name - Customer name
+ * @param {string} stage - 'local' for test mode, 'prod' for live mode
  */
-function createOrGetStripeCustomer(email, name) {
-  const stripeSecretKey = getStripeSecretKey();
+function createOrGetStripeCustomer(email, name, stage = 'local') {
+  const stripeSecretKey = getStripeSecretKey(stage);
   
   if (!email) {
     return null; // No email provided, skip customer creation
@@ -188,7 +191,7 @@ function createStripeCheckoutSession(amount, currency, paymentMethodTypes, succe
   // Create or get customer to prefill email and name
   let customerId = null;
   if (customerEmail) {
-    customerId = createOrGetStripeCustomer(customerEmail, customerName);
+    customerId = createOrGetStripeCustomer(customerEmail, customerName, stage);
   }
   
   // Use customer ID if available (this will prefill email and name)
@@ -217,6 +220,7 @@ function createStripeCheckoutSession(amount, currency, paymentMethodTypes, succe
 
   try {
     console.log('Calling Stripe API:', url);
+    console.log('Stage:', stage);
     console.log('Payload length:', formParams.join('&').length);
     
     const response = UrlFetchApp.fetch(url, options);
@@ -224,10 +228,11 @@ function createStripeCheckoutSession(amount, currency, paymentMethodTypes, succe
     const responseText = response.getContentText();
     
     console.log('Stripe API Response Code:', responseCode);
-    console.log('Stripe API Response (first 500 chars):', responseText.substring(0, 500));
+    console.log('Stripe API Response (first 1000 chars):', responseText.substring(0, 1000));
     
     if (responseCode !== 200) {
-      console.error('Stripe API Error:', responseCode, responseText);
+      console.error('Stripe API Error:', responseCode);
+      console.error('Full error response:', responseText);
       let errorMessage = `Stripe API Error: ${responseCode}`;
       try {
         const errorData = JSON.parse(responseText);
@@ -238,13 +243,16 @@ function createStripeCheckoutSession(amount, currency, paymentMethodTypes, succe
           if (errorData.error.type) {
             errorMessage += ' (Type: ' + errorData.error.type + ')';
           }
+          if (errorData.error.code) {
+            errorMessage += ' [Code: ' + errorData.error.code + ']';
+          }
         } else if (errorData.message) {
           errorMessage += ' - ' + errorData.message;
         } else {
-          errorMessage += ' - ' + responseText.substring(0, 200);
+          errorMessage += ' - ' + responseText.substring(0, 500);
         }
       } catch (e) {
-        errorMessage += ' - ' + responseText.substring(0, 200);
+        errorMessage += ' - ' + responseText.substring(0, 500);
       }
       throw new Error(errorMessage);
     }
@@ -256,10 +264,15 @@ function createStripeCheckoutSession(amount, currency, paymentMethodTypes, succe
     console.error('Error creating checkout session:', error);
     console.error('Error type:', typeof error);
     console.error('Error string:', String(error));
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
     
     // Re-throw with more context
     if (error instanceof Error) {
-      throw error;
+      // Preserve the original error message
+      const fullMessage = error.message || String(error);
+      throw new Error('Stripe checkout session creation failed: ' + fullMessage);
     } else {
       // Handle Google Apps Script specific errors
       const errorStr = String(error);
@@ -328,7 +341,7 @@ function createStripeSubscriptionSession(amount, currency, paymentMethodTypes, s
   // Create or get customer (required for subscriptions)
   let customerId = null;
   if (customerEmail) {
-    customerId = createOrGetStripeCustomer(customerEmail, customerName);
+    customerId = createOrGetStripeCustomer(customerEmail, customerName, stage);
   }
   
   // Customer is required for subscriptions
@@ -727,6 +740,70 @@ function doPost(e) {
 }
 
 /**
+ * Diagnostic endpoint to check configuration
+ * Returns current Script Properties status without making API calls
+ */
+function checkConfiguration() {
+  const properties = PropertiesService.getScriptProperties();
+  
+  const config = {
+    stripe_test_key: {
+      exists: !!properties.getProperty('STRIPE_TEST_SECRET_KEY'),
+      length: properties.getProperty('STRIPE_TEST_SECRET_KEY')?.length || 0,
+      starts_with_sk_test: properties.getProperty('STRIPE_TEST_SECRET_KEY')?.startsWith('sk_test_') || false,
+      preview: properties.getProperty('STRIPE_TEST_SECRET_KEY') ? 
+        properties.getProperty('STRIPE_TEST_SECRET_KEY').substring(0, 10) + '...' : 'NOT SET',
+    },
+    stripe_live_key: {
+      exists: !!properties.getProperty('STRIPE_LIVE_SECRET_KEY'),
+      length: properties.getProperty('STRIPE_LIVE_SECRET_KEY')?.length || 0,
+      starts_with_sk_live: properties.getProperty('STRIPE_LIVE_SECRET_KEY')?.startsWith('sk_live_') || false,
+      preview: properties.getProperty('STRIPE_LIVE_SECRET_KEY') ? 
+        properties.getProperty('STRIPE_LIVE_SECRET_KEY').substring(0, 10) + '...' : 'NOT SET',
+    },
+    setup_token: {
+      exists: !!properties.getProperty('STRIPE_SETUP_TOKEN'),
+      length: properties.getProperty('STRIPE_SETUP_TOKEN')?.length || 0,
+    },
+  };
+  
+  // Try to get keys to see if they throw errors
+  let testKeyError = null;
+  let liveKeyError = null;
+  
+  try {
+    getStripeSecretKey('local');
+    config.stripe_test_key.valid = true;
+  } catch (e) {
+    testKeyError = e.message || String(e);
+    config.stripe_test_key.valid = false;
+    config.stripe_test_key.error = testKeyError;
+  }
+  
+  try {
+    getStripeSecretKey('prod');
+    config.stripe_live_key.valid = true;
+  } catch (e) {
+    liveKeyError = e.message || String(e);
+    config.stripe_live_key.valid = false;
+    config.stripe_live_key.error = liveKeyError;
+  }
+  
+  return {
+    ok: true,
+    config: config,
+    status: {
+      test_ready: !testKeyError,
+      live_ready: !liveKeyError,
+      overall: !testKeyError && !liveKeyError ? 'ready' : 'needs_configuration',
+    },
+    message: liveKeyError ? 
+      '⚠️ LIVE key issue: ' + liveKeyError : 
+      (testKeyError ? '⚠️ TEST key issue: ' + testKeyError : '✅ Configuration looks good'),
+  };
+}
+
+/**
  * GET Handler (for testing and retrieving session details)
  */
 function doGet(e) {
@@ -734,6 +811,12 @@ function doGet(e) {
     const params = e.parameter || {};
     const action = params.action;
     const sessionId = params.session_id;
+    
+    // Diagnostic endpoint to check configuration
+    if (action === 'check-config' || action === 'diagnose') {
+      console.log('GET request: Checking configuration');
+      return jsonResponse(checkConfiguration());
+    }
     
     // If action is get-session, retrieve session details
     if (action === 'get-session' && sessionId) {
@@ -752,6 +835,7 @@ function doGet(e) {
       endpoints: {
         'POST /create-checkout-session': 'Create a Stripe Checkout Session',
         'GET /?action=get-session&session_id=cs_xxx': 'Retrieve Stripe Session Details',
+        'GET /?action=check-config': 'Check configuration status (diagnostic)',
       },
       example: {
         method: 'POST',
