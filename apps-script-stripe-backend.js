@@ -653,10 +653,27 @@ function doPost(e) {
     } catch (stripeError) {
       console.error('Stripe API call failed:', stripeError);
       console.error('Error details:', JSON.stringify(stripeError, null, 2));
-      // Return detailed error message
-      const errorMsg = stripeError.message || stripeError.toString() || 'Unknown error';
+      
+      // Extract error message more reliably
+      let errorMsg = 'Unknown error';
+      if (stripeError instanceof Error) {
+        errorMsg = stripeError.message || stripeError.toString();
+      } else if (typeof stripeError === 'string') {
+        errorMsg = stripeError;
+      } else {
+        errorMsg = String(stripeError);
+      }
+      
+      // Check if it's a configuration error
+      if (errorMsg.includes('not configured') || errorMsg.includes('Secret Key')) {
+        return errorResponse(
+          'Configuration Error: ' + errorMsg + '. Please check Apps Script Script Properties.',
+          500
+        );
+      }
+      
       return errorResponse(
-        'Failed to create Stripe checkout session: ' + errorMsg,
+        'Failed to create Stripe checkout session: ' + errorMsg.substring(0, 500), // Limit length
         500
       );
     }
@@ -683,8 +700,27 @@ function doPost(e) {
     console.error('Error in doPost:', error);
     console.error('Error stack:', error.stack);
     console.error('Error details:', JSON.stringify(error, null, 2));
+    
+    // Extract error message more reliably
+    let errorMsg = 'Unknown error';
+    if (error instanceof Error) {
+      errorMsg = error.message || error.toString();
+    } else if (typeof error === 'string') {
+      errorMsg = error;
+    } else {
+      errorMsg = String(error);
+    }
+    
+    // Check if it's a configuration error
+    if (errorMsg.includes('not configured') || errorMsg.includes('Secret Key')) {
+      return errorResponse(
+        'Configuration Error: ' + errorMsg + '. Please check Apps Script Script Properties.',
+        500
+      );
+    }
+    
     return errorResponse(
-      'An error occurred: ' + (error.message || error.toString() || 'Unknown error'),
+      'An error occurred: ' + errorMsg.substring(0, 500), // Limit length to avoid truncation
       500
     );
   }
