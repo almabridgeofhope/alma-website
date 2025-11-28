@@ -293,7 +293,7 @@ const Donation = () => {
   // using explicit onClick handlers when on the donation page to bypass PayPal SDK interception.
   
   // Component state
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [donationType, setDonationType] = useState<"one-time" | "monthly">("one-time");
   const [amount, setAmount] = useState<string>("");
   const [customAmount, setCustomAmount] = useState<string>("");
@@ -304,6 +304,9 @@ const Donation = () => {
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  
+  // Ref to track if we've already handled cancellation to prevent showing error multiple times
+  const cancellationHandledRef = useRef(false);
   
   // Helper functions to show dialogs
   const showError = useCallback((message: string) => {
@@ -344,6 +347,8 @@ const Donation = () => {
 
     // Handle PayPal success redirect
     if (success === "true") {
+      // Reset cancellation ref when handling success
+      cancellationHandledRef.current = false;
       // Redirect to success page with donation details
       // Note: We'll get the amount from the cart or form state
       const finalAmount = cartState.items.length > 0 
@@ -363,20 +368,28 @@ const Donation = () => {
       return;
     }
     
-    // Handle PayPal/Stripe cancellation
-    if (cancelled === "true" || stripeStatus === "cancelled") {
-      // Clear the URL parameters and show info message
-      navigate("/donation", { replace: true });
-      showError(
-        language === "de" 
-          ? "Die Zahlung wurde abgebrochen. Sie können es erneut versuchen."
-          : "Payment was cancelled. You can try again."
-      );
+    // Handle PayPal/Stripe cancellation - just clear URL parameters, no error message
+    if ((cancelled === "true" || stripeStatus === "cancelled") && !cancellationHandledRef.current) {
+      // Mark as handled to prevent processing multiple times
+      cancellationHandledRef.current = true;
+      
+      // Clear the URL parameters and return to the page silently
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete("cancelled");
+      newSearchParams.delete("stripe");
+      setSearchParams(newSearchParams, { replace: true });
+      
+      // Reset ref after a short delay to allow for future cancellations
+      setTimeout(() => {
+        cancellationHandledRef.current = false;
+      }, 100);
       return;
     }
     
     // Handle Stripe success redirect
     if (stripeStatus === "success" && sessionId) {
+      // Reset cancellation ref when handling success
+      cancellationHandledRef.current = false;
       // Retrieve session details from Stripe to get the amount
       stripeService.getSessionDetails(sessionId)
         .then((session) => {
@@ -400,7 +413,7 @@ const Donation = () => {
           navigate("/donation/success");
         });
     }
-  }, [searchParams, navigate, cartState.items.length, cartState.totalAmount, amount, customAmount, donationType, clearCart, language, showError]);
+  }, [searchParams, setSearchParams, navigate, cartState.items.length, cartState.totalAmount, amount, customAmount, donationType, clearCart, language, showError]);
   
   const [formData, setFormData] = useState({
     firstName: "",
