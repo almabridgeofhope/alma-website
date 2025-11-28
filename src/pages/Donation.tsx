@@ -20,12 +20,16 @@ import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, P
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { donationWebhookService } from "@/services/donationWebhookService";
+import { stripeService } from "@/services/stripeService";
 import heroImage from "@/assets/nature/nature_2.jpg";
 import communityImage from "@/assets/community/community_2.png";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 
 // PayPal Configuration
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+
+// Stripe Configuration
+const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
 // SEPA Bank Account Configuration
 const SEPA_BANK_ACCOUNT = {
@@ -147,8 +151,8 @@ const PayPalButtonWrapper = memo(({
         intent: "capture",
         components: "buttons",
         locale: paypalLocale,
-        "enable-funding": "paypal,sepa",
-        "disable-funding": "card,credit,venmo,paylater",
+        "enable-funding": "paypal",
+        "disable-funding": "card,credit,venmo,paylater,sepa",
       }}
     >
       <PayPalButtonsComponent
@@ -162,6 +166,93 @@ const PayPalButtonWrapper = memo(({
 });
 
 PayPalButtonWrapper.displayName = "PayPalButtonWrapper";
+
+// Stripe Checkout Button Component
+const StripeCheckoutButton = memo(({
+  amount,
+  onRedirect,
+  onError,
+  language,
+  paymentMethodTypes,
+  formData,
+  metadata,
+  onValidate,
+}: {
+  amount: number;
+  onRedirect: () => void;
+  onError: (error: string) => void;
+  language: string;
+  paymentMethodTypes: ('card' | 'sepa_debit')[];
+  formData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  metadata?: Record<string, string>;
+  onValidate: () => boolean;
+}) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const handleClick = async () => {
+    if (!onValidate()) {
+      return;
+    }
+
+    setIsProcessing(true);
+    setErrorMessage(null);
+
+    try {
+      const { url } = await stripeService.createCheckoutSession({
+        amount,
+        currency: 'eur',
+        paymentMethodTypes,
+        metadata: metadata || {},
+        customerEmail: formData.email,
+        customerName: `${formData.firstName} ${formData.lastName}`,
+      });
+
+      if (!url || typeof url !== 'string' || !url.startsWith('http')) {
+        throw new Error('Invalid checkout URL received');
+      }
+
+      onRedirect();
+      window.location.href = url;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create checkout session';
+      setErrorMessage(message);
+      onError(message);
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {errorMessage && (
+        <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-sm text-red-800 dark:text-red-200">{errorMessage}</p>
+        </div>
+      )}
+      <Button
+        onClick={handleClick}
+        disabled={isProcessing}
+        className="w-full"
+        size="lg"
+      >
+        {isProcessing
+          ? (language === "de" ? "Wird weitergeleitet..." : "Redirecting...")
+          : (language === "de" ? `€${amount.toFixed(2)} spenden` : `Donate €${amount.toFixed(2)}`)}
+      </Button>
+      <p className="text-xs text-muted-foreground text-center">
+        {language === "de" 
+          ? "Sie werden zu Stripe Checkout weitergeleitet, um die Zahlung abzuschließen."
+          : "You will be redirected to Stripe Checkout to complete your payment."}
+      </p>
+    </div>
+  );
+});
+
+StripeCheckoutButton.displayName = "StripeCheckoutButton";
 
 const Donation = () => {
   const { t, language } = useLanguage();
@@ -181,10 +272,33 @@ const Donation = () => {
   const [donationType, setDonationType] = useState<"one-time" | "monthly">("one-time");
   const [amount, setAmount] = useState<string>("");
   const [customAmount, setCustomAmount] = useState<string>("");
+  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "stripe-card" | "stripe-sepa">("paypal");
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showWarningDialog, setShowWarningDialog] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
   
-  // Handle success redirect from PayPal return URL
+  // Helper functions to show dialogs
+  const showError = useCallback((message: string) => {
+    setErrorMessage(message);
+    setShowErrorDialog(true);
+  }, []);
+  
+  const showSuccess = useCallback((message: string) => {
+    setSuccessMessage(message);
+    setShowSuccessDialog(true);
+  }, []);
+  
+  // Handle success and cancellation redirects from PayPal and Stripe return URLs
   useEffect(() => {
     const success = searchParams.get("success");
+    const cancelled = searchParams.get("cancelled");
+    const stripeStatus = searchParams.get("stripe");
+    const sessionId = searchParams.get("session_id");
+
+    // Handle PayPal success redirect
     if (success === "true") {
       // Redirect to success page with donation details
       // Note: We'll get the amount from the cart or form state
@@ -202,26 +316,47 @@ const Donation = () => {
         // If no amount, just redirect to success page
         navigate("/donation/success");
       }
+      return;
     }
-  }, [searchParams, navigate, cartState.items.length, cartState.totalAmount, amount, customAmount, donationType]);
-  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "sepa">("paypal");
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [showWarningDialog, setShowWarningDialog] = useState(false);
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
-  const [showErrorDialog, setShowErrorDialog] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string>("");
-  const [errorMessage, setErrorMessage] = useState<string>("");
-  
-  // Helper functions to show dialogs
-  const showError = (message: string) => {
-    setErrorMessage(message);
-    setShowErrorDialog(true);
-  };
-  
-  const showSuccess = (message: string) => {
-    setSuccessMessage(message);
-    setShowSuccessDialog(true);
-  };
+    
+    // Handle PayPal/Stripe cancellation
+    if (cancelled === "true" || stripeStatus === "cancelled") {
+      // Clear the URL parameters and show info message
+      navigate("/donation", { replace: true });
+      showError(
+        language === "de" 
+          ? "Die Zahlung wurde abgebrochen. Sie können es erneut versuchen."
+          : "Payment was cancelled. You can try again."
+      );
+      return;
+    }
+    
+    // Handle Stripe success redirect
+    if (stripeStatus === "success" && sessionId) {
+      // Retrieve session details from Stripe to get the amount
+      stripeService.getSessionDetails(sessionId)
+        .then((session) => {
+          const finalAmount = (session.amount_total / 100).toFixed(2); // Convert from cents to euros
+          const donationType = session.metadata?.donationType || "one-time";
+          
+          const params = new URLSearchParams({
+            amount: finalAmount,
+            type: donationType,
+            sessionId: sessionId,
+          });
+          
+          // Clear cart after successful payment
+          clearCart();
+          
+          navigate(`/donation/success?${params.toString()}`);
+        })
+        .catch((error) => {
+          console.error("Failed to retrieve Stripe session details:", error);
+          // Still redirect to success page even if we can't get details
+          navigate("/donation/success");
+        });
+    }
+  }, [searchParams, navigate, cartState.items.length, cartState.totalAmount, amount, customAmount, donationType, clearCart, language, showError]);
   
   const [formData, setFormData] = useState({
     firstName: "",
@@ -844,34 +979,16 @@ const Donation = () => {
           await subscribeToNewsletter(formData.email);
         }
         
-        // Calculate final amount for redirect
+        // Calculate final amount for redirect BEFORE clearing state
         const finalAmount = donationType === "monthly"
           ? (amount || customAmount || "0")
           : (cartState.items.length > 0 
               ? cartState.totalAmount.toString() 
               : (amount || customAmount || "0"));
         
-        // Clear shopping cart after successful payment
-        clearCart();
+        console.log("💰 PayPal: Navigating to success page with amount:", finalAmount);
         
-        // Reset form
-        setAmount("");
-        setCustomAmount("");
-        setFormData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          street: "",
-          postalCode: "",
-          city: "",
-          country: "",
-          comment: "",
-          wantsReceipt: false,
-          privacyConsent: false,
-          wantsNewsletter: false,
-        });
-        
-        // Redirect to success page with donation details
+        // Redirect to success page with donation details (BEFORE clearing state)
         const params = new URLSearchParams({
           amount: finalAmount,
           type: donationType,
@@ -879,7 +996,14 @@ const Donation = () => {
         if (paymentId) {
           params.set("paymentId", paymentId);
         }
-        navigate(`/donation/success?${params.toString()}`);
+        
+        // Navigate using window.location for reliable page transition
+        const successUrl = `/donation/success?${params.toString()}`;
+        console.log("🚀 Navigating to:", successUrl);
+        
+        // Use window.location.href for full page navigation
+        // This ensures the page actually changes instead of just updating the URL
+        window.location.href = successUrl;
       } catch (error) {
         console.error("Error processing PayPal payment:", error);
         setIsProcessingPayment(false);
@@ -1661,20 +1785,42 @@ const Donation = () => {
                       </Label>
                     </div>
                   </div>
-
-                  {/* Payment Method Note */}
-                  <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <Info className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                      <p className="text-sm text-amber-800 dark:text-amber-200">
-                        {t("donation.form.creditCardNote")}
-                      </p>
-                    </div>
+                  
+                  {/* Payment Method Selection */}
+                  <div className="space-y-4">
+                    <Label className="text-base font-semibold">
+                      {language === "de" ? "Zahlungsmethode" : "Payment Method"}
+                    </Label>
+                    <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as typeof paymentMethod)}>
+                      <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
+                        <RadioGroupItem value="paypal" id="payment-paypal" />
+                        <Label htmlFor="payment-paypal" className="flex-1 cursor-pointer">
+                          PayPal
+                          </Label>
+                        </div>
+                      {STRIPE_PUBLISHABLE_KEY && (
+                        <>
+                          <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
+                            <RadioGroupItem value="stripe-card" id="payment-stripe-card" />
+                            <Label htmlFor="payment-stripe-card" className="flex-1 cursor-pointer">
+                              {language === "de" ? "Kreditkarte" : "Credit Card"}
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
+                            <RadioGroupItem value="stripe-sepa" id="payment-stripe-sepa" />
+                            <Label htmlFor="payment-stripe-sepa" className="flex-1 cursor-pointer">
+                              {language === "de" ? "SEPA Lastschrift" : "SEPA Direct Debit"}
+                            </Label>
+                          </div>
+                        </>
+                      )}
+                    </RadioGroup>
                   </div>
 
-                  {/* Payment Buttons - PayPal with SEPA option */}
+                  {/* Payment UI - Conditional based on selected method */}
                   <div className="w-full relative">
-                    {PAYPAL_CLIENT_ID ? (
+                    {/* PayPal - Keep original implementation that works */}
+                    {paymentMethod === "paypal" && PAYPAL_CLIENT_ID && (
                       <div className="w-full relative" key="paypal-buttons">
                         <PayPalButtonWrapper
                           createOrder={createPayPalOrder}
@@ -1695,17 +1841,118 @@ const Donation = () => {
                           />
                         )}
                       </div>
-                    ) : (
-                      <Button 
-                        onClick={handlePaymentMethodClick}
-                        size="lg"
-                        className="w-full h-12"
-                        disabled={isProcessingPayment}
-                        variant="default"
-                      >
-                        <CreditCard className="h-5 w-5 mr-2" />
-                        {t("donation.form.paypal")}
-                      </Button>
+                    )}
+
+                    {/* Stripe Card Payment */}
+                    {paymentMethod === "stripe-card" && STRIPE_PUBLISHABLE_KEY && (
+                      <StripeCheckoutButton
+                        amount={
+                          donationType === "monthly"
+                            ? parseFloat(amount || customAmount || "0")
+                            : (cartState.items.length > 0 
+                                ? cartState.totalAmount 
+                                : parseFloat(amount || customAmount || "0"))
+                        }
+                        onRedirect={() => setIsProcessingPayment(true)}
+                        onError={(error) => showError(error)}
+                        language={language}
+                        paymentMethodTypes={['card']}
+                        formData={{
+                          firstName: formData.firstName,
+                          lastName: formData.lastName,
+                          email: formData.email,
+                        }}
+                        metadata={{
+                          donationType,
+                          donorEmail: formData.email,
+                          donorName: `${formData.firstName} ${formData.lastName}`,
+                        }}
+                        onValidate={() => {
+                          // Basic validation
+                          if (!formData.firstName){
+                            showError(t("donation.form.error.firstName"));
+                            return false;
+                          }
+                          if (!formData.lastName) {
+                            showError(t("donation.form.error.lastName"));
+                            return false;
+                          }
+                          if (!formData.email) {
+                            showError(t("donation.form.error.email"));
+                            return false;
+                          }
+                          if (!formData.privacyConsent) {
+                            showError(t("donation.form.error.privacy"));
+                            return false;
+                          }
+                          const finalAmount = donationType === "monthly"
+                            ? parseFloat(amount || customAmount || "0")
+                            : (cartState.items.length > 0 
+                                ? cartState.totalAmount 
+                                : parseFloat(amount || customAmount || "0"));
+                          if (finalAmount <= 0) {
+                            showError(t("donation.form.error.missingAmount"));
+                            return false;
+                          }
+                          return true;
+                        }}
+                      />
+                    )}
+
+                    {/* Stripe SEPA Payment */}
+                    {paymentMethod === "stripe-sepa" && STRIPE_PUBLISHABLE_KEY && (
+                      <StripeCheckoutButton
+                        amount={
+                          donationType === "monthly"
+                            ? parseFloat(amount || customAmount || "0")
+                            : (cartState.items.length > 0 
+                                ? cartState.totalAmount 
+                                : parseFloat(amount || customAmount || "0"))
+                        }
+                        onRedirect={() => setIsProcessingPayment(true)}
+                        onError={(error) => showError(error)}
+                        language={language}
+                        paymentMethodTypes={['sepa_debit']}
+                        formData={{
+                          firstName: formData.firstName,
+                          lastName: formData.lastName,
+                          email: formData.email,
+                        }}
+                        metadata={{
+                          donationType,
+                          donorEmail: formData.email,
+                          donorName: `${formData.firstName} ${formData.lastName}`,
+                        }}
+                        onValidate={() => {
+                          // Basic validation
+                          if (!formData.firstName) {
+                            showError(t("donation.form.error.firstName"));
+                            return false;
+                          }
+                          if (!formData.lastName) {
+                            showError(t("donation.form.error.lastName"));
+                            return false;
+                          }
+                          if (!formData.email) {
+                            showError(t("donation.form.error.email"));
+                            return false;
+                          }
+                          if (!formData.privacyConsent) {
+                            showError(t("donation.form.error.privacy"));
+                            return false;
+                          }
+                          const finalAmount = donationType === "monthly"
+                            ? parseFloat(amount || customAmount || "0")
+                            : (cartState.items.length > 0 
+                                ? cartState.totalAmount 
+                                : parseFloat(amount || customAmount || "0"));
+                          if (finalAmount <= 0) {
+                            showError(t("donation.form.error.missingAmount"));
+                            return false;
+                          }
+                          return true;
+                        }}
+                      />
                     )}
                   </div>
                 </div>
@@ -2023,3 +2270,4 @@ const Donation = () => {
 };
 
 export default Donation;
+
