@@ -345,6 +345,13 @@ const Donation = () => {
     const stripeStatus = searchParams.get("stripe");
     const sessionId = searchParams.get("session_id");
 
+    // Ensure we're on the donation page - if we have cancellation params but we're not on /donation, redirect there
+    if ((cancelled === "true" || stripeStatus === "cancelled") && window.location.pathname !== '/donation') {
+      console.log('[Donation] Redirecting to donation page with cancellation params');
+      navigate(`/donation?${stripeStatus === "cancelled" ? 'stripe=cancelled' : 'cancelled=true'}`, { replace: true });
+      return;
+    }
+
     // Handle PayPal success redirect
     if (success === "true") {
       // Reset cancellation ref when handling success

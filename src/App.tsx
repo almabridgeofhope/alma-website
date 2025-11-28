@@ -34,21 +34,28 @@ const Handle404Redirect = () => {
     // Handle redirect immediately on mount or route change
     const redirectPath = sessionStorage.getItem('404-redirect-path');
     const currentPathname = window.location.pathname;
+    const currentSearch = window.location.search;
     
     // If we're on /index.html and have a redirect path, navigate immediately
     if ((currentPathname === '/index.html' || currentPathname === '/') && redirectPath) {
       const targetPath = redirectPath.split('?')[0]; // Remove query string for comparison
+      const targetSearch = redirectPath.includes('?') ? redirectPath.split('?')[1] : '';
       const currentRoute = location.pathname;
+      const currentRouteSearch = location.search;
       
-      if (targetPath !== currentRoute && targetPath !== currentPathname) {
+      // Always navigate if paths don't match, or if paths match but query params differ
+      const pathsMatch = targetPath === currentRoute || targetPath === currentPathname;
+      const queryParamsMatch = targetSearch === currentRouteSearch.replace('?', '');
+      
+      if (!pathsMatch || !queryParamsMatch) {
         console.log('[Handle404Redirect] Redirecting from 404.html to:', redirectPath);
         sessionStorage.removeItem('404-redirect-path');
         hasHandledRedirect.current = true;
-        // Navigate immediately
+        // Navigate immediately with full path including query parameters
         navigate(redirectPath, { replace: true });
         return;
       } else {
-        // Path already matches, just clear the stored path
+        // Path and query params already match, just clear the stored path
         sessionStorage.removeItem('404-redirect-path');
         hasHandledRedirect.current = true;
       }
