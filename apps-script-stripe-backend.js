@@ -177,6 +177,15 @@ function createStripeCheckoutSession(amount, currency, paymentMethodTypes, succe
     formParams.push(`payment_method_types[${index}]=${encodeURIComponent(pmt)}`);
   });
   
+  // SEPA-specific configuration (for SEPA debit)
+  const hasSEPA = pmTypes.some(pmt => pmt === 'sepa_debit');
+  if (hasSEPA) {
+    // SEPA mandates configuration
+    // For one-time payments, Stripe handles mandates automatically
+    // But we can set preferred_locale for better UX
+    formParams.push('payment_method_options[sepa_debit][mandate_options][preferred_locale]=en');
+  }
+  
   // URLs
   formParams.push('success_url=' + encodeURIComponent(successUrl));
   formParams.push('cancel_url=' + encodeURIComponent(cancelUrl));
@@ -228,11 +237,11 @@ function createStripeCheckoutSession(amount, currency, paymentMethodTypes, succe
     const responseText = response.getContentText();
     
     console.log('Stripe API Response Code:', responseCode);
-    console.log('Stripe API Response (first 1000 chars):', responseText.substring(0, 1000));
+    console.log('Stripe API Response (first 2000 chars):', responseText.substring(0, 2000));
     
     if (responseCode !== 200) {
       console.error('Stripe API Error:', responseCode);
-      console.error('Full error response:', responseText);
+      console.error('Full error response (all):', responseText);
       let errorMessage = `Stripe API Error: ${responseCode}`;
       try {
         const errorData = JSON.parse(responseText);
@@ -317,6 +326,14 @@ function createStripeSubscriptionSession(amount, currency, paymentMethodTypes, s
     formParams.push(`payment_method_types[${index}]=${encodeURIComponent(pmt)}`);
   });
   
+  // SEPA-specific configuration (for SEPA debit subscriptions)
+  const hasSEPA = pmTypes.some(pmt => pmt === 'sepa_debit');
+  if (hasSEPA) {
+    // SEPA mandates are required for subscriptions
+    // Set up mandate options for SEPA direct debit
+    formParams.push('payment_method_options[sepa_debit][mandate_options][preferred_locale]=en');
+  }
+  
   // URLs
   formParams.push('success_url=' + encodeURIComponent(successUrl));
   formParams.push('cancel_url=' + encodeURIComponent(cancelUrl));
@@ -374,10 +391,11 @@ function createStripeSubscriptionSession(amount, currency, paymentMethodTypes, s
     const responseText = response.getContentText();
     
     console.log('Stripe Subscription API Response Code:', responseCode);
-    console.log('Stripe Subscription API Response (first 500 chars):', responseText.substring(0, 500));
+    console.log('Stripe Subscription API Response (first 2000 chars):', responseText.substring(0, 2000));
     
     if (responseCode !== 200) {
-      console.error('Stripe Subscription API Error:', responseCode, responseText);
+      console.error('Stripe Subscription API Error:', responseCode);
+      console.error('Full error response (all):', responseText);
       let errorMessage = `Stripe Subscription API Error: ${responseCode}`;
       try {
         const errorData = JSON.parse(responseText);
@@ -711,8 +729,21 @@ function doPost(e) {
         );
       }
       
+      // For SEPA-specific errors, provide more helpful messages
+      if (errorMsg.includes('sepa') || errorMsg.includes('SEPA')) {
+        console.error('SEPA-specific error detected:', errorMsg);
+        // SEPA might not be enabled for the account or requires additional setup
+        if (errorMsg.includes('not enabled') || errorMsg.includes('not available')) {
+          return errorResponse(
+            'SEPA Direct Debit is not enabled for your Stripe account. Please enable SEPA in your Stripe Dashboard under Settings > Payment methods.',
+            500
+          );
+        }
+      }
+      
+      // Return full error message (up to 1000 chars to avoid truncation)
       return errorResponse(
-        'Failed to create Stripe checkout session: ' + errorMsg.substring(0, 500), // Limit length
+        'Failed to create Stripe checkout session: ' + errorMsg.substring(0, 1000),
         500
       );
     }
