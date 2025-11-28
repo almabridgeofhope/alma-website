@@ -229,6 +229,108 @@ function createSubscriptionPlan(accessToken, productId, amount, currency = 'EUR'
   }
 }
 
+// ========== SETUP ENDPOINT ==========
+
+/**
+ * Secure Setup Endpoint
+ * POST /?action=setup
+ * Body: { setup_token: "...", secrets: { PAYPAL_SANDBOX_CLIENT_ID: "...", PAYPAL_SANDBOX_CLIENT_SECRET: "...", PAYPAL_LIVE_CLIENT_ID: "...", PAYPAL_LIVE_CLIENT_SECRET: "..." } }
+ * 
+ * This endpoint allows GitHub Actions to automatically sync secrets from GitHub Secrets
+ * to Apps Script Properties. The setup_token must match what's configured in GitHub Secrets.
+ */
+function setupPayPalSecrets(requestData) {
+  const properties = PropertiesService.getScriptProperties();
+  
+  // Get setup token from Script Properties (set manually once)
+  // This should be a strong random string, stored in GitHub Secrets as PAYPAL_SETUP_TOKEN
+  const expectedToken = properties.getProperty('PAYPAL_SETUP_TOKEN');
+  
+  // If no token is set, allow first-time setup (one-time initialization)
+  if (!expectedToken) {
+    console.warn('⚠️ PAYPAL_SETUP_TOKEN not set. First-time setup allowed, but you should set a token for security.');
+  }
+  
+  // Validate setup token
+  const providedToken = requestData.setup_token;
+  if (expectedToken && providedToken !== expectedToken) {
+    console.error('❌ Invalid setup token provided');
+    return ContentService.createTextOutput(JSON.stringify({
+      ok: false,
+      error: 'Unauthorized: Invalid setup token'
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  // Validate secrets structure
+  if (!requestData.secrets || typeof requestData.secrets !== 'object') {
+    return ContentService.createTextOutput(JSON.stringify({
+      ok: false,
+      error: 'Invalid request: secrets object required'
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  const secrets = requestData.secrets;
+  const propertiesToSet = {};
+  
+  // Validate and prepare secrets
+  if (secrets.PAYPAL_SANDBOX_CLIENT_ID) {
+    if (secrets.PAYPAL_SANDBOX_CLIENT_ID.length < 10) {
+      return ContentService.createTextOutput(JSON.stringify({
+        ok: false,
+        error: 'Invalid PAYPAL_SANDBOX_CLIENT_ID format'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    propertiesToSet['PAYPAL_SANDBOX_CLIENT_ID'] = secrets.PAYPAL_SANDBOX_CLIENT_ID;
+  }
+  
+  if (secrets.PAYPAL_SANDBOX_CLIENT_SECRET) {
+    if (secrets.PAYPAL_SANDBOX_CLIENT_SECRET.length < 10) {
+      return ContentService.createTextOutput(JSON.stringify({
+        ok: false,
+        error: 'Invalid PAYPAL_SANDBOX_CLIENT_SECRET format'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    propertiesToSet['PAYPAL_SANDBOX_CLIENT_SECRET'] = secrets.PAYPAL_SANDBOX_CLIENT_SECRET;
+  }
+  
+  if (secrets.PAYPAL_LIVE_CLIENT_ID) {
+    if (secrets.PAYPAL_LIVE_CLIENT_ID.length < 10) {
+      return ContentService.createTextOutput(JSON.stringify({
+        ok: false,
+        error: 'Invalid PAYPAL_LIVE_CLIENT_ID format'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    propertiesToSet['PAYPAL_LIVE_CLIENT_ID'] = secrets.PAYPAL_LIVE_CLIENT_ID;
+  }
+  
+  if (secrets.PAYPAL_LIVE_CLIENT_SECRET) {
+    if (secrets.PAYPAL_LIVE_CLIENT_SECRET.length < 10) {
+      return ContentService.createTextOutput(JSON.stringify({
+        ok: false,
+        error: 'Invalid PAYPAL_LIVE_CLIENT_SECRET format'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    propertiesToSet['PAYPAL_LIVE_CLIENT_SECRET'] = secrets.PAYPAL_LIVE_CLIENT_SECRET;
+  }
+  
+  // Store secrets
+  if (Object.keys(propertiesToSet).length > 0) {
+    properties.setProperties(propertiesToSet);
+    console.log('✅ PayPal secrets updated successfully');
+    console.log('Updated keys:', Object.keys(propertiesToSet));
+    return ContentService.createTextOutput(JSON.stringify({
+      ok: true,
+      message: 'Secrets updated successfully',
+      updated_keys: Object.keys(propertiesToSet)
+    })).setMimeType(ContentService.MimeType.JSON);
+  } else {
+    return ContentService.createTextOutput(JSON.stringify({
+      ok: false,
+      error: 'No valid secrets provided'
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
 // ========== MAIN ENDPOINT ==========
 
 /**
@@ -270,6 +372,15 @@ function doPost(e) {
       hasDonorEmail: !!requestData.donor_email,
       hasDonorName: !!requestData.donor_name
     });
+    
+    // Handle setup action (for syncing secrets from GitHub Actions)
+    if (requestData.action === 'setup') {
+      console.log('🔧 Setup request received');
+      return setupPayPalSecrets(requestData);
+    }
+    
+    // Continue with normal subscription plan creation
+    console.log('=== PayPal Subscription Plan Creation Request ===');
     
     // Validate required fields
     if (!requestData.amount || parseFloat(requestData.amount) <= 0) {

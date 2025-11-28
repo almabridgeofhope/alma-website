@@ -412,6 +412,70 @@ function createStripeSubscriptionSession(amount, currency, paymentMethodTypes, s
 // ========== WEB APP ENDPOINTS ==========
 
 /**
+ * Secure Setup Endpoint
+ * POST /?action=setup
+ * Body: { setup_token: "...", secrets: { STRIPE_TEST_SECRET_KEY: "...", STRIPE_LIVE_SECRET_KEY: "..." } }
+ * 
+ * This endpoint allows GitHub Actions to automatically sync secrets from GitHub Secrets
+ * to Apps Script Properties. The setup_token must match what's configured in GitHub Secrets.
+ */
+function setupStripeSecrets(requestData) {
+  const properties = PropertiesService.getScriptProperties();
+  
+  // Get setup token from Script Properties (set manually once)
+  // This should be a strong random string, stored in GitHub Secrets as STRIPE_SETUP_TOKEN
+  const expectedToken = properties.getProperty('STRIPE_SETUP_TOKEN');
+  
+  // If no token is set, allow first-time setup (one-time initialization)
+  if (!expectedToken) {
+    console.warn('⚠️ STRIPE_SETUP_TOKEN not set. First-time setup allowed, but you should set a token for security.');
+  }
+  
+  // Validate setup token
+  const providedToken = requestData.setup_token;
+  if (expectedToken && providedToken !== expectedToken) {
+    console.error('❌ Invalid setup token provided');
+    return errorResponse('Unauthorized: Invalid setup token', 401);
+  }
+  
+  // Validate secrets structure
+  if (!requestData.secrets || typeof requestData.secrets !== 'object') {
+    return errorResponse('Invalid request: secrets object required');
+  }
+  
+  const secrets = requestData.secrets;
+  const propertiesToSet = {};
+  
+  // Validate and prepare secrets
+  if (secrets.STRIPE_TEST_SECRET_KEY) {
+    if (!secrets.STRIPE_TEST_SECRET_KEY.startsWith('sk_test_') || secrets.STRIPE_TEST_SECRET_KEY.length < 20) {
+      return errorResponse('Invalid STRIPE_TEST_SECRET_KEY format');
+    }
+    propertiesToSet['STRIPE_TEST_SECRET_KEY'] = secrets.STRIPE_TEST_SECRET_KEY;
+  }
+  
+  if (secrets.STRIPE_LIVE_SECRET_KEY) {
+    if (!secrets.STRIPE_LIVE_SECRET_KEY.startsWith('sk_live_') || secrets.STRIPE_LIVE_SECRET_KEY.length < 20) {
+      return errorResponse('Invalid STRIPE_LIVE_SECRET_KEY format');
+    }
+    propertiesToSet['STRIPE_LIVE_SECRET_KEY'] = secrets.STRIPE_LIVE_SECRET_KEY;
+  }
+  
+  // Store secrets
+  if (Object.keys(propertiesToSet).length > 0) {
+    properties.setProperties(propertiesToSet);
+    console.log('✅ Stripe secrets updated successfully');
+    console.log('Updated keys:', Object.keys(propertiesToSet));
+    return successResponse({
+      message: 'Secrets updated successfully',
+      updated_keys: Object.keys(propertiesToSet)
+    });
+  } else {
+    return errorResponse('No valid secrets provided');
+  }
+}
+
+/**
  * Handle CORS Preflight
  */
 function doOptions() {
@@ -461,7 +525,7 @@ function getStripeSessionDetails(sessionId) {
  */
 function doPost(e) {
   try {
-    console.log('=== Stripe Checkout Session Request ===');
+    console.log('=== Stripe Backend Request ===');
     console.log('Timestamp:', new Date().toISOString());
     
     // Parse request body
@@ -518,6 +582,15 @@ function doPost(e) {
     }
     
     console.log('Request data:', requestData);
+    
+    // Handle setup action (for syncing secrets from GitHub Actions)
+    if (requestData.action === 'setup') {
+      console.log('🔧 Setup request received');
+      return setupStripeSecrets(requestData);
+    }
+    
+    // Continue with normal checkout session creation
+    console.log('=== Stripe Checkout Session Request ===');
     
     // Validate required fields
     if (!requestData.amount || requestData.amount <= 0) {
