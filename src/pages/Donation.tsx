@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, memo } from "react";
+import { useEffect, useState, useCallback, useRef, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -416,6 +416,10 @@ const Donation = () => {
     wantsNewsletter: false,
   });
 
+  // Use ref to track latest formData for PayPal validation
+  const formDataRef = useRef(formData);
+  formDataRef.current = formData;
+
   const predefinedAmounts = [10, 25, 50, 100];
   const [useCartAmount, setUseCartAmount] = useState(false);
   const [hasManualSelection, setHasManualSelection] = useState(false);
@@ -816,42 +820,47 @@ const Donation = () => {
   const createPayPalOrder = useCallback((data: any, actions: any) => {
     // Validate all required fields before creating PayPal order
     const finalAmountStr = getCurrentAmount();
-    
+
     // Validate amount
     if (!finalAmountStr || parseFloat(finalAmountStr) <= 0) {
       throw new Error(t("donation.form.error.amount"));
     }
-    
-    // Validate first name
-    if (!formData.firstName.trim()) {
+
+    // Get current formData from ref to ensure we have the latest values
+    const currentFormData = formDataRef.current;
+
+    // Validate first name - add debug logging
+    console.log('PayPal validation - firstName:', currentFormData.firstName, 'trimmed:', currentFormData.firstName?.trim());
+    if (!currentFormData.firstName || !currentFormData.firstName.trim()) {
+      console.error('PayPal validation failed: firstName is empty or whitespace only');
       throw new Error(t("donation.form.error.firstName"));
     }
-    
+
     // Validate last name
-    if (!formData.lastName.trim()) {
+    if (!currentFormData.lastName || !currentFormData.lastName.trim()) {
       throw new Error(t("donation.form.error.lastName"));
     }
-    
+
     // Validate email
-    if (!formData.email.trim()) {
+    if (!currentFormData.email || !currentFormData.email.trim()) {
       throw new Error(t("donation.form.error.email"));
     }
-    
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
+    if (!emailRegex.test(currentFormData.email)) {
       throw new Error(t("donation.form.error.emailInvalid"));
     }
-    
+
     // Validate address if receipt is requested
-    if (formData.wantsReceipt) {
-      if (!formData.street.trim() || !formData.postalCode.trim() || !formData.city.trim() || !formData.country.trim()) {
+    if (currentFormData.wantsReceipt) {
+      if (!currentFormData.street?.trim() || !currentFormData.postalCode?.trim() || !currentFormData.city?.trim() || !currentFormData.country?.trim()) {
         throw new Error(t("donation.form.error.address"));
       }
     }
-    
+
     // Validate privacy consent
-    if (!formData.privacyConsent) {
+    if (!currentFormData.privacyConsent) {
       throw new Error(t("donation.form.error.privacy"));
     }
     
@@ -1136,42 +1145,47 @@ const Donation = () => {
 
     // Validate all required fields before creating PayPal subscription
     const finalAmountStr = getCurrentAmount();
-    
+
     // Validate amount
     if (!finalAmountStr || parseFloat(finalAmountStr) <= 0) {
       throw new Error(t("donation.form.error.amount"));
     }
-    
-    // Validate first name
-    if (!formData.firstName.trim()) {
+
+    // Get current formData from ref to ensure we have the latest values
+    const currentFormData = formDataRef.current;
+
+    // Validate first name - add debug logging
+    console.log('PayPal subscription validation - firstName:', currentFormData.firstName, 'trimmed:', currentFormData.firstName?.trim());
+    if (!currentFormData.firstName || !currentFormData.firstName.trim()) {
+      console.error('PayPal subscription validation failed: firstName is empty or whitespace only');
       throw new Error(t("donation.form.error.firstName"));
     }
-    
+
     // Validate last name
-    if (!formData.lastName.trim()) {
+    if (!currentFormData.lastName || !currentFormData.lastName.trim()) {
       throw new Error(t("donation.form.error.lastName"));
     }
-    
+
     // Validate email
-    if (!formData.email.trim()) {
+    if (!currentFormData.email || !currentFormData.email.trim()) {
       throw new Error(t("donation.form.error.email"));
     }
-    
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
+    if (!emailRegex.test(currentFormData.email)) {
       throw new Error(t("donation.form.error.emailInvalid"));
     }
-    
+
     // Validate address if receipt is requested
-    if (formData.wantsReceipt) {
-      if (!formData.street.trim() || !formData.postalCode.trim() || !formData.city.trim() || !formData.country.trim()) {
+    if (currentFormData.wantsReceipt) {
+      if (!currentFormData.street?.trim() || !currentFormData.postalCode?.trim() || !currentFormData.city?.trim() || !currentFormData.country?.trim()) {
         throw new Error(t("donation.form.error.address"));
       }
     }
-    
+
     // Validate privacy consent
-    if (!formData.privacyConsent) {
+    if (!currentFormData.privacyConsent) {
       throw new Error(t("donation.form.error.privacy"));
     }
     
@@ -1190,11 +1204,11 @@ const Donation = () => {
       const planResult = await paypalService.createSubscriptionPlan({
         amount: finalAmount,
         currency: "EUR",
-        donorEmail: formData.email,
-        donorName: `${formData.firstName} ${formData.lastName}`,
+        donorEmail: currentFormData.email,
+        donorName: `${currentFormData.firstName} ${currentFormData.lastName}`,
         metadata: {
           donationType: 'monthly',
-          wantsReceipt: formData.wantsReceipt ? 'true' : 'false',
+          wantsReceipt: currentFormData.wantsReceipt ? 'true' : 'false',
         }
       });
       
@@ -1209,10 +1223,10 @@ const Donation = () => {
         plan_id: planResult.plan_id,
         subscriber: {
           name: {
-            given_name: formData.firstName,
-            surname: formData.lastName,
+            given_name: currentFormData.firstName,
+            surname: currentFormData.lastName,
           },
-          email_address: formData.email,
+          email_address: currentFormData.email,
         },
         application_context: {
           brand_name: "Alma Bridge of Hope",
