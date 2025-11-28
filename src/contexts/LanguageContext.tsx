@@ -399,7 +399,6 @@ const translations = {
     "donation.form.sepaInstructions": "Please include the reference number in your bank transfer so we can match your donation.",
     "donation.form.cardNote": "You will be redirected to complete your payment securely.",
     "donation.form.cardProcessing": "Processing payment...",
-    "donation.form.creditCardNote": "Note: Credit card payments are currently not supported. Please use PayPal or SEPA bank transfer.",
     "donation.form.personalInfo": "Personal Information",
     "donation.form.addressInfo": "Address Information",
     "donation.form.addressNote": "Required for tax-deductible donation receipt",
@@ -1181,7 +1180,6 @@ const translations = {
     "donation.form.sepaInstructions": "Bitte gib die Referenznummer bei deiner Überweisung an, damit wir deine Spende zuordnen können.",
     "donation.form.cardNote": "Du wirst weitergeleitet, um deine Zahlung sicher abzuschließen.",
     "donation.form.cardProcessing": "Zahlung wird verarbeitet...",
-    "donation.form.creditCardNote": "Hinweis: Kreditkartenzahlungen werden derzeit nicht unterstützt. Bitte verwende PayPal oder SEPA-Überweisung.",
     
     // Project Items Modal
     "projectItems.funded": "bereits finanziert",

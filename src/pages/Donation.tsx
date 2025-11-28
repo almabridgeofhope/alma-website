@@ -925,13 +925,12 @@ const Donation = () => {
         description: `${donationType === "one-time" ? t("donation.form.onetime") : t("donation.form.monthly")} donation to Alma Bridge of Hope`,
         custom_id: `${donationType}-${Date.now()}`,
       }],
-      application_context: {
-        brand_name: "Alma Bridge of Hope",
-        landing_page: "LOGIN",
-        user_action: "PAY_NOW",
-        return_url: `${window.location.origin}/donation?success=true`,
-        cancel_url: `${window.location.origin}/donation?cancelled=true`,
-      },
+        application_context: {
+          brand_name: "Alma Bridge of Hope",
+          landing_page: "LOGIN",
+          user_action: "PAY_NOW",
+          cancel_url: `${window.location.origin}/donation?cancelled=true`,
+        },
     });
   }, [getCurrentAmount, t, language, formData]);
 
@@ -1233,7 +1232,6 @@ const Donation = () => {
           locale: language === "de" ? "de-DE" : "en-US",
           shipping_preference: "NO_SHIPPING",
           user_action: "SUBSCRIBE_NOW",
-          return_url: `${window.location.origin}/donation?success=true&subscription=true`,
           cancel_url: `${window.location.origin}/donation?cancelled=true`,
         },
         custom_id: `monthly-subscription-${Date.now()}`,
