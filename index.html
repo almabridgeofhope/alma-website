@@ -10,6 +10,8 @@
     <meta name="author" content="Alma Bridge of Hope" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     <meta name="googlebot" content="index, follow" />
+    <meta name="GPTBot" content="index, follow" />
+    <meta name="anthropic-ai" content="index, follow" />
     <meta name="theme-color" content="#1a4d3a" />
     <meta name="format-detection" content="telephone=no" />
     <link rel="canonical" href="https://almabridge.org/" />
@@ -70,39 +72,103 @@
       });
     </script>
 
-    <!-- Structured Data (JSON-LD) -->
+    <!-- Structured Data (JSON-LD) for AI Search Engines -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "NGO",
-      "name": "Alma Bridge of Hope",
-      "alternateName": "Alma Bridge of Hope",
-      "url": "https://almabridge.org",
-      "logo": "https://almabridge.org/favicon.svg",
-      "description": "International initiative supporting community development in rural Uganda through basic utilities, education, and local empowerment.",
-      "foundingLocation": {
+      "@graph": [
+        {
+          "@type": "NGO",
+          "@id": "https://almabridge.org/#organization",
+          "name": "Alma Bridge of Hope",
+          "legalName": "Alma Bridge of Hope e. V.",
+          "alternateName": "Alma Bridge of Hope",
+          "url": "https://almabridge.org",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://almabridge.org/favicon.svg",
+            "width": 500,
+            "height": 500
+          },
+          "description": "International initiative supporting community development in rural Uganda through basic utilities, education, and local empowerment. A non-profit organization working with underserved communities to improve living conditions through sustainable, community-based projects.",
+          "foundingLocation": {
         "@type": "Place",
         "name": "Uganda"
       },
-      "areaServed": {
-        "@type": "Country",
-        "name": "Uganda"
-      },
-      "knowsAbout": [
-        "Community Development",
-        "Education",
-        "Sustainable Development",
-        "Rural Development",
-        "Infrastructure"
-      ],
-      "sameAs": [
-        "https://twitter.com/almabridge"
-      ],
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "contactType": "General Inquiry",
-        "url": "https://almabridge.org/contact"
-      }
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Ferchensee 8",
+            "addressLocality": "Rechtmehring",
+            "postalCode": "83562",
+            "addressCountry": "DE"
+          },
+          "areaServed": {
+            "@type": "Country",
+            "name": "Uganda"
+          },
+          "knowsAbout": [
+            "Community Development",
+            "Education",
+            "Sustainable Development",
+            "Rural Development",
+            "Infrastructure",
+            "Water Access",
+            "Renewable Energy",
+            "Local Empowerment",
+            "International Development",
+            "Non-profit Organization",
+            "Uganda Development",
+            "German-Ugandan Partnership"
+          ],
+          "sameAs": [
+            "https://twitter.com/almabridge"
+          ],
+          "contactPoint": [
+            {
+              "@type": "ContactPoint",
+              "contactType": "General Inquiry",
+              "email": "info@almabridgeofhope.org",
+              "url": "https://almabridge.org/contact",
+              "availableLanguage": ["en", "de"]
+            }
+          ],
+          "taxID": "Recognized as non-profit according to § 60a AO (Tax Office Mühldorf am Inn)",
+          "memberOf": {
+            "@type": "Organization",
+            "name": "Registered in the association register at Amtsgericht Traunstein"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://almabridge.org/#website",
+          "url": "https://almabridge.org",
+          "name": "Alma Bridge of Hope",
+          "description": "International initiative supporting community development in rural Uganda",
+          "publisher": {
+            "@id": "https://almabridge.org/#organization"
+          },
+          "inLanguage": ["en", "de"],
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://almabridge.org/?s={search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://almabridge.org/#organization",
+          "name": "Alma Bridge of Hope",
+          "mission": "Empowering sustainable community development in rural Uganda through practical, community-based initiatives that build infrastructure and create lasting positive change.",
+          "foundingDate": "2024",
+          "numberOfEmployees": {
+            "@type": "QuantitativeValue",
+            "value": "International team from Uganda and Germany"
+          }
+        }
+      ]
     }
     </script>
   </head>
