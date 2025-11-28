@@ -178,13 +178,9 @@ function createStripeCheckoutSession(amount, currency, paymentMethodTypes, succe
   });
   
   // SEPA-specific configuration (for SEPA debit)
-  const hasSEPA = pmTypes.some(pmt => pmt === 'sepa_debit');
-  if (hasSEPA) {
-    // SEPA mandates configuration
-    // For one-time payments, Stripe handles mandates automatically
-    // But we can set preferred_locale for better UX
-    formParams.push('payment_method_options[sepa_debit][mandate_options][preferred_locale]=en');
-  }
+  // Note: SEPA mandates are automatically collected by Stripe during checkout
+  // We don't need to explicitly set mandate_options for one-time payments
+  // Stripe will handle the mandate collection flow automatically
   
   // URLs
   formParams.push('success_url=' + encodeURIComponent(successUrl));
@@ -230,7 +226,9 @@ function createStripeCheckoutSession(amount, currency, paymentMethodTypes, succe
   try {
     console.log('Calling Stripe API:', url);
     console.log('Stage:', stage);
+    console.log('Payment method types:', pmTypes);
     console.log('Payload length:', formParams.join('&').length);
+    console.log('Payload preview (first 500 chars):', formParams.join('&').substring(0, 500));
     
     const response = UrlFetchApp.fetch(url, options);
     const responseCode = response.getResponseCode();
@@ -327,12 +325,9 @@ function createStripeSubscriptionSession(amount, currency, paymentMethodTypes, s
   });
   
   // SEPA-specific configuration (for SEPA debit subscriptions)
-  const hasSEPA = pmTypes.some(pmt => pmt === 'sepa_debit');
-  if (hasSEPA) {
-    // SEPA mandates are required for subscriptions
-    // Set up mandate options for SEPA direct debit
-    formParams.push('payment_method_options[sepa_debit][mandate_options][preferred_locale]=en');
-  }
+  // Note: For subscriptions, Stripe automatically collects SEPA mandates
+  // The mandate is created during the checkout session
+  // No additional configuration needed - Stripe handles this automatically
   
   // URLs
   formParams.push('success_url=' + encodeURIComponent(successUrl));

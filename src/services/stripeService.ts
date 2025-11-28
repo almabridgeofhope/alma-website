@@ -102,31 +102,39 @@ class StripeService {
         body: formData.toString(),
       });
 
+      const responseText = await response.text();
+      console.log('📥 Response status:', response.status, response.statusText);
+      console.log('📄 Full response text:', responseText);
+      
       if (!response.ok) {
-        const errorText = await response.text();
         let errorMessage = 'Failed to create checkout session';
         try {
-          const error = JSON.parse(errorText);
+          const error = JSON.parse(responseText);
           errorMessage = error.message || error.error || errorMessage;
+          console.error('❌ Backend error:', error);
         } catch {
-          errorMessage = errorText || errorMessage;
+          errorMessage = responseText || errorMessage;
+          console.error('❌ Backend error (non-JSON):', responseText);
         }
         throw new Error(errorMessage);
       }
 
-      const responseText = await response.text();
       let data;
       try {
         data = JSON.parse(responseText);
+        console.log('📦 Parsed response data:', data);
       } catch (error) {
-        console.error('Failed to parse response:', responseText);
-        throw new Error('Invalid response from server');
+        console.error('❌ Failed to parse response:', responseText);
+        console.error('❌ Parse error:', error);
+        throw new Error('Invalid response from server: ' + responseText.substring(0, 500));
       }
 
       // Validate response
-      if (!data.url) {
-        console.error('Missing URL in response:', data);
-        throw new Error('No checkout URL received from server');
+      if (!data.ok || !data.url) {
+        console.error('❌ Missing URL in response:', data);
+        console.error('❌ Full response object:', JSON.stringify(data, null, 2));
+        const errorMsg = data.error || data.message || 'No checkout URL received from server';
+        throw new Error(errorMsg);
       }
 
       return {
