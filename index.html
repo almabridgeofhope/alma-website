@@ -64,12 +64,26 @@
     </script>
     
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7N715MSVLZ"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7N715MSVLZ" 
+            onerror="console.warn('Failed to load Google Analytics script');"></script>
     <script>
-      gtag('js', new Date());
-      gtag('config', 'G-7N715MSVLZ', {
-        'anonymize_ip': true
-      });
+      // Only initialize gtag if the script loaded successfully
+      if (typeof gtag !== 'undefined') {
+        gtag('js', new Date());
+        gtag('config', 'G-7N715MSVLZ', {
+          'anonymize_ip': true
+        });
+      } else {
+        // Fallback: try to initialize after a delay if script loads late
+        setTimeout(function() {
+          if (typeof gtag !== 'undefined') {
+            gtag('js', new Date());
+            gtag('config', 'G-7N715MSVLZ', {
+              'anonymize_ip': true
+            });
+          }
+        }, 2000);
+      }
     </script>
 
     <!-- Structured Data (JSON-LD) for AI Search Engines -->
@@ -176,5 +190,52 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Global error handler to catch network errors early -->
+    <script>
+      // Handle network errors that might cause Chrome error code 5
+      window.addEventListener('error', function(event) {
+        // Check if it's a network-related error
+        const errorMessage = (event.message || '').toLowerCase();
+        const isNetworkError = 
+          errorMessage.includes('failed to fetch') ||
+          errorMessage.includes('networkerror') ||
+          errorMessage.includes('load failed') ||
+          errorMessage.includes('err_name_not_resolved') ||
+          (event.filename && (
+            event.filename.includes('googletagmanager') ||
+            event.filename.includes('fonts.googleapis') ||
+            event.filename.includes('fonts.gstatic')
+          ));
+        
+        if (isNetworkError) {
+          console.warn('[GlobalErrorHandler] Network error detected:', {
+            message: event.message,
+            filename: event.filename,
+            lineno: event.lineno,
+            colno: event.colno
+          });
+          // Prevent the error from showing Chrome's error page
+          // The NetworkRecovery component will handle user notification
+          event.preventDefault();
+        }
+      }, true); // Use capture phase to catch errors early
+      
+      // Handle unhandled promise rejections (often network errors)
+      window.addEventListener('unhandledrejection', function(event) {
+        const reason = (event.reason?.toString() || '').toLowerCase();
+        const isNetworkError = 
+          reason.includes('failed to fetch') ||
+          reason.includes('networkerror') ||
+          reason.includes('load failed') ||
+          reason.includes('err_name_not_resolved');
+        
+        if (isNetworkError) {
+          console.warn('[GlobalErrorHandler] Network rejection detected:', event.reason);
+          // Prevent default error handling
+          event.preventDefault();
+        }
+      });
+    </script>
   </body>
 </html>

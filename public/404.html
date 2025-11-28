@@ -60,11 +60,73 @@
     </script>
     
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7N715MSVLZ"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7N715MSVLZ" 
+            onerror="console.warn('Failed to load Google Analytics script');"></script>
     <script>
-      gtag('js', new Date());
-      gtag('config', 'G-7N715MSVLZ', {
-        'anonymize_ip': true
+      // Only initialize gtag if the script loaded successfully
+      if (typeof gtag !== 'undefined') {
+        gtag('js', new Date());
+        gtag('config', 'G-7N715MSVLZ', {
+          'anonymize_ip': true
+        });
+      } else {
+        // Fallback: try to initialize after a delay if script loads late
+        setTimeout(function() {
+          if (typeof gtag !== 'undefined') {
+            gtag('js', new Date());
+            gtag('config', 'G-7N715MSVLZ', {
+              'anonymize_ip': true
+            });
+          }
+        }, 2000);
+      }
+    </script>
+    
+    <!-- Global error handler for network errors (including GitHub Pages CDN issues) -->
+    <script>
+      // Handle network errors that might cause Chrome error code 5
+      // This is especially important for GitHub Pages hosted sites
+      window.addEventListener('error', function(event) {
+        const errorMessage = (event.message || '').toLowerCase();
+        const filename = (event.filename || '').toLowerCase();
+        const isNetworkError = 
+          errorMessage.includes('failed to fetch') ||
+          errorMessage.includes('networkerror') ||
+          errorMessage.includes('load failed') ||
+          errorMessage.includes('err_name_not_resolved') ||
+          errorMessage.includes('dns') ||
+          errorMessage.includes('timeout') ||
+          filename.includes('googletagmanager') ||
+          filename.includes('fonts.googleapis') ||
+          filename.includes('fonts.gstatic') ||
+          filename.includes('github.io') ||
+          filename.includes('githubusercontent');
+        
+        if (isNetworkError) {
+          console.warn('[404.html] Network error detected:', {
+            message: event.message,
+            filename: event.filename
+          });
+          // Prevent Chrome's error page from showing
+          event.preventDefault();
+        }
+      }, true);
+      
+      // Handle unhandled promise rejections
+      window.addEventListener('unhandledrejection', function(event) {
+        const reason = (event.reason?.toString() || '').toLowerCase();
+        const isNetworkError = 
+          reason.includes('failed to fetch') ||
+          reason.includes('networkerror') ||
+          reason.includes('load failed') ||
+          reason.includes('err_name_not_resolved') ||
+          reason.includes('dns') ||
+          reason.includes('timeout');
+        
+        if (isNetworkError) {
+          console.warn('[404.html] Network rejection detected:', event.reason);
+          event.preventDefault();
+        }
       });
     </script>
 
