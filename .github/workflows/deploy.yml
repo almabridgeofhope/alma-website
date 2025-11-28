@@ -3,6 +3,7 @@ name: Deploy React App to GitHub Pages
 # ====================================
 # REQUIRED GITHUB SECRETS:
 # ====================================
+# Frontend Secrets (used in build):
 # VITE_PAYPAL_CLIENT_ID          - PayPal LIVE Client ID
 # VITE_PAYPAL_BACKEND_URL        - PayPal Apps Script URL
 # VITE_STRIPE_PUBLISHABLE_KEY    - Stripe LIVE Publishable Key (pk_live_...)
@@ -10,6 +11,16 @@ name: Deploy React App to GitHub Pages
 # VITE_GOOGLE_API_KEY            - Google Sheets API Key
 # VITE_GOOGLE_SHEET_ID           - Google Sheet ID
 # VITE_DONATION_WEBHOOK_URL      - Donation Webhook Apps Script URL
+#
+# Backend Secrets (synced to Apps Script automatically):
+# STRIPE_TEST_SECRET_KEY         - Stripe Test Secret Key (sk_test_...)
+# STRIPE_LIVE_SECRET_KEY         - Stripe Live Secret Key (sk_live_...)
+# PAYPAL_SANDBOX_CLIENT_ID       - PayPal Sandbox Client ID
+# PAYPAL_SANDBOX_CLIENT_SECRET   - PayPal Sandbox Client Secret
+# PAYPAL_LIVE_CLIENT_ID          - PayPal Live Client ID
+# PAYPAL_LIVE_CLIENT_SECRET      - PayPal Live Client Secret
+# STRIPE_SETUP_TOKEN             - Token for Stripe setup endpoint (generate random string)
+# PAYPAL_SETUP_TOKEN             - Token for PayPal setup endpoint (generate random string)
 #
 # OPTIONAL SECRETS:
 # VITE_GOOGLE_SHEET_RANGE        - Sheet range (defaults if not set)
@@ -70,6 +81,38 @@ jobs:
         VITE_SEPA_ACCOUNT_HOLDER: ${{ secrets.VITE_SEPA_ACCOUNT_HOLDER }}
         VITE_SEPA_BANK_NAME: ${{ secrets.VITE_SEPA_BANK_NAME }}
       run: npm run build
+      
+    - name: Sync Stripe Secrets to Apps Script
+      continue-on-error: true
+      run: |
+        echo "Syncing Stripe secrets to Apps Script..."
+        curl -X POST "${{ secrets.VITE_STRIPE_BACKEND_URL }}" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"action\": \"setup\",
+            \"setup_token\": \"${{ secrets.STRIPE_SETUP_TOKEN }}\",
+            \"secrets\": {
+              \"STRIPE_TEST_SECRET_KEY\": \"${{ secrets.STRIPE_TEST_SECRET_KEY }}\",
+              \"STRIPE_LIVE_SECRET_KEY\": \"${{ secrets.STRIPE_LIVE_SECRET_KEY }}\"
+            }
+          }" | jq '.'
+      
+    - name: Sync PayPal Secrets to Apps Script
+      continue-on-error: true
+      run: |
+        echo "Syncing PayPal secrets to Apps Script..."
+        curl -X POST "${{ secrets.VITE_PAYPAL_BACKEND_URL }}" \
+          -H "Content-Type: application/json" \
+          -d "{
+            \"action\": \"setup\",
+            \"setup_token\": \"${{ secrets.PAYPAL_SETUP_TOKEN }}\",
+            \"secrets\": {
+              \"PAYPAL_SANDBOX_CLIENT_ID\": \"${{ secrets.PAYPAL_SANDBOX_CLIENT_ID }}\",
+              \"PAYPAL_SANDBOX_CLIENT_SECRET\": \"${{ secrets.PAYPAL_SANDBOX_CLIENT_SECRET }}\",
+              \"PAYPAL_LIVE_CLIENT_ID\": \"${{ secrets.PAYPAL_LIVE_CLIENT_ID }}\",
+              \"PAYPAL_LIVE_CLIENT_SECRET\": \"${{ secrets.PAYPAL_LIVE_CLIENT_SECRET }}\"
+            }
+          }" | jq '.'
       
     - name: Setup Pages
       uses: actions/configure-pages@v4
