@@ -20,7 +20,7 @@ import {
   Loader2,
   AlertCircle
 } from "lucide-react";
-import heroImage from "@/assets/nature/nature_2.jpg";
+import heroImage from "@/assets/nature/nature_2.webp";
 
 const DonationSuccess = () => {
   const { t, language } = useLanguage();

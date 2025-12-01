@@ -8,13 +8,13 @@ import {
 } from "@/components/ui/carousel";
 import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
-import land from "@/assets/nature/land.jpeg";
-import water from "@/assets/project/water.png";
-import education from "@/assets/project/education.png";
-import pupils from "@/assets/project/pupils.jpg";
-import nature from "@/assets/nature/nature.jpg";
-import education_2 from "@/assets/project/education_2.jpg";
-import street from "@/assets/project/street.jpg";
+import land from "@/assets/nature/land.webp";
+import water from "@/assets/project/water.webp";
+import education from "@/assets/project/education.webp";
+import pupils from "@/assets/project/pupils.webp";
+import nature from "@/assets/nature/nature.webp";
+import education_2 from "@/assets/project/education_2.webp";
+import street from "@/assets/project/street.webp";
 
 const MissionSection = () => {
   const { t } = useLanguage();

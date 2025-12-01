@@ -4,7 +4,7 @@ import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import OptimizedImage from "@/components/OptimizedImage";
 import PreloadImage from "@/components/PreloadImage";
-import heroImage from "@/assets/community/community_5.jpg";
+import heroImage from "@/assets/community/community_5.webp";
 import phionaImage from "@/assets/team/phiona.png";
 import tonyImage from "@/assets/team/tony.png";
 import peterImage from "@/assets/team/peter.png";

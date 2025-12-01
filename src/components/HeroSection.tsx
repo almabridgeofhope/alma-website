@@ -1,4 +1,4 @@
-import heroImage from "@/assets/nature/land_3.jpg";
+import heroImage from "@/assets/nature/land_3.webp";
 import { useLanguage } from "@/contexts/LanguageContext";
 import PreloadImage from "@/components/PreloadImage";
 import { Button } from "@/components/ui/button";

@@ -1,11 +1,11 @@
-import communityImage from "@/assets/community/community_2.png";
-import peterInterviewImage from "@/assets/team/peter-selfie.jpeg";
-import communityProfileImage from "@/assets/community/community_5.jpg";
-import communityLocationImage from "@/assets/community/community-location.png";
-import natureLandscapeImage from "@/assets/nature/land_10.jpg";
-import wellProjectImage from "@/assets/project/well.jpg";
-import busProjectImage from "@/assets/project/bus.png";
-import gruendungsversammlungImage from "@/assets/team/Gründungsversammlung.png";
+import communityImage from "@/assets/community/community_2.webp";
+import peterInterviewImage from "@/assets/team/peter-selfie.webp";
+import communityProfileImage from "@/assets/community/community_5.webp";
+import communityLocationImage from "@/assets/community/community-location.webp";
+import natureLandscapeImage from "@/assets/nature/land_10.webp";
+import wellProjectImage from "@/assets/project/well.webp";
+import busProjectImage from "@/assets/project/bus.webp";
+import gruendungsversammlungImage from "@/assets/team/Gründungsversammlung.webp";
 
 export interface ArticleSection {
   title: string;

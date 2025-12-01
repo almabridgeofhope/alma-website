@@ -9,15 +9,15 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import OptimizedImage from "@/components/OptimizedImage";
-import community from "@/assets/community/community_3.png";
-import community1 from "@/assets/community/community.png";
-import community2 from "@/assets/community/community_2.png";
-import house from "@/assets/project/house_2.png";
-import communityHouse from "@/assets/project/construction_house.png";
-import children from "@/assets/community/children.png";
-import community4 from "@/assets/community/community_4.jpg";
-import community5 from "@/assets/community/community_5.jpg";
-import community6 from "@/assets/community/community_6.jpg";
+import community from "@/assets/community/community_3.webp";
+import community1 from "@/assets/community/community.webp";
+import community2 from "@/assets/community/community_2.webp";
+import house from "@/assets/project/house_2.webp";
+import communityHouse from "@/assets/project/construction_house.webp";
+import children from "@/assets/community/children.webp";
+import community4 from "@/assets/community/community_4.webp";
+import community5 from "@/assets/community/community_5.webp";
+import community6 from "@/assets/community/community_6.webp";
 
 const CommunitySection = () => {
   const { t } = useLanguage();

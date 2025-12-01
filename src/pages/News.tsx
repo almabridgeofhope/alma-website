@@ -7,7 +7,7 @@ import PreloadImage from "@/components/PreloadImage";
 import NewsletterForm from "@/components/NewsletterForm";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
-import heroImage from "@/assets/project/water.jpg";
+import heroImage from "@/assets/project/water.webp";
 import { getNewsArticles, NewsArticle } from "@/data/newsArticles";
 
 const News = () => {

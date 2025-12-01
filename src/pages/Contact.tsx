@@ -10,7 +10,7 @@ import PreloadImage from "@/components/PreloadImage";
 import { Mail, MapPin, Instagram, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
-import heroImage from "@/assets/nature/land_11.jpg";
+import heroImage from "@/assets/nature/land_11.webp";
 import emailjs from '@emailjs/browser';
 
 const Contact = () => {

@@ -22,8 +22,8 @@ import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { donationWebhookService } from "@/services/donationWebhookService";
 import { stripeService } from "@/services/stripeService";
 import { paypalService } from "@/services/paypalService";
-import heroImage from "@/assets/nature/nature_2.jpg";
-import communityImage from "@/assets/community/community_2.png";
+import heroImage from "@/assets/nature/nature_2.webp";
+import communityImage from "@/assets/community/community_2.webp";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 
 // PayPal Configuration
