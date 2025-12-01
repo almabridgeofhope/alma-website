@@ -22,6 +22,7 @@ export interface StripeSessionDetails {
   currency: string;
   customer_email: string | null;
   payment_status: 'paid' | 'unpaid' | 'no_payment_required';
+  payment_method_types?: string[]; // Array of payment method types (e.g., ['card', 'sepa_debit'])
   metadata: Record<string, string>;
   customer_details?: {
     email?: string;
@@ -185,8 +186,22 @@ class StripeService {
         throw new Error('Invalid session details response');
       }
 
-      console.log("✅ Session details successfully retrieved:", data.session.id);
-      return data.session as StripeSessionDetails;
+      const session = data.session as StripeSessionDetails;
+      
+      // Comprehensive logging for payment details (especially important for live payments)
+      const isLivePayment = session.id.startsWith('cs_live_');
+      console.log("✅ Session details successfully retrieved");
+      console.log("=== Payment Details ===");
+      console.log("Session ID:", session.id);
+      console.log("Payment Mode:", isLivePayment ? "LIVE" : "TEST");
+      console.log("Payment Status:", session.payment_status);
+      console.log("Amount:", (session.amount_total / 100).toFixed(2), session.currency.toUpperCase());
+      console.log("Customer Email:", session.customer_details?.email || session.customer_email || 'N/A');
+      console.log("Customer Name:", session.customer_details?.name || 'N/A');
+      console.log("Metadata:", JSON.stringify(session.metadata || {}, null, 2));
+      console.log("======================");
+      
+      return session;
     } catch (error) {
       console.error('❌ Error retrieving session details:', error);
       throw error;

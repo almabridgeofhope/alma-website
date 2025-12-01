@@ -784,6 +784,7 @@ const Donation = () => {
           ? `${formData.firstName} ${formData.lastName}` 
           : undefined,
         paymentId: paymentId,
+        paymentStatus: 'paid', // PayPal payments are always 'paid' when we reach this point
         wantsReceipt: formData.wantsReceipt,
         address: formData.wantsReceipt ? {
           street: formData.street || undefined,

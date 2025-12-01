@@ -20,6 +20,7 @@ export interface DonationData {
   donorName?: string;
   timestamp?: string;
   paymentId?: string; // PayPal transaction ID or SEPA reference
+  paymentStatus?: 'paid' | 'unpaid' | 'pending' | 'failed'; // Payment status (for Stripe SEPA, PayPal is always 'paid')
   wantsReceipt?: boolean; // Whether donor wants a donation receipt (Spendenbescheid)
   address?: {
     street?: string;

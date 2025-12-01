@@ -561,7 +561,25 @@ function getStripeSessionDetails(sessionId, stage = null) {
     }
     
     const session = JSON.parse(responseText);
-    console.log('Session retrieved successfully:', session.id, 'Status:', session.payment_status);
+    
+    // Comprehensive logging for payment details (especially important for live payments)
+    console.log('=== Stripe Session Retrieved Successfully ===');
+    console.log('Session ID:', session.id);
+    console.log('Stage:', stage);
+    console.log('Payment Status:', session.payment_status);
+    console.log('Amount Total:', session.amount_total ? (session.amount_total / 100) + ' ' + (session.currency || 'EUR').toUpperCase() : 'N/A');
+    console.log('Currency:', session.currency || 'N/A');
+    console.log('Payment Method Types:', session.payment_method_types || 'N/A');
+    console.log('Mode:', session.mode || 'N/A');
+    console.log('Customer Email:', session.customer_details?.email || session.customer_email || 'N/A');
+    console.log('Customer Name:', session.customer_details?.name || 'N/A');
+    console.log('Customer ID:', session.customer || 'N/A');
+    console.log('Payment Intent ID:', session.payment_intent || 'N/A');
+    console.log('Subscription ID:', session.subscription || 'N/A');
+    console.log('Metadata:', JSON.stringify(session.metadata || {}, null, 2));
+    console.log('Created:', new Date(session.created * 1000).toISOString());
+    console.log('==========================================');
+    
     return session;
   } catch (error) {
     console.error('Error retrieving session:', error);
@@ -874,6 +892,14 @@ function doGet(e) {
     if (action === 'get-session' && sessionId) {
       console.log('GET request: Retrieving session', sessionId);
       const session = getStripeSessionDetails(sessionId);
+      
+      // Log payment method types for debugging (especially for SEPA detection)
+      console.log('Session payment_method_types:', session.payment_method_types);
+      const isSEPA = session.payment_method_types?.includes('sepa_debit') || 
+                     session.payment_method_types?.some(pmt => pmt.includes('sepa'));
+      console.log('Is SEPA payment:', isSEPA);
+      console.log('Payment status:', session.payment_status);
+      
       return successResponse({
         session: session,
         ok: true,

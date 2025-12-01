@@ -71,12 +71,23 @@ function doPost(e) {
         }
       }
       
-      console.log('Received donation data:', {
-        itemsCount: data.items?.length || 0,
-        totalAmount: data.totalAmount,
-        paymentMethod: data.paymentMethod,
-        donationType: data.donationType
-      });
+      // Comprehensive logging for all donation data (especially important for live payments)
+      console.log('=== Received Donation Data ===');
+      console.log('Timestamp:', new Date().toISOString());
+      console.log('Items Count:', data.items?.length || 0);
+      console.log('Total Amount:', data.totalAmount, 'EUR');
+      console.log('Payment Method:', data.paymentMethod || 'unknown');
+      console.log('Donation Type:', data.donationType || 'one-time');
+      console.log('Payment ID:', data.paymentId || 'N/A');
+      console.log('Payment Status:', data.paymentStatus || 'paid');
+      console.log('Donor Email:', data.donorEmail || 'N/A');
+      console.log('Donor Name:', data.donorName || 'N/A');
+      console.log('Wants Receipt:', data.wantsReceipt ? 'Yes' : 'No');
+      console.log('Wants Newsletter:', data.wantsNewsletter ? 'Yes' : 'No');
+      console.log('Address:', data.address ? JSON.stringify(data.address) : 'N/A');
+      console.log('Comment:', data.comment || 'N/A');
+      console.log('Full Data:', JSON.stringify(data, null, 2));
+      console.log('============================');
     } else if (e.parameter && e.parameter.data) {
       // Form-encoded data in parameters
       console.log('Parsing form-encoded data from parameters...');
@@ -241,7 +252,13 @@ function doPost(e) {
     }
 
     // Log the donation (optional - you can create a separate donations log sheet)
+    console.log('=== Logging Donation to Sheet ===');
+    console.log('Payment Method:', data.paymentMethod);
+    console.log('Amount:', data.totalAmount);
+    console.log('Payment ID:', data.paymentId || 'N/A');
+    console.log('Payment Status:', data.paymentStatus || 'paid');
     logDonation(data, updates);
+    console.log('=== Donation Logged Successfully ===');
 
     return jsonResponse({
       ok: true,
@@ -338,49 +355,148 @@ function jsonResponse(obj) {
 // Optional: Log donations to a separate sheet for tracking
 function logDonation(donationData, updates) {
   try {
+    console.log('=== Starting Donation Log to Sheet ===');
+    console.log('Sheet ID:', SHEET_ID);
+    console.log('Payment Method:', donationData.paymentMethod);
+    console.log('Payment ID:', donationData.paymentId || 'N/A');
+    console.log('Amount:', donationData.totalAmount);
+    
     const ss = SpreadsheetApp.openById(SHEET_ID);
     let logSheet = ss.getSheetByName('Donations Log');
     
+    // Define the expected header columns to match the actual Google Sheet structure
+    const expectedHeaders = [
+      'Timestamp',
+      'source',
+      'type',
+      'amount',
+      'email',
+      'name',
+      'donation receipt',
+      'street',
+      'zip',
+      'city',
+      'country',
+      'newsletter',
+      'comment',
+      'item updated',
+      'updated json',
+      'status'
+    ];
+    
     if (!logSheet) {
+      console.log('Creating new "Donations Log" sheet...');
       logSheet = ss.insertSheet('Donations Log');
-      logSheet.appendRow([
-        'Timestamp',
-        'Payment Method',
-        'Donation Type',
-        'Total Amount',
-        'Donor Email',
-        'Donor Name',
-        'Wants Receipt',
-        'Address Street',
-        'Address Postal Code',
-        'Address City',
-        'Address Country',
-        'Wants Newsletter',
-        'Comment',
-        'Items Updated',
-        'Updates JSON'
-      ]);
+      logSheet.appendRow(expectedHeaders);
+      console.log('"Donations Log" sheet created successfully with', expectedHeaders.length, 'columns');
+    } else {
+      // Check if sheet has 'status' column, add it if missing
+      const headerRow = logSheet.getRange(1, 1, 1, logSheet.getLastColumn()).getValues()[0];
+      const hasStatusColumn = headerRow.some(header => 
+        header && header.toString().toLowerCase().trim() === 'status'
+      );
+      
+      if (!hasStatusColumn) {
+        console.log('Adding "status" column as the last column (column P)...');
+        // Add status column as the very last column (after "updated json")
+        const lastCol = logSheet.getLastColumn();
+        // Insert a new column after the last column
+        logSheet.insertColumnAfter(lastCol);
+        logSheet.getRange(1, lastCol + 1).setValue('status');
+        console.log('"status" column added at position', lastCol + 1, '(column P)');
+      }
+      
+      console.log('Current sheet headers:', headerRow);
+      console.log('Expected headers:', expectedHeaders);
     }
     
-    logSheet.appendRow([
-      new Date().toISOString(),
-      donationData.paymentMethod || 'unknown',
-      donationData.donationType || 'one-time',
-      donationData.totalAmount,
-      donationData.donorEmail || '',
-      donationData.donorName || '',
-      donationData.wantsReceipt ? 'Yes' : 'No',
-      donationData.address?.street || '',
-      donationData.address?.postalCode || '',
-      donationData.address?.city || '',
-      donationData.address?.country || '',
-      donationData.wantsNewsletter ? 'Yes' : 'No',
-      donationData.comment || '',
-      updates.length,
-      JSON.stringify(updates)
-    ]);
+    // Get current number of columns in the sheet
+    const numColumns = logSheet.getLastColumn();
+    console.log('Sheet has', numColumns, 'columns');
+    
+    // Build log row to match the actual sheet structure:
+    // Timestamp, source, type, amount, email, name, donation receipt, street, zip, city, country, newsletter, comment, item updated, updated json, status (last column P)
+    const logRow = [
+      new Date().toISOString(),                                    // Timestamp
+      donationData.paymentMethod || 'unknown',                    // source (payment method)
+      donationData.donationType || 'one-time',                    // type
+      donationData.totalAmount,                                    // amount
+      donationData.donorEmail || '',                              // email
+      donationData.donorName || '',                                // name
+      donationData.wantsReceipt ? 'Yes' : 'No',                   // donation receipt
+      donationData.address?.street || '',                          // street
+      donationData.address?.postalCode || '',                      // zip
+      donationData.address?.city || '',                            // city
+      donationData.address?.country || '',                         // country
+      donationData.wantsNewsletter ? 'Yes' : 'No',                // newsletter
+      donationData.comment || '',                                  // comment
+      updates.length,                                              // item updated
+      JSON.stringify(updates),                                     // updated json
+      donationData.paymentStatus || 'paid'                        // status (paid/unpaid/pending/failed)
+    ];
+    
+    // Ensure logRow matches the number of columns (pad with empty strings if needed)
+    while (logRow.length < numColumns) {
+      logRow.push('');
+    }
+    // Trim if too long (shouldn't happen, but safety check)
+    if (logRow.length > numColumns) {
+      logRow.splice(numColumns);
+    }
+    
+    console.log('Appending row with', logRow.length, 'columns');
+    console.log('Row data preview:', {
+      timestamp: logRow[0],
+      source: logRow[1],
+      type: logRow[2],
+      amount: logRow[3],
+      email: logRow[4],
+      name: logRow[5],
+      status: logRow[15] || 'paid'
+    });
+    
+    logSheet.appendRow(logRow);
+    
+    const lastRow = logSheet.getLastRow();
+    console.log('✅ Donation successfully logged to sheet at row', lastRow);
+    console.log('=== Donation Log Complete ===');
+    
+    // Verify the data was written correctly
+    const writtenRow = logSheet.getRange(lastRow, 1, 1, Math.min(logRow.length, numColumns)).getValues()[0];
+    console.log('Verification - Written source (payment method):', writtenRow[1]);
+    console.log('Verification - Written amount:', writtenRow[3]);
+    console.log('Verification - Written email:', writtenRow[4] || 'N/A');
+    console.log('Verification - Written status (column P):', writtenRow[15] || writtenRow[numColumns - 1] || 'N/A');
+    
   } catch (err) {
-    console.error('Error logging donation:', err);
+    console.error('❌ Error logging donation to sheet:', err);
+    console.error('Error stack:', err.stack);
+    console.error('Error details:', JSON.stringify(err, null, 2));
+    console.error('Payment Method:', donationData.paymentMethod);
+    console.error('Payment ID:', donationData.paymentId || 'N/A');
+    console.error('Amount:', donationData.totalAmount);
+    
+    // Try to log error to a separate error log if possible
+    try {
+      const ss = SpreadsheetApp.openById(SHEET_ID);
+      let errorSheet = ss.getSheetByName('Donation Log Errors');
+      if (!errorSheet) {
+        errorSheet = ss.insertSheet('Donation Log Errors');
+        errorSheet.appendRow(['Timestamp', 'Error', 'Source (Payment Method)', 'Payment ID', 'Amount', 'Error Details']);
+      }
+      errorSheet.appendRow([
+        new Date().toISOString(),
+        err.toString(),
+        donationData.paymentMethod || 'unknown',
+        donationData.paymentId || 'N/A',
+        donationData.totalAmount || 0,
+        JSON.stringify({ message: err.message, stack: err.stack })
+      ]);
+      console.log('Error logged to "Donation Log Errors" sheet');
+    } catch (logErr) {
+      console.error('Failed to log error to sheet:', logErr);
+    }
+    
     // Don't fail the whole request if logging fails
   }
 }

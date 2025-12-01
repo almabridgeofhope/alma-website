@@ -67,16 +67,35 @@ const DonationSuccess = () => {
       console.log("✅ Session details loaded:", details);
       setSessionDetails(details);
       
-      // Verify payment was successful
+      // Check if this is a SEPA payment
+      // SEPA payments can be detected from metadata or payment_method_types
+      const isSEPAPayment = details.metadata?.paymentMethodType === 'sepa_debit' ||
+                           details.payment_method_types?.includes('sepa_debit') ||
+                           details.payment_method_types?.some(pmt => pmt.includes('sepa'));
+      
+      console.log("Payment method types:", details.payment_method_types);
+      console.log("Is SEPA payment:", isSEPAPayment);
+      console.log("Payment status:", details.payment_status);
+      
+      // Always log the payment, regardless of status
+      // For SEPA payments, status can be "unpaid" initially because the bank needs to process it
+      // This can take several days. We still log the donation immediately with status "unpaid".
+      // For card payments, status should be "paid" immediately.
       if (details.payment_status !== 'paid') {
-        console.warn("⚠️ Payment status is not 'paid':", details.payment_status);
-        setLoadError(language === "de" 
-          ? "Zahlung wurde noch nicht abgeschlossen." 
-          : "Payment not yet completed.");
-        return;
+        if (isSEPAPayment) {
+          console.log("ℹ️ SEPA payment detected with 'unpaid' status - this is normal. Payment will be processed by the bank in a few days.");
+          // Don't set error - SEPA payments are valid even when unpaid
+        } else {
+          console.warn("⚠️ Payment status is not 'paid':", details.payment_status);
+          // Still log it, but show a warning to the user
+          setLoadError(language === "de" 
+            ? "Zahlung wurde noch nicht abgeschlossen. Die Spende wird trotzdem protokolliert." 
+            : "Payment not yet completed. The donation will still be logged.");
+        }
       }
       
-      // Process webhook in background (non-blocking)
+      // Always process webhook in background (non-blocking)
+      // This ensures all payments are logged with their status (paid/unpaid)
       processWebhook(details).catch(error => {
         console.error("❌ Webhook processing failed (non-critical):", error);
         // Don't show error to user - payment was successful
@@ -95,7 +114,18 @@ const DonationSuccess = () => {
   
   // Process webhook in background
   const processWebhook = async (details: StripeSessionDetails) => {
+    const isLivePayment = details.id.startsWith('cs_live_');
+    
+    // Check if this is a SEPA payment
+    const isSEPAPayment = details.metadata?.paymentMethodType === 'sepa_debit' ||
+                         details.payment_method_types?.includes('sepa_debit') ||
+                         details.payment_method_types?.some(pmt => pmt.includes('sepa'));
+    
     console.log("📤 Processing donation webhook...");
+    console.log("Payment Mode:", isLivePayment ? "LIVE" : "TEST");
+    console.log("Payment Type:", isSEPAPayment ? "SEPA" : "Card");
+    console.log("Payment Status:", details.payment_status);
+    console.log("Session ID:", details.id);
     
     try {
       const finalAmount = details.amount_total / 100;
@@ -103,8 +133,7 @@ const DonationSuccess = () => {
       const customerName = details.customer_details?.name || '';
       const customerAddress = details.customer_details?.address;
       
-      const stripePaymentMethod: 'stripe-card' | 'stripe-sepa' = 
-        details.metadata?.paymentMethodType === 'sepa_debit' ? 'stripe-sepa' : 'stripe-card';
+      const stripePaymentMethod: 'stripe-card' | 'stripe-sepa' = isSEPAPayment ? 'stripe-sepa' : 'stripe-card';
       
       // Create donation items from metadata or use general donation
       const donationItems = [{
@@ -124,6 +153,7 @@ const DonationSuccess = () => {
         donorName: customerName || undefined,
         timestamp: new Date().toISOString(),
         paymentId: details.id,
+        paymentStatus: details.payment_status as 'paid' | 'unpaid' | 'pending' | 'failed', // Include payment status
         wantsReceipt: details.metadata?.wantsReceipt === 'true',
         address: customerAddress ? {
           street: customerAddress.line1 || undefined,
@@ -135,15 +165,30 @@ const DonationSuccess = () => {
         comment: details.metadata?.comment || undefined,
       };
       
+      console.log("=== Sending to Webhook ===");
+      console.log("Payment Mode:", isLivePayment ? "LIVE" : "TEST");
+      console.log("Payment Type:", isSEPAPayment ? "SEPA (pending bank processing)" : "Card (paid)");
+      console.log("Amount:", finalAmount, "EUR");
+      console.log("Payment Method:", stripePaymentMethod);
+      console.log("Payment ID:", details.id);
+      console.log("Donor Email:", customerEmail || 'N/A');
+      console.log("Donation Type:", donationType);
+      console.log("========================");
+      
       const webhookResponse = await donationWebhookService.sendDonation(donationData);
       
       if (!webhookResponse.ok) {
         console.warn('⚠️ Webhook failed (non-critical):', webhookResponse);
+        console.warn('Payment Mode:', isLivePayment ? "LIVE" : "TEST");
       } else {
         console.log('✅ Donation logged successfully');
+        console.log('Payment Mode:', isLivePayment ? "LIVE" : "TEST");
+        console.log('Payment ID:', details.id);
       }
     } catch (error) {
       console.error('❌ Webhook processing error:', error);
+      console.error('Payment Mode:', isLivePayment ? "LIVE" : "TEST");
+      console.error('Session ID:', details.id);
       throw error; // Re-throw for caller to handle
     }
   };
