@@ -110,7 +110,7 @@ const Navigation = () => {
                 className="flex items-center cursor-pointer"
                 type="button"
               >
-                <img src={logo} alt="Alma Bridge of Hope" className="h-12 w-12 object-contain" />
+                <img src={logo} alt="Alma Bridge of Hope" width={48} height={48} className="h-12 w-12 object-contain" />
               </button>
             ) : (
               <Link 
@@ -118,7 +118,7 @@ const Navigation = () => {
                 className="flex items-center"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               >
-                <img src={logo} alt="Alma Bridge of Hope" className="h-12 w-12 object-contain" />
+                <img src={logo} alt="Alma Bridge of Hope" width={48} height={48} className="h-12 w-12 object-contain" />
               </Link>
             )}
           </div>

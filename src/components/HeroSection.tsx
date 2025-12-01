@@ -16,7 +16,17 @@ const HeroSection = () => {
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${heroImage})` }}
-      />
+      >
+        <img 
+          src={heroImage} 
+          alt="" 
+          width={1920} 
+          height={1440} 
+          className="hidden" 
+          aria-hidden="true"
+          fetchPriority="high"
+        />
+      </div>
       
       {/* Overlay */}
       <div className="absolute inset-0 bg-gradient-hero" />

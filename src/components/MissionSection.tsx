@@ -60,6 +60,8 @@ const MissionSection = () => {
                       <img
                         src={water}
                         alt="Water projects"
+                        width={256}
+                        height={384}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -71,6 +73,8 @@ const MissionSection = () => {
                       <img
                         src={education}
                         alt="Education programs"
+                        width={256}
+                        height={384}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -93,6 +97,8 @@ const MissionSection = () => {
                       <img
                         src={street}
                         alt="Street project"
+                        width={256}
+                        height={384}
                         className="w-full h-full object-cover"
                       />
                     </Card>
@@ -102,6 +108,8 @@ const MissionSection = () => {
                       <img
                         src={education}
                         alt="Education programs"
+                        width={256}
+                        height={384}
                         className="w-full h-full object-cover"
                       />
                     </Card>
@@ -111,6 +119,8 @@ const MissionSection = () => {
                       <img
                         src={land}
                         alt="Land and agriculture"
+                        width={256}
+                        height={384}
                         className="w-full h-full object-cover"
                       />
                     </Card>
@@ -121,6 +131,8 @@ const MissionSection = () => {
                       <img
                         src={water}
                         alt="Water projects"
+                        width={256}
+                        height={384}
                         className="w-full h-full object-cover"
                       />
                     </Card>
@@ -130,6 +142,8 @@ const MissionSection = () => {
                       <img
                         src={pupils}
                         alt="Goat farm project"
+                        width={256}
+                        height={384}
                         className="w-full h-full object-cover"
                       />
                     </Card>
@@ -139,6 +153,8 @@ const MissionSection = () => {
                       <img
                         src={nature}
                         alt="Nature"
+                        width={256}
+                        height={384}
                         className="w-full h-full object-cover"
                       />
                     </Card>
@@ -148,6 +164,8 @@ const MissionSection = () => {
                       <img
                         src={education_2}
                         alt="Education programs"
+                        width={256}
+                        height={384}
                         className="w-full h-full object-cover"
                       />
                     </Card>

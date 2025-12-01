@@ -59,7 +59,7 @@ const Footer = () => {
           {/* Brand */}
           <div>
             <div className="flex items-center mb-4">
-              <img src={logo} alt="Alma Bridge of Hope" className="h-12 w-12 object-contain" />
+              <img src={logo} alt="Alma Bridge of Hope" width={48} height={48} className="h-12 w-12 object-contain" />
             </div>
             <p className="text-muted-foreground">
               {t("footer.tagline")}

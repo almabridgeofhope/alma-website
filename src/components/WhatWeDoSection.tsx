@@ -46,6 +46,8 @@ const WhatWeDoSection = () => {
                 <img 
                   src={initiative.image} 
                   alt={initiative.title}
+                  width={1200}
+                  height={900}
                   className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
                   style={{
                     imageRendering: 'auto',

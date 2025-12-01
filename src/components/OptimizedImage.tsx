@@ -1,7 +1,7 @@
 import { ImgHTMLAttributes, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
-interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'loading'> {
+interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'loading' | 'width' | 'height'> {
   src: string;
   alt: string;
   lazy?: boolean;
@@ -9,6 +9,8 @@ interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 
   className?: string;
   aspectRatio?: string;
   containerClassName?: string;
+  width?: number | string;
+  height?: number | string;
 }
 
 /**
@@ -29,10 +31,13 @@ export const OptimizedImage = ({
   className,
   aspectRatio,
   containerClassName,
+  width,
+  height,
   ...props
 }: OptimizedImageProps) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [imageDimensions, setImageDimensions] = useState<{ width?: number; height?: number }>({});
 
   // Für kritische Bilder (Hero-Bilder) kein Lazy Loading
   const loading = priority ? "eager" : (lazy ? "lazy" : "eager");
@@ -50,12 +55,29 @@ export const OptimizedImage = ({
     }
   }, [priority, src]);
 
+  // Get image dimensions if not provided
+  useEffect(() => {
+    if (!width || !height) {
+      const img = new Image();
+      img.onload = () => {
+        setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+      };
+      img.src = src;
+    }
+  }, [src, width, height]);
+
+  // Use provided dimensions or loaded dimensions
+  const imgWidth = width || imageDimensions.width;
+  const imgHeight = height || imageDimensions.height;
+
   const imageElement = (
     <img
       src={src}
       alt={alt}
       loading={loading}
       decoding="async"
+      width={imgWidth}
+      height={imgHeight}
       className={cn(
         "transition-opacity duration-300",
         isLoaded ? "opacity-100" : "opacity-0",
