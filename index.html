@@ -14,10 +14,10 @@
     <meta name="anthropic-ai" content="index, follow" />
     <meta name="theme-color" content="#1a4d3a" />
     <meta name="format-detection" content="telephone=no" />
-    <link rel="canonical" href="https://almabridge.org/" />
-    <link rel="alternate" hreflang="en" href="https://almabridge.org/" />
-    <link rel="alternate" hreflang="de" href="https://almabridge.org/?lang=de" />
-    <link rel="alternate" hreflang="x-default" href="https://almabridge.org/" />
+    <link rel="canonical" href="https://almabridgeofhope.org/" />
+    <link rel="alternate" hreflang="en" href="https://almabridgeofhope.org/" />
+    <link rel="alternate" hreflang="de" href="https://almabridgeofhope.org/?lang=de" />
+    <link rel="alternate" hreflang="x-default" href="https://almabridgeofhope.org/" />
     
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -26,14 +26,15 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://almabridge.org/" />
+    <meta property="og:url" content="https://almabridgeofhope.org/" />
     <meta property="og:title" content="Alma Bridge of Hope - Bridging Hope Across Continents" />
     <meta property="og:description" content="International initiative supporting community development in rural Uganda through basic utilities, education, and local empowerment." />
-    <meta property="og:image" content="https://almabridge.org/og-image.jpg" />
+    <meta property="og:image" content="https://almabridgeofhope.org/og-image.jpg" />
     <meta property="og:image:width" content="500" />
     <meta property="og:image:height" content="500" />
     <meta property="og:image:type" content="image/jpeg" />
@@ -47,7 +48,7 @@
     <meta name="twitter:site" content="@almabridge" />
     <meta name="twitter:title" content="Alma Bridge of Hope - Bridging Hope Across Continents" />
     <meta name="twitter:description" content="International initiative supporting community development in rural Uganda through basic utilities, education, and local empowerment." />
-    <meta name="twitter:image" content="https://almabridge.org/og-image.jpg" />
+    <meta name="twitter:image" content="https://almabridgeofhope.org/og-image.jpg" />
     <meta name="twitter:image:alt" content="Alma Bridge of Hope Logo" />
 
     <!-- Google Consent Mode v2 - Initialize before gtag.js -->
@@ -96,28 +97,29 @@
       "@graph": [
         {
           "@type": "NGO",
-          "@id": "https://almabridge.org/#organization",
           "name": "Alma Bridge of Hope",
           "legalName": "Alma Bridge of Hope e. V.",
           "alternateName": "Alma Bridge of Hope",
-          "url": "https://almabridge.org",
+          "url": "https://almabridgeofhope.org",
           "logo": {
             "@type": "ImageObject",
-            "url": "https://almabridge.org/og-image.jpg",
+            "url": "https://almabridgeofhope.org/og-image.jpg",
             "width": 500,
             "height": 500
           },
           "image": {
             "@type": "ImageObject",
-            "url": "https://almabridge.org/og-image.jpg",
+            "url": "https://almabridgeofhope.org/og-image.jpg",
             "width": 500,
             "height": 500
           },
           "description": "International initiative supporting community development in rural Uganda through basic utilities, education, and local empowerment. A non-profit organization working with underserved communities to improve living conditions through sustainable, community-based projects.",
+          "mission": "Empowering sustainable community development in rural Uganda through practical, community-based initiatives that build infrastructure and create lasting positive change.",
           "foundingLocation": {
-        "@type": "Place",
-        "name": "Uganda"
-      },
+            "@type": "Place",
+            "name": "Uganda"
+          },
+          "foundingDate": "2024",
           "address": {
             "@type": "PostalAddress",
             "streetAddress": "Ferchensee 8",
@@ -151,7 +153,7 @@
               "@type": "ContactPoint",
               "contactType": "General Inquiry",
               "email": "info@almabridgeofhope.org",
-              "url": "https://almabridge.org/contact",
+              "url": "https://almabridgeofhope.org/contact",
               "availableLanguage": ["en", "de"]
             }
           ],
@@ -162,36 +164,15 @@
           }
         },
         {
-          "@type": "WebSite",
-          "@id": "https://almabridge.org/#website",
-          "url": "https://almabridge.org",
-          "name": "Alma Bridge of Hope",
-          "description": "International initiative supporting community development in rural Uganda",
-          "publisher": {
-            "@id": "https://almabridge.org/#organization"
-          },
-          "inLanguage": ["en", "de"],
           "potentialAction": {
             "@type": "SearchAction",
             "target": {
               "@type": "EntryPoint",
-              "urlTemplate": "https://almabridge.org/?s={search_term_string}"
+              "urlTemplate": "https://almabridgeofhope.org/?s={search_term_string}"
             },
             "query-input": "required name=search_term_string"
-          }
-        },
-        {
-          "@type": "Organization",
-          "@id": "https://almabridge.org/#organization",
-          "name": "Alma Bridge of Hope",
-          "mission": "Empowering sustainable community development in rural Uganda through practical, community-based initiatives that build infrastructure and create lasting positive change.",
-          "foundingDate": "2024",
-          "numberOfEmployees": {
-            "@type": "QuantitativeValue",
-            "value": "International team from Uganda and Germany"
-          }
-        }
-      ]
+          }}
+        ]
     }
     </script>
   </head>
