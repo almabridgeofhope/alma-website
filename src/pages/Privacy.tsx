@@ -101,6 +101,32 @@ const Privacy = () => {
                 </div>
               </section>
 
+              {/* Stripe Donations */}
+              <section>
+                <h2 className="text-2xl font-semibold text-foreground mb-4">
+                  {t("privacy.stripe.title")}
+                </h2>
+                <div className="space-y-4 text-muted-foreground">
+                  <p>{t("privacy.stripe.description")}</p>
+                  <p>{t("privacy.stripe.data_transfer")}</p>
+                  <p><strong>{t("privacy.stripe.legal_basis")}</strong> {t("privacy.stripe.legal_basis_text")}</p>
+                  <p>{t("privacy.stripe.more_info")} <a href="https://stripe.com/de/privacy" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">{t("privacy.stripe.link_text")}</a>.</p>
+                </div>
+              </section>
+
+              {/* Google Cloud Services */}
+              <section>
+                <h2 className="text-2xl font-semibold text-foreground mb-4">
+                  {t("privacy.google_console.title")}
+                </h2>
+                <div className="space-y-4 text-muted-foreground">
+                  <p>{t("privacy.google_console.description")}</p>
+                  <p>{t("privacy.google_console.data_transfer")}</p>
+                  <p><strong>{t("privacy.google_console.legal_basis")}</strong> {t("privacy.google_console.legal_basis_text")}</p>
+                  <p>{t("privacy.google_console.more_info")} <a href="https://policies.google.com/privacy" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">{t("privacy.google_console.link_text")}</a>.</p>
+                </div>
+              </section>
+
               {/* Donor Data Processing */}
               <section>
                 <h2 className="text-2xl font-semibold text-foreground mb-4">
