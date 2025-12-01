@@ -53,7 +53,14 @@ class DonationWebhookService {
     // Get webhook URL from environment variable
     this.webhookUrl = import.meta.env.VITE_DONATION_WEBHOOK_URL || '';
     
-    // Debug logging removed to reduce console noise
+    // Log webhook URL status (without exposing full URL for security)
+    if (this.webhookUrl) {
+      const urlObj = new URL(this.webhookUrl);
+      console.log('Donation webhook URL configured:', urlObj.origin);
+    } else {
+      console.error('⚠️ VITE_DONATION_WEBHOOK_URL is not configured!');
+      console.error('Please set VITE_DONATION_WEBHOOK_URL in your environment variables.');
+    }
   }
 
   /**
@@ -68,11 +75,21 @@ class DonationWebhookService {
   ): Promise<WebhookResponse> {
     if (!this.webhookUrl) {
       const errorMsg = 'Donation webhook URL not configured. Set VITE_DONATION_WEBHOOK_URL in your environment variables.';
-      console.error(errorMsg);
+      console.error('❌', errorMsg);
+      console.error('Current environment:', import.meta.env.MODE);
+      console.error('Available env vars:', Object.keys(import.meta.env).filter(key => key.startsWith('VITE_')));
       return {
         ok: false,
         message: errorMsg
       };
+    }
+    
+    // Log the webhook URL being used (sanitized for security)
+    try {
+      const urlObj = new URL(this.webhookUrl);
+      console.log('📡 Webhook URL:', urlObj.origin + urlObj.pathname.substring(0, 20) + '...');
+    } catch (e) {
+      console.error('❌ Invalid webhook URL format:', this.webhookUrl);
     }
 
     // Ensure timestamp is set
