@@ -247,7 +247,7 @@ const Contact = () => {
                         {t("contact.info.address")}
                       </h3>
                       <p className="text-muted-foreground">
-                        Alma Bridge of Hope e. V.<br />
+                        Alma Bridge of Hope e.V.<br />
                         Ferchensee 8<br />
                         83562 Rechtmehring<br />
                         Deutschland

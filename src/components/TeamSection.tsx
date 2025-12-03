@@ -40,7 +40,7 @@ const TeamSection = () => {
               <div className="rounded-lg overflow-hidden shadow-card">
                 <img 
                   src={teamImage} 
-                  alt="Alma Bridge of Hope Team"
+                  alt="Alma Bridge of Hope e.V. Team"
                   className="w-full h-auto object-cover"
                 />
               </div>

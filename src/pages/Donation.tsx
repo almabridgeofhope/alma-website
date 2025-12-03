@@ -943,11 +943,11 @@ const Donation = () => {
           currency_code: "EUR",
           value: formattedAmount,
         },
-        description: `${donationType === "one-time" ? t("donation.form.onetime") : t("donation.form.monthly")} donation to Alma Bridge of Hope`,
+        description: `${donationType === "one-time" ? t("donation.form.onetime") : t("donation.form.monthly")} donation to Alma Bridge of Hope e.V.`,
         custom_id: `${donationType}-${Date.now()}`,
       }],
         application_context: {
-          brand_name: "Alma Bridge of Hope",
+          brand_name: "Alma Bridge of Hope e.V.",
           landing_page: "LOGIN",
           user_action: "PAY_NOW",
           cancel_url: `${window.location.origin}/donation?cancelled=true`,
@@ -1249,7 +1249,7 @@ const Donation = () => {
           email_address: currentFormData.email,
         },
         application_context: {
-          brand_name: "Alma Bridge of Hope",
+          brand_name: "Alma Bridge of Hope e.V.",
           locale: language === "de" ? "de-DE" : "en-US",
           shipping_preference: "NO_SHIPPING",
           user_action: "SUBSCRIBE_NOW",
