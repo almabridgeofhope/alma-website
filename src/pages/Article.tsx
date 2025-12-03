@@ -90,6 +90,11 @@ const Article = () => {
   const quoteText = bodyQuote?.text?.trim() || t("news.quote.text");
   const quoteAuthor = bodyQuote?.author?.trim() || t("news.quote.author");
   const shouldShowQuote = (article.body?.showQuote ?? true) && Boolean(quoteText);
+  
+  const bodyQuote2 = article.body?.quote2;
+  const quote2Text = bodyQuote2?.text?.trim();
+  const quote2Author = bodyQuote2?.author?.trim();
+  const shouldShowQuote2 = Boolean(quote2Text);
 
   return (
     <div className="min-h-screen">
@@ -153,6 +158,25 @@ const Article = () => {
               <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
                 {article.excerpt}
               </p>
+
+              {/* Quote Component - shown after excerpt and before introduction */}
+              {shouldShowQuote && (
+                <div className="my-12 p-8 bg-primary/5 border-l-4 border-primary rounded-r-lg">
+                  <div className="flex items-start gap-4">
+                    <Quote className="w-8 h-8 text-primary mt-1 flex-shrink-0" />
+                    <div>
+                      <blockquote className="text-xl font-medium text-foreground italic leading-relaxed mb-4">
+                        "{quoteText}"
+                      </blockquote>
+                      {quoteAuthor && (
+                        <cite className="text-sm text-muted-foreground">
+                          — {quoteAuthor}
+                        </cite>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <div className="text-base text-foreground leading-relaxed space-y-8">
                 {/* Introduction */}
@@ -203,22 +227,18 @@ const Article = () => {
                   </div>
                 )}
 
-                {/* Quote Component */}
-                {shouldShowQuote && (
-                  <div className="my-12 p-8 bg-primary/5 border-l-4 border-primary rounded-r-lg">
-                    <div className="flex items-start gap-4">
-                      <Quote className="w-8 h-8 text-primary mt-1 flex-shrink-0" />
-                      <div>
-                        <blockquote className="text-xl font-medium text-foreground italic leading-relaxed mb-4">
-                          "{quoteText}"
-                        </blockquote>
-                        {quoteAuthor && (
-                          <cite className="text-sm text-muted-foreground">
-                            — {quoteAuthor}
-                          </cite>
-                        )}
+                {/* Images for article 8 - shown after introduction */}
+                {article.id === "8" && article.additionalImages && article.additionalImages.length > 0 && (
+                  <div className="my-12 grid md:grid-cols-2 gap-6">
+                    {article.additionalImages.map((image, index) => (
+                      <div key={index} className="relative overflow-hidden rounded-lg aspect-video">
+                        <img 
+                          src={image} 
+                          alt={`${article.title} - Image ${index + 1}`}
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
                       </div>
-                    </div>
+                    ))}
                   </div>
                 )}
 
@@ -293,6 +313,11 @@ const Article = () => {
 
                 {/* Additional Images */}
                 {(() => {
+                  // Skip images for article 8 as they're shown after introduction
+                  if (article.id === "8") {
+                    return null;
+                  }
+                  
                   const inlineImage =
                     article.id === "4" ? article.additionalImages?.[0] : undefined;
                   const galleryImages = inlineImage
@@ -354,6 +379,24 @@ const Article = () => {
                   </div>
                 )}
 
+                {/* Second Quote Component - shown before donation form */}
+                {shouldShowQuote2 && (
+                  <div className="my-12 p-8 bg-primary/5 border-l-4 border-primary rounded-r-lg">
+                    <div className="flex items-start gap-4">
+                      <Quote className="w-8 h-8 text-primary mt-1 flex-shrink-0" />
+                      <div>
+                        <blockquote className="text-xl font-medium text-foreground italic leading-relaxed mb-4">
+                          "{quote2Text}"
+                        </blockquote>
+                        {quote2Author && (
+                          <cite className="text-sm text-muted-foreground">
+                            — {quote2Author}
+                          </cite>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Donation Form */}
                 <Card className="my-12 border-primary/20">

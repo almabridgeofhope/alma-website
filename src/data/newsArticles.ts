@@ -6,6 +6,10 @@ import natureLandscapeImage from "@/assets/nature/land_10.webp";
 import wellProjectImage from "@/assets/project/well.webp";
 import busProjectImage from "@/assets/project/bus.webp";
 import gruendungsversammlungImage from "@/assets/team/Gründungsversammlung.webp";
+import headerConstructionImage from "@/assets/project/header_construction.webp";
+import landBaseImage from "@/assets/project/header_land.webp";
+import landImage1 from "@/assets/project/well.jpg";
+import constructionHouseImage from "@/assets/project/goat_farm.webp";
 
 export interface ArticleSection {
   title: string;
@@ -25,6 +29,7 @@ export interface ArticleBody {
     buttonLabel?: string;
   };
   quote?: ArticleQuote;
+  quote2?: ArticleQuote;
   showQuote?: boolean;
 }
 
@@ -129,7 +134,142 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
     "news.article5.sections.quote.author"
   );
 
+  const article7ConclusionCtaText = sanitizeValue(
+    t("news.article7.conclusion_cta"),
+    "news.article7.conclusion_cta"
+  );
+  const article7ConclusionCtaButtonLabel = sanitizeValue(
+    t("news.article7.conclusion_cta_button"),
+    "news.article7.conclusion_cta_button"
+  );
+
+  const article7QuoteText = sanitizeValue(
+    t("news.article7.quote.text"),
+    "news.article7.quote.text"
+  );
+
+  const article7QuoteAuthor = sanitizeValue(
+    t("news.article7.quote.author"),
+    "news.article7.quote.author"
+  );
+
+  const article8QuoteText = sanitizeValue(
+    t("news.article8.quote.text"),
+    "news.article8.quote.text"
+  );
+
+  const article8QuoteAuthor = sanitizeValue(
+    t("news.article8.quote.author"),
+    "news.article8.quote.author"
+  );
+
+  const article8Quote2Text = sanitizeValue(
+    t("news.article8.quote2.text"),
+    "news.article8.quote2.text"
+  );
+
+  const article8Quote2Author = sanitizeValue(
+    t("news.article8.quote2.author"),
+    "news.article8.quote2.author"
+  );
+
   const articles: NewsArticle[] = [
+    {
+      id: "8",
+      title: t("news.article8.title"),
+      excerpt: t("news.article8.excerpt"),
+      content: t("news.article8.content"),
+      author: t("news.article8.author"),
+      date: "2025-12-03",
+      category: t("news.categories.community"),
+      image: landBaseImage,
+      additionalImages: [landImage1, constructionHouseImage],
+      featured: true,
+      body: {
+        introduction: splitToArray(
+          t("news.article8.introduction"),
+          "news.article8.introduction"
+        ),
+        highlightTitle: sanitizeValue(
+          t("news.article8.highlight_title"),
+          "news.article8.highlight_title"
+        ),
+        sections: [
+          {
+            title: t("news.article8.sections.community_house.title"),
+            paragraphs: splitToArray(
+              t("news.article8.sections.community_house.paragraphs"),
+              "news.article8.sections.community_house.paragraphs"
+            ),
+          },
+          {
+            title: t("news.article8.sections.farm_project.title"),
+            paragraphs: splitToArray(
+              t("news.article8.sections.farm_project.paragraphs"),
+              "news.article8.sections.farm_project.paragraphs"
+            ),
+          },
+          {
+            title: t("news.article8.sections.well_project.title"),
+            paragraphs: splitToArray(
+              t("news.article8.sections.well_project.paragraphs"),
+              "news.article8.sections.well_project.paragraphs"
+            ),
+          },
+        ],
+        quote: article8QuoteText
+          ? {
+              text: article8QuoteText,
+              author: article8QuoteAuthor || undefined,
+            }
+          : undefined,
+        quote2: article8Quote2Text
+          ? {
+              text: article8Quote2Text,
+              author: article8Quote2Author || undefined,
+            }
+          : undefined,
+      },
+    },
+    {
+      id: "7",
+      title: t("news.article7.title"),
+      excerpt: t("news.article7.excerpt"),
+      content: t("news.article7.content"),
+      author: t("news.article7.author"),
+      date: "2025-11-22",
+      category: t("news.categories.project_update"),
+      image: headerConstructionImage,
+      featured: true,
+      body: {
+        introduction: splitToArray(
+          t("news.article7.introduction"),
+          "news.article7.introduction"
+        ),
+        quote: article7QuoteText
+        ? {
+            text: article7QuoteText,
+            author: article7QuoteAuthor || undefined,
+          }
+        : undefined,
+        highlightTitle: sanitizeValue(
+          t("news.article7.highlight_title"),
+          "news.article7.highlight_title"
+        ),
+        sections: [],
+        conclusion: splitToArray(
+          t("news.article7.conclusion"),
+          "news.article7.conclusion"
+        ),
+        conclusionCTA: article7ConclusionCtaText
+          ? {
+              text: article7ConclusionCtaText,
+              url: "/donation",
+              buttonLabel: article7ConclusionCtaButtonLabel || undefined,
+            }
+          : undefined,
+      },
+    },
     {
       id: "6",
       title: t("news.article6.title"),
