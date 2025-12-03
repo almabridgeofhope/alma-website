@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -26,7 +26,8 @@ const DonationSuccess = () => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { formatCurrency } = useShoppingCart();
+  const { formatCurrency, state, clearCart } = useShoppingCart();
+  const cartItems = state?.items || [];
   const [showNewsletterForm, setShowNewsletterForm] = useState(false);
   
   // Get parameters from URL
@@ -42,6 +43,9 @@ const DonationSuccess = () => {
   const [isLoadingSession, setIsLoadingSession] = useState(!!sessionId);
   const [sessionDetails, setSessionDetails] = useState<StripeSessionDetails | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  
+  // Track processed session IDs to prevent duplicate webhook calls
+  const processedSessionsRef = useRef<Set<string>>(new Set());
   
   // Final display values
   const displayAmount = sessionDetails 
@@ -96,10 +100,19 @@ const DonationSuccess = () => {
       
       // Always process webhook in background (non-blocking)
       // This ensures all payments are logged with their status (paid/unpaid)
-      processWebhook(details).catch(error => {
-        console.error("❌ Webhook processing failed (non-critical):", error);
-        // Don't show error to user - payment was successful
-      });
+      // Only process once per session ID to prevent duplicates
+      if (!processedSessionsRef.current.has(details.id)) {
+        processedSessionsRef.current.add(details.id);
+        console.log('🔄 Processing webhook for session:', details.id);
+        processWebhook(details).catch(error => {
+          console.error("❌ Webhook processing failed (non-critical):", error);
+          // Remove from processed set on error so it can be retried
+          processedSessionsRef.current.delete(details.id);
+          // Don't show error to user - payment was successful
+        });
+      } else {
+        console.log('⏭️ Webhook already processed for session:', details.id, '- skipping');
+      }
       
     } catch (error) {
       console.error("❌ Failed to load session details:", error);
@@ -135,14 +148,57 @@ const DonationSuccess = () => {
       
       const stripePaymentMethod: 'stripe-card' | 'stripe-sepa' = isSEPAPayment ? 'stripe-sepa' : 'stripe-card';
       
-      // Create donation items from metadata or use general donation
-      const donationItems = [{
-        type: 'general-donation' as const,
-        name: language === "de" ? "Allgemeine Spende" : "General Donation",
-        unitPrice: finalAmount,
-        quantity: 1,
-        totalPrice: finalAmount,
-      }];
+      // Create donation items from cart or use general donation
+      // IMPORTANT: Load cart items from localStorage FIRST, before checking context
+      // The context might be empty after redirect, but localStorage should persist
+      let itemsToUse: any[] = [];
+      
+      // First, try to load from localStorage (most reliable after redirect)
+      try {
+        const savedCart = localStorage.getItem('alma-shopping-cart');
+        console.log('📦 Raw localStorage cart data:', savedCart);
+        if (savedCart) {
+          const parsedCart = JSON.parse(savedCart);
+          console.log('📦 Parsed localStorage cart:', parsedCart);
+          if (Array.isArray(parsedCart) && parsedCart.length > 0) {
+            itemsToUse = parsedCart;
+            console.log('✅ Loaded', itemsToUse.length, 'cart items from localStorage:', itemsToUse);
+          } else {
+            console.warn('⚠️ Cart in localStorage is empty or not an array:', parsedCart);
+          }
+        } else {
+          console.warn('⚠️ No cart data found in localStorage');
+        }
+      } catch (error) {
+        console.error('❌ Failed to load cart from localStorage:', error);
+      }
+      
+      // Fallback: use context items if localStorage was empty
+      if (itemsToUse.length === 0 && Array.isArray(cartItems) && cartItems.length > 0) {
+        console.log('📦 Using cart items from context (fallback):', cartItems);
+        itemsToUse = cartItems;
+      }
+      
+      console.log('📦 Final items to use for donation:', itemsToUse);
+      console.log('📦 Items count:', itemsToUse.length);
+      
+      let donationItems;
+      if (itemsToUse.length > 0) {
+        // Use cart items
+        console.log('✅ Using cart items for donation:', itemsToUse);
+        donationItems = donationWebhookService.formatCartItemsForWebhook(itemsToUse);
+        console.log('Formatted donation items:', donationItems);
+      } else {
+        // No cart items - create a general donation
+        console.log('📝 No cart items, creating general donation with amount:', finalAmount);
+        donationItems = [{
+          type: 'general-donation' as const,
+          name: language === "de" ? "Allgemeine Spende" : "General Donation",
+          unitPrice: finalAmount,
+          quantity: 1,
+          totalPrice: finalAmount,
+        }];
+      }
       
       const donationData = {
         items: donationItems,
@@ -184,6 +240,13 @@ const DonationSuccess = () => {
         console.log('✅ Donation logged successfully');
         console.log('Payment Mode:', isLivePayment ? "LIVE" : "TEST");
         console.log('Payment ID:', details.id);
+        console.log('Items updated:', webhookResponse.totalUpdated || 0);
+        
+        // Clear cart after successful donation (only if we had cart items)
+        if (itemsToUse.length > 0) {
+          console.log('🛒 Clearing cart after successful donation');
+          clearCart();
+        }
       }
     } catch (error) {
       console.error('❌ Webhook processing error:', error);

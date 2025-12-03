@@ -409,8 +409,8 @@ const Donation = () => {
             sessionId: sessionId,
           });
           
-          // Clear cart after successful payment
-          clearCart();
+          // DON'T clear cart here - it will be cleared in DonationSuccess.tsx after successful webhook
+          // The cart items are needed in DonationSuccess to send to the webhook
           
           navigate(`/donation/success?${params.toString()}`);
         })
