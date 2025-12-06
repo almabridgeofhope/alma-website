@@ -214,14 +214,30 @@ function createSubscriptionPlan(accessToken, productId, amount, currency = 'EUR'
   
   try {
     const response = UrlFetchApp.fetch(url, options);
-    const result = JSON.parse(response.getContentText());
+    const responseText = response.getContentText();
+    const result = JSON.parse(responseText);
     
     if (response.getResponseCode() !== 201) {
       console.error('PayPal API error:', response.getResponseCode(), result);
       throw new Error(`Failed to create subscription plan: ${JSON.stringify(result)}`);
     }
     
-    console.log('Created subscription plan:', result.id);
+    // Validate plan_id format (should start with "P-")
+    if (!result.id || !result.id.startsWith('P-')) {
+      console.error('⚠️ Invalid plan_id format returned from PayPal:', result.id);
+      console.error('Full PayPal response:', responseText);
+      throw new Error(`Invalid plan ID format from PayPal: ${result.id}`);
+    }
+    
+    console.log('✅ Created subscription plan:', result.id);
+    console.log('📋 Plan details:', {
+      id: result.id,
+      name: result.name,
+      status: result.status,
+      product_id: result.product_id,
+      create_time: result.create_time
+    });
+    
     return result.id;
   } catch (error) {
     console.error('Error creating PayPal subscription plan:', error);
@@ -433,9 +449,71 @@ function doPost(e) {
 }
 
 /**
- * Handle GET requests (for testing)
+ * Get PayPal subscription details
+ * @param {string} accessToken - PayPal access token
+ * @param {string} subscriptionId - PayPal subscription ID
+ * @param {string} stage - 'local' for sandbox, 'prod' for live
+ */
+function getSubscriptionDetails(accessToken, subscriptionId, stage = 'local') {
+  const { apiBase } = getPayPalCredentials(stage);
+  const url = `${apiBase}/v1/billing/subscriptions/${subscriptionId}`;
+  
+  const options = {
+    method: 'get',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    muteHttpExceptions: true
+  };
+  
+  try {
+    const response = UrlFetchApp.fetch(url, options);
+    const result = JSON.parse(response.getContentText());
+    
+    if (response.getResponseCode() !== 200) {
+      throw new Error(`Failed to get subscription details: ${JSON.stringify(result)}`);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error getting PayPal subscription details:', error);
+    throw error;
+  }
+}
+
+/**
+ * Handle GET requests (for testing and getting subscription details)
  */
 function doGet(e) {
+  const params = e.parameter || {};
+  
+  // Handle get-subscription action
+  if (params.action === 'get-subscription' && params.subscription_id) {
+    try {
+      const stage = params.stage || 'local';
+      const subscriptionId = params.subscription_id;
+      
+      console.log(`Getting subscription details for: ${subscriptionId} (stage: ${stage})`);
+      
+      const accessToken = getPayPalAccessToken(stage);
+      const subscriptionDetails = getSubscriptionDetails(accessToken, subscriptionId, stage);
+      
+      return jsonResponse({
+        ok: true,
+        subscription: subscriptionDetails
+      });
+    } catch (error) {
+      console.error('Error getting subscription details:', error);
+      return jsonResponse({
+        ok: false,
+        error: error.toString(),
+        message: `Failed to get subscription details: ${error.message}`
+      }, 500);
+    }
+  }
+  
+  // Default response
   return jsonResponse({
     ok: true,
     message: 'PayPal Subscription Backend is active',
