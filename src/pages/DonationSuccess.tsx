@@ -10,6 +10,7 @@ import NewsletterForm from "@/components/NewsletterForm";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { stripeService, StripeSessionDetails } from "@/services/stripeService";
+import { paypalService, PayPalSubscriptionDetails } from "@/services/paypalService";
 import { donationWebhookService } from "@/services/donationWebhookService";
 import { 
   CheckCircle, 
@@ -40,18 +41,19 @@ const DonationSuccess = () => {
   const legacyPaymentId = searchParams.get("paymentId");
   
   // State for async session loading
-  const [isLoadingSession, setIsLoadingSession] = useState(!!sessionId);
+  const [isLoadingSession, setIsLoadingSession] = useState(!!sessionId || !!legacyPaymentId);
   const [sessionDetails, setSessionDetails] = useState<StripeSessionDetails | null>(null);
+  const [paypalSubscriptionDetails, setPaypalSubscriptionDetails] = useState<PayPalSubscriptionDetails | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   
-  // Determine donation type from session metadata or URL parameter
+  // Determine donation type from session metadata, PayPal subscription, or URL parameter
   const donationType = sessionDetails?.metadata 
     ? (sessionDetails.metadata.donationType === "monthly" || 
        sessionDetails.metadata.donation_type === "monthly" || 
        sessionDetails.metadata.subscription_type === "monthly_donation")
       ? "monthly"
       : "one-time"
-    : (urlDonationType || "one-time");
+    : (paypalSubscriptionDetails ? "monthly" : (urlDonationType || "one-time"));
   
   // Track processed session IDs to prevent duplicate webhook calls
   const processedSessionsRef = useRef<Set<string>>(new Set());
@@ -274,12 +276,53 @@ const DonationSuccess = () => {
     }
   };
   
+  // Load PayPal subscription details if we have a PayPal payment ID and it's a monthly donation
+  const loadPayPalSubscriptionDetails = useCallback(async () => {
+    if (!legacyPaymentId || urlDonationType !== "monthly") return;
+    
+    // PayPal Subscription IDs start with "I-" (e.g., "I-BW452GLLEP1G")
+    // If the ID doesn't match this format, it's likely an Order ID, not a Subscription ID
+    const isSubscriptionIdFormat = legacyPaymentId.startsWith("I-");
+    
+    if (!isSubscriptionIdFormat) {
+      console.log("ℹ️ PayPal Payment ID doesn't match Subscription ID format (should start with 'I-'). Using type parameter instead.");
+      console.log("Payment ID:", legacyPaymentId, "- This appears to be an Order ID, not a Subscription ID.");
+      // Don't try to load subscription details - just trust the type parameter
+      setIsLoadingSession(false);
+      return;
+    }
+    
+    console.log("🔄 Loading PayPal subscription details...");
+    setIsLoadingSession(true);
+    setLoadError(null);
+    
+    try {
+      const result = await paypalService.getSubscriptionDetails(legacyPaymentId);
+      
+      if (result.ok && result.subscription) {
+        console.log("✅ PayPal subscription details loaded:", result.subscription);
+        setPaypalSubscriptionDetails(result.subscription);
+      } else {
+        console.warn("⚠️ Could not load PayPal subscription details:", result.error || result.message);
+        // Don't set error - payment was successful, we just can't verify subscription status
+      }
+    } catch (error) {
+      console.error("❌ Failed to load PayPal subscription details:", error);
+      // Don't block the success page - payment was successful
+    } finally {
+      setIsLoadingSession(false);
+    }
+  }, [legacyPaymentId, urlDonationType]);
+
   // Load session details on mount
   useEffect(() => {
     if (sessionId) {
       loadSessionDetails();
+    } else if (legacyPaymentId && urlDonationType === "monthly") {
+      // Try to load PayPal subscription details for monthly donations
+      loadPayPalSubscriptionDetails();
     }
-  }, [sessionId, loadSessionDetails]);
+  }, [sessionId, legacyPaymentId, urlDonationType, loadSessionDetails, loadPayPalSubscriptionDetails]);
 
   // Redirect if no valid parameters (invalid access)
   useEffect(() => {
