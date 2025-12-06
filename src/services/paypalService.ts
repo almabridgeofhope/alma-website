@@ -18,6 +18,35 @@ export interface CreateSubscriptionPlanResponse {
   error?: string;
 }
 
+export interface PayPalSubscriptionDetails {
+  id: string;
+  status: string;
+  plan_id: string;
+  subscriber: {
+    email_address?: string;
+    name?: {
+      given_name?: string;
+      surname?: string;
+    };
+  };
+  billing_info?: {
+    outstanding_balance?: {
+      value: string;
+      currency_code: string;
+    };
+    last_payment?: {
+      amount: {
+        value: string;
+        currency_code: string;
+      };
+      time: string;
+    };
+    next_billing_time?: string;
+  };
+  create_time?: string;
+  start_time?: string;
+}
+
 class PayPalService {
   private backendUrl: string;
   private stage: string;
@@ -96,6 +125,55 @@ class PayPalService {
         ok: false,
         error: error instanceof Error ? error.message : String(error),
         message: `Failed to create subscription plan: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+
+  /**
+   * Get PayPal subscription details
+   * This calls the Google Apps Script backend which retrieves the subscription via PayPal API
+   */
+  async getSubscriptionDetails(subscriptionId: string): Promise<{ ok: boolean; subscription?: PayPalSubscriptionDetails; error?: string; message?: string }> {
+    if (!this.backendUrl) {
+      return {
+        ok: false,
+        error: 'PayPal backend URL not configured',
+        message: 'PayPal backend URL not configured. Set VITE_PAYPAL_BACKEND_URL in your environment variables.'
+      };
+    }
+
+    try {
+      console.log('Getting PayPal subscription details via backend...', {
+        subscriptionId
+      });
+
+      // Use GET request with query parameters
+      const url = `${this.backendUrl}?action=get-subscription&subscription_id=${encodeURIComponent(subscriptionId)}&stage=${this.stage}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        mode: 'cors',
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.ok && result.subscription) {
+        console.log('PayPal subscription details retrieved successfully');
+        return result;
+      } else {
+        throw new Error(result.message || result.error || 'Failed to get subscription details');
+      }
+    } catch (error) {
+      console.error('Error getting PayPal subscription details:', error);
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+        message: `Failed to get subscription details: ${error instanceof Error ? error.message : String(error)}`
       };
     }
   }
