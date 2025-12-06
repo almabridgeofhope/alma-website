@@ -466,7 +466,9 @@ const translations = {
     
     // Donation Success Page
     "donation.success.title": "Thank You for Your Generous Donation!",
+    "donation.success.title.monthly": "Thank You for Setting Up Your Monthly Donation!",
     "donation.success.subtitle": "Your support makes a real difference in the lives of people in Namaliri.",
+    "donation.success.subtitle.monthly": "Your recurring support will make a lasting impact in the lives of people in Namaliri.",
     "donation.success.loading": "loading",
     "donation.success.confirmation.title": "Donation Confirmed",
     "donation.success.confirmation.message": "Your donation has been successfully processed.",
@@ -1185,7 +1187,9 @@ const translations = {
     
     // Donation Success Page
     "donation.success.title": "Vielen Dank für deine großzügige Spende!",
+    "donation.success.title.monthly": "Vielen Dank für die Einrichtung deiner monatlichen Spende!",
     "donation.success.subtitle": "Deine Unterstützung macht einen echten Unterschied im Leben der Menschen in Namaliri.",
+    "donation.success.subtitle.monthly": "Deine wiederkehrende Unterstützung wird einen nachhaltigen Einfluss auf das Leben der Menschen in Namaliri haben.",
     "donation.success.loading": "lädt",
     "donation.success.confirmation.title": "Spende bestätigt",
     "donation.success.confirmation.message": "Deine Spende wurde erfolgreich verarbeitet.",

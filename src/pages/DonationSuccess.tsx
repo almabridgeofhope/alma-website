@@ -32,7 +32,7 @@ const DonationSuccess = () => {
   
   // Get parameters from URL
   const sessionId = searchParams.get("session_id");
-  const donationType = searchParams.get("type") || "one-time";
+  const urlDonationType = searchParams.get("type");
   const estimatedAmount = searchParams.get("estimated_amount");
   
   // Legacy support: direct amount/paymentId (from old PayPal flow or fallback)
@@ -43,6 +43,15 @@ const DonationSuccess = () => {
   const [isLoadingSession, setIsLoadingSession] = useState(!!sessionId);
   const [sessionDetails, setSessionDetails] = useState<StripeSessionDetails | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  
+  // Determine donation type from session metadata or URL parameter
+  const donationType = sessionDetails?.metadata 
+    ? (sessionDetails.metadata.donationType === "monthly" || 
+       sessionDetails.metadata.donation_type === "monthly" || 
+       sessionDetails.metadata.subscription_type === "monthly_donation")
+      ? "monthly"
+      : "one-time"
+    : (urlDonationType || "one-time");
   
   // Track processed session IDs to prevent duplicate webhook calls
   const processedSessionsRef = useRef<Set<string>>(new Set());
@@ -134,6 +143,15 @@ const DonationSuccess = () => {
                          details.payment_method_types?.includes('sepa_debit') ||
                          details.payment_method_types?.some(pmt => pmt.includes('sepa'));
     
+    // Determine donation type from session metadata
+    const webhookDonationType = details.metadata 
+      ? (details.metadata.donationType === "monthly" || 
+         details.metadata.donation_type === "monthly" || 
+         details.metadata.subscription_type === "monthly_donation")
+        ? "monthly"
+        : "one-time"
+      : "one-time";
+    
     console.log("📤 Processing donation webhook...");
     console.log("Payment Mode:", isLivePayment ? "LIVE" : "TEST");
     console.log("Payment Type:", isSEPAPayment ? "SEPA" : "Card");
@@ -203,7 +221,7 @@ const DonationSuccess = () => {
       const donationData = {
         items: donationItems,
         totalAmount: finalAmount,
-        donationType: donationType as "one-time" | "monthly",
+        donationType: webhookDonationType as "one-time" | "monthly",
         paymentMethod: stripePaymentMethod,
         donorEmail: customerEmail || undefined,
         donorName: customerName || undefined,
@@ -228,7 +246,7 @@ const DonationSuccess = () => {
       console.log("Payment Method:", stripePaymentMethod);
       console.log("Payment ID:", details.id);
       console.log("Donor Email:", customerEmail || 'N/A');
-      console.log("Donation Type:", donationType);
+      console.log("Donation Type:", webhookDonationType);
       console.log("========================");
       
       const webhookResponse = await donationWebhookService.sendDonation(donationData);
@@ -313,10 +331,14 @@ const DonationSuccess = () => {
               </div>
             </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              {t("donation.success.title")}
+              {donationType === "monthly" 
+                ? t("donation.success.title.monthly")
+                : t("donation.success.title")}
             </h1>
             <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed mb-8">
-              {t("donation.success.subtitle")}
+              {donationType === "monthly"
+                ? t("donation.success.subtitle.monthly")
+                : t("donation.success.subtitle")}
             </p>
             {displayAmount !== null && (
               <div className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
