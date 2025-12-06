@@ -110,10 +110,15 @@ const PayPalButtonsComponent = memo(({
   };
 
   // Add the appropriate create function based on payment type
+  // PayPal SDK requires ONLY one of createOrder or createSubscription, not both
   if (createSubscription) {
+    console.log("🔵 PayPal Button: Using createSubscription for monthly payment");
     buttonProps.createSubscription = createSubscription;
   } else if (createOrder) {
+    console.log("🟢 PayPal Button: Using createOrder for one-time payment");
     buttonProps.createOrder = createOrder;
+  } else {
+    console.warn("⚠️ PayPal Button: Neither createSubscription nor createOrder provided!");
   }
 
   return (
@@ -287,7 +292,8 @@ const Donation = () => {
   // Close cart sidebar if it's open when on donation page
   useEffect(() => {
     closeCart();
-  }, [closeCart]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   // Note: Navigation links are now handled directly in the Navigation component
   // using explicit onClick handlers when on the donation page to bypass PayPal SDK interception.
@@ -295,9 +301,16 @@ const Donation = () => {
   // Component state
   const [searchParams, setSearchParams] = useSearchParams();
   const [donationType, setDonationType] = useState<"one-time" | "monthly">("one-time");
+  
+  // Debug: Log donation type changes (only when it changes, not on every render)
+  useEffect(() => {
+    console.log("🎯 Donation Type Changed:", donationType);
+    console.log("🎯 PayPal Button Config - createSubscription:", donationType === "monthly" ? "SET" : "NOT SET", "createOrder:", donationType === "one-time" ? "SET" : "NOT SET");
+  }, [donationType]);
+  
   const [amount, setAmount] = useState<string>("");
   const [customAmount, setCustomAmount] = useState<string>("");
-  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "stripe-card" | "stripe-sepa">("paypal");
+  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "stripe-card" | "stripe-sepa">("stripe-sepa");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showWarningDialog, setShowWarningDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -439,6 +452,10 @@ const Donation = () => {
   // Use ref to track latest formData for PayPal validation
   const formDataRef = useRef(formData);
   formDataRef.current = formData;
+
+  // Use ref to track latest amount values for PayPal validation (to avoid closure issues)
+  const amountRef = useRef({ amount, customAmount, donationType });
+  amountRef.current = { amount, customAmount, donationType };
 
   const predefinedAmounts = [10, 25, 50, 100];
   const [useCartAmount, setUseCartAmount] = useState(false);
@@ -1012,13 +1029,27 @@ const Donation = () => {
         if (isSubscription) {
           // For subscriptions, we don't capture - subscription is already created
           console.log("Subscription created successfully");
-          paymentId = data.subscriptionID;
+          console.log("Full PayPal data object:", JSON.stringify(data, null, 2));
+          
+          // PayPal Subscription IDs start with "I-"
+          // Check if subscriptionID exists and has the correct format
+          paymentId = data.subscriptionID || data.subscription_id || data.id;
+          
+          // Log all possible subscription ID fields for debugging
+          console.log("Possible subscription ID fields:", {
+            subscriptionID: data.subscriptionID,
+            subscription_id: data.subscription_id,
+            id: data.id,
+            orderID: data.orderID,
+            order_id: data.order_id
+          });
+          
           details = { 
             id: paymentId, 
             status: 'ACTIVE',
-            subscription_id: data.subscriptionID
+            subscription_id: paymentId
           };
-          console.log("PayPal subscription ID:", paymentId);
+          console.log("PayPal subscription ID (final):", paymentId);
         } else if (isSEPAPayment) {
           // For SEPA, try to capture but it might take time
           // Use order ID if capture is not immediately available
@@ -1118,56 +1149,130 @@ const Donation = () => {
   const onPayPalError = useCallback((err: any) => {
     console.error("PayPal error:", err);
     
+    // Check if this is a subscription-related 404 error (Subscriptions not activated)
+    const isSubscription404 = donationType === "monthly" && (
+      err?.status === 404 ||
+      err?.response?.status === 404 ||
+      err?.message?.includes("404") ||
+      err?.message?.includes("RESOURCE_NOT_FOUND") ||
+      err?.message?.includes("Not Found") ||
+      (err?.details && Array.isArray(err.details) && err.details.some((d: any) => 
+        d.issue === "RESOURCE_NOT_FOUND" || 
+        d.description?.includes("RESOURCE_NOT_FOUND") ||
+        d.description?.includes("Not Found")
+      ))
+    );
+    
     // Create detailed error message - use translated message
     let detailedError = t("donation.form.error.payment");
     
-    // Always show helpful error details to help user fix the issue
-    if (err) {
-      let errorDetails = "";
+    // Special handling for subscription 404 errors
+    if (isSubscription404) {
+      const subscriptionErrorMessage = language === "de"
+        ? "\n\n⚠️ WICHTIG: PayPal-Abonnement konnte nicht erstellt werden (404 Fehler).\n\n" +
+          "Mögliche Ursachen:\n\n" +
+          "1. Abonnements nicht aktiviert (HÄUFIGSTE URSACHE):\n" +
+          "   PayPal-Abonnements müssen in Ihrem PayPal-Geschäftskonto aktiviert werden.\n" +
+          "   → Sandbox: https://www.sandbox.paypal.com/billing/plans\n" +
+          "   → Live: https://www.paypal.com/billing/plans\n" +
+          "   → Klicken Sie auf 'Plan erstellen', erstellen Sie einen beliebigen Plan und aktivieren Sie ihn\n" +
+          "   → Dies aktiviert die Abonnementfunktion für Ihr Konto\n\n" +
+          "2. Subscriptions API nicht aktiviert:\n" +
+          "   → Prüfen Sie im PayPal Developer Portal (https://developer.paypal.com/)\n" +
+          "   → My Apps & Credentials → Ihre App → API-Berechtigungen\n" +
+          "   → Stellen Sie sicher, dass 'Subscriptions' aktiviert ist\n\n" +
+          "3. Plan noch nicht verfügbar:\n" +
+          "   → Der Plan wurde erstellt, aber PayPal braucht manchmal einen Moment, um ihn verfügbar zu machen\n" +
+          "   → Versuchen Sie es in ein paar Sekunden erneut\n\n" +
+          "Einmalige Zahlungen funktionieren ohne diese Aktivierung, aber monatliche Abonnements erfordern sie."
+        : "\n\n⚠️ IMPORTANT: PayPal subscription could not be created (404 error).\n\n" +
+          "Possible causes:\n\n" +
+          "1. Subscriptions not activated (MOST COMMON CAUSE):\n" +
+          "   PayPal subscriptions need to be activated in your PayPal business account.\n" +
+          "   → Sandbox: https://www.sandbox.paypal.com/billing/plans\n" +
+          "   → Live: https://www.paypal.com/billing/plans\n" +
+          "   → Click 'Create Plan', create any plan, and activate it\n" +
+          "   → This activates the subscription feature for your account\n\n" +
+          "2. Subscriptions API not enabled:\n" +
+          "   → Check in the PayPal Developer Portal (https://developer.paypal.com/)\n" +
+          "   → My Apps & Credentials → Your App → API Permissions\n" +
+          "   → Ensure 'Subscriptions' is enabled\n\n" +
+          "3. Plan not yet available:\n" +
+          "   → The plan was created, but PayPal sometimes needs a moment to make it available\n" +
+          "   → Try again in a few seconds\n\n" +
+          "One-time payments work without this activation, but monthly subscriptions require it.";
       
-      // Extract error details from PayPal error object
-      if (err.details && Array.isArray(err.details)) {
-        // PayPal API errors often have details array
-        const details = err.details
-          .map((d: any) => {
-            // Try to get user-friendly description
-            if (d.description) return d.description;
-            if (d.message) return d.message;
-            if (d.issue) return d.issue;
-            return null;
-          })
-          .filter(Boolean);
+      detailedError += subscriptionErrorMessage;
+    } else {
+      // Regular error handling for other errors
+      if (err) {
+        let errorDetails = "";
         
-        if (details.length > 0) {
-          errorDetails = details.join(". ");
+        // Extract error details from PayPal error object
+        if (err.details && Array.isArray(err.details)) {
+          // PayPal API errors often have details array
+          const details = err.details
+            .map((d: any) => {
+              // Try to get user-friendly description
+              if (d.description) return d.description;
+              if (d.message) return d.message;
+              if (d.issue) return d.issue;
+              return null;
+            })
+            .filter(Boolean);
+          
+          if (details.length > 0) {
+            errorDetails = details.join(". ");
+          }
+        } else if (err.message) {
+          errorDetails = err.message;
+        } else if (typeof err === "string") {
+          errorDetails = err;
         }
-      } else if (err.message) {
-        errorDetails = err.message;
-      } else if (typeof err === "string") {
-        errorDetails = err;
-      }
-      
-      // Add error details if available
-      if (errorDetails) {
-        detailedError += `\n\n${language === "de" ? "Fehlerdetails: " : "Error details: "}${errorDetails}`;
+        
+        // Add error details if available
+        if (errorDetails) {
+          detailedError += `\n\n${language === "de" ? "Fehlerdetails: " : "Error details: "}${errorDetails}`;
+        }
       }
     }
     
     setErrorMessage(detailedError);
     setShowErrorDialog(true);
     setIsProcessingPayment(false);
-  }, [t, language]);
+  }, [t, language, donationType]);
 
   // PayPal subscription creation handler for monthly donations
   // Create PayPal subscription using backend to generate dynamic subscription plan
   const createPayPalSubscription = useCallback(async (data: any, actions: any) => {
     console.log("=== Creating PayPal Subscription ===");
+    console.log("🔵 createPayPalSubscription called with data:", data);
+    console.log("🔵 createPayPalSubscription called with actions:", actions);
 
-    // Validate all required fields before creating PayPal subscription
-    const finalAmountStr = getCurrentAmount();
+    // Use ref to get latest amount values (avoids closure issues)
+    const currentAmountData = amountRef.current;
+    console.log("Current amount data from ref:", currentAmountData);
+
+    // Get amount from ref (for monthly donations)
+    let finalAmountStr = "";
+    if (currentAmountData.donationType === "monthly") {
+      finalAmountStr = currentAmountData.amount || currentAmountData.customAmount || "";
+    } else {
+      // This shouldn't happen for subscriptions, but handle it anyway
+      finalAmountStr = currentAmountData.amount || currentAmountData.customAmount || "";
+    }
+
+    console.log("Final amount string:", finalAmountStr);
 
     // Validate amount
-    if (!finalAmountStr || parseFloat(finalAmountStr) <= 0) {
+    if (!finalAmountStr || finalAmountStr.trim() === "" || parseFloat(finalAmountStr) <= 0 || isNaN(parseFloat(finalAmountStr))) {
+      console.error("Amount validation failed:", { 
+        finalAmountStr, 
+        parsed: parseFloat(finalAmountStr),
+        amountFromRef: currentAmountData.amount,
+        customAmountFromRef: currentAmountData.customAmount,
+        donationTypeFromRef: currentAmountData.donationType
+      });
       throw new Error(t("donation.form.error.amount"));
     }
 
@@ -1236,32 +1341,75 @@ const Donation = () => {
         throw new Error(planResult.message || planResult.error || "Failed to create subscription plan");
       }
       
-      console.log("Subscription plan created successfully:", planResult.plan_id);
+      // Validate plan_id format (PayPal plan IDs start with "P-")
+      if (!planResult.plan_id.startsWith("P-")) {
+        console.error("⚠️ Invalid plan_id format:", planResult.plan_id);
+        throw new Error(`Invalid plan ID format: ${planResult.plan_id}. PayPal plan IDs should start with "P-"`);
+      }
+      
+      console.log("✅ Subscription plan created successfully:", planResult.plan_id);
+      console.log("📋 Plan details:", {
+        plan_id: planResult.plan_id,
+        amount: planResult.amount,
+        currency: planResult.currency,
+        status: "ACTIVE (should be immediately available)"
+      });
+      
+      // Small delay to ensure plan is fully propagated in PayPal's system
+      // This is sometimes needed even though the plan is created with ACTIVE status
+      console.log("⏳ Waiting 500ms for plan to be fully available in PayPal system...");
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // Create the subscription using the plan ID
-      return actions.subscription.create({
-        plan_id: planResult.plan_id,
-        subscriber: {
-          name: {
-            given_name: currentFormData.firstName,
-            surname: currentFormData.lastName,
-          },
-          email_address: currentFormData.email,
-        },
-        application_context: {
-          brand_name: "Alma Bridge of Hope",
-          locale: language === "de" ? "de-DE" : "en-US",
-          shipping_preference: "NO_SHIPPING",
-          user_action: "SUBSCRIBE_NOW",
-          cancel_url: `${window.location.origin}/donation?cancelled=true`,
-        },
-        custom_id: `monthly-subscription-${Date.now()}`,
-      });
+      // According to PayPal docs: https://developer.paypal.com/docs/subscriptions/integrate/
+      // The createSubscription function should return actions.subscription.create({ plan_id: 'YOUR_PLAN_ID' })
+      // The PayPal SDK handles the promise internally
+      console.log("🔄 Creating subscription with plan_id:", planResult.plan_id);
+      console.log("📝 Plan was created successfully and should be ACTIVE");
+      console.log("⏱️ Plan creation timestamp:", new Date().toISOString());
+      
+      try {
+        // Return the promise from actions.subscription.create() directly
+        // The PayPal SDK will handle the subscription creation and call onApprove when done
+        console.log("🚀 Calling actions.subscription.create() with plan_id:", planResult.plan_id);
+        
+        const subscriptionPromise = actions.subscription.create({
+          plan_id: planResult.plan_id
+        });
+        
+        // Add promise handlers to log the result
+        subscriptionPromise
+          .then((subscriptionId: string) => {
+            console.log("✅ Subscription created successfully! Subscription ID:", subscriptionId);
+          })
+          .catch((error: any) => {
+            console.error("❌ Subscription creation failed:", error);
+            console.error("❌ Error details:", {
+              message: error?.message,
+              status: error?.status,
+              response: error?.response,
+              details: error?.details
+            });
+          });
+        
+        console.log("✅ Subscription creation promise returned, waiting for PayPal response...");
+        return subscriptionPromise;
+      } catch (subscriptionError) {
+        console.error("❌ Error calling actions.subscription.create():", subscriptionError);
+        console.error("❌ Error type:", typeof subscriptionError);
+        console.error("❌ Error details:", {
+          message: (subscriptionError as any)?.message,
+          status: (subscriptionError as any)?.status,
+          response: (subscriptionError as any)?.response,
+          details: (subscriptionError as any)?.details
+        });
+        throw subscriptionError;
+      }
     } catch (error) {
       console.error("Error creating PayPal subscription:", error);
       throw error;
     }
-  }, [getCurrentAmount, formData, t, language, showError]);
+  }, [t, language]);
 
   const onPayPalCancel = useCallback(() => {
     console.log("PayPal payment cancelled");
@@ -1623,6 +1771,15 @@ const Donation = () => {
                       onValueChange={(value: "one-time" | "monthly") => {
                         const scrollY = window.scrollY;
                         setDonationType(value);
+                        
+                        // If switching to monthly and PayPal is selected, switch to SEPA (default)
+                        if (value === "monthly" && paymentMethod === "paypal") {
+                          // Switch to SEPA (default) if available, otherwise Stripe card
+                          if (STRIPE_PUBLISHABLE_KEY) {
+                            setPaymentMethod("stripe-sepa");
+                          }
+                        }
+                        
                         // Prevent scrolling when switching donation type
                         requestAnimationFrame(() => {
                           window.scrollTo(0, scrollY);
@@ -1980,73 +2137,61 @@ const Donation = () => {
                     <Label className="text-base font-semibold">
                       {language === "de" ? "Zahlungsmethode" : "Payment Method"}
                     </Label>
-                    <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as typeof paymentMethod)}>
-                      <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
-                        <RadioGroupItem value="paypal" id="payment-paypal" />
-                        <Label htmlFor="payment-paypal" className="flex-1 cursor-pointer">
-                          PayPal
-                          </Label>
-                        </div>
+                    <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as typeof paymentMethod)} className="flex flex-wrap gap-3">
                       {STRIPE_PUBLISHABLE_KEY && (
                         <>
-                          <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
-                            <RadioGroupItem value="stripe-card" id="payment-stripe-card" />
-                            <Label htmlFor="payment-stripe-card" className="flex-1 cursor-pointer">
-                              {language === "de" ? "Kreditkarte" : "Credit Card"}
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
+                          {/* 1. SEPA Lastschrift (first) */}
+                          <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer flex-1 min-w-[150px]">
                             <RadioGroupItem value="stripe-sepa" id="payment-stripe-sepa" />
                             <Label htmlFor="payment-stripe-sepa" className="flex-1 cursor-pointer">
                               {language === "de" ? "SEPA Lastschrift" : "SEPA Direct Debit"}
                             </Label>
                           </div>
+                          {/* 2. Kreditkarte (second) */}
+                          <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer flex-1 min-w-[150px]">
+                            <RadioGroupItem value="stripe-card" id="payment-stripe-card" />
+                            <Label htmlFor="payment-stripe-card" className="flex-1 cursor-pointer">
+                              {language === "de" ? "Kreditkarte" : "Credit Card"}
+                            </Label>
+                          </div>
                         </>
                       )}
+                      {/* 3. PayPal (third, only available for one-time payments) */}
+                      {donationType === "one-time" && (
+                        <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer flex-1 min-w-[150px]">
+                          <RadioGroupItem value="paypal" id="payment-paypal" />
+                          <Label htmlFor="payment-paypal" className="flex-1 cursor-pointer">
+                            PayPal
+                          </Label>
+                        </div>
+                      )}
                     </RadioGroup>
+                    {/* Info message when monthly is selected and PayPal was previously selected */}
+                    {donationType === "monthly" && paymentMethod === "paypal" && (
+                      <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                          {language === "de" 
+                            ? "PayPal ist für monatliche Zahlungen nicht verfügbar. Bitte wählen Sie eine andere Zahlungsmethode."
+                            : "PayPal is not available for monthly payments. Please select another payment method."}
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Payment UI - Conditional based on selected method */}
                   <div className="w-full relative">
-                    {/* PayPal - Support both one-time and recurring payments */}
-                    {paymentMethod === "paypal" && PAYPAL_CLIENT_ID && (
+                    {/* PayPal - Only available for one-time payments */}
+                    {paymentMethod === "paypal" && PAYPAL_CLIENT_ID && donationType === "one-time" && (
                       <div className="w-full relative" key="paypal-buttons">
-                        {donationType === "monthly" && !paypalService.isConfigured() ? (
-                          <div className="w-full p-6 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-lg">
-                            <div className="flex items-start gap-3">
-                              <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                              <div className="space-y-2">
-                                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                                  {language === "de" 
-                                    ? "PayPal-Backend nicht konfiguriert" 
-                                    : "PayPal backend not configured"}
-                                </p>
-                                <p className="text-sm text-blue-800 dark:text-blue-200">
-                                  {language === "de"
-                                    ? "Für monatliche PayPal-Spenden muss das Backend konfiguriert sein. Bitte verwenden Sie Stripe oder kontaktieren Sie uns."
-                                    : "For monthly PayPal donations, the backend must be configured. Please use Stripe or contact us."}
-                                </p>
-                                <Button
-                                  onClick={() => setPaymentMethod("stripe-card")}
-                                  variant="outline"
-                                  size="sm"
-                                  className="mt-2 bg-white dark:bg-gray-900 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/50"
-                                >
-                                  {language === "de" ? "Zu Stripe wechseln" : "Switch to Stripe"}
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <PayPalButtonWrapper
-                            createOrder={donationType === "one-time" ? createPayPalOrder : undefined}
-                            createSubscription={donationType === "monthly" ? createPayPalSubscription : undefined}
-                            onApprove={onPayPalApprove}
-                            onError={onPayPalError}
-                            onCancel={onPayPalCancel}
-                            language={language}
-                          />
-                        )}
+                        <PayPalButtonWrapper
+                          createOrder={createPayPalOrder}
+                          createSubscription={undefined}
+                          onApprove={onPayPalApprove}
+                          onError={onPayPalError}
+                          onCancel={onPayPalCancel}
+                          language={language}
+                          key="paypal-one-time"
+                        />
                         {/* Overlay to disable PayPal buttons when dialog is open */}
                         {(showSuccessDialog || showErrorDialog || showWarningDialog) && (
                           <div 
