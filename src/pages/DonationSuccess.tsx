@@ -41,7 +41,10 @@ const DonationSuccess = () => {
   const legacyPaymentId = searchParams.get("paymentId");
   
   // State for async session loading
-  const [isLoadingSession, setIsLoadingSession] = useState(!!sessionId || !!legacyPaymentId);
+  // Only set to true if we actually need to load details (Stripe session or PayPal monthly subscription)
+  const [isLoadingSession, setIsLoadingSession] = useState(
+    !!sessionId || (!!legacyPaymentId && urlDonationType === "monthly")
+  );
   const [sessionDetails, setSessionDetails] = useState<StripeSessionDetails | null>(null);
   const [paypalSubscriptionDetails, setPaypalSubscriptionDetails] = useState<PayPalSubscriptionDetails | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -321,6 +324,11 @@ const DonationSuccess = () => {
     } else if (legacyPaymentId && urlDonationType === "monthly") {
       // Try to load PayPal subscription details for monthly donations
       loadPayPalSubscriptionDetails();
+    } else if (legacyPaymentId && !sessionId) {
+      // For one-time PayPal payments, we don't need to load additional details
+      // We already have legacyAmount and legacyPaymentId from URL params
+      console.log("ℹ️ One-time PayPal payment detected. Using URL parameters (no additional loading needed).");
+      setIsLoadingSession(false);
     }
   }, [sessionId, legacyPaymentId, urlDonationType, loadSessionDetails, loadPayPalSubscriptionDetails]);
 
