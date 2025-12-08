@@ -84,37 +84,50 @@ const Projects = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const section = params.get("section");
-    if (section) {
-      // Scroll to section first, then open modal if hash exists
+    const hash = decodeURIComponent(location.hash.replace('#', ''));
+    
+    // If we have both section and hash, open modal immediately and scroll together
+    if (section && hash && hash !== 'all') {
+      // Open modal immediately
+      const allProjects = [...activeProjects, ...plannedProjects];
+      for (const project of allProjects) {
+        const projectCost = getProjectCost(project.title);
+        if (projectCost) {
+          const hasPhase = projectCost.items.some(item => item.phase === hash);
+          if (hasPhase) {
+            setActiveCostProject(projectCost);
+            break;
+          }
+        }
+      }
+      
+      // Scroll to section instantly (no animation) so modal appears in correct position
+      const target = document.getElementById(section);
+      if (target) {
+        // Use instant scroll first, then smooth if needed
+        target.scrollIntoView({ behavior: "auto", block: "start" });
+      }
+    } else if (section) {
+      // Only section, no hash - normal scroll
       const target = document.getElementById(section);
       if (target) {
         target.scrollIntoView({ behavior: "smooth", block: "start" });
       }
-    }
-
-    // Check if there's a hash fragment (phase) and open the modal for the corresponding project
-    const hash = decodeURIComponent(location.hash.replace('#', ''));
-    if (hash && hash !== 'all') {
-      // Wait a bit for scroll to section to complete, then open modal
-      const timeoutId = setTimeout(() => {
-        // Find the project that has this phase
-        const allProjects = [...activeProjects, ...plannedProjects];
-        for (const project of allProjects) {
-          const projectCost = getProjectCost(project.title);
-          if (projectCost) {
-            const hasPhase = projectCost.items.some(item => item.phase === hash);
-            if (hasPhase) {
-              // Always set the project to ensure modal opens/updates with the correct phase
-              setActiveCostProject(projectCost);
-              break;
-            }
+    } else if (hash && hash !== 'all') {
+      // Only hash, no section - open modal immediately
+      const allProjects = [...activeProjects, ...plannedProjects];
+      for (const project of allProjects) {
+        const projectCost = getProjectCost(project.title);
+        if (projectCost) {
+          const hasPhase = projectCost.items.some(item => item.phase === hash);
+          if (hasPhase) {
+            setActiveCostProject(projectCost);
+            break;
           }
         }
-      }, section ? 500 : 0); // Wait for scroll if section exists, otherwise open immediately
-      
-      return () => clearTimeout(timeoutId);
+      }
     }
-  }, [location, getProjectCost, activeCostProject]);
+  }, [location, getProjectCost]);
 
   const mobilityDescription = t("projects.mobility.description");
   const anchorClasses = "text-primary underline underline-offset-4";

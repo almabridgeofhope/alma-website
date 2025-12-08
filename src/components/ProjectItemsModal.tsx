@@ -914,9 +914,21 @@ export const ProjectItemsModal = ({
     return isPhasePurchasable(item.phase);
   };
   
-  // Find the first incomplete phase index for initial active phase
+  // Find the first incomplete phase index for initial active phase, or use hash if present
   useEffect(() => {
     if (phaseGroups.length > 0) {
+      // Check if there's a hash in URL that matches a phase
+      const hash = decodeURIComponent(location.hash.replace('#', '')) || 'all';
+      if (hash !== 'all') {
+        const hashPhaseIndex = phaseGroups.findIndex(pg => pg.phase === hash);
+        if (hashPhaseIndex >= 0) {
+          setActivePhaseIndex(hashPhaseIndex);
+          setExpandedPhaseItems(hash);
+          return;
+        }
+      }
+      
+      // Otherwise, use first incomplete phase
       const firstIncompleteIndex = phaseGroups.findIndex(phase => !phase.isCompleted);
       if (firstIncompleteIndex >= 0) {
         setActivePhaseIndex(firstIncompleteIndex);
@@ -925,7 +937,7 @@ export const ProjectItemsModal = ({
         setActivePhaseIndex(phaseGroups.length - 1);
       }
     }
-  }, [phaseGroups.length]);
+  }, [phaseGroups.length, location.hash]);
 
   // Auto-scroll timeline to active phase
   const timelineRef = React.useRef<HTMLDivElement>(null);
@@ -1133,18 +1145,18 @@ export const ProjectItemsModal = ({
     
     const hash = decodeURIComponent(location.hash.replace('#', '')) || 'all';
     if (hash !== 'all' && activePhaseIndex >= 0) {
-      // Wait for DOM to update, then scroll to phase card
-      const timeoutId = setTimeout(() => {
-        if (activePhaseCardRef.current) {
-          activePhaseCardRef.current.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start',
-            inline: 'nearest'
-          });
-        }
-      }, 300); // Small delay to ensure modal content is rendered
-      
-      return () => clearTimeout(timeoutId);
+      // Use requestAnimationFrame for better synchronization
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (activePhaseCardRef.current) {
+            activePhaseCardRef.current.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start',
+              inline: 'nearest'
+            });
+          }
+        });
+      });
     }
   }, [isOpen, activePhaseIndex, location.hash]);
 
