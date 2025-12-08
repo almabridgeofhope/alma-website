@@ -85,6 +85,7 @@ const Projects = () => {
     const params = new URLSearchParams(location.search);
     const section = params.get("section");
     if (section) {
+      // Scroll to section first, then open modal if hash exists
       const target = document.getElementById(section);
       if (target) {
         target.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -92,23 +93,26 @@ const Projects = () => {
     }
 
     // Check if there's a hash fragment (phase) and open the modal for the corresponding project
-    const hash = location.hash.replace('#', '');
+    const hash = decodeURIComponent(location.hash.replace('#', ''));
     if (hash && hash !== 'all') {
-      // Find the project that has this phase
-      const allProjects = [...activeProjects, ...plannedProjects];
-      for (const project of allProjects) {
-        const projectCost = getProjectCost(project.title);
-        if (projectCost) {
-          const hasPhase = projectCost.items.some(item => item.phase === hash);
-          if (hasPhase) {
-            // Only set if it's a different project or modal is closed
-            if (!activeCostProject || activeCostProject.projectName !== projectCost.projectName) {
+      // Wait a bit for scroll to section to complete, then open modal
+      const timeoutId = setTimeout(() => {
+        // Find the project that has this phase
+        const allProjects = [...activeProjects, ...plannedProjects];
+        for (const project of allProjects) {
+          const projectCost = getProjectCost(project.title);
+          if (projectCost) {
+            const hasPhase = projectCost.items.some(item => item.phase === hash);
+            if (hasPhase) {
+              // Always set the project to ensure modal opens/updates with the correct phase
               setActiveCostProject(projectCost);
+              break;
             }
-            break;
           }
         }
-      }
+      }, section ? 500 : 0); // Wait for scroll if section exists, otherwise open immediately
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [location, getProjectCost, activeCostProject]);
 

@@ -483,21 +483,26 @@ const Article = () => {
                   });
 
                   return (
-                    <div className="my-12 space-y-3">
-                      <h4 className="text-lg font-semibold text-foreground">
+                    <div className="my-12 space-y-6">
+                      <h3 className="text-2xl font-bold text-foreground">
                         {language === "de" ? "Bauphasen" : "Construction Phases"}
-                      </h4>
+                      </h3>
                       {phaseGroups.map((phaseGroup, index) => {
                         const Icon = () => getPhaseIcon(phaseGroup.phase);
+                        const phaseUrl = `/projects?section=community-house#${encodeURIComponent(phaseGroup.phase)}`;
                         return (
-                          <Card
+                          <Link
                             key={phaseGroup.phase}
-                            className={`p-4 transition-all ${
-                              phaseGroup.isCompleted
-                                ? "bg-gradient-to-br from-green-50 to-green-100/50 border-2 border-green-300"
-                                : "bg-gradient-to-br from-gray-50 to-gray-100/50 border-2 border-gray-300"
-                            }`}
+                            to={phaseUrl}
+                            className="block"
                           >
+                            <Card
+                              className={`p-4 transition-all cursor-pointer hover:shadow-md ${
+                                phaseGroup.isCompleted
+                                  ? "bg-gradient-to-br from-green-50 to-green-100/50 border-2 border-green-300"
+                                  : "bg-gradient-to-br from-gray-50 to-gray-100/50 border-2 border-gray-300"
+                              }`}
+                            >
                             <div className="flex items-start gap-4">
                               <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
                                 phaseGroup.isCompleted
@@ -508,7 +513,7 @@ const Article = () => {
                                   <CheckCircle className="w-6 h-6 text-white" />
                                 ) : (
                                   <div className="text-white">
-                                    <Icon />
+                                    {getPhaseIcon(phaseGroup.phase)}
                                   </div>
                                 )}
                               </div>
@@ -551,6 +556,7 @@ const Article = () => {
                               </div>
                             </div>
                           </Card>
+                          </Link>
                         );
                       })}
                     </div>

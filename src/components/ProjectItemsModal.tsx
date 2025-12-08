@@ -1127,6 +1127,27 @@ export const ProjectItemsModal = ({
     };
   }, [isOpen, activePhaseIndex, phaseGroups.length]);
 
+  // Effect 4: Scroll to active phase card when modal opens with hash
+  useEffect(() => {
+    if (!isOpen || !activePhaseCardRef.current) return;
+    
+    const hash = decodeURIComponent(location.hash.replace('#', '')) || 'all';
+    if (hash !== 'all' && activePhaseIndex >= 0) {
+      // Wait for DOM to update, then scroll to phase card
+      const timeoutId = setTimeout(() => {
+        if (activePhaseCardRef.current) {
+          activePhaseCardRef.current.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start',
+            inline: 'nearest'
+          });
+        }
+      }, 300); // Small delay to ensure modal content is rendered
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isOpen, activePhaseIndex, location.hash]);
+
   const renderItemCard = (item: ProjectItem, isNextImportant: boolean = false) => {
     const cartQuantity = getItemCartQuantity(item.itemId);
     const isFullyInCart = isItemFullyInCart(item);
