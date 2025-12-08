@@ -10,7 +10,7 @@ const NewsPreviewSection = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  const newsArticles: NewsArticle[] = getNewsArticles(t).slice(0, 3);
+  const newsArticles: NewsArticle[] = getNewsArticles(t).slice(0, 2);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

@@ -690,6 +690,7 @@ const Article = () => {
             <div className="grid md:grid-cols-2 gap-6">
               {newsArticles
                 .filter(relatedArticle => relatedArticle.id !== article.id)
+                .slice(0, 2)
                 .map((relatedArticle) => (
                   <div
                     key={relatedArticle.id}
