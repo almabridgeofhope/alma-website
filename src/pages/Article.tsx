@@ -3,17 +3,27 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Calendar, User, ArrowLeft, Tag, Quote, ArrowRight } from "lucide-react";
+import { Calendar, User, ArrowLeft, Tag, Quote, ArrowRight, Euro, CheckCircle, Shield, BrickWall, Layers, Droplets, Sofa, Paintbrush, Zap, Toilet, Package } from "lucide-react";
 import { getNewsArticles, NewsArticle } from "@/data/newsArticles";
 import AgeDistributionChart from "@/components/AgeDistributionChart";
 import GenderDistributionChart from "@/components/GenderDistributionChart";
+import { useProjectCosts } from "@/hooks/useProjectCosts";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const Article = () => {
   const { date } = useParams<{ date: string }>();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { getProjectCost } = useProjectCosts();
 
   const newsArticles: NewsArticle[] = getNewsArticles(t);
   const navigate = useNavigate();
@@ -160,7 +170,7 @@ const Article = () => {
               </p>
 
               {/* Quote Component - shown after excerpt and before introduction */}
-              {shouldShowQuote && (
+              {shouldShowQuote && article.id !== "9" && (
                 <div className="my-12 p-8 bg-primary/5 border-l-4 border-primary rounded-r-lg">
                   <div className="flex items-start gap-4">
                     <Quote className="w-8 h-8 text-primary mt-1 flex-shrink-0" />
@@ -177,10 +187,43 @@ const Article = () => {
                   </div>
                 </div>
               )}
+
+              {/* Image Carousel for article 9 */}
+              {article.id === "9" && article.additionalImages && article.additionalImages.length > 0 && (
+                <div className="my-12">
+                  <Carousel
+                    opts={{
+                      align: "start",
+                      loop: true,
+                    }}
+                    className="w-full"
+                  >
+                    <CarouselContent className="-ml-2 md:-ml-4">
+                      {article.additionalImages.map((image, index) => (
+                        <CarouselItem key={index} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3">
+                          <div className="p-1">
+                            <Card className="overflow-hidden">
+                              <div className="relative overflow-hidden rounded-lg aspect-video">
+                                <img
+                                  src={image}
+                                  alt={`${article.title} - Image ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            </Card>
+                          </div>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious />
+                    <CarouselNext />
+                  </Carousel>
+                </div>
+              )}
               
               <div className="text-base text-foreground leading-relaxed space-y-8">
                 {/* Introduction */}
-                {article.body?.introduction && article.body.introduction.length > 0 && (
+                {article.body?.introduction && article.body.introduction.length > 0 && article.id !== "9" && (
                   <div className="space-y-4">
                     {article.id === "4" ? (() => {
                       const inlineImage = article.additionalImages?.[0];
@@ -313,8 +356,8 @@ const Article = () => {
 
                 {/* Additional Images */}
                 {(() => {
-                  // Skip images for article 8 as they're shown after introduction
-                  if (article.id === "8") {
+                  // Skip images for article 8 and 9 as they're shown elsewhere
+                  if (article.id === "8" || article.id === "9") {
                     return null;
                   }
                   
@@ -343,24 +386,216 @@ const Article = () => {
                   );
                 })()}
 
+                {/* Progress Bar and Phases for Community House - at the end of article 9 */}
+                {article.id === "9" && (() => {
+                  const projectCost = getProjectCost("Building the Community House");
+                  if (!projectCost) return null;
+                  
+                  const formatCurrency = (amount: number, currency: string = "EUR") => {
+                    try {
+                      return new Intl.NumberFormat(language === "de" ? "de-DE" : "en-US", {
+                        style: "currency",
+                        currency,
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      }).format(amount);
+                    } catch {
+                      return `${amount.toFixed ? amount.toFixed(0) : amount} ${currency}`;
+                    }
+                  };
+
+                  // Extract phases in order
+                  const itemsSortedByOrder = [...projectCost.items].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                  const phases: string[] = [];
+                  const seenPhases = new Set<string>();
+                  for (const item of itemsSortedByOrder) {
+                    if (!seenPhases.has(item.phase)) {
+                      seenPhases.add(item.phase);
+                      phases.push(item.phase);
+                    }
+                  }
+
+                  // Helper functions
+                  const getItemPhaseName = (item: any): string => {
+                    if (language === "de" && item.phaseDe) {
+                      return item.phaseDe;
+                    }
+                    return item.phase;
+                  };
+
+                  const getPhaseNameTranslated = (phase: string): string => {
+                    const itemWithPhase = projectCost.items.find(item => item.phase === phase);
+                    if (itemWithPhase) {
+                      return getItemPhaseName(itemWithPhase);
+                    }
+                    return phase;
+                  };
+
+                  const getPhaseIcon = (phase: string) => {
+                    const phaseLower = phase.toLowerCase();
+                    if (phaseLower.includes('security')) return <Shield className="w-5 h-5" />;
+                    if ((phaseLower.includes('outer') && phaseLower.includes('walls')) || 
+                        (phaseLower.includes('outer') && phaseLower.includes('floor')) ||
+                        (phaseLower.includes('walls') && phaseLower.includes('flooring'))) {
+                      return <BrickWall className="w-5 h-5" />;
+                    }
+                    if (phaseLower.includes('foundation') && phaseLower.includes('sealing')) {
+                      return <Layers className="w-5 h-5" />;
+                    }
+                    if (phaseLower.includes('water') && phaseLower.includes('system')) {
+                      return <Droplets className="w-5 h-5" />;
+                    }
+                    if (phaseLower.includes('septic') || phaseLower.includes('soak')) {
+                      return <Droplets className="w-5 h-5" />;
+                    }
+                    if (phaseLower.includes('interior') && phaseLower.includes('furniture')) {
+                      return <Sofa className="w-5 h-5" />;
+                    }
+                    if (phaseLower.includes('innenwände') || 
+                        (phaseLower.includes('interior') && phaseLower.includes('walls'))) {
+                      return <Paintbrush className="w-5 h-5" />;
+                    }
+                    if (phaseLower.includes('electricity') && phaseLower.includes('lighting')) {
+                      return <Zap className="w-5 h-5" />;
+                    }
+                    if (phaseLower.includes('bathroom') && phaseLower.includes('sanitary')) {
+                      return <Toilet className="w-5 h-5" />;
+                    }
+                    return <Package className="w-5 h-5" />;
+                  };
+
+                  // Calculate phase progress
+                  const phaseGroups = phases.map(phase => {
+                    const phaseItems = projectCost.items.filter(item => item.phase === phase);
+                    const phaseBudget = phaseItems.reduce((sum, item) => sum + (item.totalCostEUR || 0), 0);
+                    const phaseSpent = phaseItems.reduce((sum, item) => sum + (item.fundedCostEUR || 0), 0);
+                    const phaseProgress = phaseBudget > 0 ? (phaseSpent / phaseBudget) * 100 : 0;
+                    
+                    return {
+                      phase,
+                      name: getPhaseNameTranslated(phase),
+                      budget: phaseBudget,
+                      spent: phaseSpent,
+                      progress: Math.min(100, phaseProgress),
+                      isCompleted: phaseProgress >= 100,
+                      isPartiallyCompleted: phaseProgress > 0 && phaseProgress < 100,
+                    };
+                  });
+
+                  return (
+                    <div className="my-12 space-y-3">
+                      <h4 className="text-lg font-semibold text-foreground">
+                        {language === "de" ? "Bauphasen" : "Construction Phases"}
+                      </h4>
+                      {phaseGroups.map((phaseGroup, index) => {
+                        const Icon = () => getPhaseIcon(phaseGroup.phase);
+                        return (
+                          <Card
+                            key={phaseGroup.phase}
+                            className={`p-4 transition-all ${
+                              phaseGroup.isCompleted
+                                ? "bg-gradient-to-br from-green-50 to-green-100/50 border-2 border-green-300"
+                                : "bg-gradient-to-br from-gray-50 to-gray-100/50 border-2 border-gray-300"
+                            }`}
+                          >
+                            <div className="flex items-start gap-4">
+                              <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
+                                phaseGroup.isCompleted
+                                  ? "bg-green-500"
+                                  : "bg-gray-400"
+                              }`}>
+                                {phaseGroup.isCompleted ? (
+                                  <CheckCircle className="w-6 h-6 text-white" />
+                                ) : (
+                                  <div className="text-white">
+                                    <Icon />
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h5 className="font-semibold text-foreground">
+                                    {phaseGroup.name}
+                                  </h5>
+                                  <span className={`text-sm font-semibold ${
+                                    phaseGroup.isCompleted
+                                      ? "text-green-700"
+                                      : "text-gray-600"
+                                  }`}>
+                                    {phaseGroup.progress.toFixed(0)}%
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={phaseGroup.progress}
+                                  className={`h-2 ${
+                                    phaseGroup.isCompleted
+                                      ? "[&>div]:bg-green-500"
+                                      : "[&>div]:bg-gray-400"
+                                  }`}
+                                />
+                                <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+                                  <span>
+                                    {formatCurrency(phaseGroup.spent, projectCost.currency)} / {formatCurrency(phaseGroup.budget, projectCost.currency)}
+                                  </span>
+                                  {phaseGroup.isCompleted && (
+                                    <span className="text-green-700 font-medium">
+                                      {language === "de" ? "Abgeschlossen" : "Completed"}
+                                    </span>
+                                  )}
+                                  {!phaseGroup.isCompleted && (
+                                    <span className="text-gray-600 font-medium">
+                                      {language === "de" ? "Ausstehend" : "Pending"}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+
                 {(article.body?.conclusion?.length || article.body?.conclusionCTA) && (
-                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-6 shadow-soft space-y-5">
+                  <div className={article.id === "9" 
+                    ? "my-12 space-y-6" 
+                    : "bg-primary/5 border border-primary/20 rounded-xl p-6 shadow-soft space-y-5"
+                  }>
                     {article.body?.conclusion?.map((paragraph, index) => (
                       <p
                         key={index}
-                        className="text-lg leading-relaxed font-semibold text-foreground"
+                        className={article.id === "9" 
+                          ? "text-lg leading-relaxed text-foreground"
+                          : "text-lg leading-relaxed font-semibold text-foreground"
+                        }
                       >
                         {paragraph}
                       </p>
                     ))}
 
-                    {article.body?.conclusionCTA?.text && (
+                    {article.body?.conclusionCTA?.text && article.id !== "9" && (
                       <p className="text-lg leading-relaxed font-medium text-foreground">
                         {article.body.conclusionCTA.text}
                       </p>
                     )}
 
-                    {article.body?.conclusionCTA && (
+                    {article.body?.conclusionCTA && article.id === "9" ? (
+                      // Alternative Design für Artikel 9: Inline-Link mit Pfeil
+                      <div className="pt-4 border-t border-border">
+                        <Link
+                          to={article.body.conclusionCTA.url}
+                          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                          className="group inline-flex items-center text-primary hover:text-primary/80 transition-colors"
+                        >
+                          <span className="text-lg font-medium">
+                            {article.body.conclusionCTA.buttonLabel || article.body.conclusionCTA.text}
+                          </span>
+                          <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                      </div>
+                    ) : article.body?.conclusionCTA ? (
+                      // Standard Design für andere Artikel
                       <div className="flex justify-center">
                         <Link
                           to={article.body.conclusionCTA.url}
@@ -375,7 +610,7 @@ const Article = () => {
                           </Button>
                         </Link>
                       </div>
-                    )}
+                    ) : null}
                   </div>
                 )}
 
