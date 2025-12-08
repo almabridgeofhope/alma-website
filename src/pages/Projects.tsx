@@ -86,48 +86,59 @@ const Projects = () => {
     const section = params.get("section");
     const hash = decodeURIComponent(location.hash.replace('#', ''));
     
-    // If we have both section and hash, open modal immediately and scroll together
-    if (section && hash && hash !== 'all') {
-      // Open modal immediately
-      const allProjects = [...activeProjects, ...plannedProjects];
-      for (const project of allProjects) {
-        const projectCost = getProjectCost(project.title);
-        if (projectCost) {
-          const hasPhase = projectCost.items.some(item => item.phase === hash);
-          if (hasPhase) {
-            setActiveCostProject(projectCost);
-            break;
+    // Don't open modal if it's already closed (user clicked close)
+    // Only open if hash exists and modal is not already open
+    if (!activeCostProject && hash && hash !== 'all') {
+      // If we have both section and hash, open modal immediately and scroll together
+      if (section) {
+        // Open modal immediately
+        const allProjects = [...activeProjects, ...plannedProjects];
+        for (const project of allProjects) {
+          const projectCost = getProjectCost(project.title);
+          if (projectCost) {
+            const hasPhase = projectCost.items.some(item => item.phase === hash);
+            if (hasPhase) {
+              setActiveCostProject(projectCost);
+              break;
+            }
+          }
+        }
+        
+        // Scroll to section instantly (no animation) so modal appears in correct position
+        const target = document.getElementById(section);
+        if (target) {
+          // Use instant scroll first, then smooth if needed
+          target.scrollIntoView({ behavior: "auto", block: "start" });
+        }
+      } else {
+        // Only hash, no section - find project and section, then open modal
+        const allProjects = [...activeProjects, ...plannedProjects];
+        for (const project of allProjects) {
+          const projectCost = getProjectCost(project.title);
+          if (projectCost) {
+            const hasPhase = projectCost.items.some(item => item.phase === hash);
+            if (hasPhase) {
+              setActiveCostProject(projectCost);
+              // Scroll to section if anchorId exists
+              if (project.anchorId) {
+                const target = document.getElementById(project.anchorId);
+                if (target) {
+                  target.scrollIntoView({ behavior: "auto", block: "start" });
+                }
+              }
+              break;
+            }
           }
         }
       }
-      
-      // Scroll to section instantly (no animation) so modal appears in correct position
-      const target = document.getElementById(section);
-      if (target) {
-        // Use instant scroll first, then smooth if needed
-        target.scrollIntoView({ behavior: "auto", block: "start" });
-      }
-    } else if (section) {
+    } else if (section && !hash) {
       // Only section, no hash - normal scroll
       const target = document.getElementById(section);
       if (target) {
         target.scrollIntoView({ behavior: "smooth", block: "start" });
       }
-    } else if (hash && hash !== 'all') {
-      // Only hash, no section - open modal immediately
-      const allProjects = [...activeProjects, ...plannedProjects];
-      for (const project of allProjects) {
-        const projectCost = getProjectCost(project.title);
-        if (projectCost) {
-          const hasPhase = projectCost.items.some(item => item.phase === hash);
-          if (hasPhase) {
-            setActiveCostProject(projectCost);
-            break;
-          }
-        }
-      }
     }
-  }, [location, getProjectCost]);
+  }, [location, getProjectCost, activeCostProject]);
 
   const mobilityDescription = t("projects.mobility.description");
   const anchorClasses = "text-primary underline underline-offset-4";
@@ -757,6 +768,10 @@ const Projects = () => {
           onClose={() => {
             setActiveCostProject(null);
             refreshCosts();
+            // Remove hash from URL when closing modal to prevent it from reopening
+            const params = new URLSearchParams(location.search);
+            const newSearch = params.toString();
+            navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}`, { replace: true });
           }}
           onItemToggle={(itemId, purchased) => {
             if (!activeCostProject) {

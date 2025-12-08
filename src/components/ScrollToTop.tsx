@@ -21,9 +21,13 @@ const ScrollToTop = () => {
 
     // Only scroll if pathname actually changed (not just hash)
     if (prevPathnameRef.current !== pathname) {
-      // Only scroll to top if there's no hash fragment
-      // Hash fragments are used for anchor links within the same page
-      if (!hash) {
+      // Don't scroll to top if:
+      // 1. There's a hash fragment (used for anchor links or modal phases)
+      // 2. There's a section query parameter (used for scrolling to project sections)
+      const searchParams = new URLSearchParams(window.location.search);
+      const hasSection = searchParams.has('section');
+      
+      if (!hash && !hasSection) {
         // Use instant scroll for better reliability
         window.scrollTo({ top: 0, behavior: 'auto' });
         // Then smooth scroll if needed
