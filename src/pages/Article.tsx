@@ -7,8 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Calendar, User, ArrowLeft, Tag, Quote, ArrowRight, Euro, CheckCircle, Shield, BrickWall, Layers, Droplets, Sofa, Paintbrush, Zap, Toilet, Package } from "lucide-react";
-import { getNewsArticles, NewsArticle } from "@/data/newsArticles";
+import { Calendar, User, ArrowLeft, Tag, Quote, ArrowRight, Euro, CheckCircle, Shield, BrickWall, Layers, Droplets, Sofa, Paintbrush, Zap, Toilet, Package, AlertCircle } from "lucide-react";
+import { getNewsArticles, NewsArticle, isUnpublishedArticle } from "@/data/newsArticles";
 import AgeDistributionChart from "@/components/AgeDistributionChart";
 import GenderDistributionChart from "@/components/GenderDistributionChart";
 import { useProjectCosts } from "@/hooks/useProjectCosts";
@@ -124,11 +124,17 @@ const Article = () => {
               </Button>
             </Link>
 
-            <div className="mb-6">
+            <div className="mb-6 flex flex-wrap gap-3">
               <Badge className={getCategoryColor(article.category)}>
                 <Tag className="w-3 h-3 mr-1" />
                 {article.category}
               </Badge>
+              {isUnpublishedArticle(article.date) && (
+                <Badge className="bg-red-500 text-white font-medium border-2 border-red-600">
+                  <AlertCircle className="w-3 h-3 mr-1" />
+                  Unveröffentlicht
+                </Badge>
+              )}
             </div>
             
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 leading-tight">
@@ -711,9 +717,17 @@ const Article = () => {
                         alt={relatedArticle.title}
                         className="w-full h-full object-cover"
                       />
+                      {isUnpublishedArticle(relatedArticle.date) && (
+                        <div className="absolute top-3 right-3">
+                          <Badge className="bg-red-500 text-white font-medium border-2 border-red-600">
+                            <AlertCircle className="w-3 h-3 mr-1" />
+                            Unveröffentlicht
+                          </Badge>
+                        </div>
+                      )}
                     </div>
                     <div className="p-6">
-                      <div className="mb-3">
+                      <div className="mb-3 flex flex-wrap gap-2">
                         <Badge className={getCategoryColor(relatedArticle.category)}>
                           <Tag className="w-3 h-3 mr-1" />
                           {relatedArticle.category}

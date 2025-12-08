@@ -98,6 +98,48 @@ const splitStats = (value: string, key: string): ArticleStat[] => {
     .filter((stat) => stat.value || stat.label);
 };
 
+/**
+ * Checks if an article should be published based on its date.
+ * In production, articles with future dates are filtered out.
+ * In development/local, all articles are shown.
+ */
+const shouldPublishArticle = (articleDate: string): boolean => {
+  // In production, filter out articles with future dates
+  if (import.meta.env.PROD) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+    
+    const articleDateObj = new Date(articleDate);
+    articleDateObj.setHours(0, 0, 0, 0);
+    
+    // Only show articles that are published today or in the past
+    return articleDateObj.getTime() <= today.getTime();
+  }
+  
+  // In development/local, show all articles
+  return true;
+};
+
+/**
+ * Checks if an article is unpublished (has a future date).
+ * Only relevant in development/local mode.
+ */
+export const isUnpublishedArticle = (articleDate: string): boolean => {
+  // Only show warning in development
+  if (import.meta.env.PROD) {
+    return false;
+  }
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const articleDateObj = new Date(articleDate);
+  articleDateObj.setHours(0, 0, 0, 0);
+  
+  // Article is unpublished if its date is in the future
+  return articleDateObj.getTime() > today.getTime();
+};
+
 export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
   const conclusionCtaText = sanitizeValue(
     t("news.article5.sections.conclusion_cta"),
@@ -567,7 +609,10 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
     },
   ];
 
-  return articles.sort(
+  // Filter articles based on publication date (only in production)
+  const filteredArticles = articles.filter(article => shouldPublishArticle(article.date));
+
+  return filteredArticles.sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 };
