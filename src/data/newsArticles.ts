@@ -7,12 +7,14 @@ import wellProjectImage from "@/assets/project/well.webp";
 import busProjectImage from "@/assets/project/bus.webp";
 import gruendungsversammlungImage from "@/assets/team/Gründungsversammlung.webp";
 import headerConstructionImage from "@/assets/project/community_house/header_construction.webp";
+import constructionItemImage from "@/assets/project/community_house/construction_item.webp";
 import landBaseImage from "@/assets/project/header_land.webp";
 import landImage1 from "@/assets/project/well.jpg";
 import constructionHouseImage from "@/assets/project/goat_farm.webp";
 import constructionHouse2Image from "@/assets/project/community_house/construction_house_2.webp";
 import houseImage from "@/assets/project/community_house/house.webp";
 import house2Image from "@/assets/project/community_house/house_2.webp";
+import landWithPeopleImage from "@/assets/project/community_house/land_w_ppl.webp";
 
 export interface ArticleSection {
   title: string;
@@ -293,8 +295,8 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
       author: t("news.article9.author"),
       date: "2025-12-09",
       category: t("news.categories.project_update"),
-      image: headerConstructionImage,
-      additionalImages: [constructionHouseImage, constructionHouse2Image, houseImage, house2Image],
+      image: house2Image,
+      additionalImages: [constructionHouseImage, landWithPeopleImage, constructionHouse2Image,constructionItemImage],
       featured: true,
       body: {
         highlightTitle: sanitizeValue(
