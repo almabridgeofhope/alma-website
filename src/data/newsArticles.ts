@@ -6,10 +6,13 @@ import natureLandscapeImage from "@/assets/nature/land_10.webp";
 import wellProjectImage from "@/assets/project/well.webp";
 import busProjectImage from "@/assets/project/bus.webp";
 import gruendungsversammlungImage from "@/assets/team/Gründungsversammlung.webp";
-import headerConstructionImage from "@/assets/project/header_construction.webp";
+import headerConstructionImage from "@/assets/project/community_house/header_construction.webp";
 import landBaseImage from "@/assets/project/header_land.webp";
 import landImage1 from "@/assets/project/well.jpg";
 import constructionHouseImage from "@/assets/project/goat_farm.webp";
+import constructionHouse2Image from "@/assets/project/community_house/construction_house_2.webp";
+import houseImage from "@/assets/project/community_house/house.webp";
+import house2Image from "@/assets/project/community_house/house_2.webp";
 
 export interface ArticleSection {
   title: string;
@@ -173,6 +176,15 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
     "news.article8.quote2.author"
   );
 
+  const article9ConclusionCtaText = sanitizeValue(
+    t("news.article9.conclusion_cta"),
+    "news.article9.conclusion_cta"
+  );
+  const article9ConclusionCtaButtonLabel = sanitizeValue(
+    t("news.article9.conclusion_cta_button"),
+    "news.article9.conclusion_cta_button"
+  );
+
   const articles: NewsArticle[] = [
     {
       id: "8",
@@ -227,6 +239,54 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
           ? {
               text: article8Quote2Text,
               author: article8Quote2Author || undefined,
+            }
+          : undefined,
+      },
+    },
+    {
+      id: "9",
+      title: t("news.article9.title"),
+      excerpt: t("news.article9.excerpt"),
+      content: t("news.article9.content"),
+      author: t("news.article9.author"),
+      date: "2025-12-09",
+      category: t("news.categories.project_update"),
+      image: headerConstructionImage,
+      additionalImages: [constructionHouseImage, constructionHouse2Image, houseImage, house2Image],
+      featured: true,
+      body: {
+        highlightTitle: sanitizeValue(
+          t("news.article9.highlight_title"),
+          "news.article9.highlight_title"
+        ),
+        sections: [
+          {
+            title: t("news.article9.sections.what_is.title"),
+            paragraphs: splitToArray(
+              t("news.article9.sections.what_is.paragraphs"),
+              "news.article9.sections.what_is.paragraphs"
+            ),
+          },
+          {
+            title: t("news.article9.sections.next_months.title"),
+            paragraphs: splitToArray(
+              t("news.article9.sections.next_months.paragraphs"),
+              "news.article9.sections.next_months.paragraphs"
+            ),
+          },
+          {
+            title: t("news.article9.sections.bricks.title"),
+            paragraphs: splitToArray(
+              t("news.article9.sections.bricks.paragraphs"),
+              "news.article9.sections.bricks.paragraphs"
+            ),
+          },
+        ],
+        conclusionCTA: article9ConclusionCtaText
+          ? {
+              text: article9ConclusionCtaText,
+              url: "/projects?section=community-house",
+              buttonLabel: article9ConclusionCtaButtonLabel || undefined,
             }
           : undefined,
       },
