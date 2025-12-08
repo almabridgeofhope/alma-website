@@ -229,6 +229,16 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
     "news.article9.conclusion_cta_button"
   );
 
+  const article10QuoteText = sanitizeValue(
+    t("news.article10.quote.text"),
+    "news.article10.quote.text"
+  );
+
+  const article10QuoteAuthor = sanitizeValue(
+    t("news.article10.quote.author"),
+    "news.article10.quote.author"
+  );
+
   const articles: NewsArticle[] = [
     {
       id: "8",
@@ -283,6 +293,49 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
           ? {
               text: article8Quote2Text,
               author: article8Quote2Author || undefined,
+            }
+          : undefined,
+      },
+    },
+    {
+      id: "10",
+      title: t("news.article10.title"),
+      excerpt: t("news.article10.excerpt"),
+      content: t("news.article10.content"),
+      author: t("news.article10.author"),
+      date: "2025-12-22",
+      category: t("news.categories.project_update"),
+      image: wellProjectImage,
+      featured: true,
+      body: {
+        introduction: splitToArray(
+          t("news.article10.introduction"),
+          "news.article10.introduction"
+        ),
+        highlightTitle: sanitizeValue(
+          t("news.article10.highlight_title"),
+          "news.article10.highlight_title"
+        ),
+        sections: [
+          {
+            title: t("news.article10.sections.planning.title"),
+            paragraphs: splitToArray(
+              t("news.article10.sections.planning.paragraphs"),
+              "news.article10.sections.planning.paragraphs"
+            ),
+          },
+          {
+            title: t("news.article10.sections.technical.title"),
+            paragraphs: splitToArray(
+              t("news.article10.sections.technical.paragraphs"),
+              "news.article10.sections.technical.paragraphs"
+            ),
+          },
+        ],
+        quote: article10QuoteText
+          ? {
+              text: article10QuoteText,
+              author: article10QuoteAuthor || undefined,
             }
           : undefined,
       },
