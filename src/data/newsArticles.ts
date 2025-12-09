@@ -16,11 +16,17 @@ import houseImage from "@/assets/project/community_house/house.webp";
 import house2Image from "@/assets/project/community_house/house_2.webp";
 import landWithPeopleImage from "@/assets/project/community_house/land_w_ppl.webp";
 
+export interface ArticleSubsection {
+  title: string;
+  paragraphs?: string[];
+}
+
 export interface ArticleSection {
   title: string;
   paragraphs?: string[];
   bullets?: string[];
   stats?: ArticleStat[];
+  subsections?: ArticleSubsection[];
 }
 
 export interface ArticleBody {
@@ -363,6 +369,32 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
               t("news.article9.sections.what_is.paragraphs"),
               "news.article9.sections.what_is.paragraphs"
             ),
+          },
+          {
+            title: t("news.article9.sections.roles.title"),
+            subsections: [
+              {
+                title: t("news.article9.sections.roles.subsection1.title"),
+                paragraphs: splitToArray(
+                  t("news.article9.sections.roles.subsection1.paragraphs"),
+                  "news.article9.sections.roles.subsection1.paragraphs"
+                ),
+              },
+              {
+                title: t("news.article9.sections.roles.subsection2.title"),
+                paragraphs: splitToArray(
+                  t("news.article9.sections.roles.subsection2.paragraphs"),
+                  "news.article9.sections.roles.subsection2.paragraphs"
+                ),
+              },
+              {
+                title: t("news.article9.sections.roles.subsection3.title"),
+                paragraphs: splitToArray(
+                  t("news.article9.sections.roles.subsection3.paragraphs"),
+                  "news.article9.sections.roles.subsection3.paragraphs"
+                ),
+              },
+            ],
           },
           {
             title: t("news.article9.sections.next_months.title"),

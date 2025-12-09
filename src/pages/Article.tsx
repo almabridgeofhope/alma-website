@@ -347,14 +347,49 @@ const Article = () => {
                       </div>
                     )}
 
+                    {section.subsections && section.subsections.length > 0 && (
+                      <div className="space-y-6">
+                        {section.subsections.map((subsection, subsectionIndex) => (
+                          <div key={subsectionIndex} className="space-y-2">
+                            <h4 className="text-xl font-semibold text-foreground">
+                              {subsectionIndex + 1}. {subsection.title}
+                            </h4>
+                            {subsection.paragraphs && subsection.paragraphs.length > 0 && (
+                              <div className="space-y-3 pl-6">
+                                {subsection.paragraphs.map((paragraph, paragraphIndex) => (
+                                  <p key={paragraphIndex} className="leading-relaxed text-base">
+                                    {paragraph}
+                                  </p>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     {section.bullets && section.bullets.length > 0 && (
                       <ul className="space-y-4">
-                        {section.bullets.map((point, bulletIndex) => (
-                          <li key={bulletIndex} className="flex items-start gap-4">
-                            <div className="w-3 h-3 bg-primary rounded-full flex-shrink-0 mt-1.5" />
-                            <span className="leading-relaxed text-base">{point}</span>
-                          </li>
-                        ))}
+                        {section.bullets.map((point, bulletIndex) => {
+                          const parts = point.split("|");
+                          const title = parts[0];
+                          const description = parts.slice(1).join("|");
+                          return (
+                            <li key={bulletIndex} className="flex items-start gap-4">
+                              <div className="w-3 h-3 bg-primary rounded-full flex-shrink-0 mt-1.5" />
+                              <div className="flex-1">
+                                {description ? (
+                                  <>
+                                    <span className="leading-relaxed text-base font-semibold">{title}</span>
+                                    <span className="leading-relaxed text-base block mt-1">{description}</span>
+                                  </>
+                                ) : (
+                                  <span className="leading-relaxed text-base">{point}</span>
+                                )}
+                              </div>
+                            </li>
+                          );
+                        })}
                       </ul>
                     )}
                   </div>
