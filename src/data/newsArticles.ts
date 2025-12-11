@@ -309,7 +309,7 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
       excerpt: t("news.article10.excerpt"),
       content: t("news.article10.content"),
       author: t("news.article10.author"),
-      date: "2025-12-22",
+      date: "2025-12-18",
       category: t("news.categories.project_update"),
       image: wellProjectImage,
       featured: true,
