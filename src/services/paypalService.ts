@@ -130,6 +130,55 @@ class PayPalService {
   }
 
   /**
+   * Get PayPal plan details
+   * This calls the Google Apps Script backend which retrieves the plan via PayPal API
+   */
+  async getPlanDetails(planId: string): Promise<{ ok: boolean; plan?: any; error?: string; message?: string }> {
+    if (!this.backendUrl) {
+      return {
+        ok: false,
+        error: 'PayPal backend URL not configured',
+        message: 'PayPal backend URL not configured. Set VITE_PAYPAL_BACKEND_URL in your environment variables.'
+      };
+    }
+
+    try {
+      console.log('Getting PayPal plan details via backend...', {
+        planId
+      });
+
+      // Use GET request with query parameters
+      const url = `${this.backendUrl}?action=get-plan&plan_id=${encodeURIComponent(planId)}&stage=${this.stage}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        mode: 'cors',
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.ok && result.plan) {
+        console.log('PayPal plan details retrieved successfully');
+        return result;
+      } else {
+        throw new Error(result.message || result.error || 'Failed to get plan details');
+      }
+    } catch (error) {
+      console.error('Error getting PayPal plan details:', error);
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+        message: `Failed to get plan details: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+
+  /**
    * Get PayPal subscription details
    * This calls the Google Apps Script backend which retrieves the subscription via PayPal API
    */
@@ -174,6 +223,53 @@ class PayPalService {
         ok: false,
         error: error instanceof Error ? error.message : String(error),
         message: `Failed to get subscription details: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+
+  /**
+   * Get PayPal backend diagnostic information
+   * This helps verify that the frontend and backend are using the same Client ID
+   */
+  async getDiagnosticInfo(): Promise<{ ok: boolean; diagnostic?: any; error?: string; message?: string }> {
+    if (!this.backendUrl) {
+      return {
+        ok: false,
+        error: 'PayPal backend URL not configured',
+        message: 'PayPal backend URL not configured. Set VITE_PAYPAL_BACKEND_URL in your environment variables.'
+      };
+    }
+
+    try {
+      console.log('Getting PayPal backend diagnostic info...');
+
+      // Use GET request with query parameters
+      const url = `${this.backendUrl}?action=diagnostic&stage=${this.stage}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        mode: 'cors',
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.ok && result.diagnostic) {
+        console.log('PayPal backend diagnostic info retrieved successfully');
+        return result;
+      } else {
+        throw new Error(result.message || result.error || 'Failed to get diagnostic info');
+      }
+    } catch (error) {
+      console.error('Error getting PayPal diagnostic info:', error);
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+        message: `Failed to get diagnostic info: ${error instanceof Error ? error.message : String(error)}`
       };
     }
   }
