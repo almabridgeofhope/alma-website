@@ -288,7 +288,7 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
       excerpt: t("news.article11.excerpt"),
       content: t("news.article11.content"),
       author: t("news.article11.author"),
-      date: "2025-12-20",
+      date: "2025-12-23",
       category: t("news.categories.construction_progress"),
       image: soakPitImage2,
       featured: true,
