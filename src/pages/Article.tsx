@@ -19,7 +19,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import PhotoGallery from "@/components/PhotoGallery";
+import MediaCarousel from "@/components/MediaCarousel";
 import { cn } from "@/lib/utils";
 
 const Article = () => {
@@ -293,7 +293,7 @@ const Article = () => {
                       )}
                     </div>
                   )}
-                  <PhotoGallery gallery={article.photoGallery} />
+                  <MediaCarousel gallery={article.photoGallery} />
                 </div>
               )}
 
