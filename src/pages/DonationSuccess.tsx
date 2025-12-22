@@ -19,7 +19,9 @@ import {
   Home, 
   CheckCircle2,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Info,
+  ExternalLink
 } from "lucide-react";
 import heroImage from "@/assets/nature/nature_2.webp";
 
@@ -497,6 +499,67 @@ const DonationSuccess = () => {
             </div>
           </div>
         </section>
+
+        {/* Cancellation Info for Monthly Donations */}
+        {donationType === "monthly" && (
+          <section className="py-12 bg-muted/30">
+            <div className="max-w-content mx-auto px-6">
+              <div className="max-w-2xl mx-auto">
+                <Card className="p-8 shadow-card">
+                  <div className="flex items-start gap-4 mb-6">
+                    <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex-shrink-0">
+                      <Info className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                        {t("donation.success.cancellation.title")}
+                      </h2>
+                      <p className="text-muted-foreground mb-6">
+                        {t("donation.success.cancellation.description")}
+                      </p>
+                      
+                      <div className="space-y-4">
+                        <div className="p-4 bg-background rounded-lg border border-border">
+                          <div className="flex items-start gap-3">
+                            <ExternalLink className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-foreground mb-2">
+                                {t("donation.success.cancellation.stripe")}
+                              </h3>
+                              <p className="text-sm text-muted-foreground whitespace-pre-line">
+                                {t("donation.success.cancellation.stripeDesc").replace("{email}", t("donation.contact.email"))}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="p-4 bg-background rounded-lg border border-border">
+                          <div className="flex items-start gap-3">
+                            <ExternalLink className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-foreground mb-2">
+                                {t("donation.success.cancellation.paypal")}
+                              </h3>
+                              <p className="text-sm text-muted-foreground whitespace-pre-line">
+                                {t("donation.success.cancellation.paypalDesc")}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <p className="text-sm text-blue-900 dark:text-blue-100">
+                            {t("donation.success.cancellation.help").replace("{email}", t("donation.contact.email"))}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Next Steps */}
         <section className="py-12 bg-background">
