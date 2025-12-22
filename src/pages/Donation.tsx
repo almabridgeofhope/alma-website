@@ -16,7 +16,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import OptimizedImage from "@/components/OptimizedImage";
 import PreloadImage from "@/components/PreloadImage";
-import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush, Copy, CheckCircle2, AlertCircle } from "lucide-react";
+import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush, Copy, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { donationWebhookService } from "@/services/donationWebhookService";
@@ -2700,8 +2700,8 @@ const Donation = () => {
                   <AccordionTrigger className="text-left">
                     {t("donation.faq.q4")}
                   </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">
-                    {t("donation.faq.a4")}
+                  <AccordionContent className="text-muted-foreground whitespace-pre-line">
+                    {t("donation.faq.a4").replace(/{email}/g, t("donation.contact.email"))}
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="item-5" className="border rounded-lg px-6">

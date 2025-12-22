@@ -514,9 +514,6 @@ const DonationSuccess = () => {
                       <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
                         {t("donation.success.cancellation.title")}
                       </h2>
-                      <p className="text-muted-foreground mb-6">
-                        {t("donation.success.cancellation.description")}
-                      </p>
                       
                       <div className="space-y-4">
                         <div className="p-4 bg-background rounded-lg border border-border">
