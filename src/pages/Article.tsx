@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Calendar, User, ArrowLeft, Tag, Quote, ArrowRight, Euro, CheckCircle, Shield, BrickWall, Layers, Droplets, Sofa, Paintbrush, Zap, Toilet, Package, AlertCircle, Home } from "lucide-react";
+import { Calendar, User, ArrowLeft, Tag, Quote, ArrowRight, Euro, CheckCircle, Shield, BrickWall, Layers, Droplets, Sofa, Paintbrush, Zap, Toilet, Package, AlertCircle, Home, ZoomIn, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { getNewsArticles, NewsArticle, isUnpublishedArticle } from "@/data/newsArticles";
 import AgeDistributionChart from "@/components/AgeDistributionChart";
 import GenderDistributionChart from "@/components/GenderDistributionChart";
@@ -30,6 +30,27 @@ const Article = () => {
   const newsArticles: NewsArticle[] = getNewsArticles(t);
   const navigate = useNavigate();
   const [selectedDonationAmount, setSelectedDonationAmount] = useState<number | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+
+  // Keyboard navigation for lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setLightboxOpen(false);
+      } else if (e.key === "ArrowLeft" && selectedImages.length > 1) {
+        setSelectedImageIndex((prev) => (prev - 1 + selectedImages.length) % selectedImages.length);
+      } else if (e.key === "ArrowRight" && selectedImages.length > 1) {
+        setSelectedImageIndex((prev) => (prev + 1) % selectedImages.length);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lightboxOpen, selectedImages.length]);
 
   const handleNavigate = useCallback(
     (targetDate: string) => {
@@ -472,36 +493,40 @@ const Article = () => {
                 </div>
               )}
 
-              {/* Image Carousel for article 9 */}
+              {/* Image Gallery for article 9 - clickable with lightbox */}
               {article.id === "9" && article.additionalImages && article.additionalImages.length > 0 && (
                 <div className="my-12">
-                  <Carousel
-                    opts={{
-                      align: "start",
-                      loop: true,
-                    }}
-                    className="w-full"
-                  >
-                    <CarouselContent className="-ml-2 md:-ml-4">
-                      {article.additionalImages.map((image, index) => (
-                        <CarouselItem key={index} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3">
-                          <div className="p-1">
-                            <Card className="overflow-hidden">
-                              <div className="relative overflow-hidden rounded-lg aspect-video">
-                                <img
-                                  src={image}
-                                  alt={`${article.title} - Image ${index + 1}`}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            </Card>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {article.additionalImages.map((image, index) => (
+                      <div
+                        key={index}
+                        className="relative group cursor-pointer overflow-hidden rounded-lg aspect-video bg-muted"
+                        onClick={() => {
+                          setSelectedImages(article.additionalImages || []);
+                          setSelectedImageIndex(index);
+                          setLightboxOpen(true);
+                        }}
+                      >
+                        <img
+                          src={image}
+                          alt={`${article.title} - Image ${index + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                        {/* Overlay with zoom icon */}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 backdrop-blur-sm rounded-full p-3">
+                            <ZoomIn className="w-6 h-6 text-gray-900" />
                           </div>
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                    <CarouselPrevious />
-                    <CarouselNext />
-                  </Carousel>
+                        </div>
+                        {/* Hint text - always visible but more prominent on hover */}
+                        <div className="absolute bottom-2 left-2 right-2">
+                          <div className="bg-black/50 group-hover:bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded text-center transition-all duration-300">
+                            {language === "de" ? "Zum Vergrößern klicken" : "Click to enlarge"}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
               
@@ -554,16 +579,36 @@ const Article = () => {
                   </div>
                 )}
 
-                {/* Images for article 8 - shown after introduction */}
+                {/* Images for article 8 - shown after introduction - clickable with lightbox */}
                 {article.id === "8" && article.additionalImages && article.additionalImages.length > 0 && (
                   <div className="my-12 grid md:grid-cols-2 gap-6">
                     {article.additionalImages.map((image, index) => (
-                      <div key={index} className="relative overflow-hidden rounded-lg aspect-video">
+                      <div
+                        key={index}
+                        className="relative group cursor-pointer overflow-hidden rounded-lg aspect-video bg-muted"
+                        onClick={() => {
+                          setSelectedImages(article.additionalImages || []);
+                          setSelectedImageIndex(index);
+                          setLightboxOpen(true);
+                        }}
+                      >
                         <img 
                           src={image} 
                           alt={`${article.title} - Image ${index + 1}`}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
+                        {/* Overlay with zoom icon */}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 backdrop-blur-sm rounded-full p-3">
+                            <ZoomIn className="w-6 h-6 text-gray-900" />
+                          </div>
+                        </div>
+                        {/* Hint text - always visible but more prominent on hover */}
+                        <div className="absolute bottom-2 left-2 right-2">
+                          <div className="bg-black/50 group-hover:bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded text-center transition-all duration-300">
+                            {language === "de" ? "Zum Vergrößern klicken" : "Click to enlarge"}
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1087,6 +1132,76 @@ const Article = () => {
       </main>
       
       <Footer />
+
+      {/* Lightbox Modal for Images */}
+      {lightboxOpen && selectedImages.length > 0 && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setLightboxOpen(false)}
+        >
+          {/* Close Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightboxOpen(false);
+            }}
+            className="absolute top-6 right-6 z-10 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full p-3 transition-all duration-200 group"
+            aria-label="Close"
+          >
+            <X className="w-6 h-6 text-white group-hover:rotate-90 transition-transform duration-300" />
+          </button>
+
+          {/* Previous Button */}
+          {selectedImages.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedImageIndex((prev) => (prev - 1 + selectedImages.length) % selectedImages.length);
+              }}
+              className="absolute left-6 top-1/2 transform -translate-y-1/2 z-10 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full p-4 transition-all duration-200 group"
+              aria-label="Previous"
+            >
+              <ChevronLeft className="w-8 h-8 text-white group-hover:scale-110 transition-transform" />
+            </button>
+          )}
+
+          {/* Next Button */}
+          {selectedImages.length > 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedImageIndex((prev) => (prev + 1) % selectedImages.length);
+              }}
+              className="absolute right-6 top-1/2 transform -translate-y-1/2 z-10 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full p-4 transition-all duration-200 group"
+              aria-label="Next"
+            >
+              <ChevronRight className="w-8 h-8 text-white group-hover:scale-110 transition-transform" />
+            </button>
+          )}
+
+          {/* Image Container */}
+          <div
+            className="max-w-7xl w-full max-h-[90vh] flex items-center justify-center relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={selectedImages[selectedImageIndex]}
+              alt={`Image ${selectedImageIndex + 1}`}
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+            />
+          </div>
+
+          {/* Navigation Info */}
+          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 text-white/60 text-xs text-center">
+            <div>{language === "de" ? "Drücke ESC zum Schließen" : "Press ESC to close"}</div>
+            {selectedImages.length > 1 && (
+              <div className="mt-1">
+                {selectedImageIndex + 1} / {selectedImages.length} • {language === "de" ? "Pfeiltasten zum Navigieren" : "Arrow keys to navigate"}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
