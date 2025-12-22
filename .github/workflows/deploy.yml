@@ -4,7 +4,8 @@ name: Deploy React App to GitHub Pages
 # REQUIRED GITHUB SECRETS:
 # ====================================
 # Frontend Secrets (used in build):
-# VITE_PAYPAL_CLIENT_ID          - PayPal LIVE Client ID
+# VITE_PAYPAL_LIVE_CLIENT_ID     - PayPal LIVE Client ID (for production)
+# VITE_PAYPAL_SANDBOX_CLIENT_ID  - PayPal Sandbox Client ID (for local/testing)
 # VITE_PAYPAL_BACKEND_URL        - PayPal Apps Script URL
 # VITE_STRIPE_PUBLISHABLE_KEY    - Stripe LIVE Publishable Key (pk_live_...)
 # VITE_STRIPE_BACKEND_URL        - Stripe Apps Script URL
@@ -13,14 +14,14 @@ name: Deploy React App to GitHub Pages
 # VITE_DONATION_WEBHOOK_URL      - Donation Webhook Apps Script URL
 #
 # Backend Secrets (synced to Apps Script automatically):
-# STRIPE_TEST_SECRET_KEY         - Stripe Test Secret Key (sk_test_...)
-# STRIPE_LIVE_SECRET_KEY         - Stripe Live Secret Key (sk_live_...)
-# PAYPAL_SANDBOX_CLIENT_ID       - PayPal Sandbox Client ID
-# PAYPAL_SANDBOX_CLIENT_SECRET   - PayPal Sandbox Client Secret
-# PAYPAL_LIVE_CLIENT_ID          - PayPal Live Client ID
-# PAYPAL_LIVE_CLIENT_SECRET      - PayPal Live Client Secret
-# STRIPE_SETUP_TOKEN             - Token for Stripe setup endpoint (generate random string)
-# PAYPAL_SETUP_TOKEN             - Token for PayPal setup endpoint (generate random string)
+# VITE_STRIPE_TEST_SECRET_KEY    - Stripe Test Secret Key (sk_test_...)
+# VITE_STRIPE_LIVE_SECRET_KEY    - Stripe Live Secret Key (sk_live_...)
+# VITE_PAYPAL_SANDBOX_CLIENT_ID  - PayPal Sandbox Client ID
+# VITE_PAYPAL_SANDBOX_CLIENT_SECRET - PayPal Sandbox Client Secret
+# VITE_PAYPAL_LIVE_CLIENT_ID     - PayPal Live Client ID
+# VITE_PAYPAL_LIVE_CLIENT_SECRET - PayPal Live Client Secret
+# VITE_STRIPE_SETUP_TOKEN        - Token for Stripe setup endpoint (generate random string)
+# VITE_PAYPAL_SETUP_TOKEN        - Token for PayPal setup endpoint (generate random string)
 #
 # OPTIONAL SECRETS:
 # VITE_GOOGLE_SHEET_RANGE        - Sheet range (defaults if not set)
@@ -70,7 +71,8 @@ jobs:
         VITE_GOOGLE_API_KEY: ${{ secrets.VITE_GOOGLE_API_KEY }}
         VITE_GOOGLE_SHEET_ID: ${{ secrets.VITE_GOOGLE_SHEET_ID }}
         VITE_GOOGLE_SHEET_RANGE: ${{ secrets.VITE_GOOGLE_SHEET_RANGE }}
-        VITE_PAYPAL_CLIENT_ID: ${{ secrets.VITE_PAYPAL_CLIENT_ID }}
+        VITE_PAYPAL_LIVE_CLIENT_ID: ${{ secrets.VITE_PAYPAL_LIVE_CLIENT_ID }}
+        VITE_PAYPAL_SANDBOX_CLIENT_ID: ${{ secrets.VITE_PAYPAL_SANDBOX_CLIENT_ID }}
         VITE_PAYPAL_BACKEND_URL: ${{ secrets.VITE_PAYPAL_BACKEND_URL }}
         VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
         VITE_STRIPE_BACKEND_URL: ${{ secrets.VITE_STRIPE_BACKEND_URL }}
@@ -90,10 +92,10 @@ jobs:
           -H "Content-Type: application/json" \
           -d "{
             \"action\": \"setup\",
-            \"setup_token\": \"${{ secrets.STRIPE_SETUP_TOKEN }}\",
+            \"setup_token\": \"${{ secrets.VITE_STRIPE_SETUP_TOKEN }}\",
             \"secrets\": {
-              \"STRIPE_TEST_SECRET_KEY\": \"${{ secrets.STRIPE_TEST_SECRET_KEY }}\",
-              \"STRIPE_LIVE_SECRET_KEY\": \"${{ secrets.STRIPE_LIVE_SECRET_KEY }}\"
+              \"STRIPE_TEST_SECRET_KEY\": \"${{ secrets.VITE_STRIPE_TEST_SECRET_KEY }}\",
+              \"STRIPE_LIVE_SECRET_KEY\": \"${{ secrets.VITE_STRIPE_LIVE_SECRET_KEY }}\"
             }
           }" | jq '.'
       
@@ -105,12 +107,12 @@ jobs:
           -H "Content-Type: application/json" \
           -d "{
             \"action\": \"setup\",
-            \"setup_token\": \"${{ secrets.PAYPAL_SETUP_TOKEN }}\",
+            \"setup_token\": \"${{ secrets.VITE_PAYPAL_SETUP_TOKEN }}\",
             \"secrets\": {
-              \"PAYPAL_SANDBOX_CLIENT_ID\": \"${{ secrets.PAYPAL_SANDBOX_CLIENT_ID }}\",
-              \"PAYPAL_SANDBOX_CLIENT_SECRET\": \"${{ secrets.PAYPAL_SANDBOX_CLIENT_SECRET }}\",
-              \"PAYPAL_LIVE_CLIENT_ID\": \"${{ secrets.PAYPAL_LIVE_CLIENT_ID }}\",
-              \"PAYPAL_LIVE_CLIENT_SECRET\": \"${{ secrets.PAYPAL_LIVE_CLIENT_SECRET }}\"
+              \"VITE_PAYPAL_SANDBOX_CLIENT_ID\": \"${{ secrets.VITE_PAYPAL_SANDBOX_CLIENT_ID }}\",
+              \"VITE_PAYPAL_SANDBOX_CLIENT_SECRET\": \"${{ secrets.VITE_PAYPAL_SANDBOX_CLIENT_SECRET }}\",
+              \"VITE_PAYPAL_LIVE_CLIENT_ID\": \"${{ secrets.VITE_PAYPAL_LIVE_CLIENT_ID }}\",
+              \"VITE_PAYPAL_LIVE_CLIENT_SECRET\": \"${{ secrets.VITE_PAYPAL_LIVE_CLIENT_SECRET }}\"
             }
           }" | jq '.'
       
