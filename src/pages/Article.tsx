@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Calendar, User, ArrowLeft, Tag, Quote, ArrowRight, Euro, CheckCircle, Shield, BrickWall, Layers, Droplets, Sofa, Paintbrush, Zap, Toilet, Package, AlertCircle } from "lucide-react";
+import { Calendar, User, ArrowLeft, Tag, Quote, ArrowRight, Euro, CheckCircle, Shield, BrickWall, Layers, Droplets, Sofa, Paintbrush, Zap, Toilet, Package, AlertCircle, Home } from "lucide-react";
 import { getNewsArticles, NewsArticle, isUnpublishedArticle } from "@/data/newsArticles";
 import AgeDistributionChart from "@/components/AgeDistributionChart";
 import GenderDistributionChart from "@/components/GenderDistributionChart";
@@ -180,26 +180,278 @@ const Article = () => {
               {/* Photo-based article layout */}
               {article.isPhotoBased && article.photoGallery && (
                 <div className="my-16 md:my-24">
+                  {/* Community House Project Overview for article 11 */}
+                  {article.id === "11" && (() => {
+                    const projectCost = getProjectCost("Building the Community House");
+                    const communityProject = {
+                      title: t("projects.community.title"),
+                      teaser: t("projects.community.teaser"),
+                      description: t("projects.community.description"),
+                      goals: [
+                        t("projects.community.goal1"),
+                        t("projects.community.goal2"),
+                        t("projects.community.goal3"),
+                      ],
+                      impact: t("projects.community.impact"),
+                    };
+
+                    return (
+                      <Card className="mb-12 md:mb-16 overflow-hidden shadow-card">
+                        <div className="p-6 md:p-8">
+                          {/* Header with Icon */}
+                          <div className="flex items-center gap-3 mb-4">
+                            <div className="p-3 bg-primary/10 rounded-xl">
+                              <Home className="w-8 h-8 text-primary" />
+                            </div>
+                            <div>
+                              <h3 className="text-2xl md:text-3xl font-bold text-foreground">
+                                {communityProject.title}
+                              </h3>
+                              <p className="text-sm text-muted-foreground italic">
+                                {communityProject.teaser}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {/* Description */}
+                          <p className="text-base text-muted-foreground mb-6 leading-relaxed">
+                            {communityProject.description}
+                          </p>
+
+                          {/* Two Column Layout: Goals & Impact */}
+                          <div className="grid md:grid-cols-2 gap-6">
+                            {/* Goals */}
+                            <div>
+                              <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                                <span className="w-1 h-6 bg-primary rounded-full" />
+                                {t("projects.goals")}
+                              </h4>
+                              <ul className="space-y-2">
+                                {communityProject.goals.map((goal, i) => (
+                                  <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                    <span className="text-primary text-lg mt-0.5 flex-shrink-0">•</span>
+                                    <span className="leading-relaxed">{goal}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            {/* Impact */}
+                            <div>
+                              <h4 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                                <span className="w-1 h-6 bg-primary rounded-full" />
+                                {t("projects.impact_label")}
+                              </h4>
+                              <p className="text-sm text-muted-foreground leading-relaxed">
+                                {communityProject.impact}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    );
+                  })()}
+
+                  {/* Introduction text - highlighted, shown before gallery */}
                   {article.body?.introduction && article.body.introduction.length > 0 && (
                     <div className="mb-12 md:mb-16 space-y-6 max-w-3xl mx-auto">
-                      {article.body.introduction.map((paragraph, index) => (
-                        <p 
-                          key={index} 
-                          className={cn(
-                            "leading-relaxed text-foreground",
-                            index === 0 
-                              ? "text-2xl md:text-3xl font-light text-center" 
-                              : "text-lg md:text-xl"
-                          )}
-                        >
-                          {paragraph}
-                        </p>
-                      ))}
+                      <p className="text-2xl md:text-3xl font-light text-center leading-relaxed text-foreground">
+                        {article.body.introduction[0]}
+                      </p>
+                      {article.body.introduction.length > 1 && (
+                        <div className="space-y-4">
+                          {article.body.introduction.slice(1).map((paragraph, index) => (
+                            <p 
+                              key={index + 1} 
+                              className="text-lg md:text-xl leading-relaxed text-foreground"
+                            >
+                              {paragraph}
+                            </p>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                   <PhotoGallery gallery={article.photoGallery} />
                 </div>
               )}
+
+              {/* Progress Bar and Phases for Community House - for photo-based articles after gallery */}
+              {article.isPhotoBased && (article.id === "9" || article.id === "11") && (() => {
+                const projectCost = getProjectCost("Building the Community House");
+                if (!projectCost) return null;
+                
+                const formatCurrency = (amount: number, currency: string = "EUR") => {
+                  try {
+                    return new Intl.NumberFormat(language === "de" ? "de-DE" : "en-US", {
+                      style: "currency",
+                      currency,
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    }).format(amount);
+                  } catch {
+                    return `${amount.toFixed ? amount.toFixed(0) : amount} ${currency}`;
+                  }
+                };
+
+                // Extract phases in order
+                const itemsSortedByOrder = [...projectCost.items].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+                const phases: string[] = [];
+                const seenPhases = new Set<string>();
+                for (const item of itemsSortedByOrder) {
+                  if (!seenPhases.has(item.phase)) {
+                    seenPhases.add(item.phase);
+                    phases.push(item.phase);
+                  }
+                }
+
+                // Helper functions
+                const getItemPhaseName = (item: any): string => {
+                  if (language === "de" && item.phaseDe) {
+                    return item.phaseDe;
+                  }
+                  return item.phase;
+                };
+
+                const getPhaseNameTranslated = (phase: string): string => {
+                  const itemWithPhase = projectCost.items.find(item => item.phase === phase);
+                  if (itemWithPhase) {
+                    return getItemPhaseName(itemWithPhase);
+                  }
+                  return phase;
+                };
+
+                const getPhaseIcon = (phase: string) => {
+                  const phaseLower = phase.toLowerCase();
+                  if (phaseLower.includes('security')) return <Shield className="w-5 h-5" />;
+                  if ((phaseLower.includes('outer') && phaseLower.includes('walls')) || 
+                      (phaseLower.includes('outer') && phaseLower.includes('floor')) ||
+                      (phaseLower.includes('walls') && phaseLower.includes('flooring'))) {
+                    return <BrickWall className="w-5 h-5" />;
+                  }
+                  if (phaseLower.includes('foundation') && phaseLower.includes('sealing')) {
+                    return <Layers className="w-5 h-5" />;
+                  }
+                  if (phaseLower.includes('water') && phaseLower.includes('system')) {
+                    return <Droplets className="w-5 h-5" />;
+                  }
+                  if (phaseLower.includes('septic') || phaseLower.includes('soak')) {
+                    return <Droplets className="w-5 h-5" />;
+                  }
+                  if (phaseLower.includes('interior') && phaseLower.includes('furniture')) {
+                    return <Sofa className="w-5 h-5" />;
+                  }
+                  if (phaseLower.includes('innenwände') || 
+                      (phaseLower.includes('interior') && phaseLower.includes('walls'))) {
+                    return <Paintbrush className="w-5 h-5" />;
+                  }
+                  if (phaseLower.includes('electricity') && phaseLower.includes('lighting')) {
+                    return <Zap className="w-5 h-5" />;
+                  }
+                  if (phaseLower.includes('bathroom') && phaseLower.includes('sanitary')) {
+                    return <Toilet className="w-5 h-5" />;
+                  }
+                  return <Package className="w-5 h-5" />;
+                };
+
+                // Calculate phase progress
+                const phaseGroups = phases.map(phase => {
+                  const phaseItems = projectCost.items.filter(item => item.phase === phase);
+                  const phaseBudget = phaseItems.reduce((sum, item) => sum + (item.totalCostEUR || 0), 0);
+                  const phaseSpent = phaseItems.reduce((sum, item) => sum + (item.fundedCostEUR || 0), 0);
+                  const phaseProgress = phaseBudget > 0 ? (phaseSpent / phaseBudget) * 100 : 0;
+                  
+                  return {
+                    phase,
+                    name: getPhaseNameTranslated(phase),
+                    budget: phaseBudget,
+                    spent: phaseSpent,
+                    progress: Math.min(100, phaseProgress),
+                    isCompleted: phaseProgress >= 100,
+                    isPartiallyCompleted: phaseProgress > 0 && phaseProgress < 100,
+                  };
+                });
+
+                return (
+                  <div className="my-12 space-y-6">
+                    <h3 className="text-2xl font-bold text-foreground">
+                      {language === "de" ? "Bauphasen" : "Construction Phases"}
+                    </h3>
+                    {phaseGroups.map((phaseGroup, index) => {
+                      const Icon = () => getPhaseIcon(phaseGroup.phase);
+                      const phaseUrl = `/projects?section=community-house#${encodeURIComponent(phaseGroup.phase)}`;
+                      return (
+                        <Link
+                          key={phaseGroup.phase}
+                          to={phaseUrl}
+                          className="block"
+                        >
+                          <Card
+                            className={`p-4 transition-all cursor-pointer hover:shadow-md ${
+                              phaseGroup.isCompleted
+                                ? "bg-gradient-to-br from-green-50 to-green-100/50 border-2 border-green-300"
+                                : "bg-gradient-to-br from-gray-50 to-gray-100/50 border-2 border-gray-300"
+                            }`}
+                          >
+                            <div className="flex items-start gap-4">
+                              <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
+                                phaseGroup.isCompleted
+                                  ? "bg-green-500"
+                                  : "bg-gray-400"
+                              }`}>
+                                {phaseGroup.isCompleted ? (
+                                  <CheckCircle className="w-6 h-6 text-white" />
+                                ) : (
+                                  <div className="text-white">
+                                    {getPhaseIcon(phaseGroup.phase)}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h5 className="font-semibold text-foreground">
+                                    {phaseGroup.name}
+                                  </h5>
+                                  <span className={`text-sm font-semibold ${
+                                    phaseGroup.isCompleted
+                                      ? "text-green-700"
+                                      : "text-gray-600"
+                                  }`}>
+                                    {phaseGroup.progress.toFixed(0)}%
+                                  </span>
+                                </div>
+                                <Progress
+                                  value={phaseGroup.progress}
+                                  className={`h-2 ${
+                                    phaseGroup.isCompleted
+                                      ? "[&>div]:bg-green-500"
+                                      : "[&>div]:bg-gray-400"
+                                  }`}
+                                />
+                                <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+                                  <span>
+                                    {formatCurrency(phaseGroup.spent, projectCost.currency)} / {formatCurrency(phaseGroup.budget, projectCost.currency)}
+                                  </span>
+                                  {phaseGroup.isCompleted && (
+                                    <span className="text-green-700 font-medium">
+                                      {language === "de" ? "Abgeschlossen" : "Completed"}
+                                    </span>
+                                  )}
+                                  {!phaseGroup.isCompleted && (
+                                    <span className="text-gray-600 font-medium">
+                                      {language === "de" ? "Ausstehend" : "Pending"}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
 
               {/* Quote Component - shown after excerpt and before introduction */}
               {shouldShowQuote && article.id !== "9" && !article.isPhotoBased && (
@@ -453,7 +705,7 @@ const Article = () => {
                   );
                 })()}
 
-                {/* Progress Bar and Phases for Community House - at the end of article 9 */}
+                {/* Progress Bar and Phases for Community House - at the end of article 9 (article 11 shows it after gallery) */}
                 {article.id === "9" && (() => {
                   const projectCost = getProjectCost("Building the Community House");
                   if (!projectCost) return null;
