@@ -482,9 +482,7 @@ const DonationSuccess = () => {
                         {loadError}
                       </p>
                       <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-                        {language === "de" 
-                          ? "Die Spendenbescheinigung wird einmal am Jahresende versendet." 
-                          : "You will receive a confirmation email shortly."}
+                        {t("donation.success.confirmation.email")}
                       </p>
                     </div>
                   </div>
