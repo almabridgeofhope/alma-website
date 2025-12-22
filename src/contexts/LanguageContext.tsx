@@ -456,7 +456,7 @@ const translations = {
     "donation.faq.q3": "How is my donation used?",
     "donation.faq.a3": "Your donation directly supports our projects in Uganda, including water access, education, and sustainable livelihood programs. We maintain full transparency in our financial reporting.",
     "donation.faq.q4": "Can I cancel my monthly donation?",
-    "donation.faq.a4": "Yes, you can cancel your monthly donation at any time by contacting us at info@almabridgeofhope.org or through your payment provider.",
+    "donation.faq.a4": "Stripe: To cancel your Stripe subscription, please send an email to {email} with your request. Please include the email address you used for the donation so we can identify your subscription.\n\nPayPal: 1. Log in to your PayPal account at paypal.com. 2. Go to 'Settings' (gear icon) → 'Payments' → 'Manage automatic payments'. 3. Find your subscription to Alma Bridge of Hope. 4. Click on it and select 'Cancel' or 'Cancel automatic payments'.\n\nIf you encounter any problems, please contact us at {email}.",
     "donation.faq.q5": "How are the prices determined?",
     "donation.faq.a5": "The prices are determined through close coordination with our team in Uganda. All budget items are reviewed and approved together, ensuring that costs reflect local market prices and project needs. The prices include 1.5% for transaction fees and 4% for possible price and exchange rate fluctuations to avoid additional costs or delays. Remaining amounts are directly reinvested in projects in Uganda.",
     "donation.contact.title": "Questions about donating?",
@@ -501,6 +501,12 @@ const translations = {
     "donation.success.nextSteps.projects.button": "View Projects",
     "donation.success.nextSteps.donateAgain": "Make Another Donation",
     "donation.success.nextSteps.home": "Back to Home",
+    "donation.success.cancellation.title": "Cancel Your Monthly Donation",
+    "donation.success.cancellation.stripe": "Cancel via Stripe",
+    "donation.success.cancellation.paypal": "Cancel via PayPal",
+    "donation.success.cancellation.stripeDesc": "To cancel your Stripe subscription, please send an email to {email} with your request. Please include the email address you used for the donation so we can identify your subscription.",
+    "donation.success.cancellation.paypalDesc": "1. Log in to your PayPal account at paypal.com. 2. Go to 'Settings' (gear icon) → 'Payments' → 'Manage automatic payments'. 3. Find your subscription to Alma Bridge of Hope. 4. Click on it and select 'Cancel' or 'Cancel automatic payments'.",
+    "donation.success.cancellation.help": "If you encounter any problems or need assistance, please contact us at {email}.",
     
     // Donation Warning
     "donation.warning.title": "Testing Mode",
@@ -1240,7 +1246,7 @@ const translations = {
     "donation.faq.q3": "Wie wird meine Spende verwendet?",
     "donation.faq.a3": "Deine Spende unterstützt direkt unsere Projekte in Uganda, einschließlich Wasserzugang, Bildung und nachhaltigen Lebensgrundlagen-Programmen. Wir gewährleisten volle Transparenz in unserer Finanzberichterstattung.",
     "donation.faq.q4": "Kann ich meine monatliche Spende kündigen?",
-    "donation.faq.a4": "Ja, du kannst deine monatliche Spende jederzeit kündigen, indem du uns unter info@almabridgeofhope.org kontaktierst oder über deinen Zahlungsanbieter.",
+    "donation.faq.a4": "Stripe: Um dein Stripe-Abonnement zu kündigen, sende bitte eine E-Mail an {email} mit deiner Kündigungsanfrage. Bitte gib die E-Mail-Adresse an, die du für die Spende verwendet hast, damit wir dein Abonnement identifizieren können.\n\nPayPal: 1. Melde dich in deinem PayPal-Konto auf paypal.com an. 2. Gehe zu 'Einstellungen' (Zahnrad-Symbol) → 'Zahlungen' → 'Automatische Zahlungen verwalten'. 3. Finde dein Abonnement für Alma Bridge of Hope. 4. Klicke darauf und wähle 'Kündigen' oder 'Automatische Zahlungen kündigen'.\n\nFalls du dabei Probleme hast, kannst du dich gerne unter {email} bei uns melden.",
     "donation.faq.q5": "Wie entstehen die Preise?",
     "donation.faq.a5": "Die Preise entstehen durch enge Abstimmung mit unserem Team in Uganda. Alle Budgetposten werden gemeinsam geprüft und freigegeben, sodass die Kosten lokale Marktpreise und Projektbedürfnisse widerspiegeln. In den Preisen sind 1,5% für Transaktionsgebühren und 4% für mögliche Preis- und Kursschwankungen einberechnet, um zusätzliche Kosten oder Verzögerungen zu vermeiden. Restbeträge werden direkt in Projekte in Uganda reinvestiert.",
     "donation.contact.title": "Fragen zum Spenden?",
@@ -1285,6 +1291,12 @@ const translations = {
     "donation.success.nextSteps.projects.button": "Projekte ansehen",
     "donation.success.nextSteps.donateAgain": "Weitere Spende tätigen",
     "donation.success.nextSteps.home": "Zur Startseite",
+    "donation.success.cancellation.title": "Monatliche Spende kündigen",
+    "donation.success.cancellation.stripe": "Über Stripe kündigen",
+    "donation.success.cancellation.paypal": "Über PayPal kündigen",
+    "donation.success.cancellation.stripeDesc": "Um dein Stripe-Abonnement zu kündigen, sende bitte eine E-Mail an {email} mit deiner Kündigungsanfrage. Bitte gib die E-Mail-Adresse an, die du für die Spende verwendet hast, damit wir dein Abonnement identifizieren können.",
+    "donation.success.cancellation.paypalDesc": "1. Melde dich in deinem PayPal-Konto auf paypal.com an. 2. Gehe zu 'Einstellungen' (Zahnrad-Symbol) → 'Zahlungen' → 'Automatische Zahlungen verwalten'. 3. Finde dein Abonnement für Alma Bridge of Hope. 4. Klicke darauf und wähle 'Kündigen' oder 'Automatische Zahlungen kündigen'.",
+    "donation.success.cancellation.help": "Falls du dabei Probleme hast oder Hilfe benötigst, kannst du dich gerne unter {email} bei uns melden.",
     
     // Donation Warning
     "donation.warning.title": "Testmodus",
