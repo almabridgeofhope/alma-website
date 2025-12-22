@@ -26,8 +26,43 @@ import heroImage from "@/assets/nature/nature_2.webp";
 import communityImage from "@/assets/community/community_2.webp";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 
-// PayPal Configuration
-const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+// PayPal Configuration - Select Client ID based on environment
+const VITE_STAGE = import.meta.env.VITE_STAGE || "local";
+const PAYPAL_CLIENT_ID = VITE_STAGE === 'prod' 
+  ? import.meta.env.VITE_PAYPAL_LIVE_CLIENT_ID 
+  : import.meta.env.VITE_PAYPAL_SANDBOX_CLIENT_ID;
+
+// Diagnostic: Log which Client ID is loaded and from which environment
+if (typeof window !== 'undefined') {
+  const clientIdPreview = PAYPAL_CLIENT_ID ? `${PAYPAL_CLIENT_ID.substring(0, 10)}...` : "NOT SET";
+  const mode = import.meta.env.MODE || "development";
+  const sandboxId = import.meta.env.VITE_PAYPAL_SANDBOX_CLIENT_ID;
+  const liveId = import.meta.env.VITE_PAYPAL_LIVE_CLIENT_ID;
+  console.log("🔍 PayPal Environment Variable Diagnostics:");
+  console.log("   VITE_STAGE:", VITE_STAGE);
+  console.log("   MODE:", mode);
+  console.log("   Using Client ID:", VITE_STAGE === 'prod' ? 'LIVE' : 'SANDBOX');
+  console.log("   Frontend Client ID (first 10 chars):", clientIdPreview);
+  console.log("   Full Client ID length:", PAYPAL_CLIENT_ID ? PAYPAL_CLIENT_ID.length : 0);
+  console.log("   VITE_PAYPAL_SANDBOX_CLIENT_ID:", sandboxId ? `${sandboxId.substring(0, 10)}...` : "NOT SET");
+  console.log("   VITE_PAYPAL_LIVE_CLIENT_ID:", liveId ? `${liveId.substring(0, 10)}...` : "NOT SET");
+  console.log("");
+  console.log("📋 Vite Environment File Loading Priority:");
+  console.log("   1. .env.local (highest priority - used for local development)");
+  console.log("   2. .env");
+  console.log("   → If both exist, .env.local takes precedence");
+  console.log("");
+  console.log("⚠️ IMPORTANT: If Client ID doesn't match backend:");
+  console.log("   1. For local: Ensure VITE_PAYPAL_SANDBOX_CLIENT_ID matches PAYPAL_SANDBOX_CLIENT_ID in Google Apps Script");
+  console.log("   2. For production: Ensure VITE_PAYPAL_LIVE_CLIENT_ID matches PAYPAL_LIVE_CLIENT_ID in Google Apps Script");
+  console.log("   3. RESTART the dev server (npm run dev) after changing .env files");
+  console.log("   4. Vite only loads environment variables at startup, not during hot reload");
+  if (VITE_STAGE !== 'prod' && clientIdPreview !== "NOT SET" && !clientIdPreview.startsWith("AfPOv616xW")) {
+    console.warn("   ⚠️ MISMATCH DETECTED! Frontend Sandbox Client ID doesn't match expected backend ID.");
+    console.warn("   → Update VITE_PAYPAL_SANDBOX_CLIENT_ID in .env.local to match backend Client ID");
+    console.warn("   → Then restart the dev server: npm run dev");
+  }
+}
 
 // Stripe Configuration
 const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
@@ -167,6 +202,10 @@ const PayPalButtonWrapper = memo(({
   const isSubscription = !!createSubscription;
   const intent = isSubscription ? "subscription" : "capture";
   const vault = isSubscription ? true : undefined;
+  
+  // Determine PayPal environment based on VITE_STAGE
+  // PayPal SDK auto-detects from Client ID, but we can be explicit
+  const paypalEnv = import.meta.env.VITE_STAGE === 'prod' ? 'production' : 'sandbox';
 
   return (
     <PayPalScriptProvider
@@ -179,6 +218,9 @@ const PayPalButtonWrapper = memo(({
         "enable-funding": "paypal",
         "disable-funding": "card,credit,venmo,paylater,sepa",
         vault: vault as any,
+        // Explicitly set environment (though SDK auto-detects from Client ID)
+        // This ensures consistency with backend environment
+        ...(import.meta.env.VITE_STAGE === 'prod' ? {} : { "data-env": "sandbox" }),
       }}
     >
       <PayPalButtonsComponent
@@ -1149,6 +1191,30 @@ const Donation = () => {
   const onPayPalError = useCallback((err: any) => {
     console.error("PayPal error:", err);
     
+    // Check if this is a Client ID mismatch error (thrown by createPayPalSubscription)
+    if (err?.isClientIdMismatch || err?.message?.includes("Client ID mismatch") || err?.message?.includes("Client-ID stimmt nicht")) {
+      const clientIdMismatchMessage = language === "de"
+        ? "❌ PayPal Client-ID stimmt nicht überein!\n\n" +
+          "Die Frontend PayPal Client-ID stimmt nicht mit der Backend PayPal Client-ID überein.\n\n" +
+          "Bitte prüfen Sie:\n" +
+          "1. Browser-Konsole für detaillierte Client-ID-Vergleiche\n" +
+          "2. VITE_PAYPAL_SANDBOX_CLIENT_ID (für local) oder VITE_PAYPAL_LIVE_CLIENT_ID (für prod) in Ihrer .env-Datei\n" +
+          "3. PAYPAL_SANDBOX_CLIENT_ID oder PAYPAL_LIVE_CLIENT_ID in Google Apps Script\n" +
+          "4. Beide müssen von derselben PayPal-App im Developer Portal stammen\n\n" +
+          "Dies ist die häufigste Ursache für 404-Fehler bei Abonnements."
+        : "❌ PayPal Client ID mismatch!\n\n" +
+          "The frontend PayPal Client ID does not match the backend PayPal Client ID.\n\n" +
+          "Please check:\n" +
+          "1. Browser console for detailed Client ID comparisons\n" +
+          "2. VITE_PAYPAL_SANDBOX_CLIENT_ID (for local) or VITE_PAYPAL_LIVE_CLIENT_ID (for prod) in your .env file\n" +
+          "3. PAYPAL_SANDBOX_CLIENT_ID or PAYPAL_LIVE_CLIENT_ID in Google Apps Script\n" +
+          "4. Both must be from the same PayPal app in the Developer Portal\n\n" +
+          "This is the most common cause of 404 errors for subscriptions.";
+      showError(clientIdMismatchMessage);
+      setIsProcessingPayment(false);
+      return;
+    }
+    
     // Check if this is a subscription-related 404 error (Subscriptions not activated)
     const isSubscription404 = donationType === "monthly" && (
       err?.status === 404 ||
@@ -1170,36 +1236,54 @@ const Donation = () => {
     if (isSubscription404) {
       const subscriptionErrorMessage = language === "de"
         ? "\n\n⚠️ WICHTIG: PayPal-Abonnement konnte nicht erstellt werden (404 Fehler).\n\n" +
-          "Mögliche Ursachen:\n\n" +
-          "1. Abonnements nicht aktiviert (HÄUFIGSTE URSACHE):\n" +
+          "Bitte prüfen Sie die Browser-Konsole für detaillierte Diagnose-Informationen.\n\n" +
+          "Mögliche Ursachen (in Reihenfolge der Wahrscheinlichkeit):\n\n" +
+          "1. Client-ID stimmt nicht überein (SEHR HÄUFIG):\n" +
+          "   → Die Frontend PayPal Client-ID muss mit der Backend PayPal Client-ID übereinstimmen\n" +
+          "   → Frontend verwendet: VITE_PAYPAL_CLIENT_ID aus Ihrer .env-Datei\n" +
+          "   → Backend verwendet: VITE_PAYPAL_SANDBOX_CLIENT_ID oder VITE_PAYPAL_LIVE_CLIENT_ID in Google Apps Script\n" +
+          "   → Beide müssen von derselben PayPal-App im Developer Portal stammen\n" +
+          "   → Prüfen Sie die Browser-Konsole für einen Client-ID-Vergleich\n" +
+          "   → Prüfen Sie, dass Sie Sandbox-Credentials zum Testen und Live-Credentials für Produktion verwenden\n\n" +
+          "2. Abonnements nicht aktiviert:\n" +
           "   PayPal-Abonnements müssen in Ihrem PayPal-Geschäftskonto aktiviert werden.\n" +
           "   → Sandbox: https://www.sandbox.paypal.com/billing/plans\n" +
           "   → Live: https://www.paypal.com/billing/plans\n" +
           "   → Klicken Sie auf 'Plan erstellen', erstellen Sie einen beliebigen Plan und aktivieren Sie ihn\n" +
           "   → Dies aktiviert die Abonnementfunktion für Ihr Konto\n\n" +
-          "2. Subscriptions API nicht aktiviert:\n" +
+          "3. Subscriptions API nicht aktiviert:\n" +
           "   → Prüfen Sie im PayPal Developer Portal (https://developer.paypal.com/)\n" +
           "   → My Apps & Credentials → Ihre App → API-Berechtigungen\n" +
           "   → Stellen Sie sicher, dass 'Subscriptions' aktiviert ist\n\n" +
-          "3. Plan noch nicht verfügbar:\n" +
-          "   → Der Plan wurde erstellt, aber PayPal braucht manchmal einen Moment, um ihn verfügbar zu machen\n" +
-          "   → Versuchen Sie es in ein paar Sekunden erneut\n\n" +
+          "4. Plan noch nicht verfügbar:\n" +
+          "   → Der Plan wurde erstellt, aber PayPal braucht manchmal mehrere Sekunden, um ihn verfügbar zu machen\n" +
+          "   → Das System hat bereits mehrere Versuche unternommen\n" +
+          "   → Versuchen Sie es in ein paar Sekunden erneut oder kontaktieren Sie den Support\n\n" +
           "Einmalige Zahlungen funktionieren ohne diese Aktivierung, aber monatliche Abonnements erfordern sie."
         : "\n\n⚠️ IMPORTANT: PayPal subscription could not be created (404 error).\n\n" +
-          "Possible causes:\n\n" +
-          "1. Subscriptions not activated (MOST COMMON CAUSE):\n" +
+          "Please check the browser console for detailed diagnostic information.\n\n" +
+          "Possible causes (in order of likelihood):\n\n" +
+          "1. Client ID mismatch (VERY COMMON):\n" +
+          "   → The frontend PayPal Client ID must match the backend PayPal Client ID\n" +
+          "   → Frontend uses: VITE_PAYPAL_CLIENT_ID from your .env file\n" +
+          "   → Backend uses: VITE_PAYPAL_SANDBOX_CLIENT_ID or VITE_PAYPAL_LIVE_CLIENT_ID in Google Apps Script\n" +
+          "   → Both must be from the same PayPal app in the Developer Portal\n" +
+          "   → Check the browser console for Client ID comparison\n" +
+          "   → Check that you're using sandbox credentials for testing and live for production\n\n" +
+          "2. Subscriptions not activated:\n" +
           "   PayPal subscriptions need to be activated in your PayPal business account.\n" +
           "   → Sandbox: https://www.sandbox.paypal.com/billing/plans\n" +
           "   → Live: https://www.paypal.com/billing/plans\n" +
           "   → Click 'Create Plan', create any plan, and activate it\n" +
           "   → This activates the subscription feature for your account\n\n" +
-          "2. Subscriptions API not enabled:\n" +
+          "3. Subscriptions API not enabled:\n" +
           "   → Check in the PayPal Developer Portal (https://developer.paypal.com/)\n" +
           "   → My Apps & Credentials → Your App → API Permissions\n" +
           "   → Ensure 'Subscriptions' is enabled\n\n" +
-          "3. Plan not yet available:\n" +
-          "   → The plan was created, but PayPal sometimes needs a moment to make it available\n" +
-          "   → Try again in a few seconds\n\n" +
+          "4. Plan not yet available:\n" +
+          "   → The plan was created, but PayPal sometimes needs several seconds to make it available\n" +
+          "   → The system has already made multiple attempts\n" +
+          "   → Try again in a few seconds or contact support\n\n" +
           "One-time payments work without this activation, but monthly subscriptions require it.";
       
       detailedError += subscriptionErrorMessage;
@@ -1355,56 +1439,228 @@ const Donation = () => {
         status: "ACTIVE (should be immediately available)"
       });
       
-      // Small delay to ensure plan is fully propagated in PayPal's system
-      // This is sometimes needed even though the plan is created with ACTIVE status
-      console.log("⏳ Waiting 500ms for plan to be fully available in PayPal system...");
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Diagnostic: Log Client ID being used (first 10 chars for security)
+      const clientIdPreview = PAYPAL_CLIENT_ID ? `${PAYPAL_CLIENT_ID.substring(0, 10)}...` : "NOT SET";
+      const currentStage = import.meta.env.VITE_STAGE || "local";
+      console.log("🔑 PayPal Client ID (frontend):", clientIdPreview);
+      console.log("🌍 PayPal Environment (frontend):", currentStage, currentStage === 'prod' ? '(LIVE)' : '(SANDBOX)');
+      console.log("📋 Plan ID created:", planResult.plan_id);
       
-      // Create the subscription using the plan ID
+      // CRITICAL: Verify backend Client ID matches frontend (for debugging)
+      // This is the most common cause of 404 errors
+      let clientIdMismatch = false;
+      try {
+        console.log("🔍 Checking backend Client ID and environment...");
+        const backendDiagnostic = await paypalService.getDiagnosticInfo();
+        if (backendDiagnostic.ok && backendDiagnostic.diagnostic) {
+          const backendClientIdPreview = backendDiagnostic.diagnostic.client_id_preview || "UNKNOWN";
+          const backendStage = backendDiagnostic.diagnostic.stage || "unknown";
+          const backendApiBase = backendDiagnostic.diagnostic.api_base || "unknown";
+          
+          console.log("🔑 PayPal Client ID (backend):", backendClientIdPreview);
+          console.log("🌍 PayPal Environment (backend):", backendStage, backendStage === 'prod' ? '(LIVE)' : '(SANDBOX)');
+          console.log("🌐 PayPal API Base (backend):", backendApiBase);
+          
+          // Compare first 10 characters
+          const frontendPrefix = PAYPAL_CLIENT_ID ? PAYPAL_CLIENT_ID.substring(0, 10) : "";
+          const backendPrefix = backendDiagnostic.diagnostic.client_id_preview 
+            ? backendDiagnostic.diagnostic.client_id_preview.replace('...', '')
+            : "";
+          
+          // Check for Client ID mismatch
+          if (frontendPrefix && backendPrefix && frontendPrefix !== backendPrefix) {
+            clientIdMismatch = true;
+            console.error("❌ CLIENT ID MISMATCH DETECTED!");
+            console.error("   Frontend:", frontendPrefix + "...");
+            console.error("   Backend:", backendPrefix + "...");
+            console.error("   This WILL cause subscription creation to fail with 404!");
+            console.error("   → Frontend uses:", VITE_STAGE === 'prod' ? 'VITE_PAYPAL_LIVE_CLIENT_ID' : 'VITE_PAYPAL_SANDBOX_CLIENT_ID', "from .env");
+            console.error("   → Backend uses: PAYPAL_SANDBOX_CLIENT_ID or PAYPAL_LIVE_CLIENT_ID in Google Apps Script");
+            console.error("   → Both must be from the SAME PayPal app in Developer Portal");
+            console.error("   → Fix: Update", VITE_STAGE === 'prod' ? 'VITE_PAYPAL_LIVE_CLIENT_ID' : 'VITE_PAYPAL_SANDBOX_CLIENT_ID', "to match backend Client ID");
+          } else if (frontendPrefix && backendPrefix) {
+            console.log("✅ Client IDs match (first 10 characters)");
+          }
+          
+          // Check for environment mismatch
+          if (currentStage !== backendStage) {
+            console.warn("⚠️ Environment mismatch detected!");
+            console.warn(`   Frontend stage: ${currentStage}`);
+            console.warn(`   Backend stage: ${backendStage}`);
+            console.warn("   → This might cause issues if Client IDs don't match environments");
+          } else {
+            console.log("✅ Environments match");
+          }
+          
+          // Check if Client ID is set in backend
+          if (!backendDiagnostic.diagnostic.has_client_id) {
+            console.error("❌ Backend Client ID is NOT SET!");
+            console.error("   → Add VITE_PAYPAL_SANDBOX_CLIENT_ID or VITE_PAYPAL_LIVE_CLIENT_ID to Google Apps Script Properties");
+          }
+        } else {
+          console.warn("⚠️ Could not verify backend Client ID:", backendDiagnostic.error);
+          console.warn("   → This might indicate a backend configuration issue");
+        }
+      } catch (diagnosticError) {
+        console.error("❌ Diagnostic check failed:", diagnosticError);
+        console.error("   → This might indicate a backend connectivity issue");
+      }
+      
+      // If Client ID mismatch detected, throw error immediately
+      if (clientIdMismatch) {
+        const mismatchError = new Error(
+          language === "de"
+            ? "PayPal Client-ID stimmt nicht überein: Frontend und Backend verwenden unterschiedliche Client-IDs. Bitte prüfen Sie die Konfiguration."
+            : "PayPal Client ID mismatch: Frontend and backend are using different Client IDs. Please check your configuration."
+        );
+        (mismatchError as any).isClientIdMismatch = true;
+        throw mismatchError;
+      }
+      
+      // Optional: Verify plan exists and is ACTIVE before attempting subscription creation
+      // This helps diagnose PayPal account configuration issues
+      try {
+        console.log("🔍 Verifying plan exists in PayPal system...");
+        const planVerification = await paypalService.getPlanDetails(planResult.plan_id);
+        if (planVerification.ok && planVerification.plan) {
+          console.log("✅ Plan verified via API:", {
+            id: planVerification.plan.id,
+            status: planVerification.plan.status,
+            name: planVerification.plan.name,
+            product_id: planVerification.plan.product_id
+          });
+          if (planVerification.plan.status !== 'ACTIVE') {
+            console.warn("⚠️ Plan exists but status is not ACTIVE:", planVerification.plan.status);
+            console.warn("⚠️ This might cause subscription creation to fail!");
+          }
+        } else {
+          console.warn("⚠️ Could not verify plan (this might be normal if plan is still propagating):", planVerification.error);
+        }
+      } catch (verifyError) {
+        console.warn("⚠️ Plan verification failed (this might be normal):", verifyError);
+      }
+      
+      // PayPal sometimes needs time to propagate the plan across their systems
+      // Even though the plan is created with ACTIVE status, it may not be immediately
+      // available for subscription creation. We'll wait and retry if needed.
+      console.log("⏳ Waiting for plan to be fully available in PayPal system...");
+      
+      // Wait longer for plan propagation (PayPal sometimes needs 1-3 seconds)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Create the subscription using the plan ID with retry logic
       // According to PayPal docs: https://developer.paypal.com/docs/subscriptions/integrate/
       // The createSubscription function should return actions.subscription.create({ plan_id: 'YOUR_PLAN_ID' })
-      // The PayPal SDK handles the promise internally
       console.log("🔄 Creating subscription with plan_id:", planResult.plan_id);
       console.log("📝 Plan was created successfully and should be ACTIVE");
       console.log("⏱️ Plan creation timestamp:", new Date().toISOString());
       
-      try {
-        // Return the promise from actions.subscription.create() directly
-        // The PayPal SDK will handle the subscription creation and call onApprove when done
-        console.log("🚀 Calling actions.subscription.create() with plan_id:", planResult.plan_id);
-        
-        const subscriptionPromise = actions.subscription.create({
-          plan_id: planResult.plan_id
-        });
-        
-        // Add promise handlers to log the result
-        subscriptionPromise
-          .then((subscriptionId: string) => {
-            console.log("✅ Subscription created successfully! Subscription ID:", subscriptionId);
-          })
-          .catch((error: any) => {
-            console.error("❌ Subscription creation failed:", error);
-            console.error("❌ Error details:", {
-              message: error?.message,
-              status: error?.status,
-              response: error?.response,
-              details: error?.details
-            });
+      // Retry logic for subscription creation
+      // PayPal plans sometimes need time to propagate, so we retry with exponential backoff
+      const maxRetries = 4; // Increased to 4 attempts
+      let lastError: any = null;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`🚀 Attempt ${attempt}/${maxRetries}: Calling actions.subscription.create() with plan_id:`, planResult.plan_id);
+          
+          // Actually await the promise to catch rejections properly
+          const subscriptionId = await actions.subscription.create({
+            plan_id: planResult.plan_id
           });
-        
-        console.log("✅ Subscription creation promise returned, waiting for PayPal response...");
-        return subscriptionPromise;
-      } catch (subscriptionError) {
-        console.error("❌ Error calling actions.subscription.create():", subscriptionError);
-        console.error("❌ Error type:", typeof subscriptionError);
-        console.error("❌ Error details:", {
-          message: (subscriptionError as any)?.message,
-          status: (subscriptionError as any)?.status,
-          response: (subscriptionError as any)?.response,
-          details: (subscriptionError as any)?.details
-        });
-        throw subscriptionError;
+          
+          // Success! Return the subscription ID
+          console.log("✅ Subscription created successfully! Subscription ID:", subscriptionId);
+          return subscriptionId;
+          
+        } catch (subscriptionError: any) {
+          lastError = subscriptionError;
+          
+          // Extract error information
+          const errorMessage = subscriptionError?.message || String(subscriptionError);
+          const errorDetails = subscriptionError?.details || subscriptionError?.response || {};
+          const errorStatus = subscriptionError?.status || errorDetails?.status || 0;
+          
+          // Check if this is a resource not found error (404)
+          const isResourceNotFound = 
+            errorStatus === 404 ||
+            errorMessage.includes("RESOURCE_NOT_FOUND") || 
+            errorMessage.includes("INVALID_RESOURCE_ID") ||
+            errorMessage.includes("does not exist") ||
+            errorMessage.includes("404") ||
+            errorMessage.toLowerCase().includes("not found");
+          
+          console.error(`❌ Subscription creation attempt ${attempt}/${maxRetries} failed:`, {
+            error: subscriptionError,
+            message: errorMessage,
+            status: errorStatus,
+            details: errorDetails,
+            isResourceNotFound: isResourceNotFound,
+            plan_id: planResult.plan_id,
+            client_id_preview: PAYPAL_CLIENT_ID ? `${PAYPAL_CLIENT_ID.substring(0, 10)}...` : "NOT SET",
+            environment: import.meta.env.VITE_STAGE || "local (sandbox)"
+          });
+          
+          // Additional diagnostic for 404 errors
+          if (isResourceNotFound) {
+            console.error("🔍 404 Error Diagnostics:", {
+              "Plan ID": planResult.plan_id,
+              "Plan Format Valid": planResult.plan_id.startsWith("P-"),
+              "Client ID Set": !!PAYPAL_CLIENT_ID,
+              "Client ID Preview": PAYPAL_CLIENT_ID ? `${PAYPAL_CLIENT_ID.substring(0, 10)}...` : "NOT SET",
+              "Environment": import.meta.env.VITE_STAGE || "local",
+              "Attempt": `${attempt}/${maxRetries}`,
+              "Possible Causes": [
+                "1. Client ID mismatch (MOST COMMON) - Frontend and backend using different Client IDs",
+                "2. PayPal account doesn't have subscriptions enabled - Check https://www.sandbox.paypal.com/billing/plans",
+                "3. PayPal app doesn't have subscription API permissions - Check Developer Portal",
+                "4. Plan not yet propagated in PayPal system (less likely after multiple retries)",
+                "5. Wrong environment (sandbox vs live) mismatch"
+              ],
+              "Troubleshooting Steps": [
+                "1. Check console logs above for Client ID comparison",
+                "2. Verify VITE_PAYPAL_SANDBOX_CLIENT_ID (local) or VITE_PAYPAL_LIVE_CLIENT_ID (prod) matches backend Client ID",
+                "3. Log in to PayPal Sandbox and create a test plan manually",
+                "4. Check PayPal Developer Portal API permissions",
+                "5. Ensure both frontend and backend use same environment (sandbox/live)"
+              ]
+            });
+            
+            // Try to get backend diagnostic info again for this error
+            try {
+              const errorDiagnostic = await paypalService.getDiagnosticInfo();
+              if (errorDiagnostic.ok && errorDiagnostic.diagnostic) {
+                console.error("🔍 Backend Diagnostic at Error Time:", {
+                  "Backend Client ID Preview": errorDiagnostic.diagnostic.client_id_preview,
+                  "Backend Environment": errorDiagnostic.diagnostic.stage,
+                  "Backend API Base": errorDiagnostic.diagnostic.api_base,
+                  "Has Client ID": errorDiagnostic.diagnostic.has_client_id,
+                  "Has Client Secret": errorDiagnostic.diagnostic.has_client_secret
+                });
+              }
+            } catch (diagError) {
+              console.error("Could not get backend diagnostic during error:", diagError);
+            }
+          }
+          
+          // If it's a resource not found error and we have retries left, wait and retry
+          if (isResourceNotFound && attempt < maxRetries) {
+            // Exponential backoff: 2s, 3s, 4s (increased wait times)
+            const waitTime = (attempt + 1) * 1000;
+            console.log(`⏳ Plan not yet available (attempt ${attempt}/${maxRetries}), waiting ${waitTime}ms before retry...`);
+            console.log(`📋 Plan ID: ${planResult.plan_id}, created at: ${new Date().toISOString()}`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue;
+          } else {
+            // Either not a resource not found error, or we've exhausted retries
+            console.error(`❌ Final error after ${attempt} attempts:`, subscriptionError);
+            throw subscriptionError;
+          }
+        }
       }
+      
+      // If we get here, all retries failed
+      throw lastError || new Error("Failed to create subscription after multiple attempts");
     } catch (error) {
       console.error("Error creating PayPal subscription:", error);
       throw error;
@@ -1771,14 +2027,6 @@ const Donation = () => {
                       onValueChange={(value: "one-time" | "monthly") => {
                         const scrollY = window.scrollY;
                         setDonationType(value);
-                        
-                        // If switching to monthly and PayPal is selected, switch to SEPA (default)
-                        if (value === "monthly" && paymentMethod === "paypal") {
-                          // Switch to SEPA (default) if available, otherwise Stripe card
-                          if (STRIPE_PUBLISHABLE_KEY) {
-                            setPaymentMethod("stripe-sepa");
-                          }
-                        }
                         
                         // Prevent scrolling when switching donation type
                         requestAnimationFrame(() => {
@@ -2156,8 +2404,8 @@ const Donation = () => {
                           </div>
                         </>
                       )}
-                      {/* 3. PayPal (third, only available for one-time payments) */}
-                      {donationType === "one-time" && (
+                      {/* 3. PayPal (available for both one-time and monthly payments) */}
+                      {PAYPAL_CLIENT_ID && (
                         <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer flex-1 min-w-[150px]">
                           <RadioGroupItem value="paypal" id="payment-paypal" />
                           <Label htmlFor="payment-paypal" className="flex-1 cursor-pointer">
@@ -2166,31 +2414,21 @@ const Donation = () => {
                         </div>
                       )}
                     </RadioGroup>
-                    {/* Info message when monthly is selected and PayPal was previously selected */}
-                    {donationType === "monthly" && paymentMethod === "paypal" && (
-                      <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                          {language === "de" 
-                            ? "PayPal ist für monatliche Zahlungen nicht verfügbar. Bitte wählen Sie eine andere Zahlungsmethode."
-                            : "PayPal is not available for monthly payments. Please select another payment method."}
-                        </p>
-                      </div>
-                    )}
                   </div>
 
                   {/* Payment UI - Conditional based on selected method */}
                   <div className="w-full relative">
-                    {/* PayPal - Only available for one-time payments */}
-                    {paymentMethod === "paypal" && PAYPAL_CLIENT_ID && donationType === "one-time" && (
+                    {/* PayPal - Available for both one-time and monthly payments */}
+                    {paymentMethod === "paypal" && PAYPAL_CLIENT_ID && (
                       <div className="w-full relative" key="paypal-buttons">
                         <PayPalButtonWrapper
-                          createOrder={createPayPalOrder}
-                          createSubscription={undefined}
+                          createOrder={donationType === "one-time" ? createPayPalOrder : undefined}
+                          createSubscription={donationType === "monthly" ? createPayPalSubscription : undefined}
                           onApprove={onPayPalApprove}
                           onError={onPayPalError}
                           onCancel={onPayPalCancel}
                           language={language}
-                          key="paypal-one-time"
+                          key={`paypal-${donationType}`}
                         />
                         {/* Overlay to disable PayPal buttons when dialog is open */}
                         {(showSuccessDialog || showErrorDialog || showWarningDialog) && (
