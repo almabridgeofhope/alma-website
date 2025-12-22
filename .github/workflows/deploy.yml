@@ -64,6 +64,37 @@ jobs:
         
     - name: Install dependencies
       run: npm ci
+    
+    - name: Verify PayPal Secrets
+      run: |
+        echo "🔍 Checking PayPal Secrets..."
+        if [ -z "$PAYPAL_LIVE_CLIENT_ID" ]; then
+          echo "❌ VITE_PAYPAL_LIVE_CLIENT_ID is NOT SET or EMPTY"
+          exit 1
+        else
+          LENGTH=$(echo -n "$PAYPAL_LIVE_CLIENT_ID" | wc -c)
+          PREVIEW=$(echo -n "$PAYPAL_LIVE_CLIENT_ID" | cut -c1-10)
+          echo "✅ VITE_PAYPAL_LIVE_CLIENT_ID is set (length: $LENGTH)"
+          echo "   Preview: ${PREVIEW}..."
+        fi
+        if [ -z "$PAYPAL_SANDBOX_CLIENT_ID" ]; then
+          echo "⚠️ VITE_PAYPAL_SANDBOX_CLIENT_ID is NOT SET (optional for prod, but recommended)"
+        else
+          LENGTH=$(echo -n "$PAYPAL_SANDBOX_CLIENT_ID" | wc -c)
+          PREVIEW=$(echo -n "$PAYPAL_SANDBOX_CLIENT_ID" | cut -c1-10)
+          echo "✅ VITE_PAYPAL_SANDBOX_CLIENT_ID is set (length: $LENGTH)"
+          echo "   Preview: ${PREVIEW}..."
+        fi
+        if [ -z "$PAYPAL_BACKEND_URL" ]; then
+          echo "❌ VITE_PAYPAL_BACKEND_URL is NOT SET or EMPTY"
+          exit 1
+        else
+          echo "✅ VITE_PAYPAL_BACKEND_URL is set"
+        fi
+      env:
+        PAYPAL_LIVE_CLIENT_ID: ${{ secrets.VITE_PAYPAL_LIVE_CLIENT_ID }}
+        PAYPAL_SANDBOX_CLIENT_ID: ${{ secrets.VITE_PAYPAL_SANDBOX_CLIENT_ID }}
+        PAYPAL_BACKEND_URL: ${{ secrets.VITE_PAYPAL_BACKEND_URL }}
       
     - name: Build
       env:
