@@ -7,8 +7,8 @@
 // 3. Paste this code
 // 4. Add your PayPal Client ID and Client Secret in Script Properties:
 //    - File > Project properties > Script properties
-//    - Add: PAYPAL_CLIENT_ID = your_client_id
-//    - Add: PAYPAL_CLIENT_SECRET = your_client_secret
+//    - Add: VITE_PAYPAL_CLIENT_ID = your_client_id
+//    - Add: VITE_PAYPAL_CLIENT_SECRET = your_client_secret
 //    - Use SANDBOX credentials for testing, LIVE credentials for production
 // 5. Deploy as a web app:
 //    - Click Deploy > New deployment
@@ -36,23 +36,23 @@ function getPayPalCredentials(stage = 'local') {
   
   if (stage === 'prod') {
     // Production/Live credentials
-    clientId = props.getProperty('PAYPAL_LIVE_CLIENT_ID');
-    clientSecret = props.getProperty('PAYPAL_LIVE_CLIENT_SECRET');
+    clientId = props.getProperty('VITE_PAYPAL_LIVE_CLIENT_ID');
+    clientSecret = props.getProperty('VITE_PAYPAL_LIVE_CLIENT_SECRET');
     apiBase = 'https://api-m.paypal.com';
     
     if (!clientId || !clientSecret) {
-      throw new Error('PayPal LIVE credentials not configured. Add PAYPAL_LIVE_CLIENT_ID and PAYPAL_LIVE_CLIENT_SECRET to Script Properties.');
+      throw new Error('PayPal LIVE credentials not configured. Add VITE_PAYPAL_LIVE_CLIENT_ID and VITE_PAYPAL_LIVE_CLIENT_SECRET to Script Properties.');
     }
     
     console.log('Using PayPal LIVE credentials');
   } else {
     // Sandbox/Test credentials (default)
-    clientId = props.getProperty('PAYPAL_SANDBOX_CLIENT_ID');
-    clientSecret = props.getProperty('PAYPAL_SANDBOX_CLIENT_SECRET');
+    clientId = props.getProperty('VITE_PAYPAL_SANDBOX_CLIENT_ID');
+    clientSecret = props.getProperty('VITE_PAYPAL_SANDBOX_CLIENT_SECRET');
     apiBase = 'https://api-m.sandbox.paypal.com';
     
     if (!clientId || !clientSecret) {
-      throw new Error('PayPal SANDBOX credentials not configured. Add PAYPAL_SANDBOX_CLIENT_ID and PAYPAL_SANDBOX_CLIENT_SECRET to Script Properties.');
+      throw new Error('PayPal SANDBOX credentials not configured. Add VITE_PAYPAL_SANDBOX_CLIENT_ID and VITE_PAYPAL_SANDBOX_CLIENT_SECRET to Script Properties.');
     }
     
     console.log('Using PayPal SANDBOX credentials');
@@ -104,7 +104,7 @@ function getPayPalAccessToken(stage = 'local') {
 function getOrCreateDonationProduct(accessToken, stage = 'local') {
   // Try to get existing product first (separate product IDs for sandbox and production)
   const props = PropertiesService.getScriptProperties();
-  const productIdKey = stage === 'prod' ? 'PAYPAL_LIVE_DONATION_PRODUCT_ID' : 'PAYPAL_SANDBOX_DONATION_PRODUCT_ID';
+  const productIdKey = stage === 'prod' ? 'VITE_PAYPAL_LIVE_DONATION_PRODUCT_ID' : 'VITE_PAYPAL_SANDBOX_DONATION_PRODUCT_ID';
   let productId = props.getProperty(productIdKey);
   
   if (productId) {
@@ -250,7 +250,7 @@ function createSubscriptionPlan(accessToken, productId, amount, currency = 'EUR'
 /**
  * Secure Setup Endpoint
  * POST /?action=setup
- * Body: { setup_token: "...", secrets: { PAYPAL_SANDBOX_CLIENT_ID: "...", PAYPAL_SANDBOX_CLIENT_SECRET: "...", PAYPAL_LIVE_CLIENT_ID: "...", PAYPAL_LIVE_CLIENT_SECRET: "..." } }
+ * Body: { setup_token: "...", secrets: { VITE_PAYPAL_SANDBOX_CLIENT_ID: "...", VITE_PAYPAL_SANDBOX_CLIENT_SECRET: "...", VITE_PAYPAL_LIVE_CLIENT_ID: "...", VITE_PAYPAL_LIVE_CLIENT_SECRET: "..." } }
  * 
  * This endpoint allows GitHub Actions to automatically sync secrets from GitHub Secrets
  * to Apps Script Properties. The setup_token must match what's configured in GitHub Secrets.
@@ -259,12 +259,12 @@ function setupPayPalSecrets(requestData) {
   const properties = PropertiesService.getScriptProperties();
   
   // Get setup token from Script Properties (set manually once)
-  // This should be a strong random string, stored in GitHub Secrets as PAYPAL_SETUP_TOKEN
-  const expectedToken = properties.getProperty('PAYPAL_SETUP_TOKEN');
+  // This should be a strong random string, stored in GitHub Secrets as VITE_PAYPAL_SETUP_TOKEN
+  const expectedToken = properties.getProperty('VITE_PAYPAL_SETUP_TOKEN');
   
   // If no token is set, allow first-time setup (one-time initialization)
   if (!expectedToken) {
-    console.warn('⚠️ PAYPAL_SETUP_TOKEN not set. First-time setup allowed, but you should set a token for security.');
+    console.warn('⚠️ VITE_PAYPAL_SETUP_TOKEN not set. First-time setup allowed, but you should set a token for security.');
   }
   
   // Validate setup token
@@ -289,44 +289,44 @@ function setupPayPalSecrets(requestData) {
   const propertiesToSet = {};
   
   // Validate and prepare secrets
-  if (secrets.PAYPAL_SANDBOX_CLIENT_ID) {
-    if (secrets.PAYPAL_SANDBOX_CLIENT_ID.length < 10) {
+  if (secrets.VITE_PAYPAL_SANDBOX_CLIENT_ID) {
+    if (secrets.VITE_PAYPAL_SANDBOX_CLIENT_ID.length < 10) {
       return ContentService.createTextOutput(JSON.stringify({
         ok: false,
-        error: 'Invalid PAYPAL_SANDBOX_CLIENT_ID format'
+        error: 'Invalid VITE_PAYPAL_SANDBOX_CLIENT_ID format'
       })).setMimeType(ContentService.MimeType.JSON);
     }
-    propertiesToSet['PAYPAL_SANDBOX_CLIENT_ID'] = secrets.PAYPAL_SANDBOX_CLIENT_ID;
+    propertiesToSet['VITE_PAYPAL_SANDBOX_CLIENT_ID'] = secrets.VITE_PAYPAL_SANDBOX_CLIENT_ID;
   }
   
-  if (secrets.PAYPAL_SANDBOX_CLIENT_SECRET) {
-    if (secrets.PAYPAL_SANDBOX_CLIENT_SECRET.length < 10) {
+  if (secrets.VITE_PAYPAL_SANDBOX_CLIENT_SECRET) {
+    if (secrets.VITE_PAYPAL_SANDBOX_CLIENT_SECRET.length < 10) {
       return ContentService.createTextOutput(JSON.stringify({
         ok: false,
-        error: 'Invalid PAYPAL_SANDBOX_CLIENT_SECRET format'
+        error: 'Invalid VITE_PAYPAL_SANDBOX_CLIENT_SECRET format'
       })).setMimeType(ContentService.MimeType.JSON);
     }
-    propertiesToSet['PAYPAL_SANDBOX_CLIENT_SECRET'] = secrets.PAYPAL_SANDBOX_CLIENT_SECRET;
+    propertiesToSet['VITE_PAYPAL_SANDBOX_CLIENT_SECRET'] = secrets.VITE_PAYPAL_SANDBOX_CLIENT_SECRET;
   }
   
-  if (secrets.PAYPAL_LIVE_CLIENT_ID) {
-    if (secrets.PAYPAL_LIVE_CLIENT_ID.length < 10) {
+  if (secrets.VITE_PAYPAL_LIVE_CLIENT_ID) {
+    if (secrets.VITE_PAYPAL_LIVE_CLIENT_ID.length < 10) {
       return ContentService.createTextOutput(JSON.stringify({
         ok: false,
-        error: 'Invalid PAYPAL_LIVE_CLIENT_ID format'
+        error: 'Invalid VITE_PAYPAL_LIVE_CLIENT_ID format'
       })).setMimeType(ContentService.MimeType.JSON);
     }
-    propertiesToSet['PAYPAL_LIVE_CLIENT_ID'] = secrets.PAYPAL_LIVE_CLIENT_ID;
+    propertiesToSet['VITE_PAYPAL_LIVE_CLIENT_ID'] = secrets.VITE_PAYPAL_LIVE_CLIENT_ID;
   }
   
-  if (secrets.PAYPAL_LIVE_CLIENT_SECRET) {
-    if (secrets.PAYPAL_LIVE_CLIENT_SECRET.length < 10) {
+  if (secrets.VITE_PAYPAL_LIVE_CLIENT_SECRET) {
+    if (secrets.VITE_PAYPAL_LIVE_CLIENT_SECRET.length < 10) {
       return ContentService.createTextOutput(JSON.stringify({
         ok: false,
-        error: 'Invalid PAYPAL_LIVE_CLIENT_SECRET format'
+        error: 'Invalid VITE_PAYPAL_LIVE_CLIENT_SECRET format'
       })).setMimeType(ContentService.MimeType.JSON);
     }
-    propertiesToSet['PAYPAL_LIVE_CLIENT_SECRET'] = secrets.PAYPAL_LIVE_CLIENT_SECRET;
+    propertiesToSet['VITE_PAYPAL_LIVE_CLIENT_SECRET'] = secrets.VITE_PAYPAL_LIVE_CLIENT_SECRET;
   }
   
   // Store secrets
@@ -449,6 +449,40 @@ function doPost(e) {
 }
 
 /**
+ * Get PayPal plan details
+ * @param {string} accessToken - PayPal access token
+ * @param {string} planId - PayPal plan ID
+ * @param {string} stage - 'local' for sandbox, 'prod' for live
+ */
+function getPlanDetails(accessToken, planId, stage = 'local') {
+  const { apiBase } = getPayPalCredentials(stage);
+  const url = `${apiBase}/v1/billing/plans/${planId}`;
+  
+  const options = {
+    method: 'get',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    muteHttpExceptions: true
+  };
+  
+  try {
+    const response = UrlFetchApp.fetch(url, options);
+    const result = JSON.parse(response.getContentText());
+    
+    if (response.getResponseCode() !== 200) {
+      throw new Error(`Failed to get plan details: ${JSON.stringify(result)}`);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error getting PayPal plan details:', error);
+    throw error;
+  }
+}
+
+/**
  * Get PayPal subscription details
  * @param {string} accessToken - PayPal access token
  * @param {string} subscriptionId - PayPal subscription ID
@@ -488,6 +522,31 @@ function getSubscriptionDetails(accessToken, subscriptionId, stage = 'local') {
 function doGet(e) {
   const params = e.parameter || {};
   
+  // Handle get-plan action
+  if (params.action === 'get-plan' && params.plan_id) {
+    try {
+      const stage = params.stage || 'local';
+      const planId = params.plan_id;
+      
+      console.log(`Getting plan details for: ${planId} (stage: ${stage})`);
+      
+      const accessToken = getPayPalAccessToken(stage);
+      const planDetails = getPlanDetails(accessToken, planId, stage);
+      
+      return jsonResponse({
+        ok: true,
+        plan: planDetails
+      });
+    } catch (error) {
+      console.error('Error getting plan details:', error);
+      return jsonResponse({
+        ok: false,
+        error: error.toString(),
+        message: `Failed to get plan details: ${error.message}`
+      }, 500);
+    }
+  }
+  
   // Handle get-subscription action
   if (params.action === 'get-subscription' && params.subscription_id) {
     try {
@@ -513,12 +572,47 @@ function doGet(e) {
     }
   }
   
+  // Handle diagnostic action (for debugging Client ID mismatch)
+  if (params.action === 'diagnostic') {
+    try {
+      const stage = params.stage || 'local';
+      const credentials = getPayPalCredentials(stage);
+      
+      // Return Client ID preview (first 10 chars) for verification
+      // Client IDs are safe to expose, but we'll only show a preview for security
+      const clientIdPreview = credentials.clientId 
+        ? credentials.clientId.substring(0, 10) + '...' 
+        : 'NOT SET';
+      
+      return jsonResponse({
+        ok: true,
+        diagnostic: {
+          stage: stage,
+          client_id_preview: clientIdPreview,
+          client_id_length: credentials.clientId ? credentials.clientId.length : 0,
+          api_base: credentials.apiBase,
+          has_client_id: !!credentials.clientId,
+          has_client_secret: !!credentials.clientSecret,
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      console.error('Error getting diagnostic info:', error);
+      return jsonResponse({
+        ok: false,
+        error: error.toString(),
+        message: `Failed to get diagnostic info: ${error.message}`
+      }, 500);
+    }
+  }
+  
   // Default response
   return jsonResponse({
     ok: true,
     message: 'PayPal Subscription Backend is active',
     timestamp: new Date().toISOString(),
-    note: 'Stage is determined by the "stage" parameter in POST requests (local=sandbox, prod=live)'
+    note: 'Stage is determined by the "stage" parameter in POST requests (local=sandbox, prod=live)',
+    available_actions: ['get-plan', 'get-subscription', 'diagnostic']
   });
 }
 
