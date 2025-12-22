@@ -77,7 +77,7 @@ export interface MediaItem {
 
 export interface PhotoGallery {
   media: MediaItem[];
-  layout?: "grid" | "masonry" | "carousel";
+  layout?: "carousel";
 }
 
 export interface NewsArticle {
@@ -291,14 +291,8 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
       featured: true,
       isPhotoBased: true,
       photoGallery: {
-        layout: "masonry",
+        layout: "carousel",
         media: [
-          {
-            type: "image",
-            src: soakPitImage2,
-            alt: t("news.article11.gallery.image2.alt"),
-            caption: t("news.article11.gallery.image2.caption"),
-          },
           {
             type: "image",
             src: soakPitImage3,
