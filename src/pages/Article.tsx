@@ -19,6 +19,8 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import PhotoGallery from "@/components/PhotoGallery";
+import { cn } from "@/lib/utils";
 
 const Article = () => {
   const { date } = useParams<{ date: string }>();
@@ -175,8 +177,32 @@ const Article = () => {
                 {article.excerpt}
               </p>
 
+              {/* Photo-based article layout */}
+              {article.isPhotoBased && article.photoGallery && (
+                <div className="my-16 md:my-24">
+                  {article.body?.introduction && article.body.introduction.length > 0 && (
+                    <div className="mb-12 md:mb-16 space-y-6 max-w-3xl mx-auto">
+                      {article.body.introduction.map((paragraph, index) => (
+                        <p 
+                          key={index} 
+                          className={cn(
+                            "leading-relaxed text-foreground",
+                            index === 0 
+                              ? "text-2xl md:text-3xl font-light text-center" 
+                              : "text-lg md:text-xl"
+                          )}
+                        >
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  <PhotoGallery gallery={article.photoGallery} />
+                </div>
+              )}
+
               {/* Quote Component - shown after excerpt and before introduction */}
-              {shouldShowQuote && article.id !== "9" && (
+              {shouldShowQuote && article.id !== "9" && !article.isPhotoBased && (
                 <div className="my-12 p-8 bg-primary/5 border-l-4 border-primary rounded-r-lg">
                   <div className="flex items-start gap-4">
                     <Quote className="w-8 h-8 text-primary mt-1 flex-shrink-0" />
@@ -229,7 +255,7 @@ const Article = () => {
               
               <div className="text-base text-foreground leading-relaxed space-y-8">
                 {/* Introduction */}
-                {article.body?.introduction && article.body.introduction.length > 0 && article.id !== "9" && (
+                {article.body?.introduction && article.body.introduction.length > 0 && article.id !== "9" && !article.isPhotoBased && (
                   <div className="space-y-4">
                     {article.id === "4" ? (() => {
                       const inlineImage = article.additionalImages?.[0];

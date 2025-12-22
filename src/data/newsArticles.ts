@@ -15,6 +15,20 @@ import constructionHouse2Image from "@/assets/project/community_house/constructi
 import houseImage from "@/assets/project/community_house/house.webp";
 import house2Image from "@/assets/project/community_house/house_2.webp";
 import landWithPeopleImage from "@/assets/project/community_house/land_w_ppl.webp";
+// Soak pit update images (WebP format)
+import soakPitImage2 from "@/assets/project/2512_soak_pit_update/2.webp";
+import soakPitImage3 from "@/assets/project/2512_soak_pit_update/3.webp";
+import soakPitImage4 from "@/assets/project/2512_soak_pit_update/4.webp";
+import soakPitImage5 from "@/assets/project/2512_soak_pit_update/5.webp";
+import soakPitImage9 from "@/assets/project/2512_soak_pit_update/9.webp";
+import soakPitImage10 from "@/assets/project/2512_soak_pit_update/10.webp";
+import soakPitImage11 from "@/assets/project/2512_soak_pit_update/11.webp";
+import soakPitImage12 from "@/assets/project/2512_soak_pit_update/12.webp";
+import soakPitImage13 from "@/assets/project/2512_soak_pit_update/13.webp";
+// Soak pit update videos (MP4 format)
+import soakPitVideo1 from "@/assets/project/2512_soak_pit_update/1.mp4";
+import soakPitVideo6 from "@/assets/project/2512_soak_pit_update/6.mp4";
+import soakPitVideo7 from "@/assets/project/2512_soak_pit_update/7.mp4";
 
 export interface ArticleSubsection {
   title: string;
@@ -32,7 +46,7 @@ export interface ArticleSection {
 export interface ArticleBody {
   introduction?: string[];
   highlightTitle?: string;
-  sections: ArticleSection[];
+  sections?: ArticleSection[];
   conclusion?: string[];
   conclusionCTA?: {
     text: string;
@@ -42,6 +56,28 @@ export interface ArticleBody {
   quote?: ArticleQuote;
   quote2?: ArticleQuote;
   showQuote?: boolean;
+}
+
+export interface ArticleStat {
+  value: string;
+  label: string;
+}
+
+export interface ArticleQuote {
+  text: string;
+  author?: string;
+}
+
+export interface MediaItem {
+  type: "image" | "video";
+  src: string;
+  alt?: string;
+  caption?: string;
+}
+
+export interface PhotoGallery {
+  media: MediaItem[];
+  layout?: "grid" | "masonry" | "carousel";
 }
 
 export interface NewsArticle {
@@ -56,16 +92,8 @@ export interface NewsArticle {
   featured: boolean;
   additionalImages?: string[];
   body?: ArticleBody;
-}
-
-export interface ArticleStat {
-  value: string;
-  label: string;
-}
-
-export interface ArticleQuote {
-  text: string;
-  author?: string;
+  photoGallery?: PhotoGallery;
+  isPhotoBased?: boolean;
 }
 
 const sanitizeValue = (value: string, key: string): string => {
@@ -245,7 +273,104 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
     "news.article10.quote.author"
   );
 
+  const article11Introduction = splitToArray(
+    t("news.article11.introduction"),
+    "news.article11.introduction"
+  );
+
   const articles: NewsArticle[] = [
+    {
+      id: "11",
+      title: t("news.article11.title"),
+      excerpt: t("news.article11.excerpt"),
+      content: t("news.article11.content"),
+      author: t("news.article11.author"),
+      date: "2025-12-20",
+      category: t("news.categories.project_update"),
+      image: soakPitImage2,
+      featured: true,
+      isPhotoBased: true,
+      photoGallery: {
+        layout: "masonry",
+        media: [
+          {
+            type: "image",
+            src: soakPitImage2,
+            alt: t("news.article11.gallery.image2.alt"),
+            caption: t("news.article11.gallery.image2.caption"),
+          },
+          {
+            type: "image",
+            src: soakPitImage3,
+            alt: t("news.article11.gallery.image3.alt"),
+            caption: t("news.article11.gallery.image3.caption"),
+          },
+          {
+            type: "video",
+            src: soakPitVideo1,
+            alt: t("news.article11.gallery.video1.alt"),
+            caption: t("news.article11.gallery.video1.caption"),
+          },
+          {
+            type: "image",
+            src: soakPitImage4,
+            alt: t("news.article11.gallery.image4.alt"),
+            caption: t("news.article11.gallery.image4.caption"),
+          },
+          {
+            type: "image",
+            src: soakPitImage5,
+            alt: t("news.article11.gallery.image5.alt"),
+            caption: t("news.article11.gallery.image5.caption"),
+          },
+          {
+            type: "video",
+            src: soakPitVideo6,
+            alt: t("news.article11.gallery.video6.alt"),
+            caption: t("news.article11.gallery.video6.caption"),
+          },
+          {
+            type: "video",
+            src: soakPitVideo7,
+            alt: t("news.article11.gallery.video7.alt"),
+            caption: t("news.article11.gallery.video7.caption"),
+          },
+          {
+            type: "image",
+            src: soakPitImage9,
+            alt: t("news.article11.gallery.image9.alt"),
+            caption: t("news.article11.gallery.image9.caption"),
+          },
+          {
+            type: "image",
+            src: soakPitImage10,
+            alt: t("news.article11.gallery.image10.alt"),
+            caption: t("news.article11.gallery.image10.caption"),
+          },
+          {
+            type: "image",
+            src: soakPitImage11,
+            alt: t("news.article11.gallery.image11.alt"),
+            caption: t("news.article11.gallery.image11.caption"),
+          },
+          {
+            type: "image",
+            src: soakPitImage12,
+            alt: t("news.article11.gallery.image12.alt"),
+            caption: t("news.article11.gallery.image12.caption"),
+          },
+          {
+            type: "image",
+            src: soakPitImage13,
+            alt: t("news.article11.gallery.image13.alt"),
+            caption: t("news.article11.gallery.image13.caption"),
+          },
+        ],
+      },
+      body: {
+        introduction: article11Introduction,
+      },
+    },
     {
       id: "8",
       title: t("news.article8.title"),
