@@ -493,40 +493,36 @@ const Article = () => {
                 </div>
               )}
 
-              {/* Image Gallery for article 9 - clickable with lightbox */}
+              {/* Image Carousel for article 9 */}
               {article.id === "9" && article.additionalImages && article.additionalImages.length > 0 && (
                 <div className="my-12">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {article.additionalImages.map((image, index) => (
-                      <div
-                        key={index}
-                        className="relative group cursor-pointer overflow-hidden rounded-lg aspect-video bg-muted"
-                        onClick={() => {
-                          setSelectedImages(article.additionalImages || []);
-                          setSelectedImageIndex(index);
-                          setLightboxOpen(true);
-                        }}
-                      >
-                        <img
-                          src={image}
-                          alt={`${article.title} - Image ${index + 1}`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        {/* Overlay with zoom icon */}
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 backdrop-blur-sm rounded-full p-3">
-                            <ZoomIn className="w-6 h-6 text-gray-900" />
+                  <Carousel
+                    opts={{
+                      align: "start",
+                      loop: true,
+                    }}
+                    className="w-full"
+                  >
+                    <CarouselContent className="-ml-2 md:-ml-4">
+                      {article.additionalImages.map((image, index) => (
+                        <CarouselItem key={index} className="pl-2 md:pl-4 basis-full md:basis-1/2 lg:basis-1/3">
+                          <div className="p-1">
+                            <Card className="overflow-hidden">
+                              <div className="relative overflow-hidden rounded-lg aspect-video">
+                                <img
+                                  src={image}
+                                  alt={`${article.title} - Image ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            </Card>
                           </div>
-                        </div>
-                        {/* Hint text - always visible but more prominent on hover */}
-                        <div className="absolute bottom-2 left-2 right-2">
-                          <div className="bg-black/50 group-hover:bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded text-center transition-all duration-300">
-                            {language === "de" ? "Zum Vergrößern klicken" : "Click to enlarge"}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    <CarouselPrevious />
+                    <CarouselNext />
+                  </Carousel>
                 </div>
               )}
               
@@ -601,12 +597,6 @@ const Article = () => {
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/90 backdrop-blur-sm rounded-full p-3">
                             <ZoomIn className="w-6 h-6 text-gray-900" />
-                          </div>
-                        </div>
-                        {/* Hint text - always visible but more prominent on hover */}
-                        <div className="absolute bottom-2 left-2 right-2">
-                          <div className="bg-black/50 group-hover:bg-black/80 backdrop-blur-sm text-white text-xs px-2 py-1 rounded text-center transition-all duration-300">
-                            {language === "de" ? "Zum Vergrößern klicken" : "Click to enlarge"}
                           </div>
                         </div>
                       </div>
@@ -1181,13 +1171,14 @@ const Article = () => {
 
           {/* Image Container */}
           <div
-            className="max-w-7xl w-full max-h-[90vh] flex items-center justify-center relative"
+            className="w-full h-full flex items-center justify-center relative"
             onClick={(e) => e.stopPropagation()}
           >
             <img
               src={selectedImages[selectedImageIndex]}
               alt={`Image ${selectedImageIndex + 1}`}
-              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+              className="max-w-[95vw] max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+              style={{ aspectRatio: 'auto' }}
             />
           </div>
 
