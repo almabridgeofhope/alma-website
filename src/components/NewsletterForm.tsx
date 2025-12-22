@@ -42,18 +42,15 @@ export default function NewsletterForm({
 
     setIsLoading(true);
     try {
-      if (!endpoint) {
-        // If endpoint is not configured, still show success message (like Footer does)
-        // but log a warning for developers
-        console.warn("Newsletter endpoint not configured (VITE_NEWSLETTER_ENDPOINT)");
-        lastSubmittedAtRef.current = now;
-        setEmail("");
-        toast({
-          title: "Vielen Dank für deine Anmeldung!",
-          description: "Wir setzen dich auf unsere Newsletter-Liste.",
-          style: { backgroundColor: "#d1fae5", color: "#000000" } // Light green bg, black text
-        });
+      if (!endpoint || endpoint.trim() === "") {
+        // Endpoint is missing - show error message
+        console.error("Newsletter endpoint not configured (VITE_NEWSLETTER_ENDPOINT)");
         setIsLoading(false);
+        toast({
+          title: "Newsletter-Anmeldung nicht verfügbar",
+          description: "Der Newsletter-Service ist derzeit nicht konfiguriert. Bitte kontaktiere uns direkt.",
+          variant: "destructive"
+        });
         return;
       }
 
