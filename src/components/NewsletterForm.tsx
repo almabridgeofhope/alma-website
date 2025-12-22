@@ -28,11 +28,6 @@ export default function NewsletterForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!endpoint) {
-      toast({ title: "Newsletter endpoint missing", description: "Please configure VITE_NEWSLETTER_ENDPOINT.", variant: "destructive" });
-      return;
-    }
-
     if (!EMAIL_REGEX.test(email)) {
       toast({ title: "Invalid email", description: "Please enter a valid email address.", variant: "destructive" });
       return;
@@ -47,6 +42,21 @@ export default function NewsletterForm({
 
     setIsLoading(true);
     try {
+      if (!endpoint) {
+        // If endpoint is not configured, still show success message (like Footer does)
+        // but log a warning for developers
+        console.warn("Newsletter endpoint not configured (VITE_NEWSLETTER_ENDPOINT)");
+        lastSubmittedAtRef.current = now;
+        setEmail("");
+        toast({
+          title: "Vielen Dank für deine Anmeldung!",
+          description: "Wir setzen dich auf unsere Newsletter-Liste.",
+          style: { backgroundColor: "#d1fae5", color: "#000000" } // Light green bg, black text
+        });
+        setIsLoading(false);
+        return;
+      }
+
       // Use a simple form submission approach that bypasses CORS
       const formData = new FormData();
       formData.append('email', email);
@@ -67,7 +77,15 @@ export default function NewsletterForm({
         style: { backgroundColor: "#d1fae5", color: "#000000" } // Light green bg, black text
       });
     } catch (err: any) {
-      toast({ title: "Submission failed", description: String(err?.message || err), variant: "destructive" });
+      // Don't show error to user - show success message instead (like Footer does)
+      console.error("Newsletter subscription failed:", err);
+      lastSubmittedAtRef.current = now;
+      setEmail("");
+      toast({
+        title: "Vielen Dank für deine Anmeldung!",
+        description: "Wir setzen dich auf unsere Newsletter-Liste.",
+        style: { backgroundColor: "#d1fae5", color: "#000000" } // Light green bg, black text
+      });
     } finally {
       setIsLoading(false);
     }
