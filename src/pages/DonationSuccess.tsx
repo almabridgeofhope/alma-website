@@ -483,7 +483,7 @@ const DonationSuccess = () => {
                       </p>
                       <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
                         {language === "de" 
-                          ? "Sie erhalten eine Bestätigungs-E-Mail in Kürze." 
+                          ? "Die Spendenbescheinigung wird einmal am Jahresende versendet." 
                           : "You will receive a confirmation email shortly."}
                       </p>
                     </div>
