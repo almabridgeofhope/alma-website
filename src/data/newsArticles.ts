@@ -25,10 +25,13 @@ import soakPitImage10 from "@/assets/project/2512_soak_pit_update/10.webp";
 import soakPitImage11 from "@/assets/project/2512_soak_pit_update/11.webp";
 import soakPitImage12 from "@/assets/project/2512_soak_pit_update/12.webp";
 import soakPitImage13 from "@/assets/project/2512_soak_pit_update/13.webp";
+import soakPitImage15 from "@/assets/project/2512_soak_pit_update/15.webp";
+import soakPitImage16 from "@/assets/project/2512_soak_pit_update/16.webp";
 // Soak pit update videos (MP4 format)
 import soakPitVideo1 from "@/assets/project/2512_soak_pit_update/1.mp4";
 import soakPitVideo6 from "@/assets/project/2512_soak_pit_update/6.mp4";
 import soakPitVideo7 from "@/assets/project/2512_soak_pit_update/7.mp4";
+import soakPitVideo12 from "@/assets/project/2512_soak_pit_update/12.mp4";
 
 export interface ArticleSubsection {
   title: string;
@@ -358,6 +361,24 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
             src: soakPitImage13,
             alt: t("news.article11.gallery.image13.alt"),
             caption: t("news.article11.gallery.image13.caption"),
+          },
+          {
+            type: "video",
+            src: soakPitVideo12,
+            alt: t("news.article11.gallery.video12.alt"),
+            caption: t("news.article11.gallery.video12.caption"),
+          },
+          {
+            type: "image",
+            src: soakPitImage15,
+            alt: t("news.article11.gallery.image15.alt"),
+            caption: t("news.article11.gallery.image15.caption"),
+          },
+          {
+            type: "image",
+            src: soakPitImage16,
+            alt: t("news.article11.gallery.image16.alt"),
+            caption: t("news.article11.gallery.image16.caption"),
           },
         ],
       },
