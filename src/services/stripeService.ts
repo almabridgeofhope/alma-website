@@ -9,6 +9,8 @@ export interface CreateCheckoutSessionRequest {
   customerEmail?: string;
   customerName?: string;
   isSubscription?: boolean; // true for monthly recurring payments
+  successUrl?: string; // Optional override for success redirect
+  cancelUrl?: string;  // Optional override for cancel redirect
 }
 
 export interface CreateCheckoutSessionResponse {
@@ -68,8 +70,8 @@ class StripeService {
       const baseUrl = window.location.origin;
       // Use BrowserRouter format (no hash)
       // Redirect directly to success page with session_id
-      const successUrl = `${baseUrl}/donation/success?session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${baseUrl}/donation?stripe=cancelled`;
+      const successUrl = request.successUrl || `${baseUrl}/donation/success?session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = request.cancelUrl || `${baseUrl}/donation?stripe=cancelled`;
 
       // Google Apps Script web apps have CORS limitations
       // Use form-encoded data to bypass CORS preflight

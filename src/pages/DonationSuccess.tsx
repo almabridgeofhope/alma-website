@@ -225,10 +225,21 @@ const DonationSuccess = () => {
         }];
       }
       
+      const isMembership =
+        details.metadata?.subscription_type === "membership" ||
+        searchParams.get("source") === "membership" ||
+        searchParams.get("flow") === "membership" ||
+        searchParams.get("donationType") === "new-membership";
+      const membershipReason =
+        details.metadata?.membership_comment ||
+        details.metadata?.comment ||
+        searchParams.get("comment") ||
+        undefined;
+
       const donationData = {
         items: donationItems,
         totalAmount: finalAmount,
-        donationType: webhookDonationType as "one-time" | "monthly",
+        donationType: (isMembership ? "new-membership" : webhookDonationType) as "one-time" | "monthly" | "new-membership",
         paymentMethod: stripePaymentMethod,
         donorEmail: customerEmail || undefined,
         donorName: customerName || undefined,
@@ -243,7 +254,7 @@ const DonationSuccess = () => {
           country: customerAddress.country || undefined,
         } : undefined,
         wantsNewsletter: details.metadata?.wantsNewsletter === 'true',
-        comment: details.metadata?.comment || undefined,
+        comment: membershipReason,
       };
       
       console.log("=== Sending to Webhook ===");
