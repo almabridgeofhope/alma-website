@@ -75,6 +75,13 @@ const Footer = () => {
               >
                 {t("nav.contact")}
               </Link>
+              <Link 
+                to="/membership" 
+                className="block text-muted-foreground hover:text-primary transition-colors"
+                onClick={(e) => handleFooterNavClick("/membership", e)}
+              >
+                {t("nav.membership")}
+              </Link>
             </nav>
           </div>
 
