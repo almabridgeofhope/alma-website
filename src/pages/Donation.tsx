@@ -399,6 +399,9 @@ const Donation = () => {
     const cancelled = searchParams.get("cancelled");
     const stripeStatus = searchParams.get("stripe");
     const sessionId = searchParams.get("session_id");
+    const flow = searchParams.get("flow");
+    const source = searchParams.get("source");
+    const isMembershipFlow = flow === "membership" || source === "membership";
 
     // Ensure we're on the donation page - if we have cancellation params but we're not on /donation, redirect there
     if ((cancelled === "true" || stripeStatus === "cancelled") && window.location.pathname !== '/donation') {
@@ -422,10 +425,20 @@ const Donation = () => {
           amount: finalAmount,
           type: donationType,
         });
-        navigate(`/donation/success?${params.toString()}`);
+        if (isMembershipFlow) {
+          params.set("flow", "membership");
+          params.set("source", source || "membership");
+          navigate(`/membership/success?${params.toString()}`);
+        } else {
+          navigate(`/donation/success?${params.toString()}`);
+        }
       } else {
         // If no amount, just redirect to success page
-        navigate("/donation/success");
+        if (isMembershipFlow) {
+          navigate("/membership/success?flow=membership&source=membership");
+        } else {
+          navigate("/donation/success");
+        }
       }
       return;
     }
