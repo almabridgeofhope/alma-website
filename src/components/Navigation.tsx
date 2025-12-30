@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, Globe } from "lucide-react";
+import { Menu, X, Globe, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "@/assets/alma-logo.svg";
@@ -8,10 +8,18 @@ import { DonateCartButton, CartBadge } from "@/components/CartSidebar";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isInfoMobileOpen, setIsInfoMobileOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const isDonationPage = location.pathname === '/donation';
+  
+  // Close the nested mobile menu when the main menu closes
+  useEffect(() => {
+    if (!isMenuOpen) {
+      setIsInfoMobileOpen(false);
+    }
+  }, [isMenuOpen]);
   
   // Refs for navigation buttons on donation page
   const homeRef = useRef<HTMLButtonElement>(null);
@@ -19,6 +27,7 @@ const Navigation = () => {
   const newsRef = useRef<HTMLButtonElement>(null);
   const aboutRef = useRef<HTMLButtonElement>(null);
   const contactRef = useRef<HTMLButtonElement>(null);
+  const membershipRef = useRef<HTMLButtonElement>(null);
   const logoRef = useRef<HTMLButtonElement>(null);
   
   // Handler for navigation links that works even when PayPal intercepts clicks
@@ -62,6 +71,7 @@ const Navigation = () => {
       addButton(newsRef, '/news');
       addButton(aboutRef, '/about');
       addButton(contactRef, '/contact');
+      addButton(membershipRef, '/membership');
       addButton(logoRef, '/');
       
       return buttonMap;
@@ -152,21 +162,43 @@ const Navigation = () => {
                 >
                   {t("nav.news")}
                 </button>
+                <div className="relative group">
+                  <button
+                    className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                    type="button"
+                  >
+                    <span className="font-medium">{t("nav.about")}</span>
+                    <ChevronDown
+                      size={16}
+                      className="transition-transform group-hover:rotate-180 group-focus-within:rotate-180"
+                    />
+                  </button>
+                  <div className="absolute left-0 top-full pt-2 w-48 rounded-lg border border-border bg-background shadow-lg opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto transition-opacity">
+                    <button
+                      ref={aboutRef}
+                      onClick={() => handleNavClick("/about")}
+                      className="block w-full px-4 py-2 text-left text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                      type="button"
+                    >
+                      {t("nav.about")}
+                    </button>
+                    <button
+                      ref={contactRef}
+                      onClick={() => handleNavClick("/contact")}
+                      className="block w-full px-4 py-2 text-left text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                      type="button"
+                    >
+                      {t("nav.contact")}
+                    </button>
+                  </div>
+                </div>
                 <button
-                  ref={aboutRef}
-                  onClick={() => handleNavClick("/about")}
+                  ref={membershipRef}
+                  onClick={() => handleNavClick("/membership")}
                   className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
                   type="button"
                 >
-                  {t("nav.about")}
-                </button>
-                <button
-                  ref={contactRef}
-                  onClick={() => handleNavClick("/contact")}
-                  className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-                  type="button"
-                >
-                  {t("nav.contact")}
+                  {t("nav.membership")}
                 </button>
                 <Link 
                   to="/donation" 
@@ -201,19 +233,40 @@ const Navigation = () => {
                 >
                   {t("nav.news")}
                 </Link>
+                <div className="relative group">
+                  <button
+                    className="inline-flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors"
+                    type="button"
+                  >
+                    <span className="font-medium">{t("nav.about")}</span>
+                    <ChevronDown
+                      size={16}
+                      className="transition-transform group-hover:rotate-180 group-focus-within:rotate-180"
+                    />
+                  </button>
+                  <div className="absolute left-0 top-full pt-2 w-48 rounded-lg border border-border bg-background shadow-lg opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto transition-opacity">
+                    <Link 
+                      to="/about" 
+                      className="block px-4 py-2 text-muted-foreground hover:text-primary transition-colors"
+                      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    >
+                      {t("nav.about")}
+                    </Link>
+                    <Link 
+                      to="/contact" 
+                      className="block px-4 py-2 text-muted-foreground hover:text-primary transition-colors"
+                      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    >
+                      {t("nav.contact")}
+                    </Link>
+                  </div>
+                </div>
                 <Link 
-                  to="/about" 
+                  to="/membership" 
                   className="text-muted-foreground hover:text-primary transition-colors"
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                 >
-                  {t("nav.about")}
-                </Link>
-                <Link 
-                  to="/contact" 
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                >
-                  {t("nav.contact")}
+                  {t("nav.membership")}
                 </Link>
                 <Link 
                   to="/donation" 
@@ -284,24 +337,53 @@ const Navigation = () => {
                   {t("nav.news")}
                 </button>
                 <button
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    handleNavClick("/about");
-                  }}
-                  className="block text-muted-foreground hover:text-primary transition-colors w-full text-left cursor-pointer"
+                  onClick={() => setIsInfoMobileOpen(!isInfoMobileOpen)}
+                  className="flex w-full items-center justify-between rounded-md px-3 py-2 text-muted-foreground hover:text-primary transition-colors"
                   type="button"
                 >
-                  {t("nav.about")}
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{t("nav.about")}</span>
+                  </div>
+                  <ChevronDown
+                    size={16}
+                    className={`transition-transform ${isInfoMobileOpen ? "rotate-180" : ""}`}
+                  />
                 </button>
+                {isInfoMobileOpen && (
+                  <div className="ml-2 mt-2 space-y-2 border-l border-border/60 pl-3">
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setIsInfoMobileOpen(false);
+                        handleNavClick("/about");
+                      }}
+                      className="block w-full text-left text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                      type="button"
+                    >
+                      {t("nav.about")}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setIsInfoMobileOpen(false);
+                        handleNavClick("/contact");
+                      }}
+                      className="block w-full text-left text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                      type="button"
+                    >
+                      {t("nav.contact")}
+                    </button>
+                  </div>
+                )}
                 <button
                   onClick={() => {
                     setIsMenuOpen(false);
-                    handleNavClick("/contact");
+                    handleNavClick("/membership");
                   }}
                   className="block text-muted-foreground hover:text-primary transition-colors w-full text-left cursor-pointer"
                   type="button"
                 >
-                  {t("nav.contact")}
+                  {t("nav.membership")}
                 </button>
                 <Link 
                   to="/donation" 
@@ -348,25 +430,54 @@ const Navigation = () => {
                 >
                   {t("nav.news")}
                 </Link>
+                <button
+                  onClick={() => setIsInfoMobileOpen(!isInfoMobileOpen)}
+                  className="flex w-full items-center justify-between rounded-md px-3 py-2 text-muted-foreground hover:text-primary transition-colors"
+                  type="button"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{t("nav.about")}</span>
+                  </div>
+                  <ChevronDown
+                    size={16}
+                    className={`transition-transform ${isInfoMobileOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+                {isInfoMobileOpen && (
+                  <div className="ml-2 mt-2 space-y-2 border-l border-border/60 pl-3">
+                    <Link 
+                      to="/about" 
+                      className="block text-muted-foreground hover:text-primary transition-colors"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setIsInfoMobileOpen(false);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      {t("nav.about")}
+                    </Link>
+                    <Link 
+                      to="/contact" 
+                      className="block text-muted-foreground hover:text-primary transition-colors"
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        setIsInfoMobileOpen(false);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                    >
+                      {t("nav.contact")}
+                    </Link>
+                  </div>
+                )}
                 <Link 
-                  to="/about" 
+                  to="/membership" 
                   className="block text-muted-foreground hover:text-primary transition-colors"
                   onClick={() => {
                     setIsMenuOpen(false);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                 >
-                  {t("nav.about")}
-                </Link>
-                <Link 
-                  to="/contact" 
-                  className="block text-muted-foreground hover:text-primary transition-colors"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                >
-                  {t("nav.contact")}
+                  {t("nav.membership")}
                 </Link>
                 <Link 
                   to="/donation" 
