@@ -185,7 +185,7 @@ const MembershipSuccess = () => {
                   </div>
                 </div>
 
-                <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                <div className="mt-8 grid gap-4 sm:grid-cols-2">
                   <Card className="p-4 border border-primary/15 bg-white/60 backdrop-blur">
                     <p className="text-sm text-muted-foreground">{t("membership.success.payment.amount")}</p>
                     <p className="text-2xl font-semibold text-foreground mt-1">
@@ -201,12 +201,6 @@ const MembershipSuccess = () => {
                     <p className="text-sm text-muted-foreground">{t("membership.success.payment.method")}</p>
                     <p className="text-lg font-semibold text-foreground mt-1">
                       {paymentMethodLabel || t("membership.success.payment.methodFallback")}
-                    </p>
-                  </Card>
-                  <Card className="p-4 border border-primary/15 bg-white/60 backdrop-blur">
-                    <p className="text-sm text-muted-foreground">{t("membership.success.payment.email")}</p>
-                    <p className="text-lg font-semibold text-foreground mt-1">
-                      {donorEmail || t("membership.success.payment.emailFallback")}
                     </p>
                   </Card>
                 </div>
@@ -236,34 +230,28 @@ const MembershipSuccess = () => {
                       {t("membership.success.actions.contact")}
                     </a>
                   </Button>
-                  <Button asChild variant="ghost" size="lg">
-                    <Link to="/projects">
-                      {t("membership.success.actions.projects")}
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Link>
-                  </Button>
                 </div>
               </Card>
 
-              <Card className="p-6 shadow-card border-border/60">
+              <Card className="p-6 shadow-card border-primary/15 bg-white/70 backdrop-blur">
                 <div className="flex items-start gap-3">
                   <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                     <Sparkles className="w-5 h-5" />
                   </div>
-                  <div className="space-y-2">
-                    <h2 className="text-xl font-semibold text-foreground">
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-semibold text-foreground">
                       {t("membership.success.nextSteps.title")}
-                    </h2>
-                    <ul className="space-y-3 text-muted-foreground">
-                      <li className="flex gap-2">
+                    </h3>
+                    <ul className="space-y-2 text-muted-foreground">
+                      <li className="flex gap-3">
                         <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                         <span>{t("membership.success.nextSteps.point1")}</span>
                       </li>
-                      <li className="flex gap-2">
+                      <li className="flex gap-3">
                         <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                         <span>{t("membership.success.nextSteps.point2")}</span>
                       </li>
-                      <li className="flex gap-2">
+                      <li className="flex gap-3">
                         <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 shrink-0" />
                         <span>{t("membership.success.nextSteps.point3")}</span>
                       </li>
@@ -276,7 +264,7 @@ const MembershipSuccess = () => {
             <div className="space-y-4">
               <Card className="p-6 shadow-card border-primary/20 bg-white">
                 <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shadow-sm">
                     <Heart className="w-5 h-5" />
                   </div>
                   <div className="space-y-1">
@@ -297,9 +285,9 @@ const MembershipSuccess = () => {
                 </Button>
               </Card>
 
-              <Card className="p-6 shadow-card border-border/70 bg-gradient-to-br from-secondary/10 to-background">
+              <Card className="p-6 shadow-card border-primary/15 bg-white/60 backdrop-blur">
                 <div className="flex items-start gap-3">
-                  <div className="h-10 w-10 rounded-full bg-secondary/20 text-secondary-foreground flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shadow-sm">
                     <MessageCircle className="w-5 h-5" />
                   </div>
                   <div className="space-y-1">
