@@ -171,9 +171,56 @@ const Membership = () => {
     }
 
     setIsSubmitting(true);
-    toast({
-      title: t("membership.status.redirect"),
-    });
+
+    // Waiver path: no payment, log immediately and go to success
+    if (requestWaiver) {
+      try {
+        const amountNumber = parseFloat(amount || "0") || 0;
+        const donationData = {
+          items: [
+            {
+              type: "general-donation" as const,
+              name: t("membership.form.title"),
+              unitPrice: amountNumber,
+              quantity: 1,
+              totalPrice: amountNumber,
+            },
+          ],
+          totalAmount: amountNumber,
+          donationType: "new-membership" as const,
+          paymentMethod: "card" as const,
+          donorEmail: formData.email || undefined,
+          donorName: `${formData.firstName} ${formData.lastName}`.trim() || undefined,
+          timestamp: new Date().toISOString(),
+          paymentStatus: "unpaid" as const,
+          wantsReceipt: false,
+          address: {
+            street: formData.street || undefined,
+            postalCode: formData.postalCode || undefined,
+            city: formData.city || undefined,
+            country: formData.country || undefined,
+          },
+          wantsNewsletter: false,
+          comment: formData.comment || undefined,
+        };
+
+        await donationWebhookService.sendDonation(donationData);
+        navigate("/membership/success?flow=membership&source=membership&waiver=true");
+      } catch (err) {
+        console.error("Membership waiver logging failed:", err);
+        const message =
+          err instanceof Error ? err.message : t("membership.status.error");
+        setError(message);
+        toast({
+          title: t("membership.status.error"),
+          description: message,
+          variant: "destructive",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
 
     try {
       await startCheckout();
@@ -405,6 +452,7 @@ const Membership = () => {
                   )}
                 </div>
 
+                {!requestWaiver && (
                 <div className="space-y-3">
                   <h3 className="text-lg font-semibold text-foreground">
                     {t("membership.form.payment")}
@@ -465,6 +513,7 @@ const Membership = () => {
                     </Label>
                   </RadioGroup>
                 </div>
+                )}
 
                 <div className="flex items-start space-x-3">
                   <Checkbox
