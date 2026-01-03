@@ -176,7 +176,7 @@ const Membership = () => {
           ],
           totalAmount: amountNumber,
           donationType: "new-membership" as const,
-          paymentMethod: "card" as const,
+          paymentMethod: "no-payment" as const,
           donorEmail: formData.email || undefined,
           donorName: `${formData.firstName} ${formData.lastName}`.trim() || undefined,
           timestamp: new Date().toISOString(),

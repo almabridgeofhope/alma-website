@@ -15,7 +15,7 @@ export interface DonationData {
   items: DonationItem[];
   totalAmount: number;
   donationType: 'one-time' | 'monthly' | 'new-membership';
-  paymentMethod: 'paypal' | 'sepa' | 'card' | 'stripe-card' | 'stripe-sepa';
+  paymentMethod: 'paypal' | 'sepa' | 'card' | 'stripe-card' | 'stripe-sepa' | 'no-payment';
   donorEmail?: string;
   donorName?: string;
   timestamp?: string;
