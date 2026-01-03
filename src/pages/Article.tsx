@@ -648,6 +648,13 @@ const Article = () => {
                       </div>
                     )}
 
+                    {/* Photo Gallery for section */}
+                    {section.photoGallery && (
+                      <div className="my-8">
+                        <MediaCarousel gallery={section.photoGallery} />
+                      </div>
+                    )}
+
                     {/* Charts for Population section in article 4 */}
                     {article.id === "4" && section.title === t("news.article4.sections.population.title") && (
                       <div className="grid md:grid-cols-2 gap-8 my-8">
@@ -704,6 +711,18 @@ const Article = () => {
                           );
                         })}
                       </ul>
+                    )}
+
+                    {/* CTA for section */}
+                    {section.cta && (
+                      <div className="mt-8">
+                        <Link to={section.cta.url}>
+                          <Button className="w-full sm:w-auto">
+                            {section.cta.buttonLabel || t("news.read_more")}
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </div>
                     )}
                   </div>
                 ))}

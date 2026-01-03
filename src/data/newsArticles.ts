@@ -32,6 +32,14 @@ import soakPitVideo1 from "@/assets/project/2512_soak_pit_update/1.mp4";
 import soakPitVideo6 from "@/assets/project/2512_soak_pit_update/6.mp4";
 import soakPitVideo7 from "@/assets/project/2512_soak_pit_update/7.mp4";
 import soakPitVideo12 from "@/assets/project/2512_soak_pit_update/12.mp4";
+// Christmas meal images
+import christmasImage1 from "@/assets/project/2512_soak_pit_update/2512_christmas/all-food.jpeg";
+import christmasImage2 from "@/assets/project/2512_soak_pit_update/2512_christmas/chicken-2.jpeg";
+import christmasImage3 from "@/assets/project/2512_soak_pit_update/2512_christmas/WhatsApp Image 2025-12-24 at 12.39.25.jpeg";
+import christmasImage4 from "@/assets/project/2512_soak_pit_update/2512_christmas/WhatsApp Image 2025-12-24 at 12.39.27.jpeg";
+import christmasheaderImage from "@/assets/project/2512_soak_pit_update/2512_christmas/WhatsApp Image 2025-12-25 at 18.40.39.jpeg";
+import christmasImage6 from "@/assets/project/2512_soak_pit_update/2512_christmas/WhatsApp Image 2025-12-25 at 18.40.40.jpeg";
+import christmasImage7 from "@/assets/project/2512_soak_pit_update/2512_christmas/WhatsApp Image 2025-12-25 at 18.40.43.jpeg";
 
 export interface ArticleSubsection {
   title: string;
@@ -44,6 +52,12 @@ export interface ArticleSection {
   bullets?: string[];
   stats?: ArticleStat[];
   subsections?: ArticleSubsection[];
+  photoGallery?: PhotoGallery;
+  cta?: {
+    text: string;
+    url: string;
+    buttonLabel?: string;
+  };
 }
 
 export interface ArticleBody {
@@ -384,6 +398,149 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
       },
       body: {
         introduction: article11Introduction,
+      },
+    },
+    {
+      id: "12",
+      title: t("news.article12.title"),
+      excerpt: t("news.article12.excerpt"),
+      content: t("news.article12.content"),
+      author: t("news.article12.author"),
+      date: "2026-01-03",
+      category: t("news.categories.organization"),
+      image: christmasheaderImage,
+      featured: true,
+      body: {
+        showQuote: false,
+        sections: [
+          {
+            title: t("news.article12.sections.fundraising.title"),
+            paragraphs: splitToArray(
+              t("news.article12.sections.fundraising.paragraphs"),
+              "news.article12.sections.fundraising.paragraphs"
+            ),
+            stats: splitStats(
+              t("news.article12.sections.fundraising.stats"),
+              "news.article12.sections.fundraising.stats"
+            ),
+          },
+          {
+            title: t("news.article12.sections.septic_tank.title"),
+            paragraphs: splitToArray(
+              t("news.article12.sections.septic_tank.paragraphs"),
+              "news.article12.sections.septic_tank.paragraphs"
+            ),
+            photoGallery: {
+              layout: "carousel",
+              media: [
+                {
+                  type: "image",
+                  src: soakPitImage3,
+                  alt: t("news.article11.gallery.image3.alt"),
+                },
+                {
+                  type: "image",
+                  src: soakPitImage4,
+                  alt: t("news.article11.gallery.image4.alt"),
+                },
+                {
+                  type: "image",
+                  src: soakPitImage5,
+                  alt: t("news.article11.gallery.image5.alt"),
+                },
+                {
+                  type: "image",
+                  src: soakPitImage9,
+                  alt: t("news.article11.gallery.image9.alt"),
+                },
+                {
+                  type: "image",
+                  src: soakPitImage10,
+                  alt: t("news.article11.gallery.image10.alt"),
+                },
+                {
+                  type: "image",
+                  src: soakPitImage11,
+                  alt: t("news.article11.gallery.image11.alt"),
+                },
+                {
+                  type: "image",
+                  src: soakPitImage12,
+                  alt: t("news.article11.gallery.image12.alt"),
+                },
+                {
+                  type: "image",
+                  src: soakPitImage13,
+                  alt: t("news.article11.gallery.image13.alt"),
+                },
+                {
+                  type: "image",
+                  src: soakPitImage15,
+                  alt: t("news.article11.gallery.image15.alt"),
+                },
+                {
+                  type: "image",
+                  src: soakPitImage16,
+                  alt: t("news.article11.gallery.image16.alt"),
+                },
+              ],
+            },
+          },
+          {
+            title: t("news.article12.sections.christmas.title"),
+            paragraphs: splitToArray(
+              t("news.article12.sections.christmas.paragraphs"),
+              "news.article12.sections.christmas.paragraphs"
+            ),
+            photoGallery: {
+              layout: "carousel",
+              media: [
+                {
+                  type: "image",
+                  src: christmasImage1,
+                  alt: t("news.article12.sections.christmas.gallery.image1.alt"),
+                },
+                {
+                  type: "image",
+                  src: christmasImage2,
+                  alt: t("news.article12.sections.christmas.gallery.image2.alt"),
+                },
+                {
+                  type: "image",
+                  src: christmasImage3,
+                  alt: t("news.article12.sections.christmas.gallery.image3.alt"),
+                },
+                {
+                  type: "image",
+                  src: christmasImage4,
+                  alt: t("news.article12.sections.christmas.gallery.image4.alt"),
+                },
+                {
+                  type: "image",
+                  src: christmasImage6,
+                  alt: t("news.article12.sections.christmas.gallery.image6.alt"),
+                },
+                {
+                  type: "image",
+                  src: christmasImage7,
+                  alt: t("news.article12.sections.christmas.gallery.image7.alt"),
+                },
+              ],
+            },
+          },
+          {
+            title: t("news.article12.sections.outlook.title"),
+            paragraphs: splitToArray(
+              t("news.article12.sections.outlook.paragraphs"),
+              "news.article12.sections.outlook.paragraphs"
+            ),
+            cta: {
+              text: t("news.article12.sections.outlook.cta.text"),
+              url: "/projects",
+              buttonLabel: t("news.article12.sections.outlook.cta.button"),
+            },
+          },
+        ],
       },
     },
     {
