@@ -16,7 +16,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import OptimizedImage from "@/components/OptimizedImage";
 import PreloadImage from "@/components/PreloadImage";
-import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush, Copy, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
+import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush, Copy, CheckCircle2, AlertCircle, Home } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { donationWebhookService } from "@/services/donationWebhookService";
@@ -1727,6 +1727,18 @@ const Donation = () => {
                 <p>{t("donation.mission.p1")}</p>
                 <p>{t("donation.mission.p2")}</p>
               </div>
+              <div className="mt-6 pt-6 border-t border-border/50">
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  {t("donation.communityHouse.cta")}{" "}
+                  <Link 
+                    to="/projects#community-house" 
+                    className="text-primary hover:underline font-medium"
+                  >
+                    {t("donation.communityHouse.button")}
+                  </Link>
+                  .
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -2579,7 +2591,7 @@ const Donation = () => {
           </div>
         </section>
 
-        {/* 4. Transparency Commitment */}
+        {/* 5. Transparency Commitment */}
         <section className="py-section bg-muted/30">
           <div className="max-w-content mx-auto px-6">
             <div className="max-w-4xl mx-auto">
