@@ -2474,6 +2474,9 @@ const Donation = () => {
                           donationType,
                           donorEmail: formData.email,
                           donorName: `${formData.firstName} ${formData.lastName}`,
+                          comment: formData.comment || "",
+                          wantsReceipt: formData.wantsReceipt ? "true" : "false",
+                          wantsNewsletter: formData.wantsNewsletter ? "true" : "false",
                         }}
                         isSubscription={donationType === "monthly"}
                         onValidate={() => {
@@ -2525,6 +2528,9 @@ const Donation = () => {
                           donationType,
                           donorEmail: formData.email,
                           donorName: `${formData.firstName} ${formData.lastName}`,
+                          comment: formData.comment || "",
+                          wantsReceipt: formData.wantsReceipt ? "true" : "false",
+                          wantsNewsletter: formData.wantsNewsletter ? "true" : "false",
                         }}
                         isSubscription={donationType === "monthly"}
                         onValidate={() => {

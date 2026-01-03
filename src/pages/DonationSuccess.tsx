@@ -230,7 +230,9 @@ const DonationSuccess = () => {
         searchParams.get("source") === "membership" ||
         searchParams.get("flow") === "membership" ||
         searchParams.get("donationType") === "new-membership";
-      const membershipReason =
+      
+      // Get comment from metadata (for both membership and regular donations)
+      const donationComment =
         details.metadata?.membership_comment ||
         details.metadata?.comment ||
         searchParams.get("comment") ||
@@ -254,7 +256,7 @@ const DonationSuccess = () => {
           country: customerAddress.country || undefined,
         } : undefined,
         wantsNewsletter: details.metadata?.wantsNewsletter === 'true',
-        comment: membershipReason,
+        comment: donationComment,
       };
       
       console.log("=== Sending to Webhook ===");
