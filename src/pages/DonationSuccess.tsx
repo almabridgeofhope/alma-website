@@ -170,6 +170,44 @@ const DonationSuccess = () => {
       const customerEmail = details.customer_details?.email || details.customer_email || '';
       const customerName = details.customer_details?.name || '';
       const customerAddress = details.customer_details?.address;
+
+      // Get address from Stripe customer_details or from metadata (form data)
+      const addressFromStripe = customerAddress
+        ? {
+            street: customerAddress.line1 || undefined,
+            postalCode: customerAddress.postal_code || undefined,
+            city: customerAddress.city || undefined,
+            country: customerAddress.country || undefined,
+          }
+        : undefined;
+
+      // Extract address from metadata if any field is present
+      // For subscriptions, metadata might be in subscription object, but we check session metadata first
+      const hasMetadataAddressFields = 
+        details.metadata?.donor_street !== undefined ||
+        details.metadata?.donor_postalCode !== undefined ||
+        details.metadata?.donor_city !== undefined ||
+        details.metadata?.donor_country !== undefined;
+
+      const addressFromMetadata = hasMetadataAddressFields
+        ? {
+            street: (details.metadata?.donor_street?.trim() || undefined),
+            postalCode: (details.metadata?.donor_postalCode?.trim() || undefined),
+            city: (details.metadata?.donor_city?.trim() || undefined),
+            country: (details.metadata?.donor_country?.trim() || undefined),
+          }
+        : undefined;
+
+      // Log metadata for debugging
+      console.log("=== Address Debug ===");
+      console.log("Session Metadata:", details.metadata);
+      console.log("Address from Stripe:", addressFromStripe);
+      console.log("Address from Metadata:", addressFromMetadata);
+      console.log("Has Metadata Address Fields:", hasMetadataAddressFields);
+      console.log("===================");
+
+      // Prefer metadata address (form data) over Stripe address, as form data is more complete
+      const address = addressFromMetadata || addressFromStripe;
       
       const stripePaymentMethod: 'stripe-card' | 'stripe-sepa' = isSEPAPayment ? 'stripe-sepa' : 'stripe-card';
       
@@ -249,12 +287,7 @@ const DonationSuccess = () => {
         paymentId: details.id,
         paymentStatus: details.payment_status as 'paid' | 'unpaid' | 'pending' | 'failed', // Include payment status
         wantsReceipt: details.metadata?.wantsReceipt === 'true',
-        address: customerAddress ? {
-          street: customerAddress.line1 || undefined,
-          postalCode: customerAddress.postal_code || undefined,
-          city: customerAddress.city || undefined,
-          country: customerAddress.country || undefined,
-        } : undefined,
+        address: address,
         wantsNewsletter: details.metadata?.wantsNewsletter === 'true',
         comment: donationComment,
       };

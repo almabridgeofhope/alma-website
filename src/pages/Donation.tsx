@@ -2477,6 +2477,10 @@ const Donation = () => {
                           comment: formData.comment || "",
                           wantsReceipt: formData.wantsReceipt ? "true" : "false",
                           wantsNewsletter: formData.wantsNewsletter ? "true" : "false",
+                          donor_street: formData.street || "",
+                          donor_postalCode: formData.postalCode || "",
+                          donor_city: formData.city || "",
+                          donor_country: formData.country || "",
                         }}
                         isSubscription={donationType === "monthly"}
                         onValidate={() => {
@@ -2531,6 +2535,10 @@ const Donation = () => {
                           comment: formData.comment || "",
                           wantsReceipt: formData.wantsReceipt ? "true" : "false",
                           wantsNewsletter: formData.wantsNewsletter ? "true" : "false",
+                          donor_street: formData.street || "",
+                          donor_postalCode: formData.postalCode || "",
+                          donor_city: formData.city || "",
+                          donor_country: formData.country || "",
                         }}
                         isSubscription={donationType === "monthly"}
                         onValidate={() => {

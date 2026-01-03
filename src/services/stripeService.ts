@@ -190,6 +190,18 @@ class StripeService {
 
       const session = data.session as StripeSessionDetails;
       
+      // For subscriptions, check if subscription metadata exists and merge it with session metadata
+      // Stripe stores metadata in both session.metadata and subscription.metadata for subscriptions
+      if ((data.session as any).subscription && (data.session as any).subscription.metadata) {
+        const subscriptionMetadata = (data.session as any).subscription.metadata;
+        console.log("📋 Found subscription metadata:", JSON.stringify(subscriptionMetadata, null, 2));
+        // Merge subscription metadata into session metadata (subscription metadata takes precedence)
+        session.metadata = {
+          ...session.metadata,
+          ...subscriptionMetadata,
+        };
+      }
+      
       // Comprehensive logging for payment details (especially important for live payments)
       const isLivePayment = session.id.startsWith('cs_live_');
       console.log("✅ Session details successfully retrieved");
