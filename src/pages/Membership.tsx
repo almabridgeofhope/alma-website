@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import { stripeService } from "@/services/stripeService";
 import { donationWebhookService } from "@/services/donationWebhookService";
-import heroImage from "@/assets/community/community_2.webp";
+import heroImage from "@/assets/project/education_5.webp";
 import { CheckCircle, Heart, Shield } from "lucide-react";
 
 const presetAmounts = [10, 15, 25, 50];
@@ -24,7 +24,7 @@ const Membership = () => {
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [amount, setAmount] = useState<string>("15");
-  const [paymentMethod, setPaymentMethod] = useState<"sepa" | "card" | "paypal">("sepa");
+  const [paymentMethod, setPaymentMethod] = useState<"sepa" | "card">("sepa");
   const [requestWaiver, setRequestWaiver] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -115,18 +115,6 @@ const Membership = () => {
     const baseUrl = window.location.origin;
     const paymentMethodTypes =
       paymentMethod === "sepa" ? ["sepa_debit"] : ["card"];
-
-    if (paymentMethod === "paypal") {
-      // Reuse donation flow for PayPal subscriptions
-      const params = new URLSearchParams({
-        amount: selectedAmount.toString(),
-        type: "monthly",
-        source: "membership",
-        flow: "membership",
-      });
-      window.location.href = `${baseUrl}/donation?${params.toString()}`;
-      return;
-    }
 
     const metadata: Record<string, string> = {
       donationType: "monthly",
@@ -243,16 +231,19 @@ const Membership = () => {
       <Navigation />
 
       <main className="pt-16">
-        <section className="relative min-h-[50vh] flex items-center justify-center overflow-hidden">
+        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
           <PreloadImage src={heroImage} />
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105"
-            style={{ backgroundImage: `url(${heroImage})` }}
+            className="absolute inset-0 bg-cover bg-no-repeat scale-105"
+            style={{
+              backgroundImage: `url(${heroImage})`,
+              backgroundPosition: "center 20%",
+            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-hero" />
 
-          <div className="relative z-10 text-left text-white max-w-4xl px-6 py-16">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
+          <div className="relative z-10 text-center text-white max-w-4xl px-6 py-16">
+            <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
               {t("membership.hero.title")}
             </h1>
           </div>
@@ -459,10 +450,10 @@ const Membership = () => {
                   </h3>
                   <RadioGroup
                     value={paymentMethod}
-                    onValueChange={(value: "sepa" | "card" | "paypal") =>
+                    onValueChange={(value: "sepa" | "card") =>
                       setPaymentMethod(value)
                     }
-                    className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3"
+                    className="grid sm:grid-cols-2 gap-3"
                   >
                     <Label
                       htmlFor="sepa"
@@ -495,43 +486,32 @@ const Membership = () => {
                         </div>
                       </div>
                     </Label>
-
-                    <Label
-                      htmlFor="paypal"
-                      className={`border rounded-lg p-4 cursor-pointer hover-border-primary/50 hover:border-primary/50 ${
-                        paymentMethod === "paypal" ? "border-primary" : "border-border"
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <RadioGroupItem value="paypal" id="paypal" className="mt-1" />
-                        <div>
-                          <div className="font-medium leading-snug break-words hyphens-auto">
-                            {t("membership.form.payment.paypal")}
-                          </div>
-                        </div>
-                      </div>
-                    </Label>
                   </RadioGroup>
                 </div>
                 )}
 
-                <div className="flex items-start space-x-3">
+
+                <div className="flex items-start space-x-2">
                   <Checkbox
                     id="privacy"
                     checked={formData.privacyAccepted}
                     onCheckedChange={(checked) =>
                       handleInputChange("privacyAccepted", checked === true)
                     }
+                    className="mt-1"
                   />
-                  <Label htmlFor="privacy" className="leading-snug">
-                    {t("membership.form.privacy")}{" "}
-                    <a
-                      href="/privacy"
+                  <Label htmlFor="privacy" className="text-sm leading-relaxed">
+                    {t("membership.form.privacyConsent")}{" "}
+                    <Link
+                      to="/privacy"
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="text-primary hover:underline"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {t("footer.legal.privacy")}
-                    </a>
+                      {t("membership.form.privacyPolicy")}
+                    </Link>{" "}
+                    {t("membership.form.privacyConsentEnd")}
                   </Label>
                 </div>
 
