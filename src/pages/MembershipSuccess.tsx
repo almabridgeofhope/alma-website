@@ -26,6 +26,7 @@ const MembershipSuccess = () => {
   const sessionId = searchParams.get("session_id");
   const urlAmount = searchParams.get("amount");
   const urlType = searchParams.get("type");
+  const isWaiver = searchParams.get("waiver") === "true";
 
   const [sessionDetails, setSessionDetails] = useState<StripeSessionDetails | null>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(!!sessionId);
@@ -36,6 +37,9 @@ const MembershipSuccess = () => {
   const numericUrlAmount = urlAmount ? parseFloat(urlAmount) : null;
 
   const displayAmount = useMemo(() => {
+    if (isWaiver) {
+      return 0;
+    }
     if (sessionDetails) {
       return sessionDetails.amount_total / 100;
     }
@@ -43,7 +47,7 @@ const MembershipSuccess = () => {
       return numericUrlAmount || null;
     }
     return null;
-  }, [sessionDetails, numericUrlAmount]);
+  }, [sessionDetails, numericUrlAmount, isWaiver]);
 
   const formattedAmount = useMemo(() => {
     if (displayAmount == null) return null;
@@ -55,6 +59,9 @@ const MembershipSuccess = () => {
   }, [displayAmount, language]);
 
   const paymentMethodLabel = useMemo(() => {
+    if (isWaiver) {
+      return language === "de" ? "Keine Zahlung" : "No payment";
+    }
     if (!sessionDetails) return null;
     const methodFromMeta = sessionDetails.metadata?.paymentMethodType;
     const methodFromSession = sessionDetails.payment_method_types?.[0];
@@ -64,7 +71,7 @@ const MembershipSuccess = () => {
       return language === "de" ? "SEPA-Lastschrift" : "SEPA direct debit";
     }
     return language === "de" ? "Kartenzahlung" : "Card payment";
-  }, [sessionDetails, language]);
+  }, [sessionDetails, language, isWaiver]);
 
   const donorEmail = useMemo(() => {
     if (sessionDetails?.customer_details?.email) return sessionDetails.customer_details.email;
@@ -90,6 +97,31 @@ const MembershipSuccess = () => {
         const customerName = details.customer_details?.name || "";
         const customerAddress = details.customer_details?.address;
 
+        // Get address from Stripe customer_details or from metadata (form data)
+        const addressFromStripe = customerAddress
+          ? {
+              street: customerAddress.line1 || undefined,
+              postalCode: customerAddress.postal_code || undefined,
+              city: customerAddress.city || undefined,
+              country: customerAddress.country || undefined,
+            }
+          : undefined;
+
+        const addressFromMetadata = details.metadata?.donor_street ||
+          details.metadata?.donor_postalCode ||
+          details.metadata?.donor_city ||
+          details.metadata?.donor_country
+          ? {
+              street: details.metadata?.donor_street || undefined,
+              postalCode: details.metadata?.donor_postalCode || undefined,
+              city: details.metadata?.donor_city || undefined,
+              country: details.metadata?.donor_country || undefined,
+            }
+          : undefined;
+
+        // Prefer Stripe address, fallback to metadata address
+        const address = addressFromStripe || addressFromMetadata;
+
         const donationData = {
           items: [
             {
@@ -109,14 +141,7 @@ const MembershipSuccess = () => {
           paymentId: details.id,
           paymentStatus: details.payment_status as "paid" | "unpaid" | "pending" | "failed",
           wantsReceipt: details.metadata?.wantsReceipt === "true",
-          address: customerAddress
-            ? {
-                street: customerAddress.line1 || undefined,
-                postalCode: customerAddress.postal_code || undefined,
-                city: customerAddress.city || undefined,
-                country: customerAddress.country || undefined,
-              }
-            : undefined,
+          address: address,
           wantsNewsletter: details.metadata?.wantsNewsletter === "true",
           comment: details.metadata?.membership_comment || details.metadata?.comment,
         };
