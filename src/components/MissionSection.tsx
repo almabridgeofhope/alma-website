@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/carousel";
 import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
+import { Download } from "lucide-react";
 import land from "@/assets/nature/land.webp";
 import water from "@/assets/project/water.webp";
 import education from "@/assets/project/education.webp";
@@ -217,6 +218,17 @@ const MissionSection = () => {
                   {t("mission.donate")}
                 </Button>
               </Link>
+              <a 
+                href="/flyer.pdf" 
+                target="_blank"
+                rel="noopener noreferrer"
+                download
+              >
+                <Button size="lg" variant="outline" className="gap-2">
+                  <Download size={20} />
+                  {t("mission.flyer")}
+                </Button>
+              </a>
             </div>
           </div>
         </div>

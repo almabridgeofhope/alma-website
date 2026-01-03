@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import logo from "@/assets/alma-logo.svg";
 import { useLanguage } from "@/contexts/LanguageContext";
 import NewsletterForm from "@/components/NewsletterForm";
+import { Download } from "lucide-react";
 
 const Footer = () => {
   const { t } = useLanguage();
@@ -82,6 +83,16 @@ const Footer = () => {
               >
                 {t("nav.membership")}
               </Link>
+              <a 
+                href="/flyer.pdf" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                download
+              >
+                <Download size={16} />
+                {t("footer.nav.flyer")}
+              </a>
             </nav>
           </div>
 

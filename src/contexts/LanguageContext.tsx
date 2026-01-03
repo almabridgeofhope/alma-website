@@ -31,6 +31,7 @@ const translations = {
     "mission.p3": "Through practical, community-based initiatives, we do not only build infrastructure – we build bridges of hope that connect communities across continents and create lasting positive change.",
     "mission.about": "About Us",
     "mission.donate": "Support Projects",
+    "mission.flyer": "Download Flyer",
     
     // What We Do
     "whatwedo.title": "What We Do",
@@ -130,6 +131,7 @@ const translations = {
     // Footer
     "footer.tagline": "Bridging hope across continents through sustainable community development.",
     "footer.nav.title": "Navigation",
+    "footer.nav.flyer": "Download Flyer",
     "footer.legal.title": "Legal",
     "footer.legal.impressum": "Impressum",
     "footer.legal.privacy": "Privacy Policy",
@@ -902,6 +904,7 @@ const translations = {
     "mission.p3": "Mit unseren praktischen, lokalen Entwicklungsprojekten fördern wir nicht nur den Aufbau von Infrastruktur, sondern bauen Brücken der Hoffnung – Verbindungen zwischen Kontinenten, die Menschen zusammenbringen und dauerhafte positive Veränderungen ermöglichen.",
     "mission.about": "Über uns",
     "mission.donate": "Projekte unterstützen",
+    "mission.flyer": "Flyer herunterladen",
     
     // What We Do
     "whatwedo.title": "Was wir tun",
@@ -1001,6 +1004,7 @@ const translations = {
     // Footer
     "footer.tagline": "Brücken der Hoffnung zwischen Kontinenten durch nachhaltige Gemeindeentwicklung.",
     "footer.nav.title": "Navigation",
+    "footer.nav.flyer": "Flyer herunterladen",
     "footer.legal.title": "Rechtliches",
     "footer.legal.impressum": "Impressum",
     "footer.legal.privacy": "Datenschutz",
