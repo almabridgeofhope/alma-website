@@ -167,7 +167,8 @@ const Membership = () => {
     // Waiver path: no payment, log immediately and go to success
     if (requestWaiver) {
       try {
-        const amountNumber = parseFloat(amount || "0") || 0;
+        // For waiver, amount should always be 0 since no payment is set up
+        const amountNumber = 0;
         const donationData = {
           items: [
             {
