@@ -112,7 +112,16 @@ function doPost(e) {
       return jsonResponse({ ok: false, message: 'No donation items provided' });
     }
 
-    if (!data.totalAmount || parseFloat(data.totalAmount) <= 0) {
+    // Allow 0 amount only for no-payment (waivers), otherwise require > 0
+    const isNoPayment = data.paymentMethod === 'no-payment';
+    if (data.totalAmount === undefined || data.totalAmount === null) {
+      return jsonResponse({ ok: false, message: 'Invalid donation amount' });
+    }
+    const parsedAmount = parseFloat(data.totalAmount);
+    if (isNaN(parsedAmount)) {
+      return jsonResponse({ ok: false, message: 'Invalid donation amount' });
+    }
+    if (!isNoPayment && parsedAmount <= 0) {
       return jsonResponse({ ok: false, message: 'Invalid donation amount' });
     }
 
