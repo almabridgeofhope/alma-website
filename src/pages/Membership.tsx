@@ -127,6 +127,10 @@ const Membership = () => {
       donor_phone: formData.phone || "",
       comment: "new-membership",
       paymentMethodType: paymentMethod === "sepa" ? "sepa_debit" : "card",
+      donor_street: formData.street || "",
+      donor_postalCode: formData.postalCode || "",
+      donor_city: formData.city || "",
+      donor_country: formData.country || "",
     };
 
     const { url } = await stripeService.createCheckoutSession({

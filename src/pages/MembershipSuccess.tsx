@@ -107,20 +107,31 @@ const MembershipSuccess = () => {
             }
           : undefined;
 
-        const addressFromMetadata = details.metadata?.donor_street ||
-          details.metadata?.donor_postalCode ||
-          details.metadata?.donor_city ||
-          details.metadata?.donor_country
+        // Extract address from metadata - always create object if metadata fields exist
+        // Check if metadata has address fields (even if empty strings, they were sent)
+        const hasMetadataAddressFields = 
+          details.metadata?.donor_street !== undefined ||
+          details.metadata?.donor_postalCode !== undefined ||
+          details.metadata?.donor_city !== undefined ||
+          details.metadata?.donor_country !== undefined;
+
+        const addressFromMetadata = hasMetadataAddressFields
           ? {
-              street: details.metadata?.donor_street || undefined,
-              postalCode: details.metadata?.donor_postalCode || undefined,
-              city: details.metadata?.donor_city || undefined,
-              country: details.metadata?.donor_country || undefined,
+              street: (details.metadata?.donor_street?.trim() || undefined),
+              postalCode: (details.metadata?.donor_postalCode?.trim() || undefined),
+              city: (details.metadata?.donor_city?.trim() || undefined),
+              country: (details.metadata?.donor_country?.trim() || undefined),
             }
           : undefined;
 
-        // Prefer Stripe address, fallback to metadata address
-        const address = addressFromStripe || addressFromMetadata;
+        // Prefer metadata address (form data) over Stripe address, as form data is more complete
+        // Always include address object, even if partially empty
+        const address = addressFromMetadata || addressFromStripe || {
+          street: undefined,
+          postalCode: undefined,
+          city: undefined,
+          country: undefined,
+        };
 
         const donationData = {
           items: [
@@ -145,6 +156,13 @@ const MembershipSuccess = () => {
           wantsNewsletter: details.metadata?.wantsNewsletter === "true",
           comment: details.metadata?.membership_comment || details.metadata?.comment,
         };
+
+        console.log("=== Membership Webhook Data ===");
+        console.log("Address from Stripe:", addressFromStripe);
+        console.log("Address from Metadata:", addressFromMetadata);
+        console.log("Final address:", address);
+        console.log("Full donationData:", JSON.stringify(donationData, null, 2));
+        console.log("==============================");
 
         const response = await donationWebhookService.sendDonation(donationData);
         setWebhookStatus(response.ok ? "done" : "failed");
