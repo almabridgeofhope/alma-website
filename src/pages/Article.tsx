@@ -20,6 +20,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import MediaCarousel from "@/components/MediaCarousel";
+import NewYearLetterLink from "@/components/NewYearLetterLink";
 import { cn } from "@/lib/utils";
 
 const Article = () => {
@@ -663,6 +664,11 @@ const Article = () => {
                       <div className="my-8">
                         <MediaCarousel gallery={section.photoGallery} />
                       </div>
+                    )}
+
+                    {/* New Year Letter Link for article 12 outlook section */}
+                    {article.id === "12" && section.title === t("news.article12.sections.outlook.title") && (
+                      <NewYearLetterLink />
                     )}
 
                     {/* Charts for Population section in article 4 */}
