@@ -321,6 +321,7 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
       isLetter: true,
       body: {
         introduction: article13Introduction,
+        showQuote: false,
         sections: [
           {
             title: t("news.article13.sections.fundraising.title"),
