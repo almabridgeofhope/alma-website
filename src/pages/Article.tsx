@@ -135,8 +135,8 @@ const Article = () => {
       
       <main className="pt-16">
         {/* Article Header */}
-        <section className="pt-section pb-section bg-background">
-          <div className="max-w-4xl mx-auto px-6">
+        <section className={`pt-section pb-section bg-background ${article.isLetter ? 'bg-gradient-to-b from-background to-muted/10' : ''}`}>
+          <div className={`max-w-4xl mx-auto px-6 ${article.isLetter ? 'max-w-3xl' : ''}`}>
             <Link 
               to="/news"
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -191,12 +191,14 @@ const Article = () => {
         </section>
 
         {/* Article Content */}
-        <section className="pb-section bg-background">
-          <div className="max-w-4xl mx-auto px-6">
-            <div className="prose prose-lg max-w-none">
-              <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-                {article.excerpt}
-              </p>
+        <section className={`pb-section bg-background ${article.isLetter ? 'bg-gradient-to-b from-background to-muted/20' : ''}`}>
+          <div className={`max-w-4xl mx-auto px-6 ${article.isLetter ? 'max-w-3xl' : ''}`}>
+            <div className={`prose prose-lg max-w-none ${article.isLetter ? 'prose-slate' : ''}`}>
+              {!article.isLetter && (
+                <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+                  {article.excerpt}
+                </p>
+              )}
 
               {/* Photo-based article layout */}
               {article.isPhotoBased && article.photoGallery && (
@@ -526,11 +528,19 @@ const Article = () => {
                 </div>
               )}
               
-              <div className="text-base text-foreground leading-relaxed space-y-8">
+              <div className={`text-base text-foreground leading-relaxed space-y-8 ${article.isLetter ? 'space-y-6' : ''}`}>
                 {/* Introduction */}
                 {article.body?.introduction && article.body.introduction.length > 0 && article.id !== "9" && !article.isPhotoBased && (
-                  <div className="space-y-4">
-                    {article.id === "4" ? (() => {
+                  <div className={`space-y-4 ${article.isLetter ? 'space-y-3 mb-8' : ''}`}>
+                    {article.isLetter ? (
+                      <div className="space-y-3 text-lg leading-relaxed">
+                        {article.body.introduction.map((paragraph, index) => (
+                          <p key={index} className={index === 0 ? "font-medium" : ""}>
+                            {paragraph}
+                          </p>
+                        ))}
+                      </div>
+                    ) : article.id === "4" ? (() => {
                       const inlineImage = article.additionalImages?.[0];
                       const firstTwoParagraphs = article.body?.introduction.slice(0, 2).filter(Boolean) ?? [];
                       const remainingParagraphs = article.body?.introduction.slice(2) ?? [];
@@ -615,8 +625,8 @@ const Article = () => {
 
                 {/* Dynamic Sections */}
                 {article.body?.sections?.map((section, sectionIndex) => (
-                  <div key={sectionIndex} className="space-y-4">
-                    <h3 className="text-2xl font-bold text-foreground">
+                  <div key={sectionIndex} className={`space-y-4 ${article.isLetter ? 'mt-8 first:mt-0' : ''}`}>
+                    <h3 className={`${article.isLetter ? 'text-xl font-semibold text-foreground mb-4' : 'text-2xl font-bold text-foreground'}`}>
                       {section.title}
                     </h3>
 
@@ -639,9 +649,9 @@ const Article = () => {
                     )}
 
                     {section.paragraphs && section.paragraphs.length > 0 && (
-                      <div className="space-y-4">
+                      <div className={`space-y-4 ${article.isLetter ? 'space-y-3' : ''}`}>
                         {section.paragraphs.map((paragraph, paragraphIndex) => (
-                          <p key={paragraphIndex} className="leading-relaxed text-base">
+                          <p key={paragraphIndex} className={`leading-relaxed ${article.isLetter ? 'text-base' : 'text-base'}`}>
                             {paragraph}
                           </p>
                         ))}
@@ -937,14 +947,18 @@ const Article = () => {
                 })()}
 
                 {(article.body?.conclusion?.length || article.body?.conclusionCTA) && (
-                  <div className={article.id === "9" 
+                  <div className={article.isLetter
+                    ? "my-12 space-y-4 mt-16"
+                    : article.id === "9" 
                     ? "my-12 space-y-6" 
                     : "bg-primary/5 border border-primary/20 rounded-xl p-6 shadow-soft space-y-5"
                   }>
                     {article.body?.conclusion?.map((paragraph, index) => (
                       <p
                         key={index}
-                        className={article.id === "9" 
+                        className={article.isLetter
+                          ? `text-base leading-relaxed text-foreground text-right ${index === 0 ? 'font-signature text-4xl md:text-3xl text-primary' : 'mt-2'}`
+                          : article.id === "9" 
                           ? "text-lg leading-relaxed text-foreground"
                           : "text-lg leading-relaxed font-semibold text-foreground"
                         }

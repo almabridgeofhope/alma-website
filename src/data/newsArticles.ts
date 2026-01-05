@@ -7,6 +7,7 @@ import wellProjectImage from "@/assets/project/well.webp";
 import busProjectImage from "@/assets/project/bus.webp";
 import gruendungsversammlungImage from "@/assets/team/Gründungsversammlung.webp";
 import headerConstructionImage from "@/assets/project/community_house/header_construction.webp";
+import teamImage from "@/assets/team/team_2.webp";
 import constructionItemImage from "@/assets/project/community_house/construction_item.webp";
 import landBaseImage from "@/assets/project/header_land.webp";
 import landImage1 from "@/assets/project/well.jpg";
@@ -111,6 +112,7 @@ export interface NewsArticle {
   body?: ArticleBody;
   photoGallery?: PhotoGallery;
   isPhotoBased?: boolean;
+  isLetter?: boolean;
 }
 
 const sanitizeValue = (value: string, key: string): string => {
@@ -295,7 +297,70 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
     "news.article11.introduction"
   );
 
+  const article13Introduction = splitToArray(
+    t("news.article13.introduction"),
+    "news.article13.introduction"
+  );
+
+  const article13Signature = splitToArray(
+    t("news.article13.sections.outlook.signature"),
+    "news.article13.sections.outlook.signature"
+  );
+
   const articles: NewsArticle[] = [
+    {
+      id: "13",
+      title: t("news.article13.title"),
+      excerpt: t("news.article13.excerpt"),
+      content: t("news.article13.content"),
+      author: t("news.article13.author"),
+      date: "2026-01-01",
+      category: t("news.categories.organization"),
+      image: gruendungsversammlungImage,
+      featured: true,
+      isLetter: true,
+      body: {
+        introduction: article13Introduction,
+        sections: [
+          {
+            title: t("news.article13.sections.fundraising.title"),
+            paragraphs: splitToArray(
+              t("news.article13.sections.fundraising.paragraphs"),
+              "news.article13.sections.fundraising.paragraphs"
+            ),
+          },
+          {
+            title: t("news.article13.sections.milestones.title"),
+            paragraphs: splitToArray(
+              t("news.article13.sections.milestones.paragraphs"),
+              "news.article13.sections.milestones.paragraphs"
+            ),
+          },
+          {
+            title: t("news.article13.sections.projects.title"),
+            paragraphs: splitToArray(
+              t("news.article13.sections.projects.paragraphs"),
+              "news.article13.sections.projects.paragraphs"
+            ),
+          },
+          {
+            title: t("news.article13.sections.challenges.title"),
+            paragraphs: splitToArray(
+              t("news.article13.sections.challenges.paragraphs"),
+              "news.article13.sections.challenges.paragraphs"
+            ),
+          },
+          {
+            title: t("news.article13.sections.outlook.title"),
+            paragraphs: splitToArray(
+              t("news.article13.sections.outlook.paragraphs"),
+              "news.article13.sections.outlook.paragraphs"
+            ),
+          },
+        ],
+        conclusion: article13Signature,
+      },
+    },
     {
       id: "11",
       title: t("news.article11.title"),

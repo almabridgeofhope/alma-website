@@ -66,7 +66,8 @@ export default {
 				'button': 'var(--shadow-button)'
 			},
 			fontFamily: {
-				'sans': ['Inter', 'system-ui', 'sans-serif']
+				'sans': ['Inter', 'system-ui', 'sans-serif'],
+				'signature': ['Dancing Script', 'cursive']
 			},
 			maxWidth: {
 				'content': 'var(--content-max-width)'
