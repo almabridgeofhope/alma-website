@@ -181,20 +181,26 @@ const DonationSuccess = () => {
           }
         : undefined;
 
-      // Extract address from metadata if any field is present
+      // Extract address from metadata if any field has meaningful content
       // For subscriptions, metadata might be in subscription object, but we check session metadata first
-      const hasMetadataAddressFields = 
-        details.metadata?.donor_street !== undefined ||
-        details.metadata?.donor_postalCode !== undefined ||
-        details.metadata?.donor_city !== undefined ||
-        details.metadata?.donor_country !== undefined;
+      const metadataStreet = details.metadata?.donor_street?.trim();
+      const metadataPostalCode = details.metadata?.donor_postalCode?.trim();
+      const metadataCity = details.metadata?.donor_city?.trim();
+      const metadataCountry = details.metadata?.donor_country?.trim();
 
-      const addressFromMetadata = hasMetadataAddressFields
+      // Only use metadata address if at least one field has meaningful content
+      const hasMeaningfulMetadataAddress =
+        (metadataStreet && metadataStreet.length > 0) ||
+        (metadataPostalCode && metadataPostalCode.length > 0) ||
+        (metadataCity && metadataCity.length > 0) ||
+        (metadataCountry && metadataCountry.length > 0);
+
+      const addressFromMetadata = hasMeaningfulMetadataAddress
         ? {
-            street: (details.metadata?.donor_street?.trim() || undefined),
-            postalCode: (details.metadata?.donor_postalCode?.trim() || undefined),
-            city: (details.metadata?.donor_city?.trim() || undefined),
-            country: (details.metadata?.donor_country?.trim() || undefined),
+            street: metadataStreet || undefined,
+            postalCode: metadataPostalCode || undefined,
+            city: metadataCity || undefined,
+            country: metadataCountry || undefined,
           }
         : undefined;
 
@@ -203,10 +209,11 @@ const DonationSuccess = () => {
       console.log("Session Metadata:", details.metadata);
       console.log("Address from Stripe:", addressFromStripe);
       console.log("Address from Metadata:", addressFromMetadata);
-      console.log("Has Metadata Address Fields:", hasMetadataAddressFields);
+      console.log("Has Meaningful Metadata Address:", hasMeaningfulMetadataAddress);
       console.log("===================");
 
       // Prefer metadata address (form data) over Stripe address, as form data is more complete
+      // But fall back to Stripe address if metadata is empty (like for SEPA payments)
       const address = addressFromMetadata || addressFromStripe;
       
       const stripePaymentMethod: 'stripe-card' | 'stripe-sepa' = isSEPAPayment ? 'stripe-sepa' : 'stripe-card';
