@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
@@ -491,6 +492,7 @@ const Donation = () => {
   }, [searchParams, setSearchParams, navigate, cartState.items.length, cartState.totalAmount, amount, customAmount, donationType, clearCart, language, showError]);
   
   const [formData, setFormData] = useState({
+    salutation: "",
     firstName: "",
     lastName: "",
     email: "",
@@ -855,6 +857,7 @@ const Donation = () => {
         donorName: formData.firstName && formData.lastName 
           ? `${formData.firstName} ${formData.lastName}` 
           : undefined,
+        donorSalutation: formData.salutation || undefined,
         paymentId: paymentId,
         paymentStatus: 'paid', // PayPal payments are always 'paid' when we reach this point
         wantsReceipt: formData.wantsReceipt,
@@ -1008,6 +1011,9 @@ const Donation = () => {
     
     // Format amount to 2 decimal places for PayPal
     const formattedAmount = finalAmount.toFixed(2);
+
+    const salutation = currentFormData.salutation || "none";
+    const customId = `${donationType}-${Date.now()}|salutation:${salutation}`;
     
     return actions.order.create({
       purchase_units: [{
@@ -1016,7 +1022,7 @@ const Donation = () => {
           value: formattedAmount,
         },
         description: `${donationType === "one-time" ? t("donation.form.onetime") : t("donation.form.monthly")} donation to Alma Bridge of Hope`,
-        custom_id: `${donationType}-${Date.now()}`,
+        custom_id: customId,
       }],
         application_context: {
           brand_name: "Alma Bridge of Hope",
@@ -1040,6 +1046,9 @@ const Donation = () => {
       const formData = new FormData();
       formData.append('email', email);
       formData.append('source', 'donation-form');
+      if (formDataRef.current.salutation) {
+        formData.append('salutation', formDataRef.current.salutation);
+      }
 
       await fetch(endpoint, {
         method: "POST",
@@ -1431,6 +1440,7 @@ const Donation = () => {
         metadata: {
           donationType: 'monthly',
           wantsReceipt: currentFormData.wantsReceipt ? 'true' : 'false',
+          donor_salutation: currentFormData.salutation || "",
         }
       });
       
@@ -2250,6 +2260,24 @@ const Donation = () => {
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-foreground">{t("donation.form.personalInfo")}</h3>
                     
+                    <div>
+                      <Label htmlFor="salutation">{t("form.salutation")}</Label>
+                      <Select
+                        value={formData.salutation || undefined}
+                        onValueChange={(value) => handleInputChange("salutation", value)}
+                      >
+                        <SelectTrigger id="salutation" className="mt-2">
+                          <SelectValue placeholder={t("form.salutation.placeholder")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="mr">{t("form.salutation.mr")}</SelectItem>
+                          <SelectItem value="ms">{t("form.salutation.ms")}</SelectItem>
+                          <SelectItem value="diverse">{t("form.salutation.diverse")}</SelectItem>
+                          <SelectItem value="none">{t("form.salutation.none")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="firstName">{t("donation.form.firstName")}</Label>
@@ -2486,6 +2514,7 @@ const Donation = () => {
                           donationType,
                           donorEmail: formData.email,
                           donorName: `${formData.firstName} ${formData.lastName}`,
+                          donor_salutation: formData.salutation || "",
                           comment: formData.comment || "",
                           wantsReceipt: formData.wantsReceipt ? "true" : "false",
                           wantsNewsletter: formData.wantsNewsletter ? "true" : "false",
@@ -2544,6 +2573,7 @@ const Donation = () => {
                           donationType,
                           donorEmail: formData.email,
                           donorName: `${formData.firstName} ${formData.lastName}`,
+                          donor_salutation: formData.salutation || "",
                           comment: formData.comment || "",
                           wantsReceipt: formData.wantsReceipt ? "true" : "false",
                           wantsNewsletter: formData.wantsNewsletter ? "true" : "false",
@@ -2683,7 +2713,7 @@ const Donation = () => {
                 <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden shadow-lg">
                   <OptimizedImage
                     src={communityImage} 
-                    alt="Community in Uganda" 
+                    alt="Gemeinschaft in Uganda: Mitglieder der Gemeinschaft arbeiten zusammen an Projekten zur Verbesserung ihrer Lebensbedingungen" 
                     className="w-full h-full object-cover object-center"
                     lazy={true}
                   />
@@ -2900,4 +2930,3 @@ const Donation = () => {
 };
 
 export default Donation;
-

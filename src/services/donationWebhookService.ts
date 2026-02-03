@@ -18,6 +18,7 @@ export interface DonationData {
   paymentMethod: 'paypal' | 'sepa' | 'card' | 'stripe-card' | 'stripe-sepa' | 'no-payment';
   donorEmail?: string;
   donorName?: string;
+  donorSalutation?: string;
   timestamp?: string;
   paymentId?: string; // PayPal transaction ID or SEPA reference
   paymentStatus?: 'paid' | 'unpaid' | 'pending' | 'failed'; // Payment status (for Stripe SEPA, PayPal is always 'paid')
@@ -223,4 +224,3 @@ class DonationWebhookService {
 
 // Singleton instance
 export const donationWebhookService = new DonationWebhookService();
-

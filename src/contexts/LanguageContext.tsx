@@ -85,6 +85,12 @@ const translations = {
     "contact.subtitle": "We'd love to hear from you. Reach out to learn more about our work or explore potential partnerships.",
     "contact.email": "info@almabridgeofhope.org",
     "contact.button": "Contact Us",
+    "form.salutation": "Salutation",
+    "form.salutation.placeholder": "Select",
+    "form.salutation.mr": "Mr.",
+    "form.salutation.ms": "Ms.",
+    "form.salutation.diverse": "Diverse",
+    "form.salutation.none": "Prefer not to say",
 
     // Membership
     "membership.hero.title": "Become a supporting member",
@@ -1042,6 +1048,12 @@ const translations = {
     "contact.subtitle": "Wir freuen uns auf deine Nachricht. Kontaktiere uns, um mehr über unsere Arbeit zu erfahren oder potenzielle Partnerschaften zu erkunden.",
     "contact.email": "info@almabridgeofhope.org",
     "contact.button": "Kontaktiere uns",
+    "form.salutation": "Ansprache",
+    "form.salutation.placeholder": "Bitte wählen",
+    "form.salutation.mr": "Herr",
+    "form.salutation.ms": "Frau",
+    "form.salutation.diverse": "Divers",
+    "form.salutation.none": "Keine Angabe",
 
     // Membership
     "membership.hero.title": "Jetzt Vereinsmitglied werden",

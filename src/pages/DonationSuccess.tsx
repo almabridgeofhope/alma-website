@@ -290,6 +290,7 @@ const DonationSuccess = () => {
         paymentMethod: stripePaymentMethod,
         donorEmail: customerEmail || undefined,
         donorName: customerName || undefined,
+        donorSalutation: details.metadata?.donor_salutation || undefined,
         timestamp: new Date().toISOString(),
         paymentId: details.id,
         paymentStatus: details.payment_status as 'paid' | 'unpaid' | 'pending' | 'failed', // Include payment status
@@ -711,4 +712,3 @@ const DonationSuccess = () => {
 };
 
 export default DonationSuccess;
-

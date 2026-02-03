@@ -148,6 +148,7 @@ const MembershipSuccess = () => {
           paymentMethod: isSepaPayment ? ("stripe-sepa" as const) : ("stripe-card" as const),
           donorEmail: customerEmail || undefined,
           donorName: customerName || undefined,
+          donorSalutation: details.metadata?.donor_salutation || undefined,
           timestamp: new Date().toISOString(),
           paymentId: details.id,
           paymentStatus: details.payment_status as "paid" | "unpaid" | "pending" | "failed",
@@ -369,5 +370,4 @@ const MembershipSuccess = () => {
 };
 
 export default MembershipSuccess;
-
 
