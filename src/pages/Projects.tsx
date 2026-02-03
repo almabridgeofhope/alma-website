@@ -304,14 +304,16 @@ const Projects = () => {
     const Icon = project.icon;
     const isEven = index % 2 === 0;
     const projectCost = getProjectCost(project.title);
+    const isWellProject = project.title === t("projects.well.title");
     const currentPhaseIndex = timelinePhases.findIndex(p => p.id === project.currentPhase);
     const spentPercentage = projectCost
       ? projectCost.totalBudget > 0
         ? Math.min(100, (projectCost.spentAmount / projectCost.totalBudget) * 100)
         : 0
       : null;
-    const displayProgressValue = spentPercentage ?? project.progress;
-    const statusProgressLabel = spentPercentage !== null ? `${Math.round(spentPercentage)}%` : `${project.progress}%`;
+    // For well project, always use hardcoded progress, ignore projectCost
+    const displayProgressValue = isWellProject ? project.progress : (spentPercentage ?? project.progress);
+    const statusProgressLabel = isWellProject ? `${project.progress}%` : (spentPercentage !== null ? `${Math.round(spentPercentage)}%` : `${project.progress}%`);
     const detailedProgressLabel = spentPercentage !== null ? `${spentPercentage.toFixed(1)}%` : statusProgressLabel;
     const costTitle = t("projects.cost.title");
     const fundedLabel = t("projects.cost.funded");
@@ -395,108 +397,120 @@ const Projects = () => {
                       })}
                     </div>
 
-                    <div className="relative">
-                      {costsLoading ? (
-                        // Show empty cost container skeleton while loading
-                        <div className="min-h-[100px]">
-                          <div className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-3 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors animate-pulse">
-                            <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-                              <div className="flex-1 min-w-[140px]">
-                                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
-                                  {costTitle}
-                                </p>
-                                <div className="h-5 bg-gray-200 rounded mt-1 w-24" />
-                              </div>
-                              <div className="flex-1 min-w-[120px]">
-                                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
-                                  {fundedLabel}
-                                </p>
-                                <div className="h-5 bg-gray-200 rounded mt-1 w-20" />
-                              </div>
-                              <div className="flex-1 min-w-[120px]">
-                                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
-                                  {remainingLabel}
-                                </p>
-                                <div className="h-5 bg-gray-200 rounded mt-1 w-20" />
-                              </div>
-                            </div>
-                            <div className="mt-3 flex flex-col gap-2">
-                              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                <span>{costProgressLabel}</span>
-                                <div className="h-4 bg-gray-200 rounded w-12" />
-                              </div>
-                              <div className="h-2 rounded-full bg-gray-200" />
-                              <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] sm:text-xs text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <CalendarIcon className="w-3.5 h-3.5" />
-                                  <div className="h-4 bg-gray-200 rounded w-20" />
+                    {isWellProject ? (
+                      <div className="sm:min-w-[200px]">
+                        <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-white">
+                          <span className="uppercase tracking-wide text-white/100">
+                            {t("projects.progress_label")}
+                          </span>
+                          <span className="text-white">{statusProgressLabel}</span>
+                        </div>
+                        <Progress value={displayProgressValue} className="mt-2 h-1.5 bg-white/25" />
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        {costsLoading ? (
+                          // Show empty cost container skeleton while loading
+                          <div className="min-h-[100px]">
+                            <div className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-3 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors animate-pulse">
+                              <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                                <div className="flex-1 min-w-[140px]">
+                                  <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                                    {costTitle}
+                                  </p>
+                                  <div className="h-5 bg-gray-200 rounded mt-1 w-24" />
                                 </div>
-                                <div className="h-6 bg-gray-200 rounded-full w-24" />
+                                <div className="flex-1 min-w-[120px]">
+                                  <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                                    {fundedLabel}
+                                  </p>
+                                  <div className="h-5 bg-gray-200 rounded mt-1 w-20" />
+                                </div>
+                                <div className="flex-1 min-w-[120px]">
+                                  <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                                    {remainingLabel}
+                                  </p>
+                                  <div className="h-5 bg-gray-200 rounded mt-1 w-20" />
+                                </div>
+                              </div>
+                              <div className="mt-3 flex flex-col gap-2">
+                                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                  <span>{costProgressLabel}</span>
+                                  <div className="h-4 bg-gray-200 rounded w-12" />
+                                </div>
+                                <div className="h-2 rounded-full bg-gray-200" />
+                                <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] sm:text-xs text-muted-foreground">
+                                  <div className="flex items-center gap-1">
+                                    <CalendarIcon className="w-3.5 h-3.5" />
+                                    <div className="h-4 bg-gray-200 rounded w-20" />
+                                  </div>
+                                  <div className="h-6 bg-gray-200 rounded-full w-24" />
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ) : projectCost ? (
-                        <div className="min-h-[100px]">
-                          <div 
-                            className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-3 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors"
-                          >
-                        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-                          <div className="flex-1 min-w-[140px]">
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
-                              {costTitle}
-                            </p>
-                            <p className="text-sm sm:text-base font-bold">
-                              {formatCurrency(projectCost.totalBudget, projectCost.currency)}
-                            </p>
-                          </div>
-                          <div className="flex-1 min-w-[120px]">
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
-                              {fundedLabel}
-                            </p>
-                            <p className="text-sm sm:text-base font-semibold text-emerald-600">
-                              {formatCurrency(projectCost.spentAmount, projectCost.currency)}
-                            </p>
-                          </div>
-                          <div className="flex-1 min-w-[120px]">
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
-                              {remainingLabel}
-                            </p>
-                            <p className="text-sm sm:text-base font-semibold text-orange-600">
-                              {formatCurrency(projectCost.remainingAmount, projectCost.currency)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="mt-3 flex flex-col gap-2">
-                          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            <span>{costProgressLabel}</span>
-                            <span className="text-slate-900">{detailedProgressLabel}</span>
-                          </div>
-                          <Progress
-                            value={spentPercentage ?? 0}
-                            className="h-2 rounded-full bg-primary/15 [&>div]:rounded-full [&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:via-primary/90 [&>div]:to-primary/70"
-                          />
-                          <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] sm:text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <CalendarIcon className="w-3.5 h-3.5" />
-                              <span>{formatDate(projectCost.lastUpdated)}</span>
+                        ) : projectCost ? (
+                          <div className="min-h-[100px]">
+                            <div 
+                              className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-3 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors"
+                            >
+                          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                            <div className="flex-1 min-w-[140px]">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                                {costTitle}
+                              </p>
+                              <p className="text-sm sm:text-base font-bold">
+                                {formatCurrency(projectCost.totalBudget, projectCost.currency)}
+                              </p>
+                            </div>
+                            <div className="flex-1 min-w-[120px]">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                                {fundedLabel}
+                              </p>
+                              <p className="text-sm sm:text-base font-semibold text-emerald-600">
+                                {formatCurrency(projectCost.spentAmount, projectCost.currency)}
+                              </p>
+                            </div>
+                            <div className="flex-1 min-w-[120px]">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                                {remainingLabel}
+                              </p>
+                              <p className="text-sm sm:text-base font-semibold text-orange-600">
+                                {formatCurrency(projectCost.remainingAmount, projectCost.currency)}
+                              </p>
                             </div>
                           </div>
-                        </div>
+                          <div className="mt-3 flex flex-col gap-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500">
+                              <span>{costProgressLabel}</span>
+                              <span className="text-slate-900">{detailedProgressLabel}</span>
+                            </div>
+                            <Progress
+                              value={spentPercentage ?? 0}
+                              className="h-2 rounded-full bg-primary/15 [&>div]:rounded-full [&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:via-primary/90 [&>div]:to-primary/70"
+                            />
+                            <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] sm:text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <CalendarIcon className="w-3.5 h-3.5" />
+                                <span>{formatDate(projectCost.lastUpdated)}</span>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="sm:min-w-[200px]">
-                          <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-white">
-                            <span className="uppercase tracking-wide text-white/100">
-                              {t("projects.progress_label")}
-                            </span>
-                            <span className="text-white">{statusProgressLabel}</span>
+                            </div>
                           </div>
-                          <Progress value={displayProgressValue} className="mt-2 h-1.5 bg-white/25" />
-                        </div>
-                      )}
-                    </div>
+                        ) : (
+                          <div className="sm:min-w-[200px]">
+                            <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-white">
+                              <span className="uppercase tracking-wide text-white/100">
+                                {t("projects.progress_label")}
+                              </span>
+                              <span className="text-white">{statusProgressLabel}</span>
+                            </div>
+                            <Progress value={displayProgressValue} className="mt-2 h-1.5 bg-white/25" />
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
