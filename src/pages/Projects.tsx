@@ -1,12 +1,11 @@
-import { ReactNode, useEffect, MouseEvent, useState } from "react";
+import { ReactNode, useEffect, MouseEvent } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { ProjectItemsModal } from "@/components/ProjectItemsModal";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet, Calendar as CalendarIcon, Package } from "lucide-react";
+import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet, Calendar as CalendarIcon } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useProjectCosts } from "@/hooks/useProjectCosts";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -44,8 +43,7 @@ const Projects = () => {
   const { t, language } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { error: costsError, getProjectCost, refreshCosts, loading: costsLoading } = useProjectCosts();
-  const [activeCostProject, setActiveCostProject] = useState<ProjectCost | null>(null);
+  const { error: costsError, getProjectCost, loading: costsLoading } = useProjectCosts();
 
   const formatCurrency = (amount: number, currency: string = "EUR") => {
     try {
@@ -84,61 +82,15 @@ const Projects = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const section = params.get("section");
-    const hash = decodeURIComponent(location.hash.replace('#', ''));
     
-    // Don't open modal if it's already closed (user clicked close)
-    // Only open if hash exists and modal is not already open
-    if (!activeCostProject && hash && hash !== 'all') {
-      // If we have both section and hash, open modal immediately and scroll together
-      if (section) {
-        // Open modal immediately
-        const allProjects = [...activeProjects, ...plannedProjects];
-        for (const project of allProjects) {
-          const projectCost = getProjectCost(project.title);
-          if (projectCost) {
-            const hasPhase = projectCost.items.some(item => item.phase === hash);
-            if (hasPhase) {
-              setActiveCostProject(projectCost);
-              break;
-            }
-          }
-        }
-        
-        // Scroll to section instantly (no animation) so modal appears in correct position
-        const target = document.getElementById(section);
-        if (target) {
-          // Use instant scroll first, then smooth if needed
-          target.scrollIntoView({ behavior: "auto", block: "start" });
-        }
-      } else {
-        // Only hash, no section - find project and section, then open modal
-        const allProjects = [...activeProjects, ...plannedProjects];
-        for (const project of allProjects) {
-          const projectCost = getProjectCost(project.title);
-          if (projectCost) {
-            const hasPhase = projectCost.items.some(item => item.phase === hash);
-            if (hasPhase) {
-              setActiveCostProject(projectCost);
-              // Scroll to section if anchorId exists
-              if (project.anchorId) {
-                const target = document.getElementById(project.anchorId);
-                if (target) {
-                  target.scrollIntoView({ behavior: "auto", block: "start" });
-                }
-              }
-              break;
-            }
-          }
-        }
-      }
-    } else if (section && !hash) {
-      // Only section, no hash - normal scroll
+    // Only handle section scrolling, no modal opening
+    if (section) {
       const target = document.getElementById(section);
       if (target) {
         target.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
-  }, [location, getProjectCost, activeCostProject]);
+  }, [location]);
 
   const mobilityDescription = t("projects.mobility.description");
   const anchorClasses = "text-primary underline underline-offset-4";
@@ -365,7 +317,6 @@ const Projects = () => {
     const fundedLabel = t("projects.cost.funded");
     const remainingLabel = t("projects.cost.remaining");
     const costProgressLabel = t("projects.cost.progress");
-    const detailsLabel = t("projects.cost.details");
     
     return (
       <div 
@@ -488,14 +439,7 @@ const Projects = () => {
                       ) : projectCost ? (
                         <div className="min-h-[100px]">
                           <div 
-                            className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-3 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors cursor-pointer hover:bg-white/95"
-                            onClick={(e) => {
-                              // Don't trigger if clicking on the button itself
-                              if ((e.target as HTMLElement).closest('button')) {
-                                return;
-                              }
-                              setActiveCostProject(projectCost);
-                            }}
+                            className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-3 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors"
                           >
                         <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                           <div className="flex-1 min-w-[140px]">
@@ -537,14 +481,6 @@ const Projects = () => {
                               <CalendarIcon className="w-3.5 h-3.5" />
                               <span>{formatDate(projectCost.lastUpdated)}</span>
                             </div>
-                            <Button
-                              size="sm"
-                              onClick={() => setActiveCostProject(projectCost)}
-                              className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm hover:bg-primary/90 focus-visible:ring-white/50"
-                            >
-                              <Package className="w-3 h-3" />
-                              {detailsLabel}
-                            </Button>
                           </div>
                         </div>
                           </div>
@@ -760,61 +696,6 @@ const Projects = () => {
           </div>
         </section>
       </main>
-
-      {activeCostProject && (
-        <ProjectItemsModal
-          projectCost={activeCostProject}
-          isOpen={!!activeCostProject}
-          onClose={() => {
-            setActiveCostProject(null);
-            refreshCosts();
-            // Remove hash from URL when closing modal to prevent it from reopening
-            const params = new URLSearchParams(location.search);
-            const newSearch = params.toString();
-            navigate(`${location.pathname}${newSearch ? '?' + newSearch : ''}`, { replace: true });
-          }}
-          onItemToggle={(itemId, purchased) => {
-            if (!activeCostProject) {
-              return;
-            }
-            const updatedItems = activeCostProject.items.map(item =>
-              item.itemId === itemId ? { ...item, purchased } : item
-            );
-            const purchasedItems = updatedItems.filter(item => item.purchased).length;
-            const spentAmount = updatedItems
-              .filter(item => item.purchased)
-              .reduce((sum, item) => sum + (item.unitCostEUR || 0), 0);
-            const remainingAmount = activeCostProject.totalBudget - spentAmount;
-            console.log('Item toggled:', itemId, purchased, {
-              ...activeCostProject,
-              items: updatedItems,
-              purchasedItems,
-              spentAmount,
-              remainingAmount,
-            });
-          }}
-          onItemCostUpdate={(itemId, cost) => {
-            if (!activeCostProject) {
-              return;
-            }
-            const updatedItems = activeCostProject.items.map(item =>
-              item.itemId === itemId ? { ...item, unitCostEUR: cost } : item
-            );
-            const totalBudget = updatedItems.reduce((sum, item) => sum + (item.unitCostEUR || 0), 0);
-            const spentAmount = updatedItems
-              .filter(item => item.purchased)
-              .reduce((sum, item) => sum + (item.unitCostEUR || 0), 0);
-            const remainingAmount = totalBudget - spentAmount;
-            console.log('Item cost updated:', itemId, cost, {
-              ...activeCostProject,
-              items: updatedItems,
-              totalBudget,
-              spentAmount,
-              remainingAmount,
-            });
-          }}
-        />
-      )}
       
       <Footer />
     </div>
