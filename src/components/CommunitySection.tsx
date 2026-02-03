@@ -197,7 +197,7 @@ const CommunitySection = () => {
           <div className="space-y-6 lg:col-span-2">
             <div className="space-y-6">
               {/* First Map */}
-              <Card className="overflow-hidden shadow-card">
+              {/* <Card className="overflow-hidden shadow-card">
                 <div className="aspect-[4/3] bg-muted relative">
                   <iframe
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.7!2d32.827667236328125!3d0.6293768286705017!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMMKwMzcnNDkuOCJOIDMywrA0OSc0MC4wIkU!5e0!3m2!1sen!2sde!4v1234567890124!5m2!1sen!2sde"
@@ -225,9 +225,9 @@ const CommunitySection = () => {
                     {t("community.location.region")}
                   </p>
                 </div>
-              </Card>
+              </Card> */}
 
-              {/* Second Map
+              {/* Second Map */}
               <Card className="overflow-hidden shadow-card">
                 <div className="aspect-[4/3] bg-muted relative">
                   <iframe
@@ -256,7 +256,7 @@ const CommunitySection = () => {
                     {t("community.location.region")}
                   </p>
                 </div>
-              </Card> */}
+              </Card>
             </div>
           </div>
         </div>
