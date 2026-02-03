@@ -47,7 +47,7 @@ const TeamSection = () => {
                 </div>
                 <div className="mt-2">
                   <p className="text-xs text-muted-foreground leading-relaxed">
-                  Peter, bei der Arbeit am Community House mit einer freiwilligen Helferin aus Namaliri
+                    {t("images.team.peter_work")}
                   </p>
                 </div>
               </div>

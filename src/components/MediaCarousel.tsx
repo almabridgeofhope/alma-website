@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { MediaItem, PhotoGallery as PhotoGalleryType } from "@/data/newsArticles";
 import { Play, X, ZoomIn, Video, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   Carousel,
   CarouselContent,
@@ -16,6 +17,7 @@ interface MediaCarouselProps {
 }
 
 const MediaCarousel = ({ gallery, className }: MediaCarouselProps) => {
+  const { t } = useLanguage();
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -90,7 +92,7 @@ const MediaCarousel = ({ gallery, className }: MediaCarouselProps) => {
                     {media.type === "image" ? (
                       <img
                         src={media.src}
-                        alt={media.alt || `Gallery image ${index + 1}`}
+                        alt={media.alt || media.caption || `${t("images.gallery.image")} ${index + 1}`}
                         className="h-full w-auto object-contain group-hover:scale-105 transition-transform duration-300 rounded-md"
                         style={{ maxWidth: 'none', height: '100%' }}
                         loading="lazy"
@@ -222,7 +224,7 @@ const MediaCarousel = ({ gallery, className }: MediaCarouselProps) => {
               {selectedMedia.type === "image" ? (
                 <img
                   src={selectedMedia.src}
-                  alt={selectedMedia.alt || "Gallery image"}
+                  alt={selectedMedia.alt || selectedMedia.caption || t("images.gallery.image")}
                   className="max-w-[95vw] max-h-[90vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
                   style={{ aspectRatio: 'auto' }}
                   key={selectedIndex}

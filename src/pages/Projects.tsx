@@ -309,19 +309,17 @@ const Projects = () => {
     const financialTitle = t("projects.financial.title");
 
     if (projectTitle === communityTitle) {
-      return language === "de" ? "Gemeindehaus im Bau" : "Community House under construction";
+      return t("images.projects.community_house");
     } else if (projectTitle === wellTitle) {
-      return language === "de"
-        ? "Geplanter Brunnen für sauberes Trinkwasser"
-        : "Planned well for clean drinking water";
+      return t("images.projects.well");
     } else if (projectTitle === livestockTitle) {
-      return language === "de" ? "Symbolbild: Farm mit Ziegen" : "Symbolic image: Farm with goats";
+      return t("images.projects.livestock");
     } else if (projectTitle === mobilityTitle) {
-      return language === "de" ? "Symbolbild: Gemeinschaftsbus für Mobilität und Bildung" : "Symbolic image: Community bus for mobility and education";
+      return t("images.projects.mobility");
     } else if (projectTitle === sponsorshipTitle) {
-      return language === "de" ? "Schülerinnen und Schüler im Unterricht" : "Symbolic image: Students in the classroom";
+      return t("images.projects.sponsorship");
     } else if (projectTitle === financialTitle) {
-      return language === "de" ? "Unterricht in Finanzbildung (aus Vorprojekt)" : "Financial literacy training (from previous project)";
+      return t("images.projects.financial");
     }
     return projectTitle;
   };

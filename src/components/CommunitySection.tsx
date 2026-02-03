@@ -22,6 +22,29 @@ import community6 from "@/assets/community/community_6.webp";
 const CommunitySection = () => {
   const { t } = useLanguage();
   
+  const getCommunityImageCaption = (imageSrc: string): string => {
+    if (imageSrc === community) {
+      return t("images.community.peter");
+    } else if (imageSrc === community1) {
+      return t("images.community.insight1");
+    } else if (imageSrc === community2) {
+      return t("images.community.aaron");
+    } else if (imageSrc === community5) {
+      return t("images.community.insight2");
+    } else if (imageSrc === communityHouse) {
+      return t("images.community.house_construction");
+    } else if (imageSrc === children) {
+      return t("images.community.children");
+    } else if (imageSrc === house) {
+      return t("images.community.house_shell");
+    } else if (imageSrc === community4) {
+      return t("images.community.activities");
+    } else if (imageSrc === community6) {
+      return t("images.community.activities");
+    }
+    return "";
+  };
+  
   return (
     <section id="community" className="pt-section pb-section bg-muted/30">
       <div className="max-w-content mx-auto px-6">
@@ -54,7 +77,7 @@ const CommunitySection = () => {
                       />
                       <div className="mt-2 px-2 pb-2">
                         <p className="text-xs text-muted-foreground leading-relaxed">
-                        Peter, Gründer von Alma Bridge of Hope Uganda, mit Kindern aus Namaliri
+                          {getCommunityImageCaption(community)}
                         </p>
                       </div>
                     </div>
@@ -74,7 +97,7 @@ const CommunitySection = () => {
                       />
                       <div className="mt-2 px-2 pb-2">
                         <p className="text-xs text-muted-foreground leading-relaxed">
-                          Einblick in Namaliri
+                          {getCommunityImageCaption(community1)}
                         </p>
                       </div>
                     </div>
@@ -94,7 +117,7 @@ const CommunitySection = () => {
                       />
                       <div className="mt-2 px-2 pb-2">
                         <p className="text-xs text-muted-foreground leading-relaxed">
-                          Aaron, Gründer von Alma Bridge of Hope Germany, bei seinem Besuch in Uganda
+                          {getCommunityImageCaption(community2)}
                         </p>
                       </div>
                     </div>
@@ -114,7 +137,7 @@ const CommunitySection = () => {
                       />
                       <div className="mt-2 px-2 pb-2">
                         <p className="text-xs text-muted-foreground leading-relaxed">
-                          Einblick in Namaliri
+                          {getCommunityImageCaption(community5)}
                         </p>
                       </div>
                     </div>
@@ -134,7 +157,7 @@ const CommunitySection = () => {
                       />
                       <div className="mt-2 px-2 pb-2">
                         <p className="text-xs text-muted-foreground leading-relaxed">
-                          Gemeindehaus im Bau
+                          {getCommunityImageCaption(communityHouse)}
                         </p>
                       </div>
                     </div>
@@ -154,7 +177,7 @@ const CommunitySection = () => {
                       />
                       <div className="mt-2 px-2 pb-2">
                         <p className="text-xs text-muted-foreground leading-relaxed">
-                          Kinder aus Namaliri
+                          {getCommunityImageCaption(children)}
                         </p>
                       </div>
                     </div>
@@ -174,7 +197,7 @@ const CommunitySection = () => {
                       />
                       <div className="mt-2 px-2 pb-2">
                         <p className="text-xs text-muted-foreground leading-relaxed">
-                          Rohbau des Gemeindehauses
+                          {getCommunityImageCaption(house)}
                         </p>
                       </div>
                     </div>

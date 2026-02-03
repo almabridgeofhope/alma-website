@@ -150,7 +150,7 @@ const Team = () => {
                     />
                     <div className="mt-2 px-2 pb-2">
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        {image.alt || "Team-Mitglieder"}
+                        {image.alt || t("images.team.members")}
                       </p>
                     </div>
                   </div>

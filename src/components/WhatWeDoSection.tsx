@@ -7,7 +7,7 @@ import infrastructureImage from "@/assets/project/street.webp";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const WhatWeDoSection = () => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   
   const initiatives = [
     {
@@ -33,11 +33,11 @@ const WhatWeDoSection = () => {
     const educationTitle = t("whatwedo.education.title");
 
     if (initiativeTitle === utilitiesTitle) {
-      return language === "de" ? "Geplanter Brunnen für sauberes Trinkwasser" : "Planned well for clean drinking water";
+      return t("images.initiatives.utilities");
     } else if (initiativeTitle === infrastructureTitle) {
-      return language === "de" ? "Einblick in Namaliri" : "Insight into Namaliri";
+      return t("images.initiatives.infrastructure");
     } else if (initiativeTitle === educationTitle) {
-      return language === "de" ? "Schülerinnen und Schüler im Unterricht" : "Students in the classroom";
+      return t("images.initiatives.education");
     }
     return initiativeTitle;
   };
