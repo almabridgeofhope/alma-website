@@ -23,6 +23,9 @@ export interface DonationData {
   paymentId?: string; // PayPal transaction ID or SEPA reference
   paymentStatus?: 'paid' | 'unpaid' | 'pending' | 'failed'; // Payment status (for Stripe SEPA, PayPal is always 'paid')
   wantsReceipt?: boolean; // Whether donor wants a donation receipt (Spendenbescheid)
+  isGift?: boolean; // Whether donation is a present
+  giftRecipientName?: string;
+  giftRecipientEmail?: string;
   address?: {
     street?: string;
     postalCode?: string;

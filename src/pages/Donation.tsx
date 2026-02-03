@@ -26,6 +26,7 @@ import { paypalService } from "@/services/paypalService";
 import heroImage from "@/assets/nature/nature_2.webp";
 import communityImage from "@/assets/community/community_2.webp";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import emailjs from "@emailjs/browser";
 
 // PayPal Configuration - Select Client ID based on environment
 const VITE_STAGE = import.meta.env.VITE_STAGE || "local";
@@ -496,6 +497,9 @@ const Donation = () => {
     firstName: "",
     lastName: "",
     email: "",
+    isGift: false,
+    giftRecipientName: "",
+    giftRecipientEmail: "",
     street: "",
     postalCode: "",
     city: "",
@@ -721,8 +725,62 @@ const Donation = () => {
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
+      ...(field === "isGift" && value === false
+        ? { giftRecipientName: "", giftRecipientEmail: "" }
+        : {})
     }));
+  };
+
+  const sendGiftEmail = async (params: {
+    recipientName: string;
+    recipientEmail: string;
+    donorName: string;
+    donorEmail: string;
+    amount: string;
+    donationType: "one-time" | "monthly";
+  }) => {
+    try {
+      const serviceId = "service_wou9sst";
+      const templateId = "template_eqc74jo";
+      const publicKey = "zxPupF44hCueD6u4K";
+
+      const subject = t("donation.giftEmail.subject");
+      const greeting = `${t("donation.giftEmail.greeting")} ${params.recipientName},`;
+      const bodyLines = [
+        greeting,
+        "",
+        t("donation.giftEmail.body"),
+        "",
+        `${t("donation.giftEmail.details.donor")} ${params.donorName} (${params.donorEmail})`,
+        `${t("donation.giftEmail.details.amount")} ${params.amount}`,
+        `${t("donation.giftEmail.details.type")} ${
+          params.donationType === "monthly"
+            ? t("donation.giftEmail.details.type.monthly")
+            : t("donation.giftEmail.details.type.onetime")
+        }`,
+        "",
+        t("donation.giftEmail.closing"),
+        t("donation.giftEmail.signature"),
+      ];
+
+      await emailjs.send(
+        serviceId,
+        templateId,
+        {
+          from_name: params.donorName,
+          from_email: params.donorEmail,
+          subject,
+          message: bodyLines.join("\n"),
+          to_email: params.recipientEmail,
+          reply_to: params.donorEmail,
+        },
+        publicKey
+      );
+      console.log("✅ Gift email sent to recipient");
+    } catch (error) {
+      console.error("❌ Failed to send gift email:", error);
+    }
   };
 
   const validateForm = () => {
@@ -775,6 +833,22 @@ const Donation = () => {
       if (!formData.street.trim() || !formData.postalCode.trim() || !formData.city.trim() || !formData.country.trim()) {
         console.log("Address validation failed");
         showError(t("donation.form.error.address"));
+        return false;
+      }
+    }
+
+    if (formData.isGift) {
+      if (!formData.giftRecipientName.trim()) {
+        showError(t("donation.form.error.giftRecipientName"));
+        return false;
+      }
+      if (!formData.giftRecipientEmail.trim()) {
+        showError(t("donation.form.error.giftRecipientEmail"));
+        return false;
+      }
+      const giftEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!giftEmailRegex.test(formData.giftRecipientEmail)) {
+        showError(t("donation.form.error.giftRecipientEmailInvalid"));
         return false;
       }
     }
@@ -861,6 +935,9 @@ const Donation = () => {
         paymentId: paymentId,
         paymentStatus: 'paid', // PayPal payments are always 'paid' when we reach this point
         wantsReceipt: formData.wantsReceipt,
+        isGift: formData.isGift,
+        giftRecipientName: formData.isGift ? formData.giftRecipientName || undefined : undefined,
+        giftRecipientEmail: formData.isGift ? formData.giftRecipientEmail || undefined : undefined,
         address: formData.wantsReceipt ? {
           street: formData.street || undefined,
           postalCode: formData.postalCode || undefined,
@@ -952,6 +1029,19 @@ const Donation = () => {
     if (currentFormData.wantsReceipt) {
       if (!currentFormData.street?.trim() || !currentFormData.postalCode?.trim() || !currentFormData.city?.trim() || !currentFormData.country?.trim()) {
         throw new Error(t("donation.form.error.address"));
+      }
+    }
+
+    if (currentFormData.isGift) {
+      if (!currentFormData.giftRecipientName?.trim()) {
+        throw new Error(t("donation.form.error.giftRecipientName"));
+      }
+      if (!currentFormData.giftRecipientEmail?.trim()) {
+        throw new Error(t("donation.form.error.giftRecipientEmail"));
+      }
+      const giftEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!giftEmailRegex.test(currentFormData.giftRecipientEmail)) {
+        throw new Error(t("donation.form.error.giftRecipientEmailInvalid"));
       }
     }
 
@@ -1164,7 +1254,19 @@ const Donation = () => {
           : (cartState.items.length > 0 
               ? cartState.totalAmount.toString() 
               : (amount || customAmount || "0"));
-        
+
+        if (formData.isGift && formData.giftRecipientEmail && formData.giftRecipientName) {
+          const amountLabel = formatCurrency(parseFloat(finalAmount || "0"));
+          await sendGiftEmail({
+            recipientName: formData.giftRecipientName,
+            recipientEmail: formData.giftRecipientEmail,
+            donorName: `${formData.firstName} ${formData.lastName}`.trim(),
+            donorEmail: formData.email,
+            amount: amountLabel,
+            donationType,
+          });
+        }
+
         console.log("💰 PayPal: Navigating to success page with amount:", finalAmount);
         
         // Redirect to success page with donation details (BEFORE clearing state)
@@ -1415,6 +1517,19 @@ const Donation = () => {
       }
     }
 
+    if (currentFormData.isGift) {
+      if (!currentFormData.giftRecipientName?.trim()) {
+        throw new Error(t("donation.form.error.giftRecipientName"));
+      }
+      if (!currentFormData.giftRecipientEmail?.trim()) {
+        throw new Error(t("donation.form.error.giftRecipientEmail"));
+      }
+      const giftEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!giftEmailRegex.test(currentFormData.giftRecipientEmail)) {
+        throw new Error(t("donation.form.error.giftRecipientEmailInvalid"));
+      }
+    }
+
     // Validate privacy consent
     if (!currentFormData.privacyConsent) {
       throw new Error(t("donation.form.error.privacy"));
@@ -1441,6 +1556,9 @@ const Donation = () => {
           donationType: 'monthly',
           wantsReceipt: currentFormData.wantsReceipt ? 'true' : 'false',
           donor_salutation: currentFormData.salutation || "",
+          giftDonation: currentFormData.isGift ? "true" : "false",
+          giftRecipientName: currentFormData.giftRecipientName || "",
+          giftRecipientEmail: currentFormData.giftRecipientEmail || "",
         }
       });
       
@@ -2314,6 +2432,51 @@ const Donation = () => {
                     </div>
                   </div>
 
+                  {/* Gift Donation */}
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="isGift"
+                        checked={formData.isGift}
+                        onCheckedChange={(checked) => handleInputChange("isGift", checked as boolean)}
+                      />
+                      <Label htmlFor="isGift" className="text-sm">
+                        {t("donation.form.gift.label")}
+                      </Label>
+                    </div>
+
+                    {formData.isGift && (
+                      <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+                        <p className="text-sm text-muted-foreground">
+                          {t("donation.form.gift.description")}
+                        </p>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="giftRecipientName">{t("donation.form.gift.name")}</Label>
+                            <Input
+                              id="giftRecipientName"
+                              value={formData.giftRecipientName}
+                              onChange={(e) => handleInputChange("giftRecipientName", e.target.value)}
+                              className="mt-2"
+                              required={formData.isGift}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="giftRecipientEmail">{t("donation.form.gift.email")}</Label>
+                            <Input
+                              id="giftRecipientEmail"
+                              type="email"
+                              value={formData.giftRecipientEmail}
+                              onChange={(e) => handleInputChange("giftRecipientEmail", e.target.value)}
+                              className="mt-2"
+                              required={formData.isGift}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Receipt Checkbox */}
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2">
@@ -2518,6 +2681,9 @@ const Donation = () => {
                           comment: formData.comment || "",
                           wantsReceipt: formData.wantsReceipt ? "true" : "false",
                           wantsNewsletter: formData.wantsNewsletter ? "true" : "false",
+                          giftDonation: formData.isGift ? "true" : "false",
+                          giftRecipientName: formData.giftRecipientName || "",
+                          giftRecipientEmail: formData.giftRecipientEmail || "",
                           donor_street: formData.street || "",
                           donor_postalCode: formData.postalCode || "",
                           donor_city: formData.city || "",
@@ -2541,6 +2707,21 @@ const Donation = () => {
                           if (!formData.privacyConsent) {
                             showError(t("donation.form.error.privacy"));
                             return false;
+                          }
+                          if (formData.isGift) {
+                            if (!formData.giftRecipientName) {
+                              showError(t("donation.form.error.giftRecipientName"));
+                              return false;
+                            }
+                            if (!formData.giftRecipientEmail) {
+                              showError(t("donation.form.error.giftRecipientEmail"));
+                              return false;
+                            }
+                            const giftEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                            if (!giftEmailRegex.test(formData.giftRecipientEmail)) {
+                              showError(t("donation.form.error.giftRecipientEmailInvalid"));
+                              return false;
+                            }
                           }
                           const finalAmount = donationType === "monthly"
                             ? parseFloat(amount || customAmount || "0")
@@ -2577,6 +2758,9 @@ const Donation = () => {
                           comment: formData.comment || "",
                           wantsReceipt: formData.wantsReceipt ? "true" : "false",
                           wantsNewsletter: formData.wantsNewsletter ? "true" : "false",
+                          giftDonation: formData.isGift ? "true" : "false",
+                          giftRecipientName: formData.giftRecipientName || "",
+                          giftRecipientEmail: formData.giftRecipientEmail || "",
                           donor_street: formData.street || "",
                           donor_postalCode: formData.postalCode || "",
                           donor_city: formData.city || "",
@@ -2601,6 +2785,21 @@ const Donation = () => {
                             showError(t("donation.form.error.privacy"));
                             return false;
                           }
+                          if (formData.isGift) {
+                            if (!formData.giftRecipientName) {
+                              showError(t("donation.form.error.giftRecipientName"));
+                              return false;
+                            }
+                            if (!formData.giftRecipientEmail) {
+                              showError(t("donation.form.error.giftRecipientEmail"));
+                              return false;
+                            }
+                            const giftEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                            if (!giftEmailRegex.test(formData.giftRecipientEmail)) {
+                              showError(t("donation.form.error.giftRecipientEmailInvalid"));
+                              return false;
+                            }
+                          }
                           const finalAmount = donationType === "monthly"
                             ? parseFloat(amount || customAmount || "0")
                             : (cartState.items.length > 0 
@@ -2618,6 +2817,29 @@ const Donation = () => {
                 </div>
               </Card>
             </div>
+          </div>
+        </section>
+
+        {/* 1b. Spenden statt Geschenke CTA */}
+        <section className="py-10 bg-muted/30">
+          <div className="max-w-content mx-auto px-6">
+            <Card className="p-6 md:p-8 shadow-card">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                    {t("donation.giftCta.title")}
+                  </h2>
+                  <p className="text-muted-foreground text-lg">
+                    {t("donation.giftCta.description")}
+                  </p>
+                </div>
+                <Button asChild size="lg">
+                  <Link to="/spenden-statt-geschenke">
+                    {t("donation.giftCta.button")}
+                  </Link>
+                </Button>
+              </div>
+            </Card>
           </div>
         </section>
 

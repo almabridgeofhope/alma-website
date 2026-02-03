@@ -24,6 +24,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import heroImage from "@/assets/nature/nature_2.webp";
+import emailjs from "@emailjs/browser";
 
 const DonationSuccess = () => {
   const { t, language } = useLanguage();
@@ -62,6 +63,7 @@ const DonationSuccess = () => {
   
   // Track processed session IDs to prevent duplicate webhook calls
   const processedSessionsRef = useRef<Set<string>>(new Set());
+  const giftEmailSentRef = useRef<Set<string>>(new Set());
   
   // Final display values
   const displayAmount = sessionDetails 
@@ -86,6 +88,68 @@ const DonationSuccess = () => {
       const details = await stripeService.getSessionDetails(sessionId);
       console.log("✅ Session details loaded:", details);
       setSessionDetails(details);
+
+      const metadata = details.metadata || {};
+      const isGiftDonation = metadata.giftDonation === "true";
+      const giftRecipientName = metadata.giftRecipientName || "";
+      const giftRecipientEmail = metadata.giftRecipientEmail || "";
+      const donorName = metadata.donorName || details.customer_details?.name || "";
+      const donorEmail = metadata.donorEmail || details.customer_details?.email || details.customer_email || "";
+      const metadataDonationType = metadata.donationType === "monthly" ||
+        metadata.donation_type === "monthly" ||
+        metadata.subscription_type === "monthly_donation"
+          ? "monthly"
+          : "one-time";
+
+      if (
+        isGiftDonation &&
+        giftRecipientName &&
+        giftRecipientEmail &&
+        donorName &&
+        donorEmail &&
+        !giftEmailSentRef.current.has(details.id)
+      ) {
+        try {
+          giftEmailSentRef.current.add(details.id);
+          const amountLabel = formatCurrency(details.amount_total / 100);
+          const subject = t("donation.giftEmail.subject");
+          const greeting = `${t("donation.giftEmail.greeting")} ${giftRecipientName},`;
+          const bodyLines = [
+            greeting,
+            "",
+            t("donation.giftEmail.body"),
+            "",
+            `${t("donation.giftEmail.details.donor")} ${donorName} (${donorEmail})`,
+            `${t("donation.giftEmail.details.amount")} ${amountLabel}`,
+            `${t("donation.giftEmail.details.type")} ${
+              metadataDonationType === "monthly"
+                ? t("donation.giftEmail.details.type.monthly")
+                : t("donation.giftEmail.details.type.onetime")
+            }`,
+            "",
+            t("donation.giftEmail.closing"),
+            t("donation.giftEmail.signature"),
+          ];
+
+          await emailjs.send(
+            "service_wou9sst",
+            "template_eqc74jo",
+            {
+              from_name: donorName,
+              from_email: donorEmail,
+              subject,
+              message: bodyLines.join("\n"),
+              to_email: giftRecipientEmail,
+              reply_to: donorEmail,
+            },
+            "zxPupF44hCueD6u4K"
+          );
+          console.log("✅ Gift email sent to recipient (Stripe)");
+        } catch (error) {
+          console.error("❌ Failed to send gift email (Stripe):", error);
+          giftEmailSentRef.current.delete(details.id);
+        }
+      }
       
       // Check if this is a SEPA payment
       // SEPA payments can be detected from metadata or payment_method_types
@@ -139,7 +203,7 @@ const DonationSuccess = () => {
     } finally {
       setIsLoadingSession(false);
     }
-  }, [sessionId, language]);
+  }, [sessionId, language, formatCurrency, t]);
   
   // Process webhook in background
   const processWebhook = async (details: StripeSessionDetails) => {
@@ -295,6 +359,9 @@ const DonationSuccess = () => {
         paymentId: details.id,
         paymentStatus: details.payment_status as 'paid' | 'unpaid' | 'pending' | 'failed', // Include payment status
         wantsReceipt: details.metadata?.wantsReceipt === 'true',
+        isGift: details.metadata?.giftDonation === 'true',
+        giftRecipientName: details.metadata?.giftRecipientName || undefined,
+        giftRecipientEmail: details.metadata?.giftRecipientEmail || undefined,
         address: address,
         wantsNewsletter: details.metadata?.wantsNewsletter === 'true',
         comment: donationComment,
