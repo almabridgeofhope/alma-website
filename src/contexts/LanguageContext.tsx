@@ -574,7 +574,7 @@ const translations = {
     "donation.contact.subtitle": "Contact us for any questions about donations, tax receipts, or our work.",
     "donation.contact.email": "info@almabridgeofhope.org",
     "donation.contact.button": "Contact Us",
-    
+
     // Donation Success Page
     "donation.success.title": "Thank You for Your Generous Donation!",
     "donation.success.title.monthly": "Thank You for Setting Up Your Monthly Donation!",
@@ -607,7 +607,7 @@ const translations = {
     "donation.success.nextSteps.newsletter.title": "Stay Updated",
     "donation.success.nextSteps.newsletter.desc": "Subscribe to our newsletter to receive updates about our projects and impact.",
     "donation.success.nextSteps.newsletter.button": "Subscribe to Newsletter",
-    "donation.success.nextSteps.projects.title": "See Our Projects",
+    "donation.success.nextSteps.projects.title": "Our Projects",
     "donation.success.nextSteps.projects.desc": "Explore our current projects and see how your donation is being used.",
     "donation.success.nextSteps.projects.button": "View Projects",
     "donation.success.nextSteps.donateAgain": "Make Another Donation",
@@ -1562,7 +1562,7 @@ const translations = {
     "donation.success.nextSteps.newsletter.title": "Bleib informiert",
     "donation.success.nextSteps.newsletter.desc": "Abonniere unseren Newsletter, um Updates zu unseren Projekten und dem Impact zu erhalten.",
     "donation.success.nextSteps.newsletter.button": "Newsletter abonnieren",
-    "donation.success.nextSteps.projects.title": "Sieh unsere Projekte",
+    "donation.success.nextSteps.projects.title": "Unsere Projekte",
     "donation.success.nextSteps.projects.desc": "Erkunde unsere aktuellen Projekte und sieh, wie deine Spende verwendet wird.",
     "donation.success.nextSteps.projects.button": "Projekte ansehen",
     "donation.success.nextSteps.donateAgain": "Weitere Spende tätigen",
