@@ -2823,23 +2823,25 @@ const Donation = () => {
         {/* 1b. Spenden statt Geschenke CTA */}
         <section className="py-10 bg-muted/30">
           <div className="max-w-content mx-auto px-6">
-            <Card className="p-6 md:p-8 shadow-card">
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                    {t("donation.giftCta.title")}
-                  </h2>
-                  <p className="text-muted-foreground text-lg">
-                    {t("donation.giftCta.description")}
-                  </p>
+            <div className="max-w-4xl mx-auto">
+              <Card className="p-6 md:p-8 shadow-card">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                  <div>
+                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                      {t("donation.giftCta.title")}
+                    </h2>
+                    <p className="text-muted-foreground text-lg">
+                      {t("donation.giftCta.description")}
+                    </p>
+                  </div>
+                  <Button asChild size="lg">
+                    <Link to="/spenden-statt-geschenke">
+                      {t("donation.giftCta.button")}
+                    </Link>
+                  </Button>
                 </div>
-                <Button asChild size="lg">
-                  <Link to="/spenden-statt-geschenke">
-                    {t("donation.giftCta.button")}
-                  </Link>
-                </Button>
-              </div>
-            </Card>
+              </Card>
+            </div>
           </div>
         </section>
 
