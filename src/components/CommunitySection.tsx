@@ -44,117 +44,140 @@ const CommunitySection = () => {
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={community}
-                      alt="Community"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover"
-                      lazy={true}
-                    />
+                    <div className="flex flex-col">
+                      <OptimizedImage
+                        src={community}
+                        alt="Peter, Gründer von Alma Bridge of Hope Uganda, mit Kindern aus Namaliri"
+                        aspectRatio="4/3"
+                        className="w-full h-full object-cover"
+                        lazy={true}
+                      />
+                      <div className="mt-2 px-2 pb-2">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                        Peter, Gründer von Alma Bridge of Hope Uganda, mit Kindern aus Namaliri
+                        </p>
+                      </div>
+                    </div>
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={community1}
-                      alt="Community members"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover object-top"
-                      lazy={true}
-                    />
+                    <div className="flex flex-col">
+                      <OptimizedImage
+                        src={community1}
+                        alt="Einblick in Namaliri"
+                        aspectRatio="4/3"
+                        className="w-full h-full object-cover object-top"
+                        lazy={true}
+                      />
+                      <div className="mt-2 px-2 pb-2">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Einblick in Namaliri
+                        </p>
+                      </div>
+                    </div>
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={community2}
-                      alt="Community activities"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover"
-                      lazy={true}
-                    />
+                    <div className="flex flex-col">
+                      <OptimizedImage
+                        src={community2}
+                        alt="Aaron, Gründer von Alma Bridge of Hope Germany, bei seinem Besuch in Uganda"
+                        aspectRatio="4/3"
+                        className="w-full h-full object-cover"
+                        lazy={true}
+                      />
+                      <div className="mt-2 px-2 pb-2">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Aaron, Gründer von Alma Bridge of Hope Germany, bei seinem Besuch in Uganda
+                        </p>
+                      </div>
+                    </div>
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={community5}
-                      alt="Community gathering"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover"
-                      lazy={true}
-                    />
+                    <div className="flex flex-col">
+                      <OptimizedImage
+                        src={community5}
+                        alt="Einblick in Namaliri"
+                        aspectRatio="4/3"
+                        className="w-full h-full object-cover"
+                        lazy={true}
+                      />
+                      <div className="mt-2 px-2 pb-2">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Einblick in Namaliri
+                        </p>
+                      </div>
+                    </div>
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={communityHouse}
-                      alt="Community house"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover"
-                      lazy={true}
-                    />
+                    <div className="flex flex-col">
+                      <OptimizedImage
+                        src={communityHouse}
+                        alt="Gemeindehaus im Bau: Das zentrale Gebäude für Gemeinschaftsaktivitäten und Veranstaltungen"
+                        aspectRatio="4/3"
+                        className="w-full h-full object-cover"
+                        lazy={true}
+                      />
+                      <div className="mt-2 px-2 pb-2">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Gemeindehaus im Bau
+                        </p>
+                      </div>
+                    </div>
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={children}
-                      alt="Children"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover"
-                      lazy={true}
-                    />
+                    <div className="flex flex-col">
+                      <OptimizedImage
+                        src={children}
+                        alt="Kinder aus Namaliri"
+                        aspectRatio="4/3"
+                        className="w-full h-full object-cover"
+                        lazy={true}
+                      />
+                      <div className="mt-2 px-2 pb-2">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Kinder aus Namaliri
+                        </p>
+                      </div>
+                    </div>
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={community4}
-                      alt="Community activities"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover object-top"
-                      lazy={true}
-                    />
-                  </Card>
-                </div>
-              </CarouselItem>
-              <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
-                <div className="p-1">
-                  <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={house}
-                      alt="Community activities"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover object-top"
-                      lazy={true}
-                    />
-                  </Card>
-                </div>
-              </CarouselItem>
-              <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
-                <div className="p-1">
-                  <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={community6}
-                      alt="Community activities"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover object-top"
-                      lazy={true}
-                    />
+                    <div className="flex flex-col">
+                      <OptimizedImage
+                        src={house}
+                        alt="Rohbau des Gemeindehauses"
+                        aspectRatio="4/3"
+                        className="w-full h-full object-cover object-top"
+                        lazy={true}
+                      />
+                      <div className="mt-2 px-2 pb-2">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Rohbau des Gemeindehauses
+                        </p>
+                      </div>
+                    </div>
                   </Card>
                 </div>
               </CarouselItem>

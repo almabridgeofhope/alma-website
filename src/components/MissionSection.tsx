@@ -60,7 +60,7 @@ const MissionSection = () => {
                     <div className="relative h-full">
                       <img
                         src={water}
-                        alt="Water projects"
+                        alt="Wasserprojekte: Zeigt den Zugang zu sauberem Wasser und Wasserinfrastruktur"
                         width={256}
                         height={384}
                         className="w-full h-full object-cover"
@@ -73,7 +73,7 @@ const MissionSection = () => {
                     <div className="relative h-full">
                       <img
                         src={education}
-                        alt="Education programs"
+                        alt="Bildungsprogramme: Schülerinnen und Schüler nehmen an Bildungsaktivitäten teil"
                         width={256}
                         height={384}
                         className="w-full h-full object-cover"
@@ -97,7 +97,7 @@ const MissionSection = () => {
                     <Card className="overflow-hidden h-96 shadow-lg">
                       <img
                         src={street}
-                        alt="Street project"
+                        alt="Infrastrukturprojekt: Straßenbau und Verbesserung der Verkehrswege"
                         width={256}
                         height={384}
                         className="w-full h-full object-cover"
@@ -108,7 +108,7 @@ const MissionSection = () => {
                     <Card className="overflow-hidden h-96 shadow-lg">
                       <img
                         src={education}
-                        alt="Education programs"
+                        alt="Bildungsprogramme: Schülerinnen und Schüler nehmen an Bildungsaktivitäten teil"
                         width={256}
                         height={384}
                         className="w-full h-full object-cover"
@@ -119,7 +119,7 @@ const MissionSection = () => {
                     <Card className="overflow-hidden h-96 shadow-lg">
                       <img
                         src={land}
-                        alt="Land and agriculture"
+                        alt="Landwirtschaft und Land: Zeigt landwirtschaftliche Aktivitäten und Nutzung des Landes"
                         width={256}
                         height={384}
                         className="w-full h-full object-cover"
@@ -131,7 +131,7 @@ const MissionSection = () => {
                     <Card className="overflow-hidden h-96 shadow-lg">
                       <img
                         src={water}
-                        alt="Water projects"
+                        alt="Wasserprojekte: Zeigt den Zugang zu sauberem Wasser und Wasserinfrastruktur"
                         width={256}
                         height={384}
                         className="w-full h-full object-cover"
@@ -142,18 +142,7 @@ const MissionSection = () => {
                     <Card className="overflow-hidden h-96 shadow-lg">
                       <img
                         src={pupils}
-                        alt="Goat farm project"
-                        width={256}
-                        height={384}
-                        className="w-full h-full object-cover"
-                      />
-                    </Card>
-                  </CarouselItem>
-                  <CarouselItem className="pl-0">
-                    <Card className="overflow-hidden h-96 shadow-lg">
-                      <img
-                        src={nature}
-                        alt="Nature"
+                        alt="Schülerinnen und Schüler: Kinder nehmen an Bildungsprogrammen teil"
                         width={256}
                         height={384}
                         className="w-full h-full object-cover"
@@ -164,7 +153,7 @@ const MissionSection = () => {
                     <Card className="overflow-hidden h-96 shadow-lg">
                       <img
                         src={education_2}
-                        alt="Education programs"
+                        alt="Bildungsprogramme: Unterricht und Lernaktivitäten für Kinder und Jugendliche"
                         width={256}
                         height={384}
                         className="w-full h-full object-cover"

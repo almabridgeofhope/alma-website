@@ -23,9 +23,9 @@ const Team = () => {
   const { t } = useLanguage();
   
   const originImages = [
-    { src: teamAaronPhionah, alt: "Aaron Hesser & Phionah Nagujja" },
-    { src: teamPeter, alt: "Peter Ssenga", objectPositionClass: "object-[center_25%]" },
-    { src: teamPeterTony, alt: "Peter Ssenga & Tony Kalulu" },
+    { src: teamAaronPhionah, alt: "Aaron & Phionah" },
+    { src: teamPeter, alt: "Peter", objectPositionClass: "object-[center_25%]" },
+    { src: teamPeterTony, alt: "Tony, Kisutu & Peter" },
   ];
 
   const teamUganda = [
@@ -137,17 +137,22 @@ const Team = () => {
                 {originImages.map((image, index) => (
                   <div
                     key={index}
-                    className="overflow-hidden rounded-lg shadow-card"
+                    className="flex flex-col overflow-hidden rounded-lg shadow-card"
                   >
                     <OptimizedImage
                       src={image.src}
-                      alt={image.alt}
+                      alt={image.alt || "Team-Mitglieder von Alma Bridge of Hope bei der Arbeit"}
                       aspectRatio="3/2"
                       className={["h-full w-full object-cover", image.objectPositionClass]
                         .filter(Boolean)
                         .join(" ")}
                       lazy={true}
                     />
+                    <div className="mt-2 px-2 pb-2">
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {image.alt || "Team-Mitglieder"}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -171,7 +176,7 @@ const Team = () => {
                   <div className="relative aspect-square overflow-hidden bg-primary-light">
                     <OptimizedImage
                       src={member.image} 
-                      alt={`${member.name}`}
+                      alt={`Porträtfoto von ${member.name}, Team-Mitglied von Alma Bridge of Hope`}
                       aspectRatio="1/1"
                       className="w-full h-full object-cover"
                       lazy={true}
@@ -207,7 +212,7 @@ const Team = () => {
                   <div className="aspect-square overflow-hidden bg-background">
                     <OptimizedImage
                       src={member.image} 
-                      alt={`${member.name}`}
+                      alt={`Porträtfoto von ${member.name}, Team-Mitglied von Alma Bridge of Hope`}
                       aspectRatio="1/1"
                       className="w-full h-full object-cover"
                       lazy={true}

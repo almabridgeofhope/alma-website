@@ -300,6 +300,32 @@ const Projects = () => {
     }
   ];
 
+  const getProjectImageCaption = (projectTitle: string): string => {
+    const communityTitle = t("projects.community.title");
+    const wellTitle = t("projects.well.title");
+    const livestockTitle = t("projects.livestock.title");
+    const mobilityTitle = t("projects.mobility.title");
+    const sponsorshipTitle = t("projects.sponsorship.title");
+    const financialTitle = t("projects.financial.title");
+
+    if (projectTitle === communityTitle) {
+      return language === "de" ? "Gemeindehaus im Bau" : "Community House under construction";
+    } else if (projectTitle === wellTitle) {
+      return language === "de"
+        ? "Geplanter Brunnen für sauberes Trinkwasser"
+        : "Planned well for clean drinking water";
+    } else if (projectTitle === livestockTitle) {
+      return language === "de" ? "Symbolbild: Farm mit Ziegen" : "Symbolic image: Farm with goats";
+    } else if (projectTitle === mobilityTitle) {
+      return language === "de" ? "Symbolbild: Gemeinschaftsbus für Mobilität und Bildung" : "Symbolic image: Community bus for mobility and education";
+    } else if (projectTitle === sponsorshipTitle) {
+      return language === "de" ? "Schülerinnen und Schüler im Unterricht" : "Symbolic image: Students in the classroom";
+    } else if (projectTitle === financialTitle) {
+      return language === "de" ? "Unterricht in Finanzbildung (aus Vorprojekt)" : "Financial literacy training (from previous project)";
+    }
+    return projectTitle;
+  };
+
   const renderProjectCard = (project: Project, index: number) => {
     const Icon = project.icon;
     const isEven = index % 2 === 0;
@@ -346,6 +372,9 @@ const Projects = () => {
               <div className="absolute inset-x-0 bottom-0">
                 <div className="bg-gradient-to-t from-slate-800/85 via-slate-700/65 to-transparent px-4 sm:px-6 py-3 sm:py-4 text-white backdrop-blur-[2px] pointer-events-auto">
                   <div className="flex flex-col gap-2 sm:gap-3 z-10 relative">
+                    <p className="text-xs sm:text-sm text-white/90 leading-relaxed mb-1">
+                      {getProjectImageCaption(project.title)}
+                    </p>
                     <div className="flex flex-wrap items-center gap-2">
                       {timelinePhases.map((phase, phaseIndex) => {
                         const isActive = phaseIndex === currentPhaseIndex;
