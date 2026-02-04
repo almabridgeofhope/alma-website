@@ -68,6 +68,12 @@ const translations = {
     "images.gallery.detailed": "Detailed project views",
     "images.gallery.image": "Gallery image",
     
+    // Dictionary Definition
+    "dictionary.word": "alma",
+    "dictionary.partOfSpeech": "adjective",
+    "dictionary.definition": "Origin: L, fem. of almus, nourishing, bountiful",
+    "dictionary.context": "This word embodies our mission: to nurture communities and create fertile ground for sustainable growth and positive change.",
+    
     // Team
     "team.title": "Meet Our Team",
     "team.subtitle": "Alma Bridge of Hope is a collaborative project bringing together dedicated people from Uganda and Germany. Our strength lies in the close partnership between both countries: while our team in Uganda implements projects on the ground and directly supports local communities, our German team coordinates strategic development, fundraising, and international partnerships.",
@@ -1075,6 +1081,12 @@ const translations = {
     "images.gallery.fallback": "Projektfortschritte und Aktivitäten",
     "images.gallery.detailed": "Detaillierte Projektansichten",
     "images.gallery.image": "Galeriebild",
+    
+    // Lexikon-Definition
+    "dictionary.word": "alma",
+    "dictionary.partOfSpeech": "Adjektiv",
+    "dictionary.definition": "Herkunft: L, nährend, fruchtbar",
+    "dictionary.context": "Dieses Wort verkörpert unsere Mission: Gemeinschaften zu nähren und fruchtbaren Boden für nachhaltiges Wachstum und positive Veränderung zu schaffen.",
     
     // Team
     "team.title": "Über uns",

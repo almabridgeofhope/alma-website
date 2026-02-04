@@ -4,6 +4,7 @@ import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import OptimizedImage from "@/components/OptimizedImage";
 import PreloadImage from "@/components/PreloadImage";
+import DictionaryDefinition from "@/components/DictionaryDefinition";
 import heroImage from "@/assets/community/community_5.webp";
 import phionaImage from "@/assets/team/phiona.webp";
 import tonyImage from "@/assets/team/tony.webp";
@@ -101,19 +102,25 @@ const Team = () => {
           </div>
         </section>
 
-        {/* Introduction Section */}
+        {/* Introduction Section with Dictionary Definition */}
         <section className="pt-section pb-section bg-background">
           <div className="max-w-content mx-auto px-6">
-            <div className="max-w-3xl mx-auto text-center mb-8">
-              <h2 className="text-3xl font-bold text-foreground mb-6">
-                {t("team.intro.title")}
-              </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed mb-4">
-                {t("team.intro.p1")}
-              </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                {t("team.intro.p2")}
-              </p>
+            <div className="grid lg:grid-cols-[1fr,1.8fr] gap-8 lg:gap-10 items-stretch">
+              {/* Dictionary Definition - left side */}
+              <div className="lg:sticky lg:top-24 h-full">
+                <DictionaryDefinition className="h-full" />
+              </div>
+              
+              {/* Introduction Text - right side */}
+              <div className="space-y-6 flex flex-col">
+                <h2 className="text-3xl font-bold text-foreground">
+                  {t("team.intro.title")}
+                </h2>
+                <div className="space-y-4 text-lg text-muted-foreground leading-relaxed flex-1">
+                  <p>{t("team.intro.p1")}</p>
+                  <p>{t("team.intro.p2")}</p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
