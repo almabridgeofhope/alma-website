@@ -172,6 +172,7 @@ const Membership = () => {
       }
 
       const donorName = `${formData.firstName} ${formData.lastName}`.trim();
+      const monthlyAmount = requestWaiver ? 0 : selectedAmount;
       const payload = {
         formType: "membership",
         source: "membership-page",
@@ -185,7 +186,7 @@ const Membership = () => {
         donorName,
         donorEmail: formData.email,
         donorPhone: formData.phone || "",
-        monthlyAmount: selectedAmount,
+        monthlyAmount,
         requestWaiver,
         comment: formData.comment || "",
         privacyAccepted: formData.privacyAccepted,
