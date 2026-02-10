@@ -1125,7 +1125,9 @@ const Donation = () => {
 
   // Function to subscribe to newsletter
   const subscribeToNewsletter = async (email: string) => {
-    const endpoint = import.meta.env.VITE_NEWSLETTER_ENDPOINT as string | undefined;
+    const endpoint =
+      (import.meta.env.VITE_FORM_SUBMIT_URL as string | undefined) ||
+      (import.meta.env.VITE_NEWSLETTER_ENDPOINT as string | undefined);
     
     if (!endpoint) {
       console.warn("Newsletter endpoint not configured");
@@ -1133,18 +1135,23 @@ const Donation = () => {
     }
 
     try {
-      const formData = new FormData();
-      formData.append('email', email);
-      formData.append('source', 'donation-form');
-      if (formDataRef.current.salutation) {
-        formData.append('salutation', formDataRef.current.salutation);
-      }
-
-      await fetch(endpoint, {
+      const response = await fetch(endpoint, {
         method: "POST",
-        body: formData,
-        mode: 'no-cors',
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          formType: "newsletter",
+          email,
+          source: "donation-form",
+          salutation: formDataRef.current.salutation || "",
+          submittedAt: new Date().toISOString(),
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error(`Newsletter submit failed with status ${response.status}`);
+      }
       
       console.log("Newsletter subscription successful for:", email);
     } catch (err) {

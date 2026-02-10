@@ -13,7 +13,6 @@ import PreloadImage from "@/components/PreloadImage";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import { stripeService } from "@/services/stripeService";
-import { donationWebhookService } from "@/services/donationWebhookService";
 import heroImage from "@/assets/project/education_5.webp";
 import { CheckCircle, Heart, Shield } from "lucide-react";
 
@@ -41,6 +40,9 @@ const Membership = () => {
     privacyAccepted: false,
   });
   const navigate = useNavigate();
+  const formSubmitUrl =
+    (import.meta.env.VITE_FORM_SUBMIT_URL as string | undefined) ||
+    (import.meta.env.VITE_SUPABASE_WEBHOOK_URL as string | undefined);
 
   // Normalize language-specific defaults on change
   useEffect(() => {
@@ -164,40 +166,55 @@ const Membership = () => {
 
     setIsSubmitting(true);
 
+    const submitMembershipForm = async () => {
+      if (!formSubmitUrl || formSubmitUrl.trim() === "") {
+        throw new Error("Form endpoint not configured (VITE_FORM_SUBMIT_URL).");
+      }
+
+      const donorName = `${formData.firstName} ${formData.lastName}`.trim();
+      const payload = {
+        formType: "membership",
+        source: "membership-page",
+        submittedAt: new Date().toISOString(),
+        provider: "website",
+        donationType: "new-membership",
+        paymentMethod: requestWaiver ? "no-payment" : paymentMethod,
+        paymentStatus: "pending",
+        donorFirstName: formData.firstName,
+        donorLastName: formData.lastName,
+        donorName,
+        donorEmail: formData.email,
+        donorPhone: formData.phone || "",
+        monthlyAmount: selectedAmount,
+        requestWaiver,
+        comment: formData.comment || "",
+        privacyAccepted: formData.privacyAccepted,
+        wantsNewsletter: false,
+        address: {
+          street: formData.street || "",
+          postalCode: formData.postalCode || "",
+          city: formData.city || "",
+          country: formData.country || "",
+        },
+      };
+
+      const response = await fetch(formSubmitUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Membership submit failed with status ${response.status}`);
+      }
+    };
+
     // Waiver path: no payment, log immediately and go to success
     if (requestWaiver) {
       try {
-        // For waiver, amount should always be 0 since no payment is set up
-        const amountNumber = 0;
-        const donationData = {
-          items: [
-            {
-              type: "general-donation" as const,
-              name: t("membership.form.title"),
-              unitPrice: amountNumber,
-              quantity: 1,
-              totalPrice: amountNumber,
-            },
-          ],
-          totalAmount: amountNumber,
-          donationType: "new-membership" as const,
-          paymentMethod: "no-payment" as const,
-          donorEmail: formData.email || undefined,
-          donorName: `${formData.firstName} ${formData.lastName}`.trim() || undefined,
-          timestamp: new Date().toISOString(),
-          paymentStatus: "unpaid" as const,
-          wantsReceipt: false,
-          address: {
-            street: formData.street || undefined,
-            postalCode: formData.postalCode || undefined,
-            city: formData.city || undefined,
-            country: formData.country || undefined,
-          },
-          wantsNewsletter: false,
-          comment: formData.comment || undefined,
-        };
-
-        await donationWebhookService.sendDonation(donationData);
+        await submitMembershipForm();
         navigate("/membership/success?flow=membership&source=membership&waiver=true");
       } catch (err) {
         console.error("Membership waiver logging failed:", err);
@@ -216,6 +233,7 @@ const Membership = () => {
     }
 
     try {
+      await submitMembershipForm();
       await startCheckout();
     } catch (err) {
       console.error("Membership checkout failed:", err);
@@ -540,4 +558,3 @@ const Membership = () => {
 };
 
 export default Membership;
-

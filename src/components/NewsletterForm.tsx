@@ -23,7 +23,9 @@ export default function NewsletterForm({
   const lastSubmittedAtRef = useRef<number>(0);
   const { toast } = useToast();
 
-  const endpoint = import.meta.env.VITE_NEWSLETTER_ENDPOINT as string | undefined;
+  const endpoint =
+    (import.meta.env.VITE_FORM_SUBMIT_URL as string | undefined) ||
+    (import.meta.env.VITE_NEWSLETTER_ENDPOINT as string | undefined);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +46,7 @@ export default function NewsletterForm({
     try {
       if (!endpoint || endpoint.trim() === "") {
         // Endpoint is missing - show error message
-        console.error("Newsletter endpoint not configured (VITE_NEWSLETTER_ENDPOINT)");
+        console.error("Newsletter endpoint not configured (VITE_FORM_SUBMIT_URL / VITE_NEWSLETTER_ENDPOINT)");
         setIsLoading(false);
         toast({
           title: "Newsletter-Anmeldung nicht verfügbar",
@@ -54,18 +56,30 @@ export default function NewsletterForm({
         return;
       }
 
-      // Use a simple form submission approach that bypasses CORS
-      const formData = new FormData();
-      formData.append('email', email);
-      formData.append('source', source);
+      const honeypot = (
+        new FormData(e.currentTarget as HTMLFormElement).get("company") || ""
+      )
+        .toString()
+        .trim();
 
       const res = await fetch(endpoint, {
         method: "POST",
-        body: formData, // Use FormData instead of JSON
-        mode: 'no-cors', // Disable CORS checking
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          formType: "newsletter",
+          email,
+          source,
+          honeypot,
+          submittedAt: new Date().toISOString(),
+        }),
       });
 
-      // With no-cors mode, we can't read the response, so assume success
+      if (!res.ok) {
+        throw new Error(`Newsletter submit failed with status ${res.status}`);
+      }
+
       lastSubmittedAtRef.current = now;
       setEmail("");
       toast({
@@ -73,7 +87,7 @@ export default function NewsletterForm({
         description: "Wir setzen dich auf unsere Newsletter-Liste.",
         style: { backgroundColor: "#d1fae5", color: "#000000" } // Light green bg, black text
       });
-    } catch (err: any) {
+    } catch (err) {
       // Don't show error to user - show success message instead (like Footer does)
       console.error("Newsletter subscription failed:", err);
       lastSubmittedAtRef.current = now;
@@ -108,6 +122,4 @@ export default function NewsletterForm({
     </form>
   );
 }
-
-
 
