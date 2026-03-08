@@ -248,6 +248,7 @@ const StripeCheckoutButton = memo(({
   formData,
   metadata,
   onValidate,
+  onBeforeCheckout,
   isSubscription,
 }: {
   amount: number;
@@ -262,6 +263,7 @@ const StripeCheckoutButton = memo(({
   };
   metadata?: Record<string, string>;
   onValidate: () => boolean;
+  onBeforeCheckout?: () => Promise<string>;
   isSubscription?: boolean;
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -276,11 +278,17 @@ const StripeCheckoutButton = memo(({
     setErrorMessage(null);
 
     try {
+      const intentId = onBeforeCheckout ? await onBeforeCheckout() : "";
+      const checkoutMetadata = {
+        ...(metadata || {}),
+        ...(intentId ? { intentId } : {}),
+      };
+
       const { url } = await stripeService.createCheckoutSession({
         amount,
         currency: 'eur',
         paymentMethodTypes,
-        metadata: metadata || {},
+        metadata: checkoutMetadata,
         customerEmail: formData.email,
         customerName: `${formData.firstName} ${formData.lastName}`,
         isSubscription: isSubscription || false,
@@ -517,6 +525,7 @@ const Donation = () => {
   // Use ref to track latest amount values for PayPal validation (to avoid closure issues)
   const amountRef = useRef({ amount, customAmount, donationType });
   amountRef.current = { amount, customAmount, donationType };
+  const formSubmitUrl = import.meta.env.VITE_FORM_SUBMIT_URL as string | undefined;
 
   const predefinedAmounts = [10, 25, 50, 100];
   const [useCartAmount, setUseCartAmount] = useState(false);
@@ -528,6 +537,170 @@ const Donation = () => {
   const [newGeneralDonationAmount, setNewGeneralDonationAmount] = useState<string>("");
   const [sepaReference, setSepaReference] = useState<string>("");
   const [sepaDetailsCopied, setSepaDetailsCopied] = useState(false);
+
+  const getFinalDonationAmount = useCallback((): number => {
+    if (donationType === "monthly") {
+      return parseFloat(amount || customAmount || "0");
+    }
+
+    if (cartState.items.length > 0) {
+      const cartTotal = cartState.totalAmount;
+      if (!isNaN(cartTotal) && cartTotal > 0) {
+        return cartTotal;
+      }
+
+      const calculatedTotal = cartState.items.reduce((sum, item) => {
+        const itemTotal = item.totalPrice || (item.unitPrice * (item.quantity || 1));
+        return sum + (isNaN(itemTotal) ? 0 : itemTotal);
+      }, 0);
+      if (!isNaN(calculatedTotal) && calculatedTotal > 0) {
+        return calculatedTotal;
+      }
+    }
+
+    return parseFloat(amount || customAmount || "0");
+  }, [amount, customAmount, donationType, cartState.items, cartState.totalAmount]);
+
+  const createDonationIntent = useCallback(async (): Promise<string> => {
+    if (!formSubmitUrl || formSubmitUrl.trim() === "") {
+      const message = language === "de"
+        ? "Form-Endpoint nicht konfiguriert. Bitte später erneut versuchen."
+        : "Form endpoint not configured. Please try again later.";
+      showError(message);
+      throw new Error("form_submit_url_missing");
+    }
+
+    const currentFormData = formDataRef.current;
+
+    if (!currentFormData.firstName.trim()) {
+      showError(t("donation.form.error.firstName"));
+      throw new Error("validation_failed:first_name");
+    }
+    if (!currentFormData.lastName.trim()) {
+      showError(t("donation.form.error.lastName"));
+      throw new Error("validation_failed:last_name");
+    }
+    if (!currentFormData.email.trim()) {
+      showError(t("donation.form.error.email"));
+      throw new Error("validation_failed:email_missing");
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(currentFormData.email)) {
+      showError(t("donation.form.error.emailInvalid"));
+      throw new Error("validation_failed:email_invalid");
+    }
+
+    if (currentFormData.isGift) {
+      if (!currentFormData.giftRecipientName.trim()) {
+        showError(t("donation.form.error.giftRecipientName"));
+        throw new Error("validation_failed:gift_name_missing");
+      }
+      if (!currentFormData.giftRecipientEmail.trim()) {
+        showError(t("donation.form.error.giftRecipientEmail"));
+        throw new Error("validation_failed:gift_email_missing");
+      }
+      if (!emailRegex.test(currentFormData.giftRecipientEmail)) {
+        showError(t("donation.form.error.giftRecipientEmailInvalid"));
+        throw new Error("validation_failed:gift_email_invalid");
+      }
+    }
+
+    if (currentFormData.wantsReceipt) {
+      if (!currentFormData.street.trim() || !currentFormData.postalCode.trim() || !currentFormData.city.trim() || !currentFormData.country.trim()) {
+        showError(t("donation.form.error.address"));
+        throw new Error("validation_failed:receipt_address");
+      }
+    }
+
+    if (!currentFormData.privacyConsent) {
+      showError(t("donation.form.error.privacy"));
+      throw new Error("validation_failed:privacy");
+    }
+
+    const finalAmount = getFinalDonationAmount();
+    if (isNaN(finalAmount) || finalAmount <= 0) {
+      showError(t("donation.form.error.amount"));
+      throw new Error("invalid_amount");
+    }
+
+    const rawStreet = currentFormData.street.trim();
+    const streetMatch = rawStreet.match(/^(.*?)(?:\s+|,)(\d+[a-zA-Z0-9\-\/]*)$/);
+    const parsedStreet = streetMatch?.[1]?.trim() || rawStreet;
+    const parsedHouseNumber = streetMatch?.[2]?.trim() || "";
+    const addressPayload = {
+      street: parsedStreet,
+      houseNumber: parsedHouseNumber,
+      postalCode: currentFormData.postalCode.trim(),
+      city: currentFormData.city.trim(),
+      country: currentFormData.country.trim(),
+    };
+    const intentId = crypto.randomUUID();
+
+    const payload = {
+      formType: "donation",
+      intentId,
+      source: "donation-page",
+      submittedAt: new Date().toISOString(),
+      amount: Number(finalAmount),
+      donationType: donationType === "monthly" ? "monthly" : "one-time",
+      paymentMethod,
+      salutation: currentFormData.salutation,
+      donorFirstName: currentFormData.firstName,
+      donorLastName: currentFormData.lastName,
+      donorName: `${currentFormData.firstName} ${currentFormData.lastName}`.trim(),
+      donorEmail: currentFormData.email,
+      isGift: !!currentFormData.isGift,
+      giftRecipientName: currentFormData.isGift ? currentFormData.giftRecipientName : undefined,
+      giftRecipientEmail: currentFormData.isGift ? currentFormData.giftRecipientEmail : undefined,
+      wantsReceipt: !!currentFormData.wantsReceipt,
+      address: addressPayload,
+      receiptAddress: currentFormData.wantsReceipt
+        ? addressPayload
+        : undefined,
+      comment: currentFormData.comment || undefined,
+      privacyAccepted: !!currentFormData.privacyConsent,
+      wantsNewsletter: !!currentFormData.wantsNewsletter,
+      currency: "EUR",
+    };
+
+    const response = await fetch(formSubmitUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      let errorCode = "";
+      try {
+        const body = await response.json();
+        errorCode = String(body?.error || body?.code || "");
+      } catch {
+        // Ignore parse errors
+      }
+
+      if (response.status === 400) {
+        if (errorCode.startsWith("invalid_email")) {
+          showError(t("donation.form.error.emailInvalid"));
+        } else if (errorCode === "privacy_not_accepted") {
+          showError(t("donation.form.error.privacy"));
+        } else if (errorCode.includes("gift")) {
+          showError(t("donation.form.error.giftRecipientEmailInvalid"));
+        } else if (errorCode.includes("address") || errorCode.includes("receipt")) {
+          showError(t("donation.form.error.address"));
+        } else {
+          showError(t("donation.form.error.amount"));
+        }
+      } else {
+        showError(language === "de"
+          ? "Übermittlung fehlgeschlagen. Bitte erneut versuchen."
+          : "Submission failed. Please retry.");
+      }
+      throw new Error(`intent_submit_failed:${response.status}:${errorCode}`);
+    }
+
+    return intentId;
+  }, [donationType, formSubmitUrl, getFinalDonationAmount, language, paymentMethod, showError, t]);
 
   // Auto-add general donation when URL param exists and cart has items
   useEffect(() => {
@@ -990,7 +1163,7 @@ const Donation = () => {
   };
 
   // PayPal payment handlers - memoized to prevent unnecessary re-renders
-  const createPayPalOrder = useCallback((data: any, actions: any) => {
+  const createPayPalOrder = useCallback(async (data: any, actions: any) => {
     // Validate all required fields before creating PayPal order
     const finalAmountStr = getCurrentAmount();
 
@@ -1102,8 +1275,7 @@ const Donation = () => {
     // Format amount to 2 decimal places for PayPal
     const formattedAmount = finalAmount.toFixed(2);
 
-    const salutation = currentFormData.salutation || "none";
-    const customId = `${donationType}-${Date.now()}|salutation:${salutation}`;
+    const intentId = await createDonationIntent();
     
     return actions.order.create({
       purchase_units: [{
@@ -1112,7 +1284,7 @@ const Donation = () => {
           value: formattedAmount,
         },
         description: `${donationType === "one-time" ? t("donation.form.onetime") : t("donation.form.monthly")} donation to Alma Bridge of Hope`,
-        custom_id: customId,
+        custom_id: intentId,
       }],
         application_context: {
           brand_name: "Alma Bridge of Hope",
@@ -1121,7 +1293,7 @@ const Donation = () => {
           cancel_url: `${window.location.origin}/donation?cancelled=true`,
         },
     });
-  }, [getCurrentAmount, t, language, formData]);
+  }, [amount, cartState.items, cartState.totalAmount, createDonationIntent, customAmount, donationType, getCurrentAmount, t]);
 
   // Function to subscribe to newsletter
   const subscribeToNewsletter = async (email: string) => {
@@ -1550,6 +1722,7 @@ const Donation = () => {
       throw new Error(t("donation.form.error.amount"));
     }
     
+    const intentId = await createDonationIntent();
     console.log("Creating PayPal subscription plan via backend with amount:", finalAmount, "EUR");
     
     try {
@@ -1566,6 +1739,7 @@ const Donation = () => {
           giftDonation: currentFormData.isGift ? "true" : "false",
           giftRecipientName: currentFormData.giftRecipientName || "",
           giftRecipientEmail: currentFormData.giftRecipientEmail || "",
+          intentId,
         }
       });
       
@@ -1714,7 +1888,8 @@ const Donation = () => {
           
           // Actually await the promise to catch rejections properly
           const subscriptionId = await actions.subscription.create({
-            plan_id: planResult.plan_id
+            plan_id: planResult.plan_id,
+            custom_id: intentId,
           });
           
           // Success! Return the subscription ID
@@ -1813,7 +1988,7 @@ const Donation = () => {
       console.error("Error creating PayPal subscription:", error);
       throw error;
     }
-  }, [t, language]);
+  }, [createDonationIntent, language, t]);
 
   const onPayPalCancel = useCallback(() => {
     console.log("PayPal payment cancelled");
@@ -2697,6 +2872,7 @@ const Donation = () => {
                           donor_country: formData.country || "",
                         }}
                         isSubscription={donationType === "monthly"}
+                        onBeforeCheckout={createDonationIntent}
                         onValidate={() => {
                           // Basic validation
                           if (!formData.firstName){
@@ -2774,6 +2950,7 @@ const Donation = () => {
                           donor_country: formData.country || "",
                         }}
                         isSubscription={donationType === "monthly"}
+                        onBeforeCheckout={createDonationIntent}
                         onValidate={() => {
                           // Basic validation
                           if (!formData.firstName) {
