@@ -1,15 +1,10 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/alma-logo.svg";
 import { useLanguage } from "@/contexts/LanguageContext";
 import NewsletterForm from "@/components/NewsletterForm";
+import { Download } from "lucide-react";
 
 const Footer = () => {
-  const [email, setEmail] = useState("");
-  const { toast } = useToast();
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
@@ -34,23 +29,6 @@ const Footer = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) {
-      toast({
-        title: "Please enter your email",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    toast({
-      title: "Thank you for subscribing!",
-      description: "You'll receive monthly updates from our team.",
-    });
-    
-    setEmail("");
-  };
 
   return (
     <footer className="bg-muted py-12">
@@ -98,28 +76,34 @@ const Footer = () => {
               >
                 {t("nav.contact")}
               </Link>
+              <Link 
+                to="/membership" 
+                className="block text-muted-foreground hover:text-primary transition-colors"
+                onClick={(e) => handleFooterNavClick("/membership", e)}
+              >
+                {t("nav.membership")}
+              </Link>
+              <a 
+                href="/flyer.pdf" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                download
+              >
+                <Download size={16} />
+                {t("footer.nav.flyer")}
+              </a>
             </nav>
           </div>
 
           {/* Newsletter */}
           <div>
             <h4 className="font-semibold text-foreground mb-4">{t("newsletter.title")}</h4>
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <Input
-                type="email"
-                placeholder={t("newsletter.placeholder")}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full"
-              />
-              <Button 
-                type="submit" 
-                size="sm"
-                className="w-full"
-              >
-                {t("newsletter.button")}
-              </Button>
-            </form>
+            <NewsletterForm
+              placeholder={t("newsletter.placeholder")}
+              buttonLabel={t("newsletter.button")}
+              source="website-footer"
+            />
           </div>
         </div>
 

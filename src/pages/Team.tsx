@@ -4,18 +4,19 @@ import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import OptimizedImage from "@/components/OptimizedImage";
 import PreloadImage from "@/components/PreloadImage";
+import DictionaryDefinition from "@/components/DictionaryDefinition";
 import heroImage from "@/assets/community/community_5.webp";
-import phionaImage from "@/assets/team/phiona.png";
-import tonyImage from "@/assets/team/tony.png";
-import peterImage from "@/assets/team/peter.png";
-import claraImage from "@/assets/team/clara.png";
+import phionaImage from "@/assets/team/phiona.webp";
+import tonyImage from "@/assets/team/tony.webp";
+import peterImage from "@/assets/team/peter.webp";
+import claraImage from "@/assets/team/clara.webp";
 import aaronImage from "@/assets/team/aaron.jpeg";
 import tanjaImage from "@/assets/team/tanja.jpeg";
 import hansenImage from "@/assets/team/hansen.jpeg";
 import maxImage from "@/assets/team/max.jpeg";
 import yuanImage from "@/assets/team/yuan.jpeg";
 import eileenImage from "@/assets/team/eileen.jpeg";
-import teamAaronPhionah from "@/assets/team/team.png";
+import teamAaronPhionah from "@/assets/team/team.webp";
 import teamPeter from "@/assets/team/team_2.jpg";
 import teamPeterTony from "@/assets/team/team_3.jpg";
 
@@ -23,9 +24,9 @@ const Team = () => {
   const { t } = useLanguage();
   
   const originImages = [
-    { src: teamAaronPhionah, alt: "Aaron Hesser & Phionah Nagujja" },
-    { src: teamPeter, alt: "Peter Ssenga", objectPositionClass: "object-[center_25%]" },
-    { src: teamPeterTony, alt: "Peter Ssenga & Tony Kalulu" },
+    { src: teamAaronPhionah, alt: "Aaron & Phionah" },
+    { src: teamPeter, alt: "Peter", objectPositionClass: "object-[center_25%]" },
+    { src: teamPeterTony, alt: "Tony, Kisutu & Peter" },
   ];
 
   const teamUganda = [
@@ -101,19 +102,25 @@ const Team = () => {
           </div>
         </section>
 
-        {/* Introduction Section */}
+        {/* Introduction Section with Dictionary Definition */}
         <section className="pt-section pb-section bg-background">
           <div className="max-w-content mx-auto px-6">
-            <div className="max-w-3xl mx-auto text-center mb-8">
-              <h2 className="text-3xl font-bold text-foreground mb-6">
-                {t("team.intro.title")}
-              </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed mb-4">
-                {t("team.intro.p1")}
-              </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                {t("team.intro.p2")}
-              </p>
+            <div className="grid lg:grid-cols-[1fr,1.8fr] gap-8 lg:gap-10 items-stretch">
+              {/* Dictionary Definition - left side */}
+              <div className="lg:sticky lg:top-24 h-full">
+                <DictionaryDefinition className="h-full" />
+              </div>
+              
+              {/* Introduction Text - right side */}
+              <div className="space-y-6 flex flex-col">
+                <h2 className="text-3xl font-bold text-foreground">
+                  {t("team.intro.title")}
+                </h2>
+                <div className="space-y-4 text-lg text-muted-foreground leading-relaxed flex-1">
+                  <p>{t("team.intro.p1")}</p>
+                  <p>{t("team.intro.p2")}</p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -137,17 +144,22 @@ const Team = () => {
                 {originImages.map((image, index) => (
                   <div
                     key={index}
-                    className="overflow-hidden rounded-lg shadow-card"
+                    className="flex flex-col overflow-hidden rounded-lg shadow-card"
                   >
                     <OptimizedImage
                       src={image.src}
-                      alt={image.alt}
+                      alt={image.alt || "Team-Mitglieder von Alma Bridge of Hope bei der Arbeit"}
                       aspectRatio="3/2"
                       className={["h-full w-full object-cover", image.objectPositionClass]
                         .filter(Boolean)
                         .join(" ")}
                       lazy={true}
                     />
+                    <div className="mt-2 px-2 pb-2">
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {image.alt || t("images.team.members")}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -171,7 +183,7 @@ const Team = () => {
                   <div className="relative aspect-square overflow-hidden bg-primary-light">
                     <OptimizedImage
                       src={member.image} 
-                      alt={`${member.name}`}
+                      alt={`Porträtfoto von ${member.name}, Team-Mitglied von Alma Bridge of Hope`}
                       aspectRatio="1/1"
                       className="w-full h-full object-cover"
                       lazy={true}
@@ -207,7 +219,7 @@ const Team = () => {
                   <div className="aspect-square overflow-hidden bg-background">
                     <OptimizedImage
                       src={member.image} 
-                      alt={`${member.name}`}
+                      alt={`Porträtfoto von ${member.name}, Team-Mitglied von Alma Bridge of Hope`}
                       aspectRatio="1/1"
                       className="w-full h-full object-cover"
                       lazy={true}

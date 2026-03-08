@@ -21,6 +21,9 @@ import Impressum from "./pages/Impressum";
 import Privacy from "./pages/Privacy";
 import Donation from "./pages/Donation";
 import DonationSuccess from "./pages/DonationSuccess";
+import Membership from "./pages/Membership";
+import MembershipSuccess from "./pages/MembershipSuccess";
+import GiftDonations from "./pages/GiftDonations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -195,10 +198,13 @@ const AppContent = () => {
         <Route path="/news" element={<News />} />
         <Route path="/news/:date" element={<Article />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/membership" element={<Membership />} />
+        <Route path="/membership/success" element={<MembershipSuccess />} />
         <Route path="/impressum" element={<Impressum />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/donation" element={<Donation />} />
         <Route path="/donation/success" element={<DonationSuccess />} />
+        <Route path="/spenden-statt-geschenke" element={<GiftDonations />} />
         {/* Redirect all /dev/* routes to their non-dev equivalents */}
         <Route path="/dev/*" element={<DevRedirect />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

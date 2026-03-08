@@ -1,19 +1,18 @@
-import { ReactNode, useEffect, MouseEvent, useState } from "react";
+import { ReactNode, useEffect, MouseEvent } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { ProjectItemsModal } from "@/components/ProjectItemsModal";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet, Calendar as CalendarIcon, Package } from "lucide-react";
+import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet, Calendar as CalendarIcon } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useProjectCosts } from "@/hooks/useProjectCosts";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import OptimizedImage from "@/components/OptimizedImage";
 import PreloadImage from "@/components/PreloadImage";
-import heroImage from "@/assets/project/header_construction.webp";
-import communityHouseImage from "@/assets/project/construction_house.webp";
+import heroImage from "@/assets/project/community_house/header_construction.webp";
+import communityHouseImage from "@/assets/project/community_house/construction_house.webp";
 import waterImage from "@/assets/project/well.webp";
 import agricultureImage from "@/assets/project/goat_farm.webp";
 import educationImage from "@/assets/project/pupils_2.webp";
@@ -44,8 +43,7 @@ const Projects = () => {
   const { t, language } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const { error: costsError, getProjectCost, refreshCosts, loading: costsLoading } = useProjectCosts();
-  const [activeCostProject, setActiveCostProject] = useState<ProjectCost | null>(null);
+  const { error: costsError, getProjectCost, loading: costsLoading } = useProjectCosts();
 
   const formatCurrency = (amount: number, currency: string = "EUR") => {
     try {
@@ -84,33 +82,15 @@ const Projects = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const section = params.get("section");
+    
+    // Only handle section scrolling, no modal opening
     if (section) {
       const target = document.getElementById(section);
       if (target) {
         target.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }
-
-    // Check if there's a hash fragment (phase) and open the modal for the corresponding project
-    const hash = location.hash.replace('#', '');
-    if (hash && hash !== 'all') {
-      // Find the project that has this phase
-      const allProjects = [...activeProjects, ...plannedProjects];
-      for (const project of allProjects) {
-        const projectCost = getProjectCost(project.title);
-        if (projectCost) {
-          const hasPhase = projectCost.items.some(item => item.phase === hash);
-          if (hasPhase) {
-            // Only set if it's a different project or modal is closed
-            if (!activeCostProject || activeCostProject.projectName !== projectCost.projectName) {
-              setActiveCostProject(projectCost);
-            }
-            break;
-          }
-        }
-      }
-    }
-  }, [location, getProjectCost, activeCostProject]);
+  }, [location]);
 
   const mobilityDescription = t("projects.mobility.description");
   const anchorClasses = "text-primary underline underline-offset-4";
@@ -320,24 +300,49 @@ const Projects = () => {
     }
   ];
 
+  const getProjectImageCaption = (projectTitle: string): string => {
+    const communityTitle = t("projects.community.title");
+    const wellTitle = t("projects.well.title");
+    const livestockTitle = t("projects.livestock.title");
+    const mobilityTitle = t("projects.mobility.title");
+    const sponsorshipTitle = t("projects.sponsorship.title");
+    const financialTitle = t("projects.financial.title");
+
+    if (projectTitle === communityTitle) {
+      return t("images.projects.community_house");
+    } else if (projectTitle === wellTitle) {
+      return t("images.projects.well");
+    } else if (projectTitle === livestockTitle) {
+      return t("images.projects.livestock");
+    } else if (projectTitle === mobilityTitle) {
+      return t("images.projects.mobility");
+    } else if (projectTitle === sponsorshipTitle) {
+      return t("images.projects.sponsorship");
+    } else if (projectTitle === financialTitle) {
+      return t("images.projects.financial");
+    }
+    return projectTitle;
+  };
+
   const renderProjectCard = (project: Project, index: number) => {
     const Icon = project.icon;
     const isEven = index % 2 === 0;
     const projectCost = getProjectCost(project.title);
+    const isWellProject = project.title === t("projects.well.title");
     const currentPhaseIndex = timelinePhases.findIndex(p => p.id === project.currentPhase);
     const spentPercentage = projectCost
       ? projectCost.totalBudget > 0
         ? Math.min(100, (projectCost.spentAmount / projectCost.totalBudget) * 100)
         : 0
       : null;
-    const displayProgressValue = spentPercentage ?? project.progress;
-    const statusProgressLabel = spentPercentage !== null ? `${Math.round(spentPercentage)}%` : `${project.progress}%`;
+    // For well project, always use hardcoded progress, ignore projectCost
+    const displayProgressValue = isWellProject ? project.progress : (spentPercentage ?? project.progress);
+    const statusProgressLabel = isWellProject ? `${project.progress}%` : (spentPercentage !== null ? `${Math.round(spentPercentage)}%` : `${project.progress}%`);
     const detailedProgressLabel = spentPercentage !== null ? `${spentPercentage.toFixed(1)}%` : statusProgressLabel;
     const costTitle = t("projects.cost.title");
     const fundedLabel = t("projects.cost.funded");
     const remainingLabel = t("projects.cost.remaining");
     const costProgressLabel = t("projects.cost.progress");
-    const detailsLabel = t("projects.cost.details");
     
     return (
       <div 
@@ -365,6 +370,9 @@ const Projects = () => {
               <div className="absolute inset-x-0 bottom-0">
                 <div className="bg-gradient-to-t from-slate-800/85 via-slate-700/65 to-transparent px-4 sm:px-6 py-3 sm:py-4 text-white backdrop-blur-[2px] pointer-events-auto">
                   <div className="flex flex-col gap-2 sm:gap-3 z-10 relative">
+                    <p className="text-xs sm:text-sm text-white/90 leading-relaxed mb-1">
+                      {getProjectImageCaption(project.title)}
+                    </p>
                     <div className="flex flex-wrap items-center gap-2">
                       {timelinePhases.map((phase, phaseIndex) => {
                         const isActive = phaseIndex === currentPhaseIndex;
@@ -416,123 +424,120 @@ const Projects = () => {
                       })}
                     </div>
 
-                    <div className="relative">
-                      {costsLoading ? (
-                        // Show empty cost container skeleton while loading
-                        <div className="min-h-[100px]">
-                          <div className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-3 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors animate-pulse">
-                            <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-                              <div className="flex-1 min-w-[140px]">
-                                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
-                                  {costTitle}
-                                </p>
-                                <div className="h-5 bg-gray-200 rounded mt-1 w-24" />
-                              </div>
-                              <div className="flex-1 min-w-[120px]">
-                                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
-                                  {fundedLabel}
-                                </p>
-                                <div className="h-5 bg-gray-200 rounded mt-1 w-20" />
-                              </div>
-                              <div className="flex-1 min-w-[120px]">
-                                <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
-                                  {remainingLabel}
-                                </p>
-                                <div className="h-5 bg-gray-200 rounded mt-1 w-20" />
-                              </div>
-                            </div>
-                            <div className="mt-3 flex flex-col gap-2">
-                              <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500">
-                                <span>{costProgressLabel}</span>
-                                <div className="h-4 bg-gray-200 rounded w-12" />
-                              </div>
-                              <div className="h-2 rounded-full bg-gray-200" />
-                              <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] sm:text-xs text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <CalendarIcon className="w-3.5 h-3.5" />
-                                  <div className="h-4 bg-gray-200 rounded w-20" />
+                    {isWellProject ? (
+                      <div className="sm:min-w-[200px]">
+                        <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-white">
+                          <span className="uppercase tracking-wide text-white/100">
+                            {t("projects.progress_label")}
+                          </span>
+                          <span className="text-white">{statusProgressLabel}</span>
+                        </div>
+                        <Progress value={displayProgressValue} className="mt-2 h-1.5 bg-white/25" />
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        {costsLoading ? (
+                          // Show empty cost container skeleton while loading
+                          <div className="min-h-[100px]">
+                            <div className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-3 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors animate-pulse">
+                              <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                                <div className="flex-1 min-w-[140px]">
+                                  <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                                    {costTitle}
+                                  </p>
+                                  <div className="h-5 bg-gray-200 rounded mt-1 w-24" />
                                 </div>
-                                <div className="h-6 bg-gray-200 rounded-full w-24" />
+                                <div className="flex-1 min-w-[120px]">
+                                  <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                                    {fundedLabel}
+                                  </p>
+                                  <div className="h-5 bg-gray-200 rounded mt-1 w-20" />
+                                </div>
+                                <div className="flex-1 min-w-[120px]">
+                                  <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                                    {remainingLabel}
+                                  </p>
+                                  <div className="h-5 bg-gray-200 rounded mt-1 w-20" />
+                                </div>
+                              </div>
+                              <div className="mt-3 flex flex-col gap-2">
+                                <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                  <span>{costProgressLabel}</span>
+                                  <div className="h-4 bg-gray-200 rounded w-12" />
+                                </div>
+                                <div className="h-2 rounded-full bg-gray-200" />
+                                <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] sm:text-xs text-muted-foreground">
+                                  <div className="flex items-center gap-1">
+                                    <CalendarIcon className="w-3.5 h-3.5" />
+                                    <div className="h-4 bg-gray-200 rounded w-20" />
+                                  </div>
+                                  <div className="h-6 bg-gray-200 rounded-full w-24" />
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ) : projectCost ? (
-                        <div className="min-h-[100px]">
-                          <div 
-                            className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-3 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors cursor-pointer hover:bg-white/95"
-                            onClick={(e) => {
-                              // Don't trigger if clicking on the button itself
-                              if ((e.target as HTMLElement).closest('button')) {
-                                return;
-                              }
-                              setActiveCostProject(projectCost);
-                            }}
-                          >
-                        <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-                          <div className="flex-1 min-w-[140px]">
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
-                              {costTitle}
-                            </p>
-                            <p className="text-sm sm:text-base font-bold">
-                              {formatCurrency(projectCost.totalBudget, projectCost.currency)}
-                            </p>
-                          </div>
-                          <div className="flex-1 min-w-[120px]">
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
-                              {fundedLabel}
-                            </p>
-                            <p className="text-sm sm:text-base font-semibold text-emerald-600">
-                              {formatCurrency(projectCost.spentAmount, projectCost.currency)}
-                            </p>
-                          </div>
-                          <div className="flex-1 min-w-[120px]">
-                            <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
-                              {remainingLabel}
-                            </p>
-                            <p className="text-sm sm:text-base font-semibold text-orange-600">
-                              {formatCurrency(projectCost.remainingAmount, projectCost.currency)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="mt-3 flex flex-col gap-2">
-                          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500">
-                            <span>{costProgressLabel}</span>
-                            <span className="text-slate-900">{detailedProgressLabel}</span>
-                          </div>
-                          <Progress
-                            value={spentPercentage ?? 0}
-                            className="h-2 rounded-full bg-primary/15 [&>div]:rounded-full [&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:via-primary/90 [&>div]:to-primary/70"
-                          />
-                          <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] sm:text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <CalendarIcon className="w-3.5 h-3.5" />
-                              <span>{formatDate(projectCost.lastUpdated)}</span>
-                            </div>
-                            <Button
-                              size="sm"
-                              onClick={() => setActiveCostProject(projectCost)}
-                              className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white shadow-sm hover:bg-primary/90 focus-visible:ring-white/50"
+                        ) : projectCost ? (
+                          <div className="min-h-[100px]">
+                            <div 
+                              className="rounded-2xl border border-white/20 bg-white/85 px-4 sm:px-5 py-3 text-slate-900 shadow-lg backdrop-blur-md supports-[backdrop-filter]:bg-white/75 transition-colors"
                             >
-                              <Package className="w-3 h-3" />
-                              {detailsLabel}
-                            </Button>
+                          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+                            <div className="flex-1 min-w-[140px]">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                                {costTitle}
+                              </p>
+                              <p className="text-sm sm:text-base font-bold">
+                                {formatCurrency(projectCost.totalBudget, projectCost.currency)}
+                              </p>
+                            </div>
+                            <div className="flex-1 min-w-[120px]">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                                {fundedLabel}
+                              </p>
+                              <p className="text-sm sm:text-base font-semibold text-emerald-600">
+                                {formatCurrency(projectCost.spentAmount, projectCost.currency)}
+                              </p>
+                            </div>
+                            <div className="flex-1 min-w-[120px]">
+                              <p className="text-[11px] font-semibold uppercase tracking-wide text-primary/80">
+                                {remainingLabel}
+                              </p>
+                              <p className="text-sm sm:text-base font-semibold text-orange-600">
+                                {formatCurrency(projectCost.remainingAmount, projectCost.currency)}
+                              </p>
+                            </div>
                           </div>
-                        </div>
+                          <div className="mt-3 flex flex-col gap-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] sm:text-xs font-semibold uppercase tracking-wide text-slate-500">
+                              <span>{costProgressLabel}</span>
+                              <span className="text-slate-900">{detailedProgressLabel}</span>
+                            </div>
+                            <Progress
+                              value={spentPercentage ?? 0}
+                              className="h-2 rounded-full bg-primary/15 [&>div]:rounded-full [&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:via-primary/90 [&>div]:to-primary/70"
+                            />
+                            <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] sm:text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <CalendarIcon className="w-3.5 h-3.5" />
+                                <span>{formatDate(projectCost.lastUpdated)}</span>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="sm:min-w-[200px]">
-                          <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-white">
-                            <span className="uppercase tracking-wide text-white/100">
-                              {t("projects.progress_label")}
-                            </span>
-                            <span className="text-white">{statusProgressLabel}</span>
+                            </div>
                           </div>
-                          <Progress value={displayProgressValue} className="mt-2 h-1.5 bg-white/25" />
-                        </div>
-                      )}
-                    </div>
+                        ) : (
+                          <div className="sm:min-w-[200px]">
+                            <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-white">
+                              <span className="uppercase tracking-wide text-white/100">
+                                {t("projects.progress_label")}
+                              </span>
+                              <span className="text-white">{statusProgressLabel}</span>
+                            </div>
+                            <Progress value={displayProgressValue} className="mt-2 h-1.5 bg-white/25" />
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -732,57 +737,6 @@ const Projects = () => {
           </div>
         </section>
       </main>
-
-      {activeCostProject && (
-        <ProjectItemsModal
-          projectCost={activeCostProject}
-          isOpen={!!activeCostProject}
-          onClose={() => {
-            setActiveCostProject(null);
-            refreshCosts();
-          }}
-          onItemToggle={(itemId, purchased) => {
-            if (!activeCostProject) {
-              return;
-            }
-            const updatedItems = activeCostProject.items.map(item =>
-              item.itemId === itemId ? { ...item, purchased } : item
-            );
-            const purchasedItems = updatedItems.filter(item => item.purchased).length;
-            const spentAmount = updatedItems
-              .filter(item => item.purchased)
-              .reduce((sum, item) => sum + (item.unitCostEUR || 0), 0);
-            const remainingAmount = activeCostProject.totalBudget - spentAmount;
-            console.log('Item toggled:', itemId, purchased, {
-              ...activeCostProject,
-              items: updatedItems,
-              purchasedItems,
-              spentAmount,
-              remainingAmount,
-            });
-          }}
-          onItemCostUpdate={(itemId, cost) => {
-            if (!activeCostProject) {
-              return;
-            }
-            const updatedItems = activeCostProject.items.map(item =>
-              item.itemId === itemId ? { ...item, unitCostEUR: cost } : item
-            );
-            const totalBudget = updatedItems.reduce((sum, item) => sum + (item.unitCostEUR || 0), 0);
-            const spentAmount = updatedItems
-              .filter(item => item.purchased)
-              .reduce((sum, item) => sum + (item.unitCostEUR || 0), 0);
-            const remainingAmount = totalBudget - spentAmount;
-            console.log('Item cost updated:', itemId, cost, {
-              ...activeCostProject,
-              items: updatedItems,
-              totalBudget,
-              spentAmount,
-              remainingAmount,
-            });
-          }}
-        />
-      )}
       
       <Footer />
     </div>

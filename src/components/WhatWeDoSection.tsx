@@ -27,6 +27,21 @@ const WhatWeDoSection = () => {
     },
   ];
 
+  const getInitiativeImageCaption = (initiativeTitle: string): string => {
+    const utilitiesTitle = t("whatwedo.utilities.title");
+    const infrastructureTitle = t("whatwedo.infrastructure.title");
+    const educationTitle = t("whatwedo.education.title");
+
+    if (initiativeTitle === utilitiesTitle) {
+      return t("images.initiatives.utilities");
+    } else if (initiativeTitle === infrastructureTitle) {
+      return t("images.initiatives.infrastructure");
+    } else if (initiativeTitle === educationTitle) {
+      return t("images.initiatives.education");
+    }
+    return initiativeTitle;
+  };
+
   return (
     <section id="work" className="pt-section pb-section bg-background">
       <div className="max-w-content mx-auto px-6">
@@ -42,27 +57,34 @@ const WhatWeDoSection = () => {
         <div className="grid md:grid-cols-3 gap-8">
           {initiatives.map((initiative, index) => (
             <Card key={index} className="overflow-hidden shadow-card hover:shadow-soft transition-shadow duration-300">
-              <div className="aspect-[4/3] overflow-hidden relative">
-                <img 
-                  src={initiative.image} 
-                  alt={initiative.title}
-                  width={1200}
-                  height={900}
-                  className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
-                  style={{
-                    imageRendering: 'auto',
-                    objectPosition: 'center center',
-                    filter: 'contrast(1.1) brightness(1.05)'
-                  }}
-                />
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-semibold text-foreground mb-3">
-                  {initiative.title}
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  {initiative.description}
-                </p>
+              <div className="flex flex-col">
+                <div className="aspect-[4/3] overflow-hidden relative">
+                  <img 
+                    src={initiative.image} 
+                    alt={initiative.title}
+                    width={1200}
+                    height={900}
+                    className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-300"
+                    style={{
+                      imageRendering: 'auto',
+                      objectPosition: 'center center',
+                      filter: 'contrast(1.1) brightness(1.05)'
+                    }}
+                  />
+                </div>
+                <div className="px-6 pt-3 pb-0">
+                  <p className="text-xs text-muted-foreground leading-relaxed mb-2">
+                    {getInitiativeImageCaption(initiative.title)}
+                  </p>
+                </div>
+                <div className="p-6 pt-3">
+                  <h3 className="text-xl font-semibold text-foreground mb-3">
+                    {initiative.title}
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {initiative.description}
+                  </p>
+                </div>
               </div>
             </Card>
           ))}

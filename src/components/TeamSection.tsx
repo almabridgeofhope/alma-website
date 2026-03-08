@@ -37,12 +37,19 @@ const TeamSection = () => {
 
             {/* Portrait image on the right */}
             <div className="flex-1 max-w-sm">
-              <div className="rounded-lg overflow-hidden shadow-card">
-                <img 
-                  src={teamImage} 
-                  alt="Alma Bridge of Hope e.V. Team"
-                  className="w-full h-auto object-cover"
-                />
+              <div className="flex flex-col">
+                <div className="rounded-lg overflow-hidden shadow-card">
+                  <img 
+                    src={teamImage} 
+                    alt="Peter, bei der Arbeit am Community House mit einer freiwilligen Helferin aus Namaliri"
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
+                <div className="mt-2">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {t("images.team.peter_work")}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

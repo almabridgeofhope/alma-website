@@ -227,9 +227,46 @@ const CartItemComponent: React.FC<{ item: CartItem; onClose?: () => void }> = ({
       // Extract itemId from cart item id (format: "item-{itemId}")
       const itemId = item.id.replace('item-', '');
       
-      // Navigate to projects page with phase hash and itemId to scroll to specific item
+      // Try to find which project this phase belongs to and add section parameter
+      // Use the projectName from the cart item if available, otherwise check all projects
+      let sectionParam = '';
+      
+      if (item.projectName) {
+        // Map project names to section IDs
+        const projectSectionMap: Record<string, string> = {
+          'Building the Community House': 'community-house',
+          'Well Construction': 'well',
+          'Agriculture Project': 'agriculture',
+          'Education Support': 'education',
+          'Mobility Project': 'mobility',
+        };
+        
+        const section = projectSectionMap[item.projectName];
+        if (section) {
+          sectionParam = `section=${section}&`;
+        }
+      } else {
+        // If projectName is not available, check all projects to find which one has this phase
+        const projectSections = [
+          { name: 'Building the Community House', section: 'community-house' },
+          { name: 'Well Construction', section: 'well' },
+          { name: 'Agriculture Project', section: 'agriculture' },
+          { name: 'Education Support', section: 'education' },
+          { name: 'Mobility Project', section: 'mobility' },
+        ];
+        
+        for (const project of projectSections) {
+          const projectCost = getProjectCost(project.name);
+          if (projectCost && projectCost.items.some(i => i.phase === item.phase)) {
+            sectionParam = `section=${project.section}&`;
+            break;
+          }
+        }
+      }
+      
+      // Navigate to projects page with section, phase hash and itemId to scroll to specific item
       // Use replace: false to trigger hash change detection in modal
-      navigate(`/projects?itemId=${encodeURIComponent(itemId)}#${encodeURIComponent(item.phase)}`, { replace: false });
+      navigate(`/projects?${sectionParam}itemId=${encodeURIComponent(itemId)}#${encodeURIComponent(item.phase)}`, { replace: false });
     } else {
       // For items without phase, just navigate to projects
       navigate('/projects');

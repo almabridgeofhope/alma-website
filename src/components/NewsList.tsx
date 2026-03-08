@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, ArrowRight, Tag } from "lucide-react";
-import { NewsArticle } from "@/data/newsArticles";
+import { Calendar, User, ArrowRight, Tag, AlertCircle } from "lucide-react";
+import { NewsArticle, isUnpublishedArticle } from "@/data/newsArticles";
 
 interface NewsListProps {
   articles: NewsArticle[];
@@ -49,11 +49,17 @@ const NewsList = ({
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
-                <div className="absolute top-3 left-3">
+                <div className="absolute top-3 left-3 flex flex-col gap-2">
                   <Badge className={getCategoryColor(article.category)}>
                     <Tag className="w-3 h-3 mr-1" />
                     {article.category}
                   </Badge>
+                  {isUnpublishedArticle(article.date) && (
+                    <Badge className="bg-red-500 text-white font-medium border-2 border-red-600">
+                      <AlertCircle className="w-3 h-3 mr-1" />
+                      Unveröffentlicht
+                    </Badge>
+                  )}
                 </div>
               </div>
 

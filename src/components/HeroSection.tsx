@@ -24,7 +24,7 @@ const HeroSection = () => {
           height={1440} 
           className="hidden" 
           aria-hidden="true"
-          fetchPriority="high"
+          fetchpriority="high"
         />
       </div>
       

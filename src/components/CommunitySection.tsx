@@ -12,8 +12,8 @@ import OptimizedImage from "@/components/OptimizedImage";
 import community from "@/assets/community/community_3.webp";
 import community1 from "@/assets/community/community.webp";
 import community2 from "@/assets/community/community_2.webp";
-import house from "@/assets/project/house_2.webp";
-import communityHouse from "@/assets/project/construction_house.webp";
+import house from "@/assets/project/community_house/house_2.webp";
+import communityHouse from "@/assets/project/community_house/construction_house.webp";
 import children from "@/assets/community/children.webp";
 import community4 from "@/assets/community/community_4.webp";
 import community5 from "@/assets/community/community_5.webp";
@@ -21,6 +21,29 @@ import community6 from "@/assets/community/community_6.webp";
 
 const CommunitySection = () => {
   const { t } = useLanguage();
+  
+  const getCommunityImageCaption = (imageSrc: string): string => {
+    if (imageSrc === community) {
+      return t("images.community.peter");
+    } else if (imageSrc === community1) {
+      return t("images.community.insight1");
+    } else if (imageSrc === community2) {
+      return t("images.community.aaron");
+    } else if (imageSrc === community5) {
+      return t("images.community.insight2");
+    } else if (imageSrc === communityHouse) {
+      return t("images.community.house_construction");
+    } else if (imageSrc === children) {
+      return t("images.community.children");
+    } else if (imageSrc === house) {
+      return t("images.community.house_shell");
+    } else if (imageSrc === community4) {
+      return t("images.community.activities");
+    } else if (imageSrc === community6) {
+      return t("images.community.activities");
+    }
+    return "";
+  };
   
   return (
     <section id="community" className="pt-section pb-section bg-muted/30">
@@ -44,117 +67,140 @@ const CommunitySection = () => {
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={community}
-                      alt="Community"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover"
-                      lazy={true}
-                    />
+                    <div className="flex flex-col">
+                      <OptimizedImage
+                        src={community}
+                        alt="Peter, Gründer von Alma Bridge of Hope Uganda, mit Kindern aus Namaliri"
+                        aspectRatio="4/3"
+                        className="w-full h-full object-cover"
+                        lazy={true}
+                      />
+                      <div className="mt-2 px-2 pb-2">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {getCommunityImageCaption(community)}
+                        </p>
+                      </div>
+                    </div>
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={community1}
-                      alt="Community members"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover object-top"
-                      lazy={true}
-                    />
+                    <div className="flex flex-col">
+                      <OptimizedImage
+                        src={community1}
+                        alt="Einblick in Namaliri"
+                        aspectRatio="4/3"
+                        className="w-full h-full object-cover object-top"
+                        lazy={true}
+                      />
+                      <div className="mt-2 px-2 pb-2">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {getCommunityImageCaption(community1)}
+                        </p>
+                      </div>
+                    </div>
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={community2}
-                      alt="Community activities"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover"
-                      lazy={true}
-                    />
+                    <div className="flex flex-col">
+                      <OptimizedImage
+                        src={community2}
+                        alt="Aaron, Gründer von Alma Bridge of Hope Germany, bei seinem Besuch in Uganda"
+                        aspectRatio="4/3"
+                        className="w-full h-full object-cover"
+                        lazy={true}
+                      />
+                      <div className="mt-2 px-2 pb-2">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {getCommunityImageCaption(community2)}
+                        </p>
+                      </div>
+                    </div>
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={community5}
-                      alt="Community gathering"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover"
-                      lazy={true}
-                    />
+                    <div className="flex flex-col">
+                      <OptimizedImage
+                        src={community5}
+                        alt="Einblick in Namaliri"
+                        aspectRatio="4/3"
+                        className="w-full h-full object-cover"
+                        lazy={true}
+                      />
+                      <div className="mt-2 px-2 pb-2">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {getCommunityImageCaption(community5)}
+                        </p>
+                      </div>
+                    </div>
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={communityHouse}
-                      alt="Community house"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover"
-                      lazy={true}
-                    />
+                    <div className="flex flex-col">
+                      <OptimizedImage
+                        src={communityHouse}
+                        alt="Gemeindehaus im Bau: Das zentrale Gebäude für Gemeinschaftsaktivitäten und Veranstaltungen"
+                        aspectRatio="4/3"
+                        className="w-full h-full object-cover"
+                        lazy={true}
+                      />
+                      <div className="mt-2 px-2 pb-2">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {getCommunityImageCaption(communityHouse)}
+                        </p>
+                      </div>
+                    </div>
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={children}
-                      alt="Children"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover"
-                      lazy={true}
-                    />
+                    <div className="flex flex-col">
+                      <OptimizedImage
+                        src={children}
+                        alt="Kinder aus Namaliri"
+                        aspectRatio="4/3"
+                        className="w-full h-full object-cover"
+                        lazy={true}
+                      />
+                      <div className="mt-2 px-2 pb-2">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {getCommunityImageCaption(children)}
+                        </p>
+                      </div>
+                    </div>
                   </Card>
                 </div>
               </CarouselItem>
               <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
                 <div className="p-1">
                   <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={community4}
-                      alt="Community activities"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover object-top"
-                      lazy={true}
-                    />
-                  </Card>
-                </div>
-              </CarouselItem>
-              <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
-                <div className="p-1">
-                  <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={house}
-                      alt="Community activities"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover object-top"
-                      lazy={true}
-                    />
-                  </Card>
-                </div>
-              </CarouselItem>
-              <CarouselItem className="pl-2 md:pl-4 basis-1/2 lg:basis-1/4">
-                <div className="p-1">
-                  <Card className="overflow-hidden">
-                    <OptimizedImage
-                      src={community6}
-                      alt="Community activities"
-                      aspectRatio="4/3"
-                      className="w-full h-full object-cover object-top"
-                      lazy={true}
-                    />
+                    <div className="flex flex-col">
+                      <OptimizedImage
+                        src={house}
+                        alt="Rohbau des Gemeindehauses"
+                        aspectRatio="4/3"
+                        className="w-full h-full object-cover object-top"
+                        lazy={true}
+                      />
+                      <div className="mt-2 px-2 pb-2">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {getCommunityImageCaption(house)}
+                        </p>
+                      </div>
+                    </div>
                   </Card>
                 </div>
               </CarouselItem>
@@ -197,7 +243,7 @@ const CommunitySection = () => {
           <div className="space-y-6 lg:col-span-2">
             <div className="space-y-6">
               {/* First Map */}
-              <Card className="overflow-hidden shadow-card">
+              {/* <Card className="overflow-hidden shadow-card">
                 <div className="aspect-[4/3] bg-muted relative">
                   <iframe
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.7!2d32.827667236328125!3d0.6293768286705017!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMMKwMzcnNDkuOCJOIDMywrA0OSc0MC4wIkU!5e0!3m2!1sen!2sde!4v1234567890124!5m2!1sen!2sde"
@@ -225,9 +271,9 @@ const CommunitySection = () => {
                     {t("community.location.region")}
                   </p>
                 </div>
-              </Card>
+              </Card> */}
 
-              {/* Second Map
+              {/* Second Map */}
               <Card className="overflow-hidden shadow-card">
                 <div className="aspect-[4/3] bg-muted relative">
                   <iframe
@@ -256,7 +302,7 @@ const CommunitySection = () => {
                     {t("community.location.region")}
                   </p>
                 </div>
-              </Card> */}
+              </Card>
             </div>
           </div>
         </div>

@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Separator } from "@/components/ui/separator";
@@ -16,7 +17,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import OptimizedImage from "@/components/OptimizedImage";
 import PreloadImage from "@/components/PreloadImage";
-import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush, Copy, CheckCircle2, AlertCircle } from "lucide-react";
+import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush, Copy, CheckCircle2, AlertCircle, Home } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { donationWebhookService } from "@/services/donationWebhookService";
@@ -25,9 +26,45 @@ import { paypalService } from "@/services/paypalService";
 import heroImage from "@/assets/nature/nature_2.webp";
 import communityImage from "@/assets/community/community_2.webp";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import emailjs from "@emailjs/browser";
 
-// PayPal Configuration
-const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+// PayPal Configuration - Select Client ID based on environment
+const VITE_STAGE = import.meta.env.VITE_STAGE || "local";
+const PAYPAL_CLIENT_ID = VITE_STAGE === 'prod' 
+  ? import.meta.env.VITE_PAYPAL_LIVE_CLIENT_ID 
+  : import.meta.env.VITE_PAYPAL_SANDBOX_CLIENT_ID;
+
+// Diagnostic: Log which Client ID is loaded and from which environment
+if (typeof window !== 'undefined') {
+  const clientIdPreview = PAYPAL_CLIENT_ID ? `${PAYPAL_CLIENT_ID.substring(0, 10)}...` : "NOT SET";
+  const mode = import.meta.env.MODE || "development";
+  const sandboxId = import.meta.env.VITE_PAYPAL_SANDBOX_CLIENT_ID;
+  const liveId = import.meta.env.VITE_PAYPAL_LIVE_CLIENT_ID;
+  console.log("🔍 PayPal Environment Variable Diagnostics:");
+  console.log("   VITE_STAGE:", VITE_STAGE);
+  console.log("   MODE:", mode);
+  console.log("   Using Client ID:", VITE_STAGE === 'prod' ? 'LIVE' : 'SANDBOX');
+  console.log("   Frontend Client ID (first 10 chars):", clientIdPreview);
+  console.log("   Full Client ID length:", PAYPAL_CLIENT_ID ? PAYPAL_CLIENT_ID.length : 0);
+  console.log("   VITE_PAYPAL_SANDBOX_CLIENT_ID:", sandboxId ? `${sandboxId.substring(0, 10)}...` : "NOT SET");
+  console.log("   VITE_PAYPAL_LIVE_CLIENT_ID:", liveId ? `${liveId.substring(0, 10)}...` : "NOT SET");
+  console.log("");
+  console.log("📋 Vite Environment File Loading Priority:");
+  console.log("   1. .env.local (highest priority - used for local development)");
+  console.log("   2. .env");
+  console.log("   → If both exist, .env.local takes precedence");
+  console.log("");
+  console.log("⚠️ IMPORTANT: If Client ID doesn't match backend:");
+  console.log("   1. For local: Ensure VITE_PAYPAL_SANDBOX_CLIENT_ID matches PAYPAL_SANDBOX_CLIENT_ID in Google Apps Script");
+  console.log("   2. For production: Ensure VITE_PAYPAL_LIVE_CLIENT_ID matches PAYPAL_LIVE_CLIENT_ID in Google Apps Script");
+  console.log("   3. RESTART the dev server (npm run dev) after changing .env files");
+  console.log("   4. Vite only loads environment variables at startup, not during hot reload");
+  if (VITE_STAGE !== 'prod' && clientIdPreview !== "NOT SET" && !clientIdPreview.startsWith("AfPOv616xW")) {
+    console.warn("   ⚠️ MISMATCH DETECTED! Frontend Sandbox Client ID doesn't match expected backend ID.");
+    console.warn("   → Update VITE_PAYPAL_SANDBOX_CLIENT_ID in .env.local to match backend Client ID");
+    console.warn("   → Then restart the dev server: npm run dev");
+  }
+}
 
 // Stripe Configuration
 const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
@@ -110,10 +147,15 @@ const PayPalButtonsComponent = memo(({
   };
 
   // Add the appropriate create function based on payment type
+  // PayPal SDK requires ONLY one of createOrder or createSubscription, not both
   if (createSubscription) {
+    console.log("🔵 PayPal Button: Using createSubscription for monthly payment");
     buttonProps.createSubscription = createSubscription;
   } else if (createOrder) {
+    console.log("🟢 PayPal Button: Using createOrder for one-time payment");
     buttonProps.createOrder = createOrder;
+  } else {
+    console.warn("⚠️ PayPal Button: Neither createSubscription nor createOrder provided!");
   }
 
   return (
@@ -162,6 +204,10 @@ const PayPalButtonWrapper = memo(({
   const isSubscription = !!createSubscription;
   const intent = isSubscription ? "subscription" : "capture";
   const vault = isSubscription ? true : undefined;
+  
+  // Determine PayPal environment based on VITE_STAGE
+  // PayPal SDK auto-detects from Client ID, but we can be explicit
+  const paypalEnv = import.meta.env.VITE_STAGE === 'prod' ? 'production' : 'sandbox';
 
   return (
     <PayPalScriptProvider
@@ -174,6 +220,9 @@ const PayPalButtonWrapper = memo(({
         "enable-funding": "paypal",
         "disable-funding": "card,credit,venmo,paylater,sepa",
         vault: vault as any,
+        // Explicitly set environment (though SDK auto-detects from Client ID)
+        // This ensures consistency with backend environment
+        ...(import.meta.env.VITE_STAGE === 'prod' ? {} : { "data-env": "sandbox" }),
       }}
     >
       <PayPalButtonsComponent
@@ -199,6 +248,7 @@ const StripeCheckoutButton = memo(({
   formData,
   metadata,
   onValidate,
+  onBeforeCheckout,
   isSubscription,
 }: {
   amount: number;
@@ -213,6 +263,7 @@ const StripeCheckoutButton = memo(({
   };
   metadata?: Record<string, string>;
   onValidate: () => boolean;
+  onBeforeCheckout?: () => Promise<string>;
   isSubscription?: boolean;
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -227,11 +278,17 @@ const StripeCheckoutButton = memo(({
     setErrorMessage(null);
 
     try {
+      const intentId = onBeforeCheckout ? await onBeforeCheckout() : "";
+      const checkoutMetadata = {
+        ...(metadata || {}),
+        ...(intentId ? { intentId } : {}),
+      };
+
       const { url } = await stripeService.createCheckoutSession({
         amount,
         currency: 'eur',
         paymentMethodTypes,
-        metadata: metadata || {},
+        metadata: checkoutMetadata,
         customerEmail: formData.email,
         customerName: `${formData.firstName} ${formData.lastName}`,
         isSubscription: isSubscription || false,
@@ -287,7 +344,8 @@ const Donation = () => {
   // Close cart sidebar if it's open when on donation page
   useEffect(() => {
     closeCart();
-  }, [closeCart]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   // Note: Navigation links are now handled directly in the Navigation component
   // using explicit onClick handlers when on the donation page to bypass PayPal SDK interception.
@@ -295,9 +353,16 @@ const Donation = () => {
   // Component state
   const [searchParams, setSearchParams] = useSearchParams();
   const [donationType, setDonationType] = useState<"one-time" | "monthly">("one-time");
+  
+  // Debug: Log donation type changes (only when it changes, not on every render)
+  useEffect(() => {
+    console.log("🎯 Donation Type Changed:", donationType);
+    console.log("🎯 PayPal Button Config - createSubscription:", donationType === "monthly" ? "SET" : "NOT SET", "createOrder:", donationType === "one-time" ? "SET" : "NOT SET");
+  }, [donationType]);
+  
   const [amount, setAmount] = useState<string>("");
   const [customAmount, setCustomAmount] = useState<string>("");
-  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "stripe-card" | "stripe-sepa">("paypal");
+  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "stripe-card" | "stripe-sepa">("stripe-sepa");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showWarningDialog, setShowWarningDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -344,6 +409,9 @@ const Donation = () => {
     const cancelled = searchParams.get("cancelled");
     const stripeStatus = searchParams.get("stripe");
     const sessionId = searchParams.get("session_id");
+    const flow = searchParams.get("flow");
+    const source = searchParams.get("source");
+    const isMembershipFlow = flow === "membership" || source === "membership";
 
     // Ensure we're on the donation page - if we have cancellation params but we're not on /donation, redirect there
     if ((cancelled === "true" || stripeStatus === "cancelled") && window.location.pathname !== '/donation') {
@@ -367,10 +435,20 @@ const Donation = () => {
           amount: finalAmount,
           type: donationType,
         });
-        navigate(`/donation/success?${params.toString()}`);
+        if (isMembershipFlow) {
+          params.set("flow", "membership");
+          params.set("source", source || "membership");
+          navigate(`/membership/success?${params.toString()}`);
+        } else {
+          navigate(`/donation/success?${params.toString()}`);
+        }
       } else {
         // If no amount, just redirect to success page
-        navigate("/donation/success");
+        if (isMembershipFlow) {
+          navigate("/membership/success?flow=membership&source=membership");
+        } else {
+          navigate("/donation/success");
+        }
       }
       return;
     }
@@ -423,9 +501,13 @@ const Donation = () => {
   }, [searchParams, setSearchParams, navigate, cartState.items.length, cartState.totalAmount, amount, customAmount, donationType, clearCart, language, showError]);
   
   const [formData, setFormData] = useState({
+    salutation: "",
     firstName: "",
     lastName: "",
     email: "",
+    isGift: false,
+    giftRecipientName: "",
+    giftRecipientEmail: "",
     street: "",
     postalCode: "",
     city: "",
@@ -440,6 +522,11 @@ const Donation = () => {
   const formDataRef = useRef(formData);
   formDataRef.current = formData;
 
+  // Use ref to track latest amount values for PayPal validation (to avoid closure issues)
+  const amountRef = useRef({ amount, customAmount, donationType });
+  amountRef.current = { amount, customAmount, donationType };
+  const formSubmitUrl = import.meta.env.VITE_FORM_SUBMIT_URL as string | undefined;
+
   const predefinedAmounts = [10, 25, 50, 100];
   const [useCartAmount, setUseCartAmount] = useState(false);
   const [hasManualSelection, setHasManualSelection] = useState(false);
@@ -450,6 +537,170 @@ const Donation = () => {
   const [newGeneralDonationAmount, setNewGeneralDonationAmount] = useState<string>("");
   const [sepaReference, setSepaReference] = useState<string>("");
   const [sepaDetailsCopied, setSepaDetailsCopied] = useState(false);
+
+  const getFinalDonationAmount = useCallback((): number => {
+    if (donationType === "monthly") {
+      return parseFloat(amount || customAmount || "0");
+    }
+
+    if (cartState.items.length > 0) {
+      const cartTotal = cartState.totalAmount;
+      if (!isNaN(cartTotal) && cartTotal > 0) {
+        return cartTotal;
+      }
+
+      const calculatedTotal = cartState.items.reduce((sum, item) => {
+        const itemTotal = item.totalPrice || (item.unitPrice * (item.quantity || 1));
+        return sum + (isNaN(itemTotal) ? 0 : itemTotal);
+      }, 0);
+      if (!isNaN(calculatedTotal) && calculatedTotal > 0) {
+        return calculatedTotal;
+      }
+    }
+
+    return parseFloat(amount || customAmount || "0");
+  }, [amount, customAmount, donationType, cartState.items, cartState.totalAmount]);
+
+  const createDonationIntent = useCallback(async (): Promise<string> => {
+    if (!formSubmitUrl || formSubmitUrl.trim() === "") {
+      const message = language === "de"
+        ? "Form-Endpoint nicht konfiguriert. Bitte später erneut versuchen."
+        : "Form endpoint not configured. Please try again later.";
+      showError(message);
+      throw new Error("form_submit_url_missing");
+    }
+
+    const currentFormData = formDataRef.current;
+
+    if (!currentFormData.firstName.trim()) {
+      showError(t("donation.form.error.firstName"));
+      throw new Error("validation_failed:first_name");
+    }
+    if (!currentFormData.lastName.trim()) {
+      showError(t("donation.form.error.lastName"));
+      throw new Error("validation_failed:last_name");
+    }
+    if (!currentFormData.email.trim()) {
+      showError(t("donation.form.error.email"));
+      throw new Error("validation_failed:email_missing");
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(currentFormData.email)) {
+      showError(t("donation.form.error.emailInvalid"));
+      throw new Error("validation_failed:email_invalid");
+    }
+
+    if (currentFormData.isGift) {
+      if (!currentFormData.giftRecipientName.trim()) {
+        showError(t("donation.form.error.giftRecipientName"));
+        throw new Error("validation_failed:gift_name_missing");
+      }
+      if (!currentFormData.giftRecipientEmail.trim()) {
+        showError(t("donation.form.error.giftRecipientEmail"));
+        throw new Error("validation_failed:gift_email_missing");
+      }
+      if (!emailRegex.test(currentFormData.giftRecipientEmail)) {
+        showError(t("donation.form.error.giftRecipientEmailInvalid"));
+        throw new Error("validation_failed:gift_email_invalid");
+      }
+    }
+
+    if (currentFormData.wantsReceipt) {
+      if (!currentFormData.street.trim() || !currentFormData.postalCode.trim() || !currentFormData.city.trim() || !currentFormData.country.trim()) {
+        showError(t("donation.form.error.address"));
+        throw new Error("validation_failed:receipt_address");
+      }
+    }
+
+    if (!currentFormData.privacyConsent) {
+      showError(t("donation.form.error.privacy"));
+      throw new Error("validation_failed:privacy");
+    }
+
+    const finalAmount = getFinalDonationAmount();
+    if (isNaN(finalAmount) || finalAmount <= 0) {
+      showError(t("donation.form.error.amount"));
+      throw new Error("invalid_amount");
+    }
+
+    const rawStreet = currentFormData.street.trim();
+    const streetMatch = rawStreet.match(/^(.*?)(?:\s+|,)(\d+[a-zA-Z0-9\-\/]*)$/);
+    const parsedStreet = streetMatch?.[1]?.trim() || rawStreet;
+    const parsedHouseNumber = streetMatch?.[2]?.trim() || "";
+    const addressPayload = {
+      street: parsedStreet,
+      houseNumber: parsedHouseNumber,
+      postalCode: currentFormData.postalCode.trim(),
+      city: currentFormData.city.trim(),
+      country: currentFormData.country.trim(),
+    };
+    const intentId = crypto.randomUUID();
+
+    const payload = {
+      formType: "donation",
+      intentId,
+      source: "donation-page",
+      submittedAt: new Date().toISOString(),
+      amount: Number(finalAmount),
+      donationType: donationType === "monthly" ? "monthly" : "one-time",
+      paymentMethod,
+      salutation: currentFormData.salutation,
+      donorFirstName: currentFormData.firstName,
+      donorLastName: currentFormData.lastName,
+      donorName: `${currentFormData.firstName} ${currentFormData.lastName}`.trim(),
+      donorEmail: currentFormData.email,
+      isGift: !!currentFormData.isGift,
+      giftRecipientName: currentFormData.isGift ? currentFormData.giftRecipientName : undefined,
+      giftRecipientEmail: currentFormData.isGift ? currentFormData.giftRecipientEmail : undefined,
+      wantsReceipt: !!currentFormData.wantsReceipt,
+      address: addressPayload,
+      receiptAddress: currentFormData.wantsReceipt
+        ? addressPayload
+        : undefined,
+      comment: currentFormData.comment || undefined,
+      privacyAccepted: !!currentFormData.privacyConsent,
+      wantsNewsletter: !!currentFormData.wantsNewsletter,
+      currency: "EUR",
+    };
+
+    const response = await fetch(formSubmitUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      let errorCode = "";
+      try {
+        const body = await response.json();
+        errorCode = String(body?.error || body?.code || "");
+      } catch {
+        // Ignore parse errors
+      }
+
+      if (response.status === 400) {
+        if (errorCode.startsWith("invalid_email")) {
+          showError(t("donation.form.error.emailInvalid"));
+        } else if (errorCode === "privacy_not_accepted") {
+          showError(t("donation.form.error.privacy"));
+        } else if (errorCode.includes("gift")) {
+          showError(t("donation.form.error.giftRecipientEmailInvalid"));
+        } else if (errorCode.includes("address") || errorCode.includes("receipt")) {
+          showError(t("donation.form.error.address"));
+        } else {
+          showError(t("donation.form.error.amount"));
+        }
+      } else {
+        showError(language === "de"
+          ? "Übermittlung fehlgeschlagen. Bitte erneut versuchen."
+          : "Submission failed. Please retry.");
+      }
+      throw new Error(`intent_submit_failed:${response.status}:${errorCode}`);
+    }
+
+    return intentId;
+  }, [donationType, formSubmitUrl, getFinalDonationAmount, language, paymentMethod, showError, t]);
 
   // Auto-add general donation when URL param exists and cart has items
   useEffect(() => {
@@ -647,8 +898,62 @@ const Donation = () => {
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: value,
+      ...(field === "isGift" && value === false
+        ? { giftRecipientName: "", giftRecipientEmail: "" }
+        : {})
     }));
+  };
+
+  const sendGiftEmail = async (params: {
+    recipientName: string;
+    recipientEmail: string;
+    donorName: string;
+    donorEmail: string;
+    amount: string;
+    donationType: "one-time" | "monthly";
+  }) => {
+    try {
+      const serviceId = "service_wou9sst";
+      const templateId = "template_eqc74jo";
+      const publicKey = "zxPupF44hCueD6u4K";
+
+      const subject = t("donation.giftEmail.subject");
+      const greeting = `${t("donation.giftEmail.greeting")} ${params.recipientName},`;
+      const bodyLines = [
+        greeting,
+        "",
+        t("donation.giftEmail.body"),
+        "",
+        `${t("donation.giftEmail.details.donor")} ${params.donorName} (${params.donorEmail})`,
+        `${t("donation.giftEmail.details.amount")} ${params.amount}`,
+        `${t("donation.giftEmail.details.type")} ${
+          params.donationType === "monthly"
+            ? t("donation.giftEmail.details.type.monthly")
+            : t("donation.giftEmail.details.type.onetime")
+        }`,
+        "",
+        t("donation.giftEmail.closing"),
+        t("donation.giftEmail.signature"),
+      ];
+
+      await emailjs.send(
+        serviceId,
+        templateId,
+        {
+          from_name: params.donorName,
+          from_email: params.donorEmail,
+          subject,
+          message: bodyLines.join("\n"),
+          to_email: params.recipientEmail,
+          reply_to: params.donorEmail,
+        },
+        publicKey
+      );
+      console.log("✅ Gift email sent to recipient");
+    } catch (error) {
+      console.error("❌ Failed to send gift email:", error);
+    }
   };
 
   const validateForm = () => {
@@ -701,6 +1006,22 @@ const Donation = () => {
       if (!formData.street.trim() || !formData.postalCode.trim() || !formData.city.trim() || !formData.country.trim()) {
         console.log("Address validation failed");
         showError(t("donation.form.error.address"));
+        return false;
+      }
+    }
+
+    if (formData.isGift) {
+      if (!formData.giftRecipientName.trim()) {
+        showError(t("donation.form.error.giftRecipientName"));
+        return false;
+      }
+      if (!formData.giftRecipientEmail.trim()) {
+        showError(t("donation.form.error.giftRecipientEmail"));
+        return false;
+      }
+      const giftEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!giftEmailRegex.test(formData.giftRecipientEmail)) {
+        showError(t("donation.form.error.giftRecipientEmailInvalid"));
         return false;
       }
     }
@@ -783,9 +1104,13 @@ const Donation = () => {
         donorName: formData.firstName && formData.lastName 
           ? `${formData.firstName} ${formData.lastName}` 
           : undefined,
+        donorSalutation: formData.salutation || undefined,
         paymentId: paymentId,
         paymentStatus: 'paid', // PayPal payments are always 'paid' when we reach this point
         wantsReceipt: formData.wantsReceipt,
+        isGift: formData.isGift,
+        giftRecipientName: formData.isGift ? formData.giftRecipientName || undefined : undefined,
+        giftRecipientEmail: formData.isGift ? formData.giftRecipientEmail || undefined : undefined,
         address: formData.wantsReceipt ? {
           street: formData.street || undefined,
           postalCode: formData.postalCode || undefined,
@@ -838,7 +1163,7 @@ const Donation = () => {
   };
 
   // PayPal payment handlers - memoized to prevent unnecessary re-renders
-  const createPayPalOrder = useCallback((data: any, actions: any) => {
+  const createPayPalOrder = useCallback(async (data: any, actions: any) => {
     // Validate all required fields before creating PayPal order
     const finalAmountStr = getCurrentAmount();
 
@@ -877,6 +1202,19 @@ const Donation = () => {
     if (currentFormData.wantsReceipt) {
       if (!currentFormData.street?.trim() || !currentFormData.postalCode?.trim() || !currentFormData.city?.trim() || !currentFormData.country?.trim()) {
         throw new Error(t("donation.form.error.address"));
+      }
+    }
+
+    if (currentFormData.isGift) {
+      if (!currentFormData.giftRecipientName?.trim()) {
+        throw new Error(t("donation.form.error.giftRecipientName"));
+      }
+      if (!currentFormData.giftRecipientEmail?.trim()) {
+        throw new Error(t("donation.form.error.giftRecipientEmail"));
+      }
+      const giftEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!giftEmailRegex.test(currentFormData.giftRecipientEmail)) {
+        throw new Error(t("donation.form.error.giftRecipientEmailInvalid"));
       }
     }
 
@@ -936,6 +1274,8 @@ const Donation = () => {
     
     // Format amount to 2 decimal places for PayPal
     const formattedAmount = finalAmount.toFixed(2);
+
+    const intentId = await createDonationIntent();
     
     return actions.order.create({
       purchase_units: [{
@@ -944,7 +1284,7 @@ const Donation = () => {
           value: formattedAmount,
         },
         description: `${donationType === "one-time" ? t("donation.form.onetime") : t("donation.form.monthly")} donation to Alma Bridge of Hope e.V.`,
-        custom_id: `${donationType}-${Date.now()}`,
+        custom_id: intentId,
       }],
         application_context: {
           brand_name: "Alma Bridge of Hope e.V.",
@@ -953,11 +1293,13 @@ const Donation = () => {
           cancel_url: `${window.location.origin}/donation?cancelled=true`,
         },
     });
-  }, [getCurrentAmount, t, language, formData]);
+  }, [amount, cartState.items, cartState.totalAmount, createDonationIntent, customAmount, donationType, getCurrentAmount, t]);
 
   // Function to subscribe to newsletter
   const subscribeToNewsletter = async (email: string) => {
-    const endpoint = import.meta.env.VITE_NEWSLETTER_ENDPOINT as string | undefined;
+    const endpoint =
+      (import.meta.env.VITE_FORM_SUBMIT_URL as string | undefined) ||
+      (import.meta.env.VITE_NEWSLETTER_ENDPOINT as string | undefined);
     
     if (!endpoint) {
       console.warn("Newsletter endpoint not configured");
@@ -965,15 +1307,23 @@ const Donation = () => {
     }
 
     try {
-      const formData = new FormData();
-      formData.append('email', email);
-      formData.append('source', 'donation-form');
-
-      await fetch(endpoint, {
+      const response = await fetch(endpoint, {
         method: "POST",
-        body: formData,
-        mode: 'no-cors',
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          formType: "newsletter",
+          email,
+          source: "donation-form",
+          salutation: formDataRef.current.salutation || "",
+          submittedAt: new Date().toISOString(),
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error(`Newsletter submit failed with status ${response.status}`);
+      }
       
       console.log("Newsletter subscription successful for:", email);
     } catch (err) {
@@ -1012,13 +1362,27 @@ const Donation = () => {
         if (isSubscription) {
           // For subscriptions, we don't capture - subscription is already created
           console.log("Subscription created successfully");
-          paymentId = data.subscriptionID;
+          console.log("Full PayPal data object:", JSON.stringify(data, null, 2));
+          
+          // PayPal Subscription IDs start with "I-"
+          // Check if subscriptionID exists and has the correct format
+          paymentId = data.subscriptionID || data.subscription_id || data.id;
+          
+          // Log all possible subscription ID fields for debugging
+          console.log("Possible subscription ID fields:", {
+            subscriptionID: data.subscriptionID,
+            subscription_id: data.subscription_id,
+            id: data.id,
+            orderID: data.orderID,
+            order_id: data.order_id
+          });
+          
           details = { 
             id: paymentId, 
             status: 'ACTIVE',
-            subscription_id: data.subscriptionID
+            subscription_id: paymentId
           };
-          console.log("PayPal subscription ID:", paymentId);
+          console.log("PayPal subscription ID (final):", paymentId);
         } else if (isSEPAPayment) {
           // For SEPA, try to capture but it might take time
           // Use order ID if capture is not immediately available
@@ -1069,7 +1433,19 @@ const Donation = () => {
           : (cartState.items.length > 0 
               ? cartState.totalAmount.toString() 
               : (amount || customAmount || "0"));
-        
+
+        if (formData.isGift && formData.giftRecipientEmail && formData.giftRecipientName) {
+          const amountLabel = formatCurrency(parseFloat(finalAmount || "0"));
+          await sendGiftEmail({
+            recipientName: formData.giftRecipientName,
+            recipientEmail: formData.giftRecipientEmail,
+            donorName: `${formData.firstName} ${formData.lastName}`.trim(),
+            donorEmail: formData.email,
+            amount: amountLabel,
+            donationType,
+          });
+        }
+
         console.log("💰 PayPal: Navigating to success page with amount:", finalAmount);
         
         // Redirect to success page with donation details (BEFORE clearing state)
@@ -1118,56 +1494,172 @@ const Donation = () => {
   const onPayPalError = useCallback((err: any) => {
     console.error("PayPal error:", err);
     
+    // Check if this is a Client ID mismatch error (thrown by createPayPalSubscription)
+    if (err?.isClientIdMismatch || err?.message?.includes("Client ID mismatch") || err?.message?.includes("Client-ID stimmt nicht")) {
+      const clientIdMismatchMessage = language === "de"
+        ? "❌ PayPal Client-ID stimmt nicht überein!\n\n" +
+          "Die Frontend PayPal Client-ID stimmt nicht mit der Backend PayPal Client-ID überein.\n\n" +
+          "Bitte prüfen Sie:\n" +
+          "1. Browser-Konsole für detaillierte Client-ID-Vergleiche\n" +
+          "2. VITE_PAYPAL_SANDBOX_CLIENT_ID (für local) oder VITE_PAYPAL_LIVE_CLIENT_ID (für prod) in Ihrer .env-Datei\n" +
+          "3. PAYPAL_SANDBOX_CLIENT_ID oder PAYPAL_LIVE_CLIENT_ID in Google Apps Script\n" +
+          "4. Beide müssen von derselben PayPal-App im Developer Portal stammen\n\n" +
+          "Dies ist die häufigste Ursache für 404-Fehler bei Abonnements."
+        : "❌ PayPal Client ID mismatch!\n\n" +
+          "The frontend PayPal Client ID does not match the backend PayPal Client ID.\n\n" +
+          "Please check:\n" +
+          "1. Browser console for detailed Client ID comparisons\n" +
+          "2. VITE_PAYPAL_SANDBOX_CLIENT_ID (for local) or VITE_PAYPAL_LIVE_CLIENT_ID (for prod) in your .env file\n" +
+          "3. PAYPAL_SANDBOX_CLIENT_ID or PAYPAL_LIVE_CLIENT_ID in Google Apps Script\n" +
+          "4. Both must be from the same PayPal app in the Developer Portal\n\n" +
+          "This is the most common cause of 404 errors for subscriptions.";
+      showError(clientIdMismatchMessage);
+      setIsProcessingPayment(false);
+      return;
+    }
+    
+    // Check if this is a subscription-related 404 error (Subscriptions not activated)
+    const isSubscription404 = donationType === "monthly" && (
+      err?.status === 404 ||
+      err?.response?.status === 404 ||
+      err?.message?.includes("404") ||
+      err?.message?.includes("RESOURCE_NOT_FOUND") ||
+      err?.message?.includes("Not Found") ||
+      (err?.details && Array.isArray(err.details) && err.details.some((d: any) => 
+        d.issue === "RESOURCE_NOT_FOUND" || 
+        d.description?.includes("RESOURCE_NOT_FOUND") ||
+        d.description?.includes("Not Found")
+      ))
+    );
+    
     // Create detailed error message - use translated message
     let detailedError = t("donation.form.error.payment");
     
-    // Always show helpful error details to help user fix the issue
-    if (err) {
-      let errorDetails = "";
+    // Special handling for subscription 404 errors
+    if (isSubscription404) {
+      const subscriptionErrorMessage = language === "de"
+        ? "\n\n⚠️ WICHTIG: PayPal-Abonnement konnte nicht erstellt werden (404 Fehler).\n\n" +
+          "Bitte prüfen Sie die Browser-Konsole für detaillierte Diagnose-Informationen.\n\n" +
+          "Mögliche Ursachen (in Reihenfolge der Wahrscheinlichkeit):\n\n" +
+          "1. Client-ID stimmt nicht überein (SEHR HÄUFIG):\n" +
+          "   → Die Frontend PayPal Client-ID muss mit der Backend PayPal Client-ID übereinstimmen\n" +
+          "   → Frontend verwendet: VITE_PAYPAL_CLIENT_ID aus Ihrer .env-Datei\n" +
+          "   → Backend verwendet: VITE_PAYPAL_SANDBOX_CLIENT_ID oder VITE_PAYPAL_LIVE_CLIENT_ID in Google Apps Script\n" +
+          "   → Beide müssen von derselben PayPal-App im Developer Portal stammen\n" +
+          "   → Prüfen Sie die Browser-Konsole für einen Client-ID-Vergleich\n" +
+          "   → Prüfen Sie, dass Sie Sandbox-Credentials zum Testen und Live-Credentials für Produktion verwenden\n\n" +
+          "2. Abonnements nicht aktiviert:\n" +
+          "   PayPal-Abonnements müssen in Ihrem PayPal-Geschäftskonto aktiviert werden.\n" +
+          "   → Sandbox: https://www.sandbox.paypal.com/billing/plans\n" +
+          "   → Live: https://www.paypal.com/billing/plans\n" +
+          "   → Klicken Sie auf 'Plan erstellen', erstellen Sie einen beliebigen Plan und aktivieren Sie ihn\n" +
+          "   → Dies aktiviert die Abonnementfunktion für Ihr Konto\n\n" +
+          "3. Subscriptions API nicht aktiviert:\n" +
+          "   → Prüfen Sie im PayPal Developer Portal (https://developer.paypal.com/)\n" +
+          "   → My Apps & Credentials → Ihre App → API-Berechtigungen\n" +
+          "   → Stellen Sie sicher, dass 'Subscriptions' aktiviert ist\n\n" +
+          "4. Plan noch nicht verfügbar:\n" +
+          "   → Der Plan wurde erstellt, aber PayPal braucht manchmal mehrere Sekunden, um ihn verfügbar zu machen\n" +
+          "   → Das System hat bereits mehrere Versuche unternommen\n" +
+          "   → Versuchen Sie es in ein paar Sekunden erneut oder kontaktieren Sie den Support\n\n" +
+          "Einmalige Zahlungen funktionieren ohne diese Aktivierung, aber monatliche Abonnements erfordern sie."
+        : "\n\n⚠️ IMPORTANT: PayPal subscription could not be created (404 error).\n\n" +
+          "Please check the browser console for detailed diagnostic information.\n\n" +
+          "Possible causes (in order of likelihood):\n\n" +
+          "1. Client ID mismatch (VERY COMMON):\n" +
+          "   → The frontend PayPal Client ID must match the backend PayPal Client ID\n" +
+          "   → Frontend uses: VITE_PAYPAL_CLIENT_ID from your .env file\n" +
+          "   → Backend uses: VITE_PAYPAL_SANDBOX_CLIENT_ID or VITE_PAYPAL_LIVE_CLIENT_ID in Google Apps Script\n" +
+          "   → Both must be from the same PayPal app in the Developer Portal\n" +
+          "   → Check the browser console for Client ID comparison\n" +
+          "   → Check that you're using sandbox credentials for testing and live for production\n\n" +
+          "2. Subscriptions not activated:\n" +
+          "   PayPal subscriptions need to be activated in your PayPal business account.\n" +
+          "   → Sandbox: https://www.sandbox.paypal.com/billing/plans\n" +
+          "   → Live: https://www.paypal.com/billing/plans\n" +
+          "   → Click 'Create Plan', create any plan, and activate it\n" +
+          "   → This activates the subscription feature for your account\n\n" +
+          "3. Subscriptions API not enabled:\n" +
+          "   → Check in the PayPal Developer Portal (https://developer.paypal.com/)\n" +
+          "   → My Apps & Credentials → Your App → API Permissions\n" +
+          "   → Ensure 'Subscriptions' is enabled\n\n" +
+          "4. Plan not yet available:\n" +
+          "   → The plan was created, but PayPal sometimes needs several seconds to make it available\n" +
+          "   → The system has already made multiple attempts\n" +
+          "   → Try again in a few seconds or contact support\n\n" +
+          "One-time payments work without this activation, but monthly subscriptions require it.";
       
-      // Extract error details from PayPal error object
-      if (err.details && Array.isArray(err.details)) {
-        // PayPal API errors often have details array
-        const details = err.details
-          .map((d: any) => {
-            // Try to get user-friendly description
-            if (d.description) return d.description;
-            if (d.message) return d.message;
-            if (d.issue) return d.issue;
-            return null;
-          })
-          .filter(Boolean);
+      detailedError += subscriptionErrorMessage;
+    } else {
+      // Regular error handling for other errors
+      if (err) {
+        let errorDetails = "";
         
-        if (details.length > 0) {
-          errorDetails = details.join(". ");
+        // Extract error details from PayPal error object
+        if (err.details && Array.isArray(err.details)) {
+          // PayPal API errors often have details array
+          const details = err.details
+            .map((d: any) => {
+              // Try to get user-friendly description
+              if (d.description) return d.description;
+              if (d.message) return d.message;
+              if (d.issue) return d.issue;
+              return null;
+            })
+            .filter(Boolean);
+          
+          if (details.length > 0) {
+            errorDetails = details.join(". ");
+          }
+        } else if (err.message) {
+          errorDetails = err.message;
+        } else if (typeof err === "string") {
+          errorDetails = err;
         }
-      } else if (err.message) {
-        errorDetails = err.message;
-      } else if (typeof err === "string") {
-        errorDetails = err;
-      }
-      
-      // Add error details if available
-      if (errorDetails) {
-        detailedError += `\n\n${language === "de" ? "Fehlerdetails: " : "Error details: "}${errorDetails}`;
+        
+        // Add error details if available
+        if (errorDetails) {
+          detailedError += `\n\n${language === "de" ? "Fehlerdetails: " : "Error details: "}${errorDetails}`;
+        }
       }
     }
     
     setErrorMessage(detailedError);
     setShowErrorDialog(true);
     setIsProcessingPayment(false);
-  }, [t, language]);
+  }, [t, language, donationType]);
 
   // PayPal subscription creation handler for monthly donations
   // Create PayPal subscription using backend to generate dynamic subscription plan
   const createPayPalSubscription = useCallback(async (data: any, actions: any) => {
     console.log("=== Creating PayPal Subscription ===");
+    console.log("🔵 createPayPalSubscription called with data:", data);
+    console.log("🔵 createPayPalSubscription called with actions:", actions);
 
-    // Validate all required fields before creating PayPal subscription
-    const finalAmountStr = getCurrentAmount();
+    // Use ref to get latest amount values (avoids closure issues)
+    const currentAmountData = amountRef.current;
+    console.log("Current amount data from ref:", currentAmountData);
+
+    // Get amount from ref (for monthly donations)
+    let finalAmountStr = "";
+    if (currentAmountData.donationType === "monthly") {
+      finalAmountStr = currentAmountData.amount || currentAmountData.customAmount || "";
+    } else {
+      // This shouldn't happen for subscriptions, but handle it anyway
+      finalAmountStr = currentAmountData.amount || currentAmountData.customAmount || "";
+    }
+
+    console.log("Final amount string:", finalAmountStr);
 
     // Validate amount
-    if (!finalAmountStr || parseFloat(finalAmountStr) <= 0) {
+    if (!finalAmountStr || finalAmountStr.trim() === "" || parseFloat(finalAmountStr) <= 0 || isNaN(parseFloat(finalAmountStr))) {
+      console.error("Amount validation failed:", { 
+        finalAmountStr, 
+        parsed: parseFloat(finalAmountStr),
+        amountFromRef: currentAmountData.amount,
+        customAmountFromRef: currentAmountData.customAmount,
+        donationTypeFromRef: currentAmountData.donationType
+      });
       throw new Error(t("donation.form.error.amount"));
     }
 
@@ -1204,6 +1696,19 @@ const Donation = () => {
       }
     }
 
+    if (currentFormData.isGift) {
+      if (!currentFormData.giftRecipientName?.trim()) {
+        throw new Error(t("donation.form.error.giftRecipientName"));
+      }
+      if (!currentFormData.giftRecipientEmail?.trim()) {
+        throw new Error(t("donation.form.error.giftRecipientEmail"));
+      }
+      const giftEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!giftEmailRegex.test(currentFormData.giftRecipientEmail)) {
+        throw new Error(t("donation.form.error.giftRecipientEmailInvalid"));
+      }
+    }
+
     // Validate privacy consent
     if (!currentFormData.privacyConsent) {
       throw new Error(t("donation.form.error.privacy"));
@@ -1217,6 +1722,7 @@ const Donation = () => {
       throw new Error(t("donation.form.error.amount"));
     }
     
+    const intentId = await createDonationIntent();
     console.log("Creating PayPal subscription plan via backend with amount:", finalAmount, "EUR");
     
     try {
@@ -1229,6 +1735,11 @@ const Donation = () => {
         metadata: {
           donationType: 'monthly',
           wantsReceipt: currentFormData.wantsReceipt ? 'true' : 'false',
+          donor_salutation: currentFormData.salutation || "",
+          giftDonation: currentFormData.isGift ? "true" : "false",
+          giftRecipientName: currentFormData.giftRecipientName || "",
+          giftRecipientEmail: currentFormData.giftRecipientEmail || "",
+          intentId,
         }
       });
       
@@ -1236,32 +1747,248 @@ const Donation = () => {
         throw new Error(planResult.message || planResult.error || "Failed to create subscription plan");
       }
       
-      console.log("Subscription plan created successfully:", planResult.plan_id);
+      // Validate plan_id format (PayPal plan IDs start with "P-")
+      if (!planResult.plan_id.startsWith("P-")) {
+        console.error("⚠️ Invalid plan_id format:", planResult.plan_id);
+        throw new Error(`Invalid plan ID format: ${planResult.plan_id}. PayPal plan IDs should start with "P-"`);
+      }
       
-      // Create the subscription using the plan ID
-      return actions.subscription.create({
+      console.log("✅ Subscription plan created successfully:", planResult.plan_id);
+      console.log("📋 Plan details:", {
         plan_id: planResult.plan_id,
-        subscriber: {
-          name: {
-            given_name: currentFormData.firstName,
-            surname: currentFormData.lastName,
-          },
-          email_address: currentFormData.email,
-        },
-        application_context: {
-          brand_name: "Alma Bridge of Hope e.V.",
-          locale: language === "de" ? "de-DE" : "en-US",
-          shipping_preference: "NO_SHIPPING",
-          user_action: "SUBSCRIBE_NOW",
-          cancel_url: `${window.location.origin}/donation?cancelled=true`,
-        },
-        custom_id: `monthly-subscription-${Date.now()}`,
+        amount: planResult.amount,
+        currency: planResult.currency,
+        status: "ACTIVE (should be immediately available)"
       });
+      
+      // Diagnostic: Log Client ID being used (first 10 chars for security)
+      const clientIdPreview = PAYPAL_CLIENT_ID ? `${PAYPAL_CLIENT_ID.substring(0, 10)}...` : "NOT SET";
+      const currentStage = import.meta.env.VITE_STAGE || "local";
+      console.log("🔑 PayPal Client ID (frontend):", clientIdPreview);
+      console.log("🌍 PayPal Environment (frontend):", currentStage, currentStage === 'prod' ? '(LIVE)' : '(SANDBOX)');
+      console.log("📋 Plan ID created:", planResult.plan_id);
+      
+      // CRITICAL: Verify backend Client ID matches frontend (for debugging)
+      // This is the most common cause of 404 errors
+      let clientIdMismatch = false;
+      try {
+        console.log("🔍 Checking backend Client ID and environment...");
+        const backendDiagnostic = await paypalService.getDiagnosticInfo();
+        if (backendDiagnostic.ok && backendDiagnostic.diagnostic) {
+          const backendClientIdPreview = backendDiagnostic.diagnostic.client_id_preview || "UNKNOWN";
+          const backendStage = backendDiagnostic.diagnostic.stage || "unknown";
+          const backendApiBase = backendDiagnostic.diagnostic.api_base || "unknown";
+          
+          console.log("🔑 PayPal Client ID (backend):", backendClientIdPreview);
+          console.log("🌍 PayPal Environment (backend):", backendStage, backendStage === 'prod' ? '(LIVE)' : '(SANDBOX)');
+          console.log("🌐 PayPal API Base (backend):", backendApiBase);
+          
+          // Compare first 10 characters
+          const frontendPrefix = PAYPAL_CLIENT_ID ? PAYPAL_CLIENT_ID.substring(0, 10) : "";
+          const backendPrefix = backendDiagnostic.diagnostic.client_id_preview 
+            ? backendDiagnostic.diagnostic.client_id_preview.replace('...', '')
+            : "";
+          
+          // Check for Client ID mismatch
+          if (frontendPrefix && backendPrefix && frontendPrefix !== backendPrefix) {
+            clientIdMismatch = true;
+            console.error("❌ CLIENT ID MISMATCH DETECTED!");
+            console.error("   Frontend:", frontendPrefix + "...");
+            console.error("   Backend:", backendPrefix + "...");
+            console.error("   This WILL cause subscription creation to fail with 404!");
+            console.error("   → Frontend uses:", VITE_STAGE === 'prod' ? 'VITE_PAYPAL_LIVE_CLIENT_ID' : 'VITE_PAYPAL_SANDBOX_CLIENT_ID', "from .env");
+            console.error("   → Backend uses: PAYPAL_SANDBOX_CLIENT_ID or PAYPAL_LIVE_CLIENT_ID in Google Apps Script");
+            console.error("   → Both must be from the SAME PayPal app in Developer Portal");
+            console.error("   → Fix: Update", VITE_STAGE === 'prod' ? 'VITE_PAYPAL_LIVE_CLIENT_ID' : 'VITE_PAYPAL_SANDBOX_CLIENT_ID', "to match backend Client ID");
+          } else if (frontendPrefix && backendPrefix) {
+            console.log("✅ Client IDs match (first 10 characters)");
+          }
+          
+          // Check for environment mismatch
+          if (currentStage !== backendStage) {
+            console.warn("⚠️ Environment mismatch detected!");
+            console.warn(`   Frontend stage: ${currentStage}`);
+            console.warn(`   Backend stage: ${backendStage}`);
+            console.warn("   → This might cause issues if Client IDs don't match environments");
+          } else {
+            console.log("✅ Environments match");
+          }
+          
+          // Check if Client ID is set in backend
+          if (!backendDiagnostic.diagnostic.has_client_id) {
+            console.error("❌ Backend Client ID is NOT SET!");
+            console.error("   → Add VITE_PAYPAL_SANDBOX_CLIENT_ID or VITE_PAYPAL_LIVE_CLIENT_ID to Google Apps Script Properties");
+          }
+        } else {
+          console.warn("⚠️ Could not verify backend Client ID:", backendDiagnostic.error);
+          console.warn("   → This might indicate a backend configuration issue");
+        }
+      } catch (diagnosticError) {
+        console.error("❌ Diagnostic check failed:", diagnosticError);
+        console.error("   → This might indicate a backend connectivity issue");
+      }
+      
+      // If Client ID mismatch detected, throw error immediately
+      if (clientIdMismatch) {
+        const mismatchError = new Error(
+          language === "de"
+            ? "PayPal Client-ID stimmt nicht überein: Frontend und Backend verwenden unterschiedliche Client-IDs. Bitte prüfen Sie die Konfiguration."
+            : "PayPal Client ID mismatch: Frontend and backend are using different Client IDs. Please check your configuration."
+        );
+        (mismatchError as any).isClientIdMismatch = true;
+        throw mismatchError;
+      }
+      
+      // Optional: Verify plan exists and is ACTIVE before attempting subscription creation
+      // This helps diagnose PayPal account configuration issues
+      try {
+        console.log("🔍 Verifying plan exists in PayPal system...");
+        const planVerification = await paypalService.getPlanDetails(planResult.plan_id);
+        if (planVerification.ok && planVerification.plan) {
+          console.log("✅ Plan verified via API:", {
+            id: planVerification.plan.id,
+            status: planVerification.plan.status,
+            name: planVerification.plan.name,
+            product_id: planVerification.plan.product_id
+          });
+          if (planVerification.plan.status !== 'ACTIVE') {
+            console.warn("⚠️ Plan exists but status is not ACTIVE:", planVerification.plan.status);
+            console.warn("⚠️ This might cause subscription creation to fail!");
+          }
+        } else {
+          console.warn("⚠️ Could not verify plan (this might be normal if plan is still propagating):", planVerification.error);
+        }
+      } catch (verifyError) {
+        console.warn("⚠️ Plan verification failed (this might be normal):", verifyError);
+      }
+      
+      // PayPal sometimes needs time to propagate the plan across their systems
+      // Even though the plan is created with ACTIVE status, it may not be immediately
+      // available for subscription creation. We'll wait and retry if needed.
+      console.log("⏳ Waiting for plan to be fully available in PayPal system...");
+      
+      // Wait longer for plan propagation (PayPal sometimes needs 1-3 seconds)
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Create the subscription using the plan ID with retry logic
+      // According to PayPal docs: https://developer.paypal.com/docs/subscriptions/integrate/
+      // The createSubscription function should return actions.subscription.create({ plan_id: 'YOUR_PLAN_ID' })
+      console.log("🔄 Creating subscription with plan_id:", planResult.plan_id);
+      console.log("📝 Plan was created successfully and should be ACTIVE");
+      console.log("⏱️ Plan creation timestamp:", new Date().toISOString());
+      
+      // Retry logic for subscription creation
+      // PayPal plans sometimes need time to propagate, so we retry with exponential backoff
+      const maxRetries = 4; // Increased to 4 attempts
+      let lastError: any = null;
+      
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`🚀 Attempt ${attempt}/${maxRetries}: Calling actions.subscription.create() with plan_id:`, planResult.plan_id);
+          
+          // Actually await the promise to catch rejections properly
+          const subscriptionId = await actions.subscription.create({
+            plan_id: planResult.plan_id,
+            custom_id: intentId,
+          });
+          
+          // Success! Return the subscription ID
+          console.log("✅ Subscription created successfully! Subscription ID:", subscriptionId);
+          return subscriptionId;
+          
+        } catch (subscriptionError: any) {
+          lastError = subscriptionError;
+          
+          // Extract error information
+          const errorMessage = subscriptionError?.message || String(subscriptionError);
+          const errorDetails = subscriptionError?.details || subscriptionError?.response || {};
+          const errorStatus = subscriptionError?.status || errorDetails?.status || 0;
+          
+          // Check if this is a resource not found error (404)
+          const isResourceNotFound = 
+            errorStatus === 404 ||
+            errorMessage.includes("RESOURCE_NOT_FOUND") || 
+            errorMessage.includes("INVALID_RESOURCE_ID") ||
+            errorMessage.includes("does not exist") ||
+            errorMessage.includes("404") ||
+            errorMessage.toLowerCase().includes("not found");
+          
+          console.error(`❌ Subscription creation attempt ${attempt}/${maxRetries} failed:`, {
+            error: subscriptionError,
+            message: errorMessage,
+            status: errorStatus,
+            details: errorDetails,
+            isResourceNotFound: isResourceNotFound,
+            plan_id: planResult.plan_id,
+            client_id_preview: PAYPAL_CLIENT_ID ? `${PAYPAL_CLIENT_ID.substring(0, 10)}...` : "NOT SET",
+            environment: import.meta.env.VITE_STAGE || "local (sandbox)"
+          });
+          
+          // Additional diagnostic for 404 errors
+          if (isResourceNotFound) {
+            console.error("🔍 404 Error Diagnostics:", {
+              "Plan ID": planResult.plan_id,
+              "Plan Format Valid": planResult.plan_id.startsWith("P-"),
+              "Client ID Set": !!PAYPAL_CLIENT_ID,
+              "Client ID Preview": PAYPAL_CLIENT_ID ? `${PAYPAL_CLIENT_ID.substring(0, 10)}...` : "NOT SET",
+              "Environment": import.meta.env.VITE_STAGE || "local",
+              "Attempt": `${attempt}/${maxRetries}`,
+              "Possible Causes": [
+                "1. Client ID mismatch (MOST COMMON) - Frontend and backend using different Client IDs",
+                "2. PayPal account doesn't have subscriptions enabled - Check https://www.sandbox.paypal.com/billing/plans",
+                "3. PayPal app doesn't have subscription API permissions - Check Developer Portal",
+                "4. Plan not yet propagated in PayPal system (less likely after multiple retries)",
+                "5. Wrong environment (sandbox vs live) mismatch"
+              ],
+              "Troubleshooting Steps": [
+                "1. Check console logs above for Client ID comparison",
+                "2. Verify VITE_PAYPAL_SANDBOX_CLIENT_ID (local) or VITE_PAYPAL_LIVE_CLIENT_ID (prod) matches backend Client ID",
+                "3. Log in to PayPal Sandbox and create a test plan manually",
+                "4. Check PayPal Developer Portal API permissions",
+                "5. Ensure both frontend and backend use same environment (sandbox/live)"
+              ]
+            });
+            
+            // Try to get backend diagnostic info again for this error
+            try {
+              const errorDiagnostic = await paypalService.getDiagnosticInfo();
+              if (errorDiagnostic.ok && errorDiagnostic.diagnostic) {
+                console.error("🔍 Backend Diagnostic at Error Time:", {
+                  "Backend Client ID Preview": errorDiagnostic.diagnostic.client_id_preview,
+                  "Backend Environment": errorDiagnostic.diagnostic.stage,
+                  "Backend API Base": errorDiagnostic.diagnostic.api_base,
+                  "Has Client ID": errorDiagnostic.diagnostic.has_client_id,
+                  "Has Client Secret": errorDiagnostic.diagnostic.has_client_secret
+                });
+              }
+            } catch (diagError) {
+              console.error("Could not get backend diagnostic during error:", diagError);
+            }
+          }
+          
+          // If it's a resource not found error and we have retries left, wait and retry
+          if (isResourceNotFound && attempt < maxRetries) {
+            // Exponential backoff: 2s, 3s, 4s (increased wait times)
+            const waitTime = (attempt + 1) * 1000;
+            console.log(`⏳ Plan not yet available (attempt ${attempt}/${maxRetries}), waiting ${waitTime}ms before retry...`);
+            console.log(`📋 Plan ID: ${planResult.plan_id}, created at: ${new Date().toISOString()}`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue;
+          } else {
+            // Either not a resource not found error, or we've exhausted retries
+            console.error(`❌ Final error after ${attempt} attempts:`, subscriptionError);
+            throw subscriptionError;
+          }
+        }
+      }
+      
+      // If we get here, all retries failed
+      throw lastError || new Error("Failed to create subscription after multiple attempts");
     } catch (error) {
       console.error("Error creating PayPal subscription:", error);
       throw error;
     }
-  }, [getCurrentAmount, formData, t, language, showError]);
+  }, [createDonationIntent, language, t]);
 
   const onPayPalCancel = useCallback(() => {
     console.log("PayPal payment cancelled");
@@ -1309,6 +2036,18 @@ const Donation = () => {
               <div className="space-y-4 text-lg text-muted-foreground leading-relaxed">
                 <p>{t("donation.mission.p1")}</p>
                 <p>{t("donation.mission.p2")}</p>
+              </div>
+              <div className="mt-6 pt-6 border-t border-border/50">
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  {t("donation.communityHouse.cta")}{" "}
+                  <Link 
+                    to="/projects#community-house" 
+                    className="text-primary hover:underline font-medium"
+                  >
+                    {t("donation.communityHouse.button")}
+                  </Link>
+                  .
+                </p>
               </div>
             </div>
           </div>
@@ -1623,6 +2362,7 @@ const Donation = () => {
                       onValueChange={(value: "one-time" | "monthly") => {
                         const scrollY = window.scrollY;
                         setDonationType(value);
+                        
                         // Prevent scrolling when switching donation type
                         requestAnimationFrame(() => {
                           window.scrollTo(0, scrollY);
@@ -1820,6 +2560,24 @@ const Donation = () => {
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-foreground">{t("donation.form.personalInfo")}</h3>
                     
+                    <div>
+                      <Label htmlFor="salutation">{t("form.salutation")}</Label>
+                      <Select
+                        value={formData.salutation || undefined}
+                        onValueChange={(value) => handleInputChange("salutation", value)}
+                      >
+                        <SelectTrigger id="salutation" className="mt-2">
+                          <SelectValue placeholder={t("form.salutation.placeholder")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="mr">{t("form.salutation.mr")}</SelectItem>
+                          <SelectItem value="ms">{t("form.salutation.ms")}</SelectItem>
+                          <SelectItem value="diverse">{t("form.salutation.diverse")}</SelectItem>
+                          <SelectItem value="none">{t("form.salutation.none")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="firstName">{t("donation.form.firstName")}</Label>
@@ -1854,6 +2612,51 @@ const Donation = () => {
                         required
                       />
                     </div>
+                  </div>
+
+                  {/* Gift Donation */}
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="isGift"
+                        checked={formData.isGift}
+                        onCheckedChange={(checked) => handleInputChange("isGift", checked as boolean)}
+                      />
+                      <Label htmlFor="isGift" className="text-sm">
+                        {t("donation.form.gift.label")}
+                      </Label>
+                    </div>
+
+                    {formData.isGift && (
+                      <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
+                        <p className="text-sm text-muted-foreground">
+                          {t("donation.form.gift.description")}
+                        </p>
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="giftRecipientName">{t("donation.form.gift.name")}</Label>
+                            <Input
+                              id="giftRecipientName"
+                              value={formData.giftRecipientName}
+                              onChange={(e) => handleInputChange("giftRecipientName", e.target.value)}
+                              className="mt-2"
+                              required={formData.isGift}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="giftRecipientEmail">{t("donation.form.gift.email")}</Label>
+                            <Input
+                              id="giftRecipientEmail"
+                              type="email"
+                              value={formData.giftRecipientEmail}
+                              onChange={(e) => handleInputChange("giftRecipientEmail", e.target.value)}
+                              className="mt-2"
+                              required={formData.isGift}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Receipt Checkbox */}
@@ -1980,73 +2783,51 @@ const Donation = () => {
                     <Label className="text-base font-semibold">
                       {language === "de" ? "Zahlungsmethode" : "Payment Method"}
                     </Label>
-                    <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as typeof paymentMethod)}>
-                      <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
-                        <RadioGroupItem value="paypal" id="payment-paypal" />
-                        <Label htmlFor="payment-paypal" className="flex-1 cursor-pointer">
-                          PayPal
-                          </Label>
-                        </div>
+                    <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as typeof paymentMethod)} className="flex flex-wrap gap-3">
                       {STRIPE_PUBLISHABLE_KEY && (
                         <>
-                          <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
-                            <RadioGroupItem value="stripe-card" id="payment-stripe-card" />
-                            <Label htmlFor="payment-stripe-card" className="flex-1 cursor-pointer">
-                              {language === "de" ? "Kreditkarte" : "Credit Card"}
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer">
+                          {/* 1. SEPA Lastschrift (first) */}
+                          <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer flex-1 min-w-[150px]">
                             <RadioGroupItem value="stripe-sepa" id="payment-stripe-sepa" />
                             <Label htmlFor="payment-stripe-sepa" className="flex-1 cursor-pointer">
                               {language === "de" ? "SEPA Lastschrift" : "SEPA Direct Debit"}
                             </Label>
                           </div>
+                          {/* 2. Kreditkarte (second) */}
+                          <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer flex-1 min-w-[150px]">
+                            <RadioGroupItem value="stripe-card" id="payment-stripe-card" />
+                            <Label htmlFor="payment-stripe-card" className="flex-1 cursor-pointer">
+                              {language === "de" ? "Kreditkarte" : "Credit Card"}
+                            </Label>
+                          </div>
                         </>
+                      )}
+                      {/* 3. PayPal (available for both one-time and monthly payments) */}
+                      {PAYPAL_CLIENT_ID && (
+                        <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer flex-1 min-w-[150px]">
+                          <RadioGroupItem value="paypal" id="payment-paypal" />
+                          <Label htmlFor="payment-paypal" className="flex-1 cursor-pointer">
+                            PayPal
+                          </Label>
+                        </div>
                       )}
                     </RadioGroup>
                   </div>
 
                   {/* Payment UI - Conditional based on selected method */}
                   <div className="w-full relative">
-                    {/* PayPal - Support both one-time and recurring payments */}
+                    {/* PayPal - Available for both one-time and monthly payments */}
                     {paymentMethod === "paypal" && PAYPAL_CLIENT_ID && (
                       <div className="w-full relative" key="paypal-buttons">
-                        {donationType === "monthly" && !paypalService.isConfigured() ? (
-                          <div className="w-full p-6 bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-lg">
-                            <div className="flex items-start gap-3">
-                              <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                              <div className="space-y-2">
-                                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                                  {language === "de" 
-                                    ? "PayPal-Backend nicht konfiguriert" 
-                                    : "PayPal backend not configured"}
-                                </p>
-                                <p className="text-sm text-blue-800 dark:text-blue-200">
-                                  {language === "de"
-                                    ? "Für monatliche PayPal-Spenden muss das Backend konfiguriert sein. Bitte verwenden Sie Stripe oder kontaktieren Sie uns."
-                                    : "For monthly PayPal donations, the backend must be configured. Please use Stripe or contact us."}
-                                </p>
-                                <Button
-                                  onClick={() => setPaymentMethod("stripe-card")}
-                                  variant="outline"
-                                  size="sm"
-                                  className="mt-2 bg-white dark:bg-gray-900 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/50"
-                                >
-                                  {language === "de" ? "Zu Stripe wechseln" : "Switch to Stripe"}
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ) : (
-                          <PayPalButtonWrapper
-                            createOrder={donationType === "one-time" ? createPayPalOrder : undefined}
-                            createSubscription={donationType === "monthly" ? createPayPalSubscription : undefined}
-                            onApprove={onPayPalApprove}
-                            onError={onPayPalError}
-                            onCancel={onPayPalCancel}
-                            language={language}
-                          />
-                        )}
+                        <PayPalButtonWrapper
+                          createOrder={donationType === "one-time" ? createPayPalOrder : undefined}
+                          createSubscription={donationType === "monthly" ? createPayPalSubscription : undefined}
+                          onApprove={onPayPalApprove}
+                          onError={onPayPalError}
+                          onCancel={onPayPalCancel}
+                          language={language}
+                          key={`paypal-${donationType}`}
+                        />
                         {/* Overlay to disable PayPal buttons when dialog is open */}
                         {(showSuccessDialog || showErrorDialog || showWarningDialog) && (
                           <div 
@@ -2078,8 +2859,20 @@ const Donation = () => {
                           donationType,
                           donorEmail: formData.email,
                           donorName: `${formData.firstName} ${formData.lastName}`,
+                          donor_salutation: formData.salutation || "",
+                          comment: formData.comment || "",
+                          wantsReceipt: formData.wantsReceipt ? "true" : "false",
+                          wantsNewsletter: formData.wantsNewsletter ? "true" : "false",
+                          giftDonation: formData.isGift ? "true" : "false",
+                          giftRecipientName: formData.giftRecipientName || "",
+                          giftRecipientEmail: formData.giftRecipientEmail || "",
+                          donor_street: formData.street || "",
+                          donor_postalCode: formData.postalCode || "",
+                          donor_city: formData.city || "",
+                          donor_country: formData.country || "",
                         }}
                         isSubscription={donationType === "monthly"}
+                        onBeforeCheckout={createDonationIntent}
                         onValidate={() => {
                           // Basic validation
                           if (!formData.firstName){
@@ -2097,6 +2890,21 @@ const Donation = () => {
                           if (!formData.privacyConsent) {
                             showError(t("donation.form.error.privacy"));
                             return false;
+                          }
+                          if (formData.isGift) {
+                            if (!formData.giftRecipientName) {
+                              showError(t("donation.form.error.giftRecipientName"));
+                              return false;
+                            }
+                            if (!formData.giftRecipientEmail) {
+                              showError(t("donation.form.error.giftRecipientEmail"));
+                              return false;
+                            }
+                            const giftEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                            if (!giftEmailRegex.test(formData.giftRecipientEmail)) {
+                              showError(t("donation.form.error.giftRecipientEmailInvalid"));
+                              return false;
+                            }
                           }
                           const finalAmount = donationType === "monthly"
                             ? parseFloat(amount || customAmount || "0")
@@ -2129,8 +2937,20 @@ const Donation = () => {
                           donationType,
                           donorEmail: formData.email,
                           donorName: `${formData.firstName} ${formData.lastName}`,
+                          donor_salutation: formData.salutation || "",
+                          comment: formData.comment || "",
+                          wantsReceipt: formData.wantsReceipt ? "true" : "false",
+                          wantsNewsletter: formData.wantsNewsletter ? "true" : "false",
+                          giftDonation: formData.isGift ? "true" : "false",
+                          giftRecipientName: formData.giftRecipientName || "",
+                          giftRecipientEmail: formData.giftRecipientEmail || "",
+                          donor_street: formData.street || "",
+                          donor_postalCode: formData.postalCode || "",
+                          donor_city: formData.city || "",
+                          donor_country: formData.country || "",
                         }}
                         isSubscription={donationType === "monthly"}
+                        onBeforeCheckout={createDonationIntent}
                         onValidate={() => {
                           // Basic validation
                           if (!formData.firstName) {
@@ -2148,6 +2968,21 @@ const Donation = () => {
                           if (!formData.privacyConsent) {
                             showError(t("donation.form.error.privacy"));
                             return false;
+                          }
+                          if (formData.isGift) {
+                            if (!formData.giftRecipientName) {
+                              showError(t("donation.form.error.giftRecipientName"));
+                              return false;
+                            }
+                            if (!formData.giftRecipientEmail) {
+                              showError(t("donation.form.error.giftRecipientEmail"));
+                              return false;
+                            }
+                            const giftEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                            if (!giftEmailRegex.test(formData.giftRecipientEmail)) {
+                              showError(t("donation.form.error.giftRecipientEmailInvalid"));
+                              return false;
+                            }
                           }
                           const finalAmount = donationType === "monthly"
                             ? parseFloat(amount || customAmount || "0")
@@ -2169,7 +3004,32 @@ const Donation = () => {
           </div>
         </section>
 
-        {/* 4. Transparency Commitment */}
+        {/* 1b. Spenden statt Geschenke CTA */}
+        <section className="py-10 bg-muted/30">
+          <div className="max-w-content mx-auto px-6">
+            <div className="max-w-4xl mx-auto">
+              <Card className="p-6 md:p-8 shadow-card">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                  <div>
+                    <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                      {t("donation.giftCta.title")}
+                    </h2>
+                    <p className="text-muted-foreground text-lg">
+                      {t("donation.giftCta.description")}
+                    </p>
+                  </div>
+                  <Button asChild size="lg">
+                    <Link to="/spenden-statt-geschenke">
+                      {t("donation.giftCta.button")}
+                    </Link>
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* 5. Transparency Commitment */}
         <section className="py-section bg-muted/30">
           <div className="max-w-content mx-auto px-6">
             <div className="max-w-4xl mx-auto">
@@ -2261,7 +3121,7 @@ const Donation = () => {
                 <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden shadow-lg">
                   <OptimizedImage
                     src={communityImage} 
-                    alt="Community in Uganda" 
+                    alt="Gemeinschaft in Uganda: Mitglieder der Gemeinschaft arbeiten zusammen an Projekten zur Verbesserung ihrer Lebensbedingungen" 
                     className="w-full h-full object-cover object-center"
                     lazy={true}
                   />
@@ -2317,8 +3177,8 @@ const Donation = () => {
                   <AccordionTrigger className="text-left">
                     {t("donation.faq.q4")}
                   </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">
-                    {t("donation.faq.a4")}
+                  <AccordionContent className="text-muted-foreground whitespace-pre-line">
+                    {t("donation.faq.a4").replace(/{email}/g, t("donation.contact.email"))}
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="item-5" className="border rounded-lg px-6">
@@ -2478,4 +3338,3 @@ const Donation = () => {
 };
 
 export default Donation;
-

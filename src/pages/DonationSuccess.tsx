@@ -10,6 +10,7 @@ import NewsletterForm from "@/components/NewsletterForm";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { stripeService, StripeSessionDetails } from "@/services/stripeService";
+import { paypalService, PayPalSubscriptionDetails } from "@/services/paypalService";
 import { donationWebhookService } from "@/services/donationWebhookService";
 import { 
   CheckCircle, 
@@ -18,9 +19,12 @@ import {
   Home, 
   CheckCircle2,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Info,
+  ExternalLink
 } from "lucide-react";
 import heroImage from "@/assets/nature/nature_2.webp";
+import emailjs from "@emailjs/browser";
 
 const DonationSuccess = () => {
   const { t, language } = useLanguage();
@@ -32,7 +36,7 @@ const DonationSuccess = () => {
   
   // Get parameters from URL
   const sessionId = searchParams.get("session_id");
-  const donationType = searchParams.get("type") || "one-time";
+  const urlDonationType = searchParams.get("type");
   const estimatedAmount = searchParams.get("estimated_amount");
   
   // Legacy support: direct amount/paymentId (from old PayPal flow or fallback)
@@ -40,12 +44,26 @@ const DonationSuccess = () => {
   const legacyPaymentId = searchParams.get("paymentId");
   
   // State for async session loading
-  const [isLoadingSession, setIsLoadingSession] = useState(!!sessionId);
+  // Only set to true if we actually need to load details (Stripe session or PayPal monthly subscription)
+  const [isLoadingSession, setIsLoadingSession] = useState(
+    !!sessionId || (!!legacyPaymentId && urlDonationType === "monthly")
+  );
   const [sessionDetails, setSessionDetails] = useState<StripeSessionDetails | null>(null);
+  const [paypalSubscriptionDetails, setPaypalSubscriptionDetails] = useState<PayPalSubscriptionDetails | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  
+  // Determine donation type from session metadata, PayPal subscription, or URL parameter
+  const donationType = sessionDetails?.metadata 
+    ? (sessionDetails.metadata.donationType === "monthly" || 
+       sessionDetails.metadata.donation_type === "monthly" || 
+       sessionDetails.metadata.subscription_type === "monthly_donation")
+      ? "monthly"
+      : "one-time"
+    : (paypalSubscriptionDetails ? "monthly" : (urlDonationType || "one-time"));
   
   // Track processed session IDs to prevent duplicate webhook calls
   const processedSessionsRef = useRef<Set<string>>(new Set());
+  const giftEmailSentRef = useRef<Set<string>>(new Set());
   
   // Final display values
   const displayAmount = sessionDetails 
@@ -70,6 +88,68 @@ const DonationSuccess = () => {
       const details = await stripeService.getSessionDetails(sessionId);
       console.log("✅ Session details loaded:", details);
       setSessionDetails(details);
+
+      const metadata = details.metadata || {};
+      const isGiftDonation = metadata.giftDonation === "true";
+      const giftRecipientName = metadata.giftRecipientName || "";
+      const giftRecipientEmail = metadata.giftRecipientEmail || "";
+      const donorName = metadata.donorName || details.customer_details?.name || "";
+      const donorEmail = metadata.donorEmail || details.customer_details?.email || details.customer_email || "";
+      const metadataDonationType = metadata.donationType === "monthly" ||
+        metadata.donation_type === "monthly" ||
+        metadata.subscription_type === "monthly_donation"
+          ? "monthly"
+          : "one-time";
+
+      if (
+        isGiftDonation &&
+        giftRecipientName &&
+        giftRecipientEmail &&
+        donorName &&
+        donorEmail &&
+        !giftEmailSentRef.current.has(details.id)
+      ) {
+        try {
+          giftEmailSentRef.current.add(details.id);
+          const amountLabel = formatCurrency(details.amount_total / 100);
+          const subject = t("donation.giftEmail.subject");
+          const greeting = `${t("donation.giftEmail.greeting")} ${giftRecipientName},`;
+          const bodyLines = [
+            greeting,
+            "",
+            t("donation.giftEmail.body"),
+            "",
+            `${t("donation.giftEmail.details.donor")} ${donorName} (${donorEmail})`,
+            `${t("donation.giftEmail.details.amount")} ${amountLabel}`,
+            `${t("donation.giftEmail.details.type")} ${
+              metadataDonationType === "monthly"
+                ? t("donation.giftEmail.details.type.monthly")
+                : t("donation.giftEmail.details.type.onetime")
+            }`,
+            "",
+            t("donation.giftEmail.closing"),
+            t("donation.giftEmail.signature"),
+          ];
+
+          await emailjs.send(
+            "service_wou9sst",
+            "template_eqc74jo",
+            {
+              from_name: donorName,
+              from_email: donorEmail,
+              subject,
+              message: bodyLines.join("\n"),
+              to_email: giftRecipientEmail,
+              reply_to: donorEmail,
+            },
+            "zxPupF44hCueD6u4K"
+          );
+          console.log("✅ Gift email sent to recipient (Stripe)");
+        } catch (error) {
+          console.error("❌ Failed to send gift email (Stripe):", error);
+          giftEmailSentRef.current.delete(details.id);
+        }
+      }
       
       // Check if this is a SEPA payment
       // SEPA payments can be detected from metadata or payment_method_types
@@ -123,7 +203,7 @@ const DonationSuccess = () => {
     } finally {
       setIsLoadingSession(false);
     }
-  }, [sessionId, language]);
+  }, [sessionId, language, formatCurrency, t]);
   
   // Process webhook in background
   const processWebhook = async (details: StripeSessionDetails) => {
@@ -133,6 +213,15 @@ const DonationSuccess = () => {
     const isSEPAPayment = details.metadata?.paymentMethodType === 'sepa_debit' ||
                          details.payment_method_types?.includes('sepa_debit') ||
                          details.payment_method_types?.some(pmt => pmt.includes('sepa'));
+    
+    // Determine donation type from session metadata
+    const webhookDonationType = details.metadata 
+      ? (details.metadata.donationType === "monthly" || 
+         details.metadata.donation_type === "monthly" || 
+         details.metadata.subscription_type === "monthly_donation")
+        ? "monthly"
+        : "one-time"
+      : "one-time";
     
     console.log("📤 Processing donation webhook...");
     console.log("Payment Mode:", isLivePayment ? "LIVE" : "TEST");
@@ -145,6 +234,51 @@ const DonationSuccess = () => {
       const customerEmail = details.customer_details?.email || details.customer_email || '';
       const customerName = details.customer_details?.name || '';
       const customerAddress = details.customer_details?.address;
+
+      // Get address from Stripe customer_details or from metadata (form data)
+      const addressFromStripe = customerAddress
+        ? {
+            street: customerAddress.line1 || undefined,
+            postalCode: customerAddress.postal_code || undefined,
+            city: customerAddress.city || undefined,
+            country: customerAddress.country || undefined,
+          }
+        : undefined;
+
+      // Extract address from metadata if any field has meaningful content
+      // For subscriptions, metadata might be in subscription object, but we check session metadata first
+      const metadataStreet = details.metadata?.donor_street?.trim();
+      const metadataPostalCode = details.metadata?.donor_postalCode?.trim();
+      const metadataCity = details.metadata?.donor_city?.trim();
+      const metadataCountry = details.metadata?.donor_country?.trim();
+
+      // Only use metadata address if at least one field has meaningful content
+      const hasMeaningfulMetadataAddress =
+        (metadataStreet && metadataStreet.length > 0) ||
+        (metadataPostalCode && metadataPostalCode.length > 0) ||
+        (metadataCity && metadataCity.length > 0) ||
+        (metadataCountry && metadataCountry.length > 0);
+
+      const addressFromMetadata = hasMeaningfulMetadataAddress
+        ? {
+            street: metadataStreet || undefined,
+            postalCode: metadataPostalCode || undefined,
+            city: metadataCity || undefined,
+            country: metadataCountry || undefined,
+          }
+        : undefined;
+
+      // Log metadata for debugging
+      console.log("=== Address Debug ===");
+      console.log("Session Metadata:", details.metadata);
+      console.log("Address from Stripe:", addressFromStripe);
+      console.log("Address from Metadata:", addressFromMetadata);
+      console.log("Has Meaningful Metadata Address:", hasMeaningfulMetadataAddress);
+      console.log("===================");
+
+      // Prefer metadata address (form data) over Stripe address, as form data is more complete
+      // But fall back to Stripe address if metadata is empty (like for SEPA payments)
+      const address = addressFromMetadata || addressFromStripe;
       
       const stripePaymentMethod: 'stripe-card' | 'stripe-sepa' = isSEPAPayment ? 'stripe-sepa' : 'stripe-card';
       
@@ -200,25 +334,37 @@ const DonationSuccess = () => {
         }];
       }
       
+      const isMembership =
+        details.metadata?.subscription_type === "membership" ||
+        searchParams.get("source") === "membership" ||
+        searchParams.get("flow") === "membership" ||
+        searchParams.get("donationType") === "new-membership";
+      
+      // Get comment from metadata (for both membership and regular donations)
+      const donationComment =
+        details.metadata?.membership_comment ||
+        details.metadata?.comment ||
+        searchParams.get("comment") ||
+        undefined;
+
       const donationData = {
         items: donationItems,
         totalAmount: finalAmount,
-        donationType: donationType as "one-time" | "monthly",
+        donationType: (isMembership ? "new-membership" : webhookDonationType) as "one-time" | "monthly" | "new-membership",
         paymentMethod: stripePaymentMethod,
         donorEmail: customerEmail || undefined,
         donorName: customerName || undefined,
+        donorSalutation: details.metadata?.donor_salutation || undefined,
         timestamp: new Date().toISOString(),
         paymentId: details.id,
         paymentStatus: details.payment_status as 'paid' | 'unpaid' | 'pending' | 'failed', // Include payment status
         wantsReceipt: details.metadata?.wantsReceipt === 'true',
-        address: customerAddress ? {
-          street: customerAddress.line1 || undefined,
-          postalCode: customerAddress.postal_code || undefined,
-          city: customerAddress.city || undefined,
-          country: customerAddress.country || undefined,
-        } : undefined,
+        isGift: details.metadata?.giftDonation === 'true',
+        giftRecipientName: details.metadata?.giftRecipientName || undefined,
+        giftRecipientEmail: details.metadata?.giftRecipientEmail || undefined,
+        address: address,
         wantsNewsletter: details.metadata?.wantsNewsletter === 'true',
-        comment: details.metadata?.comment || undefined,
+        comment: donationComment,
       };
       
       console.log("=== Sending to Webhook ===");
@@ -228,7 +374,7 @@ const DonationSuccess = () => {
       console.log("Payment Method:", stripePaymentMethod);
       console.log("Payment ID:", details.id);
       console.log("Donor Email:", customerEmail || 'N/A');
-      console.log("Donation Type:", donationType);
+      console.log("Donation Type:", webhookDonationType);
       console.log("========================");
       
       const webhookResponse = await donationWebhookService.sendDonation(donationData);
@@ -256,12 +402,58 @@ const DonationSuccess = () => {
     }
   };
   
+  // Load PayPal subscription details if we have a PayPal payment ID and it's a monthly donation
+  const loadPayPalSubscriptionDetails = useCallback(async () => {
+    if (!legacyPaymentId || urlDonationType !== "monthly") return;
+    
+    // PayPal Subscription IDs start with "I-" (e.g., "I-BW452GLLEP1G")
+    // If the ID doesn't match this format, it's likely an Order ID, not a Subscription ID
+    const isSubscriptionIdFormat = legacyPaymentId.startsWith("I-");
+    
+    if (!isSubscriptionIdFormat) {
+      console.log("ℹ️ PayPal Payment ID doesn't match Subscription ID format (should start with 'I-'). Using type parameter instead.");
+      console.log("Payment ID:", legacyPaymentId, "- This appears to be an Order ID, not a Subscription ID.");
+      // Don't try to load subscription details - just trust the type parameter
+      setIsLoadingSession(false);
+      return;
+    }
+    
+    console.log("🔄 Loading PayPal subscription details...");
+    setIsLoadingSession(true);
+    setLoadError(null);
+    
+    try {
+      const result = await paypalService.getSubscriptionDetails(legacyPaymentId);
+      
+      if (result.ok && result.subscription) {
+        console.log("✅ PayPal subscription details loaded:", result.subscription);
+        setPaypalSubscriptionDetails(result.subscription);
+      } else {
+        console.warn("⚠️ Could not load PayPal subscription details:", result.error || result.message);
+        // Don't set error - payment was successful, we just can't verify subscription status
+      }
+    } catch (error) {
+      console.error("❌ Failed to load PayPal subscription details:", error);
+      // Don't block the success page - payment was successful
+    } finally {
+      setIsLoadingSession(false);
+    }
+  }, [legacyPaymentId, urlDonationType]);
+
   // Load session details on mount
   useEffect(() => {
     if (sessionId) {
       loadSessionDetails();
+    } else if (legacyPaymentId && urlDonationType === "monthly") {
+      // Try to load PayPal subscription details for monthly donations
+      loadPayPalSubscriptionDetails();
+    } else if (legacyPaymentId && !sessionId) {
+      // For one-time PayPal payments, we don't need to load additional details
+      // We already have legacyAmount and legacyPaymentId from URL params
+      console.log("ℹ️ One-time PayPal payment detected. Using URL parameters (no additional loading needed).");
+      setIsLoadingSession(false);
     }
-  }, [sessionId, loadSessionDetails]);
+  }, [sessionId, legacyPaymentId, urlDonationType, loadSessionDetails, loadPayPalSubscriptionDetails]);
 
   // Redirect if no valid parameters (invalid access)
   useEffect(() => {
@@ -313,10 +505,14 @@ const DonationSuccess = () => {
               </div>
             </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              {t("donation.success.title")}
+              {donationType === "monthly" 
+                ? t("donation.success.title.monthly")
+                : t("donation.success.title")}
             </h1>
             <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto leading-relaxed mb-8">
-              {t("donation.success.subtitle")}
+              {donationType === "monthly"
+                ? t("donation.success.subtitle.monthly")
+                : t("donation.success.subtitle")}
             </p>
             {displayAmount !== null && (
               <div className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
@@ -407,9 +603,7 @@ const DonationSuccess = () => {
                         {loadError}
                       </p>
                       <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-                        {language === "de" 
-                          ? "Sie erhalten eine Bestätigungs-E-Mail in Kürze." 
-                          : "You will receive a confirmation email shortly."}
+                        {t("donation.success.confirmation.email")}
                       </p>
                     </div>
                   </div>
@@ -424,6 +618,64 @@ const DonationSuccess = () => {
             </div>
           </div>
         </section>
+
+        {/* Cancellation Info for Monthly Donations */}
+        {donationType === "monthly" && (
+          <section className="py-12 bg-muted/30">
+            <div className="max-w-content mx-auto px-6">
+              <div className="max-w-2xl mx-auto">
+                <Card className="p-8 shadow-card">
+                  <div className="flex items-start gap-4 mb-6">
+                    <div className="p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex-shrink-0">
+                      <Info className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+                        {t("donation.success.cancellation.title")}
+                      </h2>
+                      
+                      <div className="space-y-4">
+                        <div className="p-4 bg-background rounded-lg border border-border">
+                          <div className="flex items-start gap-3">
+                            <ExternalLink className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-foreground mb-2">
+                                {t("donation.success.cancellation.stripe")}
+                              </h3>
+                              <p className="text-sm text-muted-foreground whitespace-pre-line">
+                                {t("donation.success.cancellation.stripeDesc").replace("{email}", t("donation.contact.email"))}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="p-4 bg-background rounded-lg border border-border">
+                          <div className="flex items-start gap-3">
+                            <ExternalLink className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-foreground mb-2">
+                                {t("donation.success.cancellation.paypal")}
+                              </h3>
+                              <p className="text-sm text-muted-foreground whitespace-pre-line">
+                                {t("donation.success.cancellation.paypalDesc")}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <p className="text-sm text-blue-900 dark:text-blue-100">
+                            {t("donation.success.cancellation.help").replace("{email}", t("donation.contact.email"))}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Next Steps */}
         <section className="py-12 bg-background">
@@ -527,4 +779,3 @@ const DonationSuccess = () => {
 };
 
 export default DonationSuccess;
-
