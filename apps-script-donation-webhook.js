@@ -94,7 +94,7 @@ function doPost(e) {
       console.log('Donor Name:', data.donorName || 'N/A');
       console.log('Wants Receipt:', data.wantsReceipt ? 'Yes' : 'No');
       console.log('Wants Newsletter:', data.wantsNewsletter ? 'Yes' : 'No');
-      console.log('Address:', data.address ? JSON.stringify(data.address) : 'N/A');
+      console.log('Address (raw):', data.address ? JSON.stringify(data.address) : 'N/A');
       console.log('Comment:', data.comment || 'N/A');
       console.log('Full Data:', JSON.stringify(data, null, 2));
       console.log('============================');
@@ -106,6 +106,11 @@ function doPost(e) {
       console.error('No payload received in request');
       return jsonResponse({ ok: false, message: 'No payload received' });
     }
+
+    // Normalize address across payload variants and expose as data.address for downstream logic
+    const normalizedAddress = normalizeAddress(data);
+    data.address = normalizedAddress;
+    console.log('Address (normalized):', JSON.stringify(normalizedAddress));
 
     // Validate required fields
     if (!data.items || !Array.isArray(data.items) || data.items.length === 0) {
@@ -546,6 +551,50 @@ function jsonResponse(obj) {
   return output;
 }
 
+function normalizeAddress(donationData) {
+  const address = donationData && donationData.address ? donationData.address : {};
+  const receiptAddress = donationData && donationData.receiptAddress ? donationData.receiptAddress : {};
+
+  const street =
+    address.street ||
+    receiptAddress.street ||
+    donationData.donor_street ||
+    donationData.donorStreet ||
+    '';
+
+  const houseNumber =
+    address.houseNumber ||
+    receiptAddress.houseNumber ||
+    donationData.donor_houseNumber ||
+    donationData.donorHouseNumber ||
+    '';
+
+  const postalCode =
+    address.postalCode ||
+    address.postal_code ||
+    receiptAddress.postalCode ||
+    receiptAddress.postal_code ||
+    donationData.donor_postalCode ||
+    donationData.donorPostalCode ||
+    '';
+
+  const city =
+    address.city ||
+    receiptAddress.city ||
+    donationData.donor_city ||
+    donationData.donorCity ||
+    '';
+
+  const country =
+    address.country ||
+    receiptAddress.country ||
+    donationData.donor_country ||
+    donationData.donorCountry ||
+    '';
+
+  return { street, houseNumber, postalCode, city, country };
+}
+
 // Optional: Log donations to a separate sheet for tracking
 function logDonation(donationData, updates) {
   try {
@@ -649,10 +698,29 @@ function logDonation(donationData, updates) {
     // Timestamp, source, type, amount, email, name, donation receipt, street, zip, city, country, newsletter, comment, item updated, updated json, status (last column P)
     const itemUpdatedValue = updates.length;
     const updatedJsonValue = JSON.stringify(updates);
+    const normalizedAddress = normalizeAddress(donationData);
+    const shouldWriteReceiptAddress = donationData.wantsReceipt === true;
+
+    const giftCommentParts = [];
+    if (donationData.isGift) {
+      giftCommentParts.push('Gift donation');
+      if (donationData.giftRecipientName) {
+        giftCommentParts.push(`recipient: ${donationData.giftRecipientName}`);
+      }
+      if (donationData.giftRecipientEmail) {
+        giftCommentParts.push(`email: ${donationData.giftRecipientEmail}`);
+      }
+    }
+    const giftComment = giftCommentParts.length > 0 ? giftCommentParts.join(', ') : '';
+    const baseComment = donationData.comment || '';
+    const mergedComment = baseComment && giftComment
+      ? `${baseComment} | ${giftComment}`
+      : (baseComment || giftComment);
     
     console.log('=== LogRow Values ===');
     console.log('Item Updated (column 14, index 13):', itemUpdatedValue);
     console.log('Updated JSON (column 15, index 14):', updatedJsonValue);
+    console.log('Normalized Address:', normalizedAddress);
     console.log('====================');
     
     const logRow = [
@@ -663,12 +731,12 @@ function logDonation(donationData, updates) {
       donationData.donorEmail || '',                              // email (column 5, index 4)
       donationData.donorName || '',                                // name (column 6, index 5)
       donationData.wantsReceipt ? 'Yes' : 'No',                   // donation receipt (column 7, index 6)
-      donationData.address?.street || '',                          // street (column 8, index 7)
-      donationData.address?.postalCode || '',                      // zip (column 9, index 8)
-      donationData.address?.city || '',                            // city (column 10, index 9)
-      donationData.address?.country || '',                         // country (column 11, index 10)
+      shouldWriteReceiptAddress ? (normalizedAddress.street + (normalizedAddress.houseNumber ? ` ${normalizedAddress.houseNumber}` : '')) : '', // street (column 8, index 7)
+      shouldWriteReceiptAddress ? (normalizedAddress.postalCode || '') : '', // zip (column 9, index 8)
+      shouldWriteReceiptAddress ? (normalizedAddress.city || '') : '', // city (column 10, index 9)
+      shouldWriteReceiptAddress ? (normalizedAddress.country || '') : '', // country (column 11, index 10)
       donationData.wantsNewsletter ? 'Yes' : 'No',                // newsletter (column 12, index 11)
-      donationData.comment || '',                                  // comment (column 13, index 12)
+      mergedComment,                                               // comment (column 13, index 12)
       itemUpdatedValue,                                           // item updated (column 14, index 13)
       updatedJsonValue,                                            // updated json (column 15, index 14)
       donationData.paymentStatus || 'paid'                        // status (column 16, index 15)
@@ -745,4 +813,3 @@ function logDonation(donationData, updates) {
     // Don't fail the whole request if logging fails
   }
 }
-
