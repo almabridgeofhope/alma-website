@@ -81,6 +81,11 @@ class StripeService {
         currency: request.currency || 'eur',
         payment_method_types: request.paymentMethodTypes || ['card'],
         metadata: request.metadata || {},
+        // Keep intent correlation on both Checkout Session and PaymentIntent events.
+        // payment_intent_data is only valid for one-time (non-subscription) checkout sessions.
+        ...(!(request.isSubscription || false)
+          ? { payment_intent_data: { metadata: request.metadata || {} } }
+          : {}),
         customer_email: request.customerEmail,
         customer_name: request.customerName,
         success_url: successUrl,
