@@ -268,6 +268,7 @@ const StripeCheckoutButton = memo(({
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const checkoutUrlByIntentRef = useRef<Record<string, string>>({});
 
   const handleClick = async () => {
     if (!onValidate()) {
@@ -279,6 +280,12 @@ const StripeCheckoutButton = memo(({
 
     try {
       const intentId = onBeforeCheckout ? await onBeforeCheckout() : "";
+      if (intentId && checkoutUrlByIntentRef.current[intentId]) {
+        onRedirect();
+        window.location.href = checkoutUrlByIntentRef.current[intentId];
+        return;
+      }
+
       const checkoutMetadata = {
         ...(metadata || {}),
         ...(intentId ? { intentId } : {}),
@@ -298,6 +305,9 @@ const StripeCheckoutButton = memo(({
         throw new Error('Invalid checkout URL received');
       }
 
+      if (intentId) {
+        checkoutUrlByIntentRef.current[intentId] = url;
+      }
       onRedirect();
       window.location.href = url;
     } catch (error) {
@@ -525,6 +535,10 @@ const Donation = () => {
   // Use ref to track latest amount values for PayPal validation (to avoid closure issues)
   const amountRef = useRef({ amount, customAmount, donationType });
   amountRef.current = { amount, customAmount, donationType };
+  const donationIntentRef = useRef<{ fingerprint: string; intentId: string; submitted: boolean } | null>(null);
+  const donationIntentInFlightRef = useRef<Promise<string> | null>(null);
+  const paypalOrderByIntentRef = useRef<Record<string, string>>({});
+  const paypalSubscriptionByIntentRef = useRef<Record<string, string>>({});
   const formSubmitUrl = import.meta.env.VITE_FORM_SUBMIT_URL as string | undefined;
 
   const predefinedAmounts = [10, 25, 50, 100];
@@ -585,8 +599,9 @@ const Donation = () => {
       throw new Error("validation_failed:email_missing");
     }
 
+    const normalizedDonorEmail = currentFormData.email.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(currentFormData.email)) {
+    if (!emailRegex.test(normalizedDonorEmail)) {
       showError(t("donation.form.error.emailInvalid"));
       throw new Error("validation_failed:email_invalid");
     }
@@ -635,71 +650,126 @@ const Donation = () => {
       city: currentFormData.city.trim(),
       country: currentFormData.country.trim(),
     };
-    const intentId = crypto.randomUUID();
+    const normalizedFirstName = currentFormData.firstName.trim();
+    const normalizedLastName = currentFormData.lastName.trim();
+    const normalizedDonorName = `${normalizedFirstName} ${normalizedLastName}`.trim();
+    const normalizedComment = currentFormData.comment.trim();
+    const numericAmount = Number(finalAmount);
+    const resolvedDonationType = donationType === "monthly" ? "monthly" : "one-time";
+    const submitFingerprint = JSON.stringify({
+      donationType: resolvedDonationType,
+      paymentMethod,
+      amount: numericAmount,
+      donorEmail: normalizedDonorEmail,
+      donorFirstName: normalizedFirstName,
+      donorLastName: normalizedLastName,
+      isGift: !!currentFormData.isGift,
+      giftRecipientName: currentFormData.isGift ? currentFormData.giftRecipientName.trim() : "",
+      giftRecipientEmail: currentFormData.isGift ? currentFormData.giftRecipientEmail.trim().toLowerCase() : "",
+      wantsReceipt: !!currentFormData.wantsReceipt,
+      street: currentFormData.street.trim(),
+      postalCode: currentFormData.postalCode.trim(),
+      city: currentFormData.city.trim(),
+      country: currentFormData.country.trim(),
+      wantsNewsletter: !!currentFormData.wantsNewsletter,
+      comment: normalizedComment,
+      privacyAccepted: !!currentFormData.privacyConsent,
+    });
+    const existingIntent = donationIntentRef.current;
+    const isSameSubmit = !!existingIntent && existingIntent.fingerprint === submitFingerprint;
+    const intentId = isSameSubmit ? existingIntent.intentId : crypto.randomUUID();
+
+    donationIntentRef.current = {
+      fingerprint: submitFingerprint,
+      intentId,
+      submitted: isSameSubmit ? existingIntent.submitted : false,
+    };
+
+    if (isSameSubmit && existingIntent.submitted) {
+      return intentId;
+    }
+    if (isSameSubmit && donationIntentInFlightRef.current) {
+      return donationIntentInFlightRef.current;
+    }
 
     const payload = {
       formType: "donation",
       intentId,
       source: "donation-page",
       submittedAt: new Date().toISOString(),
-      amount: Number(finalAmount),
-      donationType: donationType === "monthly" ? "monthly" : "one-time",
+      amount: numericAmount,
+      totalAmount: numericAmount,
+      donationType: resolvedDonationType,
       paymentMethod,
       salutation: currentFormData.salutation,
-      donorFirstName: currentFormData.firstName,
-      donorLastName: currentFormData.lastName,
-      donorName: `${currentFormData.firstName} ${currentFormData.lastName}`.trim(),
-      donorEmail: currentFormData.email,
+      donorFirstName: normalizedFirstName,
+      donorLastName: normalizedLastName,
+      donorName: normalizedDonorName,
+      donorEmail: normalizedDonorEmail,
       isGift: !!currentFormData.isGift,
-      giftRecipientName: currentFormData.isGift ? currentFormData.giftRecipientName : undefined,
-      giftRecipientEmail: currentFormData.isGift ? currentFormData.giftRecipientEmail : undefined,
+      giftRecipientName: currentFormData.isGift ? currentFormData.giftRecipientName.trim() : undefined,
+      giftRecipientEmail: currentFormData.isGift ? currentFormData.giftRecipientEmail.trim().toLowerCase() : undefined,
       wantsReceipt: !!currentFormData.wantsReceipt,
       address: addressPayload,
       receiptAddress: currentFormData.wantsReceipt
         ? addressPayload
         : undefined,
-      comment: currentFormData.comment || undefined,
-      privacyAccepted: !!currentFormData.privacyConsent,
+      comment: normalizedComment || undefined,
+      privacyAccepted: true,
       wantsNewsletter: !!currentFormData.wantsNewsletter,
       currency: "EUR",
     };
 
-    const response = await fetch(formSubmitUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const submitPromise = (async () => {
+      const response = await fetch(formSubmitUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    if (!response.ok) {
-      let errorCode = "";
-      try {
-        const body = await response.json();
-        errorCode = String(body?.error || body?.code || "");
-      } catch {
-        // Ignore parse errors
-      }
-
-      if (response.status === 400) {
-        if (errorCode.startsWith("invalid_email")) {
-          showError(t("donation.form.error.emailInvalid"));
-        } else if (errorCode === "privacy_not_accepted") {
-          showError(t("donation.form.error.privacy"));
-        } else if (errorCode.includes("gift")) {
-          showError(t("donation.form.error.giftRecipientEmailInvalid"));
-        } else if (errorCode.includes("address") || errorCode.includes("receipt")) {
-          showError(t("donation.form.error.address"));
-        } else {
-          showError(t("donation.form.error.amount"));
+      if (!response.ok) {
+        let errorCode = "";
+        try {
+          const body = await response.json();
+          errorCode = String(body?.error || body?.code || "");
+        } catch {
+          // Ignore parse errors
         }
-      } else {
-        showError(language === "de"
-          ? "Übermittlung fehlgeschlagen. Bitte erneut versuchen."
-          : "Submission failed. Please retry.");
-      }
-      throw new Error(`intent_submit_failed:${response.status}:${errorCode}`);
-    }
 
-    return intentId;
+        if (response.status === 400) {
+          if (errorCode.startsWith("invalid_email")) {
+            showError(t("donation.form.error.emailInvalid"));
+          } else if (errorCode === "privacy_not_accepted") {
+            showError(t("donation.form.error.privacy"));
+          } else if (errorCode.includes("gift")) {
+            showError(t("donation.form.error.giftRecipientEmailInvalid"));
+          } else if (errorCode.includes("address") || errorCode.includes("receipt")) {
+            showError(t("donation.form.error.address"));
+          } else {
+            showError(t("donation.form.error.amount"));
+          }
+        } else {
+          showError(language === "de"
+            ? "Übermittlung fehlgeschlagen. Bitte erneut versuchen."
+            : "Submission failed. Please retry.");
+        }
+        throw new Error(`intent_submit_failed:${response.status}:${errorCode}`);
+      }
+
+      if (donationIntentRef.current && donationIntentRef.current.intentId === intentId) {
+        donationIntentRef.current.submitted = true;
+      }
+      return intentId;
+    })();
+
+    donationIntentInFlightRef.current = submitPromise;
+    try {
+      return await submitPromise;
+    } finally {
+      if (donationIntentInFlightRef.current === submitPromise) {
+        donationIntentInFlightRef.current = null;
+      }
+    }
   }, [donationType, formSubmitUrl, getFinalDonationAmount, language, paymentMethod, showError, t]);
 
   // Auto-add general donation when URL param exists and cart has items
@@ -1276,8 +1346,12 @@ const Donation = () => {
     const formattedAmount = finalAmount.toFixed(2);
 
     const intentId = await createDonationIntent();
+    const existingOrderId = paypalOrderByIntentRef.current[intentId];
+    if (existingOrderId) {
+      return existingOrderId;
+    }
     
-    return actions.order.create({
+    const orderId = await actions.order.create({
       purchase_units: [{
         amount: {
           currency_code: "EUR",
@@ -1293,6 +1367,8 @@ const Donation = () => {
           cancel_url: `${window.location.origin}/donation?cancelled=true`,
         },
     });
+    paypalOrderByIntentRef.current[intentId] = orderId;
+    return orderId;
   }, [amount, cartState.items, cartState.totalAmount, createDonationIntent, customAmount, donationType, getCurrentAmount, t]);
 
   // Function to subscribe to newsletter
@@ -1882,6 +1958,11 @@ const Donation = () => {
       const maxRetries = 4; // Increased to 4 attempts
       let lastError: any = null;
       
+      const existingSubscriptionId = paypalSubscriptionByIntentRef.current[intentId];
+      if (existingSubscriptionId) {
+        return existingSubscriptionId;
+      }
+
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           console.log(`🚀 Attempt ${attempt}/${maxRetries}: Calling actions.subscription.create() with plan_id:`, planResult.plan_id);
@@ -1893,6 +1974,7 @@ const Donation = () => {
           });
           
           // Success! Return the subscription ID
+          paypalSubscriptionByIntentRef.current[intentId] = subscriptionId;
           console.log("✅ Subscription created successfully! Subscription ID:", subscriptionId);
           return subscriptionId;
           
@@ -2857,10 +2939,10 @@ const Donation = () => {
                         }}
                         metadata={{
                           donationType,
-                          donorEmail: formData.email,
-                          donorName: `${formData.firstName} ${formData.lastName}`,
+                          donorEmail: formData.email.trim().toLowerCase(),
+                          donorName: `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim(),
                           donor_salutation: formData.salutation || "",
-                          comment: formData.comment || "",
+                          comment: formData.comment.trim() || "",
                           wantsReceipt: formData.wantsReceipt ? "true" : "false",
                           wantsNewsletter: formData.wantsNewsletter ? "true" : "false",
                           giftDonation: formData.isGift ? "true" : "false",
@@ -2935,10 +3017,10 @@ const Donation = () => {
                         }}
                         metadata={{
                           donationType,
-                          donorEmail: formData.email,
-                          donorName: `${formData.firstName} ${formData.lastName}`,
+                          donorEmail: formData.email.trim().toLowerCase(),
+                          donorName: `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim(),
                           donor_salutation: formData.salutation || "",
-                          comment: formData.comment || "",
+                          comment: formData.comment.trim() || "",
                           wantsReceipt: formData.wantsReceipt ? "true" : "false",
                           wantsNewsletter: formData.wantsNewsletter ? "true" : "false",
                           giftDonation: formData.isGift ? "true" : "false",
