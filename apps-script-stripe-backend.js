@@ -149,7 +149,7 @@ function createOrGetStripeCustomer(email, name, stage = 'local') {
  * Create Stripe Checkout Session (One-time payment)
  * Uses Stripe REST API directly (no library needed)
  */
-function createStripeCheckoutSession(amount, currency, paymentMethodTypes, successUrl, cancelUrl, metadata = {}, customerEmail = null, customerName = null, stage = 'local') {
+function createStripeCheckoutSession(amount, currency, paymentMethodTypes, successUrl, cancelUrl, metadata = {}, customerEmail = null, customerName = null, stage = 'local', paymentIntentMetadata = {}) {
   const stripeSecretKey = getStripeSecretKey(stage);
   
   if (!stripeSecretKey || stripeSecretKey.startsWith('sk_...')) {
@@ -190,6 +190,13 @@ function createStripeCheckoutSession(amount, currency, paymentMethodTypes, succe
   if (metadata && Object.keys(metadata).length > 0) {
     Object.keys(metadata).forEach((key, index) => {
       formParams.push(`metadata[${key}]=${encodeURIComponent(metadata[key])}`);
+    });
+  }
+
+  // PaymentIntent metadata (critical for payment_intent.* webhook correlation)
+  if (paymentIntentMetadata && Object.keys(paymentIntentMetadata).length > 0) {
+    Object.keys(paymentIntentMetadata).forEach((key) => {
+      formParams.push(`payment_intent_data[metadata][${key}]=${encodeURIComponent(paymentIntentMetadata[key])}`);
     });
   }
   
@@ -717,7 +724,8 @@ function doPost(e) {
           requestData.metadata || {},
           requestData.customer_email || null,
           requestData.customer_name || null,
-          stage
+          stage,
+          (requestData.payment_intent_data && requestData.payment_intent_data.metadata) || requestData.metadata || {}
         );
       }
     } catch (stripeError) {
