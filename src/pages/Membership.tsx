@@ -18,6 +18,20 @@ import { CheckCircle, Heart, Shield } from "lucide-react";
 
 const presetAmounts = [10, 15, 25, 50];
 
+type MembershipDonorFields = {
+  donorType: "private" | "company";
+  companyName: string;
+  firstName: string;
+  lastName: string;
+};
+
+const getMembershipDonorDisplayName = (fd: MembershipDonorFields): string => {
+  if (fd.donorType === "company") {
+    return fd.companyName.trim();
+  }
+  return `${fd.firstName.trim()} ${fd.lastName.trim()}`.trim();
+};
+
 const Membership = () => {
   const { t, language } = useLanguage();
   const { toast } = useToast();
@@ -28,6 +42,8 @@ const Membership = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
+    donorType: "private" as "private" | "company",
+    companyName: "",
     firstName: "",
     lastName: "",
     email: "",
@@ -81,17 +97,31 @@ const Membership = () => {
   };
 
   const validate = () => {
-    if (
-      !formData.firstName.trim() ||
-      !formData.lastName.trim() ||
-      !formData.email.trim()
-    ) {
+    const dt = formData.donorType === "company" ? "company" : "private";
+    if (dt === "private") {
+      if (!formData.firstName.trim() || !formData.lastName.trim()) {
+        return t("membership.validation.required");
+      }
+    } else if (!formData.companyName.trim()) {
+      return t("donation.form.error.companyName");
+    }
+
+    if (!formData.email.trim()) {
       return t("membership.validation.required");
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       return t("membership.validation.email");
+    }
+
+    if (
+      !formData.street.trim() ||
+      !formData.postalCode.trim() ||
+      !formData.city.trim() ||
+      !formData.country.trim()
+    ) {
+      return t("donation.form.error.address");
     }
 
     if (selectedAmount <= 0) {
@@ -118,14 +148,24 @@ const Membership = () => {
     const paymentMethodTypes =
       paymentMethod === "sepa" ? ["sepa_debit"] : ["card"];
 
+    const displayName = getMembershipDonorDisplayName({
+      donorType: formData.donorType === "company" ? "company" : "private",
+      companyName: formData.companyName,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+    });
+
     const metadata: Record<string, string> = {
       donationType: "monthly",
       subscription_type: "membership",
       membership: "true",
+      donorType: formData.donorType,
+      company_name: formData.donorType === "company" ? formData.companyName.trim() : "",
       membership_waiver: requestWaiver ? "true" : "false",
       membership_comment: formData.comment || "",
-      donor_first_name: formData.firstName,
-      donor_last_name: formData.lastName,
+      donor_first_name: formData.donorType === "private" ? formData.firstName : "",
+      donor_last_name: formData.donorType === "private" ? formData.lastName : "",
+      donor_name: displayName,
       donor_phone: formData.phone || "",
       comment: "new-membership",
       paymentMethodType: paymentMethod === "sepa" ? "sepa_debit" : "card",
@@ -140,8 +180,8 @@ const Membership = () => {
       currency: "eur",
       paymentMethodTypes: paymentMethodTypes as ("card" | "sepa_debit")[],
       metadata,
-      customerEmail: formData.email,
-      customerName: `${formData.firstName} ${formData.lastName}`,
+      customerEmail: formData.email.trim().toLowerCase(),
+      customerName: displayName,
       isSubscription: true,
       successUrl: `${baseUrl}/membership/success?session_id={CHECKOUT_SESSION_ID}&flow=membership&source=membership`,
       cancelUrl: `${baseUrl}/membership?checkout=cancelled`,
@@ -171,7 +211,13 @@ const Membership = () => {
         throw new Error("Form endpoint not configured (VITE_FORM_SUBMIT_URL).");
       }
 
-      const donorName = `${formData.firstName} ${formData.lastName}`.trim();
+      const dt = formData.donorType === "company" ? "company" : "private";
+      const donorName = getMembershipDonorDisplayName({
+        donorType: dt,
+        companyName: formData.companyName,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+      });
       const monthlyAmount = requestWaiver ? 0 : selectedAmount;
       const payload = {
         formType: "membership",
@@ -181,10 +227,12 @@ const Membership = () => {
         donationType: "new-membership",
         paymentMethod: requestWaiver ? "no-payment" : paymentMethod,
         paymentStatus: "pending",
-        donorFirstName: formData.firstName,
-        donorLastName: formData.lastName,
+        donorType: dt,
+        donorFirstName: dt === "private" ? formData.firstName : "",
+        donorLastName: dt === "private" ? formData.lastName : "",
+        companyName: dt === "company" ? formData.companyName.trim() : undefined,
         donorName,
-        donorEmail: formData.email,
+        donorEmail: formData.email.trim().toLowerCase(),
         donorPhone: formData.phone || "",
         monthlyAmount,
         requestWaiver,
@@ -250,6 +298,8 @@ const Membership = () => {
     }
   };
 
+  const requiredStar = " *";
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -314,35 +364,88 @@ const Membership = () => {
               )}
 
               <form className="space-y-5" onSubmit={handleSubmit}>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="firstName">
-                      {t("membership.form.firstName")}
-                    </Label>
-                    <Input
-                      id="firstName"
-                      value={formData.firstName}
-                      onChange={(e) => handleInputChange("firstName", e.target.value)}
-                      required
-                      className="mt-2"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="lastName">
-                      {t("membership.form.lastName")}
-                    </Label>
-                    <Input
-                      id="lastName"
-                      value={formData.lastName}
-                      onChange={(e) => handleInputChange("lastName", e.target.value)}
-                      required
-                      className="mt-2"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label className="text-base font-medium">
+                    {t("donation.form.donorType.label")}
+                  </Label>
+                  <RadioGroup
+                    value={formData.donorType}
+                    onValueChange={(value) =>
+                      handleInputChange("donorType", value as "private" | "company")
+                    }
+                    className="flex flex-wrap gap-3"
+                  >
+                    <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer flex-1 min-w-[140px]">
+                      <RadioGroupItem value="private" id="membership-donor-private" />
+                      <Label
+                        htmlFor="membership-donor-private"
+                        className="flex-1 cursor-pointer font-normal"
+                      >
+                        {t("donation.form.donorType.private")}
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer flex-1 min-w-[140px]">
+                      <RadioGroupItem value="company" id="membership-donor-company" />
+                      <Label
+                        htmlFor="membership-donor-company"
+                        className="flex-1 cursor-pointer font-normal"
+                      >
+                        {t("donation.form.donorType.company")}
+                      </Label>
+                    </div>
+                  </RadioGroup>
                 </div>
 
+                {formData.donorType === "private" ? (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="firstName">
+                        {t("membership.form.firstName")}
+                        {requiredStar}
+                      </Label>
+                      <Input
+                        id="firstName"
+                        value={formData.firstName}
+                        onChange={(e) => handleInputChange("firstName", e.target.value)}
+                        required
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="lastName">
+                        {t("membership.form.lastName")}
+                        {requiredStar}
+                      </Label>
+                      <Input
+                        id="lastName"
+                        value={formData.lastName}
+                        onChange={(e) => handleInputChange("lastName", e.target.value)}
+                        required
+                        className="mt-2"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <Label htmlFor="companyName">
+                      {t("donation.form.companyName")}
+                      {requiredStar}
+                    </Label>
+                    <Input
+                      id="companyName"
+                      value={formData.companyName}
+                      onChange={(e) => handleInputChange("companyName", e.target.value)}
+                      required
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+
                 <div>
-                  <Label htmlFor="email">{t("membership.form.email")}</Label>
+                  <Label htmlFor="email">
+                    {t("membership.form.email")}
+                    {requiredStar}
+                  </Label>
                   <Input
                     id="email"
                     type="email"
@@ -366,17 +469,22 @@ const Membership = () => {
 
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="street">{t("membership.form.street")}</Label>
+                    <Label htmlFor="street">
+                      {t("membership.form.street")}
+                      {requiredStar}
+                    </Label>
                     <Input
                       id="street"
                       value={formData.street}
                       onChange={(e) => handleInputChange("street", e.target.value)}
                       className="mt-2"
+                      required
                     />
                   </div>
                   <div>
                     <Label htmlFor="postalCode">
                       {t("membership.form.postalCode")}
+                      {requiredStar}
                     </Label>
                     <Input
                       id="postalCode"
@@ -385,31 +493,43 @@ const Membership = () => {
                         handleInputChange("postalCode", e.target.value)
                       }
                       className="mt-2"
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="city">{t("membership.form.city")}</Label>
+                    <Label htmlFor="city">
+                      {t("membership.form.city")}
+                      {requiredStar}
+                    </Label>
                     <Input
                       id="city"
                       value={formData.city}
                       onChange={(e) => handleInputChange("city", e.target.value)}
                       className="mt-2"
+                      required
                     />
                   </div>
                   <div>
-                    <Label htmlFor="country">{t("membership.form.country")}</Label>
+                    <Label htmlFor="country">
+                      {t("membership.form.country")}
+                      {requiredStar}
+                    </Label>
                     <Input
                       id="country"
                       value={formData.country}
                       onChange={(e) => handleInputChange("country", e.target.value)}
                       className="mt-2"
+                      required
                     />
                   </div>
                 </div>
 
                 {!requestWaiver && (
                   <div>
-                    <Label>{t("membership.form.amount")}</Label>
+                    <Label>
+                      {t("membership.form.amount")}
+                      {requiredStar}
+                    </Label>
                     <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-2">
                       {presetAmounts.map((preset) => (
                         <Button
@@ -454,6 +574,7 @@ const Membership = () => {
                     <div>
                       <Label htmlFor="comment">
                         {t("membership.form.comment")}
+                        {requiredStar}
                       </Label>
                       <Textarea
                         id="comment"

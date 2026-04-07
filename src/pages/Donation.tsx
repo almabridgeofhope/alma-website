@@ -86,6 +86,20 @@ const generateSEPAReference = (donorName: string, amount: number, timestamp: str
   return `ALMA-${dateStr}-${namePart}-${amountPart}`;
 };
 
+type DonationDonorFormFields = {
+  donorType: "private" | "company";
+  firstName: string;
+  lastName: string;
+  companyName: string;
+};
+
+const getDonationDonorDisplayName = (fd: DonationDonorFormFields): string => {
+  if (fd.donorType === "company") {
+    return fd.companyName.trim();
+  }
+  return `${fd.firstName.trim()} ${fd.lastName.trim()}`.trim();
+};
+
 // PayPal Button Component - uses PayPalScriptReducer hook (must be inside PayPalScriptProvider)
 const PayPalButtonsComponent = memo(({ 
   createOrder, 
@@ -260,6 +274,8 @@ const StripeCheckoutButton = memo(({
     firstName: string;
     lastName: string;
     email: string;
+    donorType?: "private" | "company";
+    companyName?: string;
   };
   metadata?: Record<string, string>;
   onValidate: () => boolean;
@@ -291,13 +307,18 @@ const StripeCheckoutButton = memo(({
         ...(intentId ? { intentId } : {}),
       };
 
+      const customerDisplayName =
+        formData.donorType === "company"
+          ? (formData.companyName || "").trim()
+          : `${formData.firstName} ${formData.lastName}`.trim();
+
       const { url } = await stripeService.createCheckoutSession({
         amount,
         currency: 'eur',
         paymentMethodTypes,
         metadata: checkoutMetadata,
         customerEmail: formData.email,
-        customerName: `${formData.firstName} ${formData.lastName}`,
+        customerName: customerDisplayName,
         isSubscription: isSubscription || false,
       });
 
@@ -511,6 +532,8 @@ const Donation = () => {
   }, [searchParams, setSearchParams, navigate, cartState.items.length, cartState.totalAmount, amount, customAmount, donationType, clearCart, language, showError]);
   
   const [formData, setFormData] = useState({
+    donorType: "private" as "private" | "company",
+    companyName: "",
     salutation: "",
     firstName: "",
     lastName: "",
@@ -585,14 +608,22 @@ const Donation = () => {
     }
 
     const currentFormData = formDataRef.current;
+    const donorType = currentFormData.donorType === "company" ? "company" : "private";
 
-    if (!currentFormData.firstName.trim()) {
-      showError(t("donation.form.error.firstName"));
-      throw new Error("validation_failed:first_name");
-    }
-    if (!currentFormData.lastName.trim()) {
-      showError(t("donation.form.error.lastName"));
-      throw new Error("validation_failed:last_name");
+    if (donorType === "private") {
+      if (!currentFormData.firstName.trim()) {
+        showError(t("donation.form.error.firstName"));
+        throw new Error("validation_failed:first_name");
+      }
+      if (!currentFormData.lastName.trim()) {
+        showError(t("donation.form.error.lastName"));
+        throw new Error("validation_failed:last_name");
+      }
+    } else {
+      if (!currentFormData.companyName.trim()) {
+        showError(t("donation.form.error.companyName"));
+        throw new Error("validation_failed:company_name");
+      }
     }
     if (!currentFormData.email.trim()) {
       showError(t("donation.form.error.email"));
@@ -621,7 +652,9 @@ const Donation = () => {
       }
     }
 
-    if (currentFormData.wantsReceipt) {
+    const addressRequiredForIntent =
+      currentFormData.wantsReceipt || currentFormData.donorType === "company";
+    if (addressRequiredForIntent) {
       if (!currentFormData.street.trim() || !currentFormData.postalCode.trim() || !currentFormData.city.trim() || !currentFormData.country.trim()) {
         showError(t("donation.form.error.address"));
         throw new Error("validation_failed:receipt_address");
@@ -650,9 +683,15 @@ const Donation = () => {
       city: currentFormData.city.trim(),
       country: currentFormData.country.trim(),
     };
-    const normalizedFirstName = currentFormData.firstName.trim();
-    const normalizedLastName = currentFormData.lastName.trim();
-    const normalizedDonorName = `${normalizedFirstName} ${normalizedLastName}`.trim();
+    const normalizedFirstName = donorType === "private" ? currentFormData.firstName.trim() : "";
+    const normalizedLastName = donorType === "private" ? currentFormData.lastName.trim() : "";
+    const normalizedCompanyName = donorType === "company" ? currentFormData.companyName.trim() : "";
+    const normalizedDonorName = getDonationDonorDisplayName({
+      donorType,
+      firstName: currentFormData.firstName,
+      lastName: currentFormData.lastName,
+      companyName: currentFormData.companyName,
+    });
     const normalizedComment = currentFormData.comment.trim();
     const numericAmount = Number(finalAmount);
     const resolvedDonationType = donationType === "monthly" ? "monthly" : "one-time";
@@ -661,8 +700,10 @@ const Donation = () => {
       paymentMethod,
       amount: numericAmount,
       donorEmail: normalizedDonorEmail,
+      donorType,
       donorFirstName: normalizedFirstName,
       donorLastName: normalizedLastName,
+      companyName: donorType === "company" ? normalizedCompanyName : undefined,
       isGift: !!currentFormData.isGift,
       giftRecipientName: currentFormData.isGift ? currentFormData.giftRecipientName.trim() : "",
       giftRecipientEmail: currentFormData.isGift ? currentFormData.giftRecipientEmail.trim().toLowerCase() : "",
@@ -701,9 +742,11 @@ const Donation = () => {
       totalAmount: numericAmount,
       donationType: resolvedDonationType,
       paymentMethod,
-      salutation: currentFormData.salutation,
+      donorType,
+      salutation: donorType === "private" ? currentFormData.salutation : "",
       donorFirstName: normalizedFirstName,
       donorLastName: normalizedLastName,
+      companyName: donorType === "company" ? normalizedCompanyName : undefined,
       donorName: normalizedDonorName,
       donorEmail: normalizedDonorEmail,
       isGift: !!currentFormData.isGift,
@@ -1026,6 +1069,97 @@ const Donation = () => {
     }
   };
 
+  const validateDonorIdentityFields = (): boolean => {
+    const dt = formData.donorType === "company" ? "company" : "private";
+    if (dt === "private") {
+      if (!formData.firstName.trim()) {
+        showError(t("donation.form.error.firstName"));
+        return false;
+      }
+      if (!formData.lastName.trim()) {
+        showError(t("donation.form.error.lastName"));
+        return false;
+      }
+    } else if (!formData.companyName.trim()) {
+      showError(t("donation.form.error.companyName"));
+      return false;
+    }
+    return true;
+  };
+
+  const validateAddressFieldsIfRequired = (): boolean => {
+    const needsAddress = formData.wantsReceipt || formData.donorType === "company";
+    if (!needsAddress) return true;
+    if (!formData.street.trim() || !formData.postalCode.trim() || !formData.city.trim() || !formData.country.trim()) {
+      showError(t("donation.form.error.address"));
+      return false;
+    }
+    return true;
+  };
+
+  const donationAddressFieldsRequired =
+    formData.wantsReceipt || formData.donorType === "company";
+
+  const renderDonationAddressInputs = () => (
+    <>
+      <div>
+        <Label htmlFor="street">
+          {t("donation.form.street")}
+          {donationAddressFieldsRequired ? " *" : ""}
+        </Label>
+        <Input
+          id="street"
+          value={formData.street}
+          onChange={(e) => handleInputChange("street", e.target.value)}
+          className="mt-2"
+          required={donationAddressFieldsRequired}
+        />
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-4">
+        <div>
+          <Label htmlFor="postalCode">
+            {t("donation.form.postalCode")}
+            {donationAddressFieldsRequired ? " *" : ""}
+          </Label>
+          <Input
+            id="postalCode"
+            value={formData.postalCode}
+            onChange={(e) => handleInputChange("postalCode", e.target.value)}
+            className="mt-2"
+            required={donationAddressFieldsRequired}
+          />
+        </div>
+        <div>
+          <Label htmlFor="city">
+            {t("donation.form.city")}
+            {donationAddressFieldsRequired ? " *" : ""}
+          </Label>
+          <Input
+            id="city"
+            value={formData.city}
+            onChange={(e) => handleInputChange("city", e.target.value)}
+            className="mt-2"
+            required={donationAddressFieldsRequired}
+          />
+        </div>
+        <div>
+          <Label htmlFor="country">
+            {t("donation.form.country")}
+            {donationAddressFieldsRequired ? " *" : ""}
+          </Label>
+          <Input
+            id="country"
+            value={formData.country}
+            onChange={(e) => handleInputChange("country", e.target.value)}
+            className="mt-2"
+            required={donationAddressFieldsRequired}
+          />
+        </div>
+      </div>
+    </>
+  );
+
   const validateForm = () => {
     // For monthly donations, always use selected amount (no cart items)
     // For one-time donations, use cart total if items exist, otherwise use selected amount
@@ -1045,15 +1179,7 @@ const Donation = () => {
       return false;
     }
     
-    if (!formData.firstName.trim()) {
-      console.log("First name validation failed");
-      showError(t("donation.form.error.firstName"));
-      return false;
-    }
-    
-    if (!formData.lastName.trim()) {
-      console.log("Last name validation failed");
-      showError(t("donation.form.error.lastName"));
+    if (!validateDonorIdentityFields()) {
       return false;
     }
     
@@ -1071,13 +1197,8 @@ const Donation = () => {
       return false;
     }
     
-    // Address validation if receipt is requested
-    if (formData.wantsReceipt) {
-      if (!formData.street.trim() || !formData.postalCode.trim() || !formData.city.trim() || !formData.country.trim()) {
-        console.log("Address validation failed");
-        showError(t("donation.form.error.address"));
-        return false;
-      }
+    if (!validateAddressFieldsIfRequired()) {
+      return false;
     }
 
     if (formData.isGift) {
@@ -1171,17 +1292,20 @@ const Donation = () => {
         donationType: donationType,
         paymentMethod: paymentMethod,
         donorEmail: formData.email || undefined,
-        donorName: formData.firstName && formData.lastName 
-          ? `${formData.firstName} ${formData.lastName}` 
-          : undefined,
-        donorSalutation: formData.salutation || undefined,
+        donorName: getDonationDonorDisplayName({
+          donorType: formData.donorType === "company" ? "company" : "private",
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          companyName: formData.companyName,
+        }) || undefined,
+        donorSalutation: formData.donorType === "private" ? (formData.salutation || undefined) : undefined,
         paymentId: paymentId,
         paymentStatus: 'paid', // PayPal payments are always 'paid' when we reach this point
         wantsReceipt: formData.wantsReceipt,
         isGift: formData.isGift,
         giftRecipientName: formData.isGift ? formData.giftRecipientName || undefined : undefined,
         giftRecipientEmail: formData.isGift ? formData.giftRecipientEmail || undefined : undefined,
-        address: formData.wantsReceipt ? {
+        address: (formData.wantsReceipt || formData.donorType === "company") ? {
           street: formData.street || undefined,
           postalCode: formData.postalCode || undefined,
           city: formData.city || undefined,
@@ -1246,15 +1370,18 @@ const Donation = () => {
     const currentFormData = formDataRef.current;
 
     // Validate first name - add debug logging
-    console.log('PayPal validation - firstName:', currentFormData.firstName, 'trimmed:', currentFormData.firstName?.trim());
-    if (!currentFormData.firstName || !currentFormData.firstName.trim()) {
-      console.error('PayPal validation failed: firstName is empty or whitespace only');
-      throw new Error(t("donation.form.error.firstName"));
-    }
-
-    // Validate last name
-    if (!currentFormData.lastName || !currentFormData.lastName.trim()) {
-      throw new Error(t("donation.form.error.lastName"));
+    const ppDonorType = currentFormData.donorType === "company" ? "company" : "private";
+    if (ppDonorType === "private") {
+      console.log('PayPal validation - firstName:', currentFormData.firstName, 'trimmed:', currentFormData.firstName?.trim());
+      if (!currentFormData.firstName || !currentFormData.firstName.trim()) {
+        console.error('PayPal validation failed: firstName is empty or whitespace only');
+        throw new Error(t("donation.form.error.firstName"));
+      }
+      if (!currentFormData.lastName || !currentFormData.lastName.trim()) {
+        throw new Error(t("donation.form.error.lastName"));
+      }
+    } else if (!currentFormData.companyName?.trim()) {
+      throw new Error(t("donation.form.error.companyName"));
     }
 
     // Validate email
@@ -1268,8 +1395,9 @@ const Donation = () => {
       throw new Error(t("donation.form.error.emailInvalid"));
     }
 
-    // Validate address if receipt is requested
-    if (currentFormData.wantsReceipt) {
+    const paypalAddressRequired =
+      currentFormData.wantsReceipt || currentFormData.donorType === "company";
+    if (paypalAddressRequired) {
       if (!currentFormData.street?.trim() || !currentFormData.postalCode?.trim() || !currentFormData.city?.trim() || !currentFormData.country?.trim()) {
         throw new Error(t("donation.form.error.address"));
       }
@@ -1515,7 +1643,12 @@ const Donation = () => {
           await sendGiftEmail({
             recipientName: formData.giftRecipientName,
             recipientEmail: formData.giftRecipientEmail,
-            donorName: `${formData.firstName} ${formData.lastName}`.trim(),
+            donorName: getDonationDonorDisplayName({
+              donorType: formData.donorType === "company" ? "company" : "private",
+              firstName: formData.firstName,
+              lastName: formData.lastName,
+              companyName: formData.companyName,
+            }),
             donorEmail: formData.email,
             amount: amountLabel,
             donationType,
@@ -1742,16 +1875,18 @@ const Donation = () => {
     // Get current formData from ref to ensure we have the latest values
     const currentFormData = formDataRef.current;
 
-    // Validate first name - add debug logging
-    console.log('PayPal subscription validation - firstName:', currentFormData.firstName, 'trimmed:', currentFormData.firstName?.trim());
-    if (!currentFormData.firstName || !currentFormData.firstName.trim()) {
-      console.error('PayPal subscription validation failed: firstName is empty or whitespace only');
-      throw new Error(t("donation.form.error.firstName"));
-    }
-
-    // Validate last name
-    if (!currentFormData.lastName || !currentFormData.lastName.trim()) {
-      throw new Error(t("donation.form.error.lastName"));
+    const subDonorType = currentFormData.donorType === "company" ? "company" : "private";
+    if (subDonorType === "private") {
+      console.log('PayPal subscription validation - firstName:', currentFormData.firstName, 'trimmed:', currentFormData.firstName?.trim());
+      if (!currentFormData.firstName || !currentFormData.firstName.trim()) {
+        console.error('PayPal subscription validation failed: firstName is empty or whitespace only');
+        throw new Error(t("donation.form.error.firstName"));
+      }
+      if (!currentFormData.lastName || !currentFormData.lastName.trim()) {
+        throw new Error(t("donation.form.error.lastName"));
+      }
+    } else if (!currentFormData.companyName?.trim()) {
+      throw new Error(t("donation.form.error.companyName"));
     }
 
     // Validate email
@@ -1765,8 +1900,9 @@ const Donation = () => {
       throw new Error(t("donation.form.error.emailInvalid"));
     }
 
-    // Validate address if receipt is requested
-    if (currentFormData.wantsReceipt) {
+    const paypalAddressRequired =
+      currentFormData.wantsReceipt || currentFormData.donorType === "company";
+    if (paypalAddressRequired) {
       if (!currentFormData.street?.trim() || !currentFormData.postalCode?.trim() || !currentFormData.city?.trim() || !currentFormData.country?.trim()) {
         throw new Error(t("donation.form.error.address"));
       }
@@ -1807,7 +1943,12 @@ const Donation = () => {
         amount: finalAmount,
         currency: "EUR",
         donorEmail: currentFormData.email,
-        donorName: `${currentFormData.firstName} ${currentFormData.lastName}`,
+        donorName: getDonationDonorDisplayName({
+          donorType: subDonorType,
+          firstName: currentFormData.firstName,
+          lastName: currentFormData.lastName,
+          companyName: currentFormData.companyName,
+        }),
         metadata: {
           donationType: 'monthly',
           wantsReceipt: currentFormData.wantsReceipt ? 'true' : 'false',
@@ -2641,7 +2782,30 @@ const Donation = () => {
                   {/* Personal Information */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-foreground">{t("donation.form.personalInfo")}</h3>
+
+                    <div className="space-y-2">
+                      <Label className="text-base font-medium">{t("donation.form.donorType.label")}</Label>
+                      <RadioGroup
+                        value={formData.donorType}
+                        onValueChange={(value) => handleInputChange("donorType", value as "private" | "company")}
+                        className="flex flex-wrap gap-3"
+                      >
+                        <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer flex-1 min-w-[140px]">
+                          <RadioGroupItem value="private" id="donor-private" />
+                          <Label htmlFor="donor-private" className="flex-1 cursor-pointer font-normal">
+                            {t("donation.form.donorType.private")}
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer flex-1 min-w-[140px]">
+                          <RadioGroupItem value="company" id="donor-company" />
+                          <Label htmlFor="donor-company" className="flex-1 cursor-pointer font-normal">
+                            {t("donation.form.donorType.company")}
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
                     
+                    {formData.donorType === "private" && (
                     <div>
                       <Label htmlFor="salutation">{t("form.salutation")}</Label>
                       <Select
@@ -2659,7 +2823,9 @@ const Donation = () => {
                         </SelectContent>
                       </Select>
                     </div>
+                    )}
 
+                    {formData.donorType === "private" ? (
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="firstName">{t("donation.form.firstName")}</Label>
@@ -2682,6 +2848,18 @@ const Donation = () => {
                         />
                       </div>
                     </div>
+                    ) : (
+                    <div>
+                      <Label htmlFor="companyName">{t("donation.form.companyName")}</Label>
+                      <Input
+                        id="companyName"
+                        value={formData.companyName}
+                        onChange={(e) => handleInputChange("companyName", e.target.value)}
+                        className="mt-2"
+                        required
+                      />
+                    </div>
+                    )}
                     
                     <div>
                       <Label htmlFor="email">{t("donation.form.email")}</Label>
@@ -2695,6 +2873,34 @@ const Donation = () => {
                       />
                     </div>
                   </div>
+
+                  {/* Company: address first (always), then receipt checkbox below */}
+                  {formData.donorType === "company" && (
+                    <div className="space-y-4">
+                      {renderDonationAddressInputs()}
+                    </div>
+                  )}
+
+                  {/* Donation receipt (private: must be able to tick before address appears) */}
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="wantsReceipt"
+                        checked={formData.wantsReceipt}
+                        onCheckedChange={(checked) => handleInputChange("wantsReceipt", checked as boolean)}
+                      />
+                      <Label htmlFor="wantsReceipt" className="text-sm">
+                        {t("donation.form.wantsReceipt")}
+                      </Label>
+                    </div>
+                  </div>
+
+                  {/* Private: address only when donation receipt requested */}
+                  {formData.donorType === "private" && formData.wantsReceipt && (
+                    <div className="space-y-4">
+                      {renderDonationAddressInputs()}
+                    </div>
+                  )}
 
                   {/* Gift Donation */}
                   <div className="space-y-4">
@@ -2740,72 +2946,6 @@ const Donation = () => {
                       </div>
                     )}
                   </div>
-
-                  {/* Receipt Checkbox */}
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="wantsReceipt"
-                        checked={formData.wantsReceipt}
-                        onCheckedChange={(checked) => handleInputChange("wantsReceipt", checked as boolean)}
-                      />
-                      <Label htmlFor="wantsReceipt" className="text-sm">
-                        {t("donation.form.wantsReceipt")}
-                      </Label>
-                    </div>
-                  </div>
-
-                  {/* Address Fields - Only show if receipt is requested */}
-                  {formData.wantsReceipt && (
-                    <div className="space-y-4 p-4 bg-muted/30 rounded-lg">
-                      <h3 className="text-lg font-semibold text-foreground">{t("donation.form.addressInfo")}</h3>
-                      <p className="text-sm text-muted-foreground">{t("donation.form.addressNote")}</p>
-                      
-                      <div>
-                        <Label htmlFor="street">{t("donation.form.street")} *</Label>
-                        <Input
-                          id="street"
-                          value={formData.street}
-                          onChange={(e) => handleInputChange("street", e.target.value)}
-                          className="mt-2"
-                          required={formData.wantsReceipt}
-                        />
-                      </div>
-                      
-                      <div className="grid md:grid-cols-3 gap-4">
-                        <div>
-                          <Label htmlFor="postalCode">{t("donation.form.postalCode")} *</Label>
-                          <Input
-                            id="postalCode"
-                            value={formData.postalCode}
-                            onChange={(e) => handleInputChange("postalCode", e.target.value)}
-                            className="mt-2"
-                            required={formData.wantsReceipt}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="city">{t("donation.form.city")} *</Label>
-                          <Input
-                            id="city"
-                            value={formData.city}
-                            onChange={(e) => handleInputChange("city", e.target.value)}
-                            className="mt-2"
-                            required={formData.wantsReceipt}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="country">{t("donation.form.country")} *</Label>
-                          <Input
-                            id="country"
-                            value={formData.country}
-                            onChange={(e) => handleInputChange("country", e.target.value)}
-                            className="mt-2"
-                            required={formData.wantsReceipt}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
                   {/* Comment */}
                   <div>
@@ -2936,12 +3076,20 @@ const Donation = () => {
                           firstName: formData.firstName,
                           lastName: formData.lastName,
                           email: formData.email,
+                          donorType: formData.donorType,
+                          companyName: formData.companyName,
                         }}
                         metadata={{
                           donationType,
+                          donorType: formData.donorType,
                           donorEmail: formData.email.trim().toLowerCase(),
-                          donorName: `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim(),
-                          donor_salutation: formData.salutation || "",
+                          donorName: getDonationDonorDisplayName({
+                            donorType: formData.donorType === "company" ? "company" : "private",
+                            firstName: formData.firstName,
+                            lastName: formData.lastName,
+                            companyName: formData.companyName,
+                          }),
+                          donor_salutation: formData.donorType === "private" ? (formData.salutation || "") : "",
                           comment: formData.comment.trim() || "",
                           wantsReceipt: formData.wantsReceipt ? "true" : "false",
                           wantsNewsletter: formData.wantsNewsletter ? "true" : "false",
@@ -2956,13 +3104,10 @@ const Donation = () => {
                         isSubscription={donationType === "monthly"}
                         onBeforeCheckout={createDonationIntent}
                         onValidate={() => {
-                          // Basic validation
-                          if (!formData.firstName){
-                            showError(t("donation.form.error.firstName"));
+                          if (!validateDonorIdentityFields()) {
                             return false;
                           }
-                          if (!formData.lastName) {
-                            showError(t("donation.form.error.lastName"));
+                          if (!validateAddressFieldsIfRequired()) {
                             return false;
                           }
                           if (!formData.email) {
@@ -3014,12 +3159,20 @@ const Donation = () => {
                           firstName: formData.firstName,
                           lastName: formData.lastName,
                           email: formData.email,
+                          donorType: formData.donorType,
+                          companyName: formData.companyName,
                         }}
                         metadata={{
                           donationType,
+                          donorType: formData.donorType,
                           donorEmail: formData.email.trim().toLowerCase(),
-                          donorName: `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim(),
-                          donor_salutation: formData.salutation || "",
+                          donorName: getDonationDonorDisplayName({
+                            donorType: formData.donorType === "company" ? "company" : "private",
+                            firstName: formData.firstName,
+                            lastName: formData.lastName,
+                            companyName: formData.companyName,
+                          }),
+                          donor_salutation: formData.donorType === "private" ? (formData.salutation || "") : "",
                           comment: formData.comment.trim() || "",
                           wantsReceipt: formData.wantsReceipt ? "true" : "false",
                           wantsNewsletter: formData.wantsNewsletter ? "true" : "false",
@@ -3034,13 +3187,10 @@ const Donation = () => {
                         isSubscription={donationType === "monthly"}
                         onBeforeCheckout={createDonationIntent}
                         onValidate={() => {
-                          // Basic validation
-                          if (!formData.firstName) {
-                            showError(t("donation.form.error.firstName"));
+                          if (!validateDonorIdentityFields()) {
                             return false;
                           }
-                          if (!formData.lastName) {
-                            showError(t("donation.form.error.lastName"));
+                          if (!validateAddressFieldsIfRequired()) {
                             return false;
                           }
                           if (!formData.email) {
