@@ -100,6 +100,27 @@ const getDonationDonorDisplayName = (fd: DonationDonorFormFields): string => {
   return `${fd.firstName.trim()} ${fd.lastName.trim()}`.trim();
 };
 
+/** Parse form-submit / Edge Function error JSON without stringifying nested objects as [object Object]. */
+const formatFormSubmitErrorDetail = (body: unknown): string => {
+  if (body == null || typeof body !== "object") {
+    return typeof body === "string" ? body : "";
+  }
+  const b = body as Record<string, unknown>;
+  if (typeof b.error === "string") {
+    return b.error;
+  }
+  if (b.error != null && typeof b.error === "object") {
+    return JSON.stringify(b.error);
+  }
+  if (typeof b.message === "string") {
+    return b.message;
+  }
+  if (typeof b.code === "string" || typeof b.code === "number") {
+    return String(b.code);
+  }
+  return JSON.stringify(body);
+};
+
 // PayPal Button Component - uses PayPalScriptReducer hook (must be inside PayPalScriptProvider)
 const PayPalButtonsComponent = memo(({ 
   createOrder, 
@@ -672,17 +693,35 @@ const Donation = () => {
       throw new Error("invalid_amount");
     }
 
-    const rawStreet = currentFormData.street.trim();
-    const streetMatch = rawStreet.match(/^(.*?)(?:\s+|,)(\d+[a-zA-Z0-9\-\/]*)$/);
-    const parsedStreet = streetMatch?.[1]?.trim() || rawStreet;
-    const parsedHouseNumber = streetMatch?.[2]?.trim() || "";
-    const addressPayload = {
-      street: parsedStreet,
-      houseNumber: parsedHouseNumber,
-      postalCode: currentFormData.postalCode.trim(),
-      city: currentFormData.city.trim(),
-      country: currentFormData.country.trim(),
-    };
+    const hasVoluntaryAddress =
+      !!currentFormData.street.trim() ||
+      !!currentFormData.postalCode.trim() ||
+      !!currentFormData.city.trim() ||
+      !!currentFormData.country.trim();
+    const includeAddressInPayload = addressRequiredForIntent || hasVoluntaryAddress;
+
+    let addressPayload:
+      | {
+          street: string;
+          houseNumber: string;
+          postalCode: string;
+          city: string;
+          country: string;
+        }
+      | undefined;
+    if (includeAddressInPayload) {
+      const rawStreet = currentFormData.street.trim();
+      const streetMatch = rawStreet.match(/^(.*?)(?:\s+|,)(\d+[a-zA-Z0-9\-\/]*)$/);
+      const parsedStreet = streetMatch?.[1]?.trim() || rawStreet;
+      const parsedHouseNumber = streetMatch?.[2]?.trim() || "";
+      addressPayload = {
+        street: parsedStreet,
+        houseNumber: parsedHouseNumber,
+        postalCode: currentFormData.postalCode.trim(),
+        city: currentFormData.city.trim(),
+        country: currentFormData.country.trim(),
+      };
+    }
     const normalizedFirstName = donorType === "private" ? currentFormData.firstName.trim() : "";
     const normalizedLastName = donorType === "private" ? currentFormData.lastName.trim() : "";
     const normalizedCompanyName = donorType === "company" ? currentFormData.companyName.trim() : "";
@@ -743,7 +782,8 @@ const Donation = () => {
       donationType: resolvedDonationType,
       paymentMethod,
       donorType,
-      salutation: donorType === "private" ? currentFormData.salutation : "",
+      salutation:
+        donorType === "private" ? currentFormData.salutation || undefined : undefined,
       donorFirstName: normalizedFirstName,
       donorLastName: normalizedLastName,
       companyName: donorType === "company" ? normalizedCompanyName : undefined,
@@ -754,9 +794,8 @@ const Donation = () => {
       giftRecipientEmail: currentFormData.isGift ? currentFormData.giftRecipientEmail.trim().toLowerCase() : undefined,
       wantsReceipt: !!currentFormData.wantsReceipt,
       address: addressPayload,
-      receiptAddress: currentFormData.wantsReceipt
-        ? addressPayload
-        : undefined,
+      receiptAddress:
+        currentFormData.wantsReceipt && addressPayload ? addressPayload : undefined,
       comment: normalizedComment || undefined,
       privacyAccepted: true,
       wantsNewsletter: !!currentFormData.wantsNewsletter,
@@ -771,22 +810,27 @@ const Donation = () => {
       });
 
       if (!response.ok) {
-        let errorCode = "";
+        const responseText = await response.text();
+        let errorDetail = "";
         try {
-          const body = await response.json();
-          errorCode = String(body?.error || body?.code || "");
+          errorDetail = formatFormSubmitErrorDetail(JSON.parse(responseText) as unknown);
         } catch {
-          // Ignore parse errors
+          errorDetail = responseText.slice(0, 500);
+        }
+
+        if (import.meta.env.DEV) {
+          console.error("[form-submit] HTTP", response.status, errorDetail || responseText.slice(0, 300));
         }
 
         if (response.status === 400) {
-          if (errorCode.startsWith("invalid_email")) {
+          const code = errorDetail;
+          if (code.startsWith("invalid_email")) {
             showError(t("donation.form.error.emailInvalid"));
-          } else if (errorCode === "privacy_not_accepted") {
+          } else if (code === "privacy_not_accepted") {
             showError(t("donation.form.error.privacy"));
-          } else if (errorCode.includes("gift")) {
+          } else if (code.includes("gift")) {
             showError(t("donation.form.error.giftRecipientEmailInvalid"));
-          } else if (errorCode.includes("address") || errorCode.includes("receipt")) {
+          } else if (code.includes("address") || code.includes("receipt")) {
             showError(t("donation.form.error.address"));
           } else {
             showError(t("donation.form.error.amount"));
@@ -796,7 +840,9 @@ const Donation = () => {
             ? "Übermittlung fehlgeschlagen. Bitte erneut versuchen."
             : "Submission failed. Please retry.");
         }
-        throw new Error(`intent_submit_failed:${response.status}:${errorCode}`);
+        throw new Error(
+          `intent_submit_failed:${response.status}:${errorDetail || "unknown"}`,
+        );
       }
 
       if (donationIntentRef.current && donationIntentRef.current.intentId === intentId) {
@@ -1358,11 +1404,10 @@ const Donation = () => {
 
   // PayPal payment handlers - memoized to prevent unnecessary re-renders
   const createPayPalOrder = useCallback(async (data: any, actions: any) => {
-    // Validate all required fields before creating PayPal order
-    const finalAmountStr = getCurrentAmount();
-
-    // Validate amount
-    if (!finalAmountStr || parseFloat(finalAmountStr) <= 0) {
+    // Same total logic as createDonationIntent / cart (getCurrentAmount can be "0" when
+    // cartState.totalAmount is stale but line items still have prices).
+    const finalAmount = getFinalDonationAmount();
+    if (isNaN(finalAmount) || finalAmount <= 0) {
       throw new Error(t("donation.form.error.amount"));
     }
 
@@ -1420,56 +1465,7 @@ const Donation = () => {
     if (!currentFormData.privacyConsent) {
       throw new Error(t("donation.form.error.privacy"));
     }
-    
-    // Calculate final amount for PayPal
-    let finalAmount: number;
-    
-    if (donationType === "monthly") {
-      finalAmount = parseFloat(amount || customAmount || "0");
-    } else {
-      if (cartState.items.length > 0) {
-        // Use cart total, but validate it and fallback to calculating from items if needed
-        finalAmount = cartState.totalAmount;
-        
-        // If totalAmount is invalid, calculate from items
-        if (isNaN(finalAmount) || finalAmount <= 0) {
-          const calculatedTotal = cartState.items.reduce((sum, item) => {
-            const itemTotal = item.totalPrice || (item.unitPrice * (item.quantity || 1));
-            return sum + (isNaN(itemTotal) ? 0 : itemTotal);
-          }, 0);
-          
-          if (!isNaN(calculatedTotal) && calculatedTotal > 0) {
-            finalAmount = calculatedTotal;
-          } else {
-            // Last resort: try to use amount/customAmount
-            finalAmount = parseFloat(amount || customAmount || "0");
-          }
-        }
-      } else {
-        finalAmount = parseFloat(amount || customAmount || "0");
-      }
-    }
-    
-    // Final amount validation (should not happen if validation above worked, but double-check)
-    if (isNaN(finalAmount) || finalAmount <= 0) {
-      console.error("Invalid amount for PayPal order:", {
-        finalAmount,
-        donationType,
-        amount,
-        customAmount,
-        cartItemsCount: cartState.items.length,
-        cartTotalAmount: cartState.totalAmount,
-        cartItems: cartState.items.map(item => ({
-          id: item.id,
-          type: item.type,
-          totalPrice: item.totalPrice,
-          unitPrice: item.unitPrice,
-          quantity: item.quantity
-        }))
-      });
-      throw new Error(t("donation.form.error.amount"));
-    }
-    
+
     // Format amount to 2 decimal places for PayPal
     const formattedAmount = finalAmount.toFixed(2);
 
@@ -1497,7 +1493,13 @@ const Donation = () => {
     });
     paypalOrderByIntentRef.current[intentId] = orderId;
     return orderId;
-  }, [amount, cartState.items, cartState.totalAmount, createDonationIntent, customAmount, donationType, getCurrentAmount, t]);
+  }, [
+    cartState.items,
+    cartState.totalAmount,
+    createDonationIntent,
+    getFinalDonationAmount,
+    t,
+  ]);
 
   // Function to subscribe to newsletter
   const subscribeToNewsletter = async (email: string) => {
