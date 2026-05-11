@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef, memo } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,7 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import OptimizedImage from "@/components/OptimizedImage";
 import PreloadImage from "@/components/PreloadImage";
-import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush, Copy, CheckCircle2, AlertCircle, Home } from "lucide-react";
+import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush, Copy, CheckCircle2, AlertCircle, Home, Landmark } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { donationWebhookService } from "@/services/donationWebhookService";
@@ -69,22 +69,16 @@ if (typeof window !== 'undefined') {
 // Stripe Configuration
 const STRIPE_PUBLISHABLE_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
-// SEPA Bank Account Configuration
-const SEPA_BANK_ACCOUNT = {
-  iban: import.meta.env.VITE_SEPA_IBAN || "DE22672300004014594213",
-  bic: import.meta.env.VITE_SEPA_BIC || "MLPBDE61XXX", 
-  accountHolder: import.meta.env.VITE_SEPA_ACCOUNT_HOLDER || "Aaron Immanuel Hesser",
-  bankName: import.meta.env.VITE_SEPA_BANK_NAME || "MLP Banking"
+// Manual bank transfer (Wise). Override with VITE_BANK_TRANSFER_* in env if the account changes.
+const BANK_TRANSFER_ACCOUNT = {
+  iban: import.meta.env.VITE_BANK_TRANSFER_IBAN || "BE37903000230728",
+  bic: import.meta.env.VITE_BANK_TRANSFER_BIC || "TRWIBEB1XXX",
+  accountHolder:
+    import.meta.env.VITE_BANK_TRANSFER_ACCOUNT_HOLDER || "Alma Bridge of Hope e.V.",
+  bankName: import.meta.env.VITE_BANK_TRANSFER_BANK_NAME || "Wise",
 };
 
-// Generate SEPA reference number
-const generateSEPAReference = (donorName: string, amount: number, timestamp: string): string => {
-  const date = new Date(timestamp);
-  const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
-  const namePart = donorName.replace(/\s+/g, '').substring(0, 10).toUpperCase();
-  const amountPart = Math.floor(amount).toString().padStart(4, '0');
-  return `ALMA-${dateStr}-${namePart}-${amountPart}`;
-};
+const formatBankTransferReference = (intentId: string) => `ALMA-${intentId}`;
 
 type DonationDonorFormFields = {
   donorType: "private" | "company";
@@ -414,10 +408,13 @@ const Donation = () => {
   
   const [amount, setAmount] = useState<string>("");
   const [customAmount, setCustomAmount] = useState<string>("");
-  const [paymentMethod, setPaymentMethod] = useState<"paypal" | "stripe-card" | "stripe-sepa">("stripe-sepa");
+  const [paymentMethod, setPaymentMethod] = useState<
+    "paypal" | "stripe-card" | "stripe-sepa" | "bank-transfer"
+  >("stripe-sepa");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showWarningDialog, setShowWarningDialog] = useState(false);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showBankTransferDetailsDialog, setShowBankTransferDetailsDialog] = useState(false);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -593,8 +590,78 @@ const Donation = () => {
   const [editGeneralDonationValue, setEditGeneralDonationValue] = useState<string>("");
   const [addingGeneralDonation, setAddingGeneralDonation] = useState(false);
   const [newGeneralDonationAmount, setNewGeneralDonationAmount] = useState<string>("");
-  const [sepaReference, setSepaReference] = useState<string>("");
-  const [sepaDetailsCopied, setSepaDetailsCopied] = useState(false);
+  const [registeredBankTransferRef, setRegisteredBankTransferRef] = useState<string | null>(null);
+  const [bankTransferDetailsCopied, setBankTransferDetailsCopied] = useState(false);
+  const [isRegisteringBankTransfer, setIsRegisteringBankTransfer] = useState(false);
+
+  const cartAllocationFingerprint = useMemo(
+    () =>
+      JSON.stringify(
+        cartState.items.map((item) => ({
+          id: item.id,
+          quantity: item.quantity,
+          totalPrice: item.totalPrice,
+        })),
+      ),
+    [cartState.items],
+  );
+
+  const bankTransferDonorFingerprint = useMemo(
+    () =>
+      JSON.stringify({
+        donorType: formData.donorType,
+        companyName: formData.companyName,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        isGift: formData.isGift,
+        giftRecipientName: formData.giftRecipientName,
+        giftRecipientEmail: formData.giftRecipientEmail,
+        wantsReceipt: formData.wantsReceipt,
+        street: formData.street,
+        postalCode: formData.postalCode,
+        city: formData.city,
+        country: formData.country,
+      }),
+    [
+      formData.donorType,
+      formData.companyName,
+      formData.firstName,
+      formData.lastName,
+      formData.email,
+      formData.isGift,
+      formData.giftRecipientName,
+      formData.giftRecipientEmail,
+      formData.wantsReceipt,
+      formData.street,
+      formData.postalCode,
+      formData.city,
+      formData.country,
+    ],
+  );
+
+  useEffect(() => {
+    setRegisteredBankTransferRef(null);
+  }, [
+    donationType,
+    amount,
+    customAmount,
+    cartAllocationFingerprint,
+    paymentMethod,
+    bankTransferDonorFingerprint,
+  ]);
+
+  useEffect(() => {
+    if (!registeredBankTransferRef) {
+      setShowBankTransferDetailsDialog(false);
+    }
+  }, [registeredBankTransferRef]);
+
+  useEffect(() => {
+    if (donationType !== "monthly" || paymentMethod !== "bank-transfer") return;
+    if (STRIPE_PUBLISHABLE_KEY) setPaymentMethod("stripe-sepa");
+    else if (PAYPAL_CLIENT_ID) setPaymentMethod("paypal");
+  }, [donationType, paymentMethod]);
 
   const getFinalDonationAmount = useCallback((): number => {
     if (donationType === "monthly") {
@@ -800,6 +867,21 @@ const Donation = () => {
       privacyAccepted: true,
       wantsNewsletter: !!currentFormData.wantsNewsletter,
       currency: "EUR",
+      ...(cartState.items.length > 0
+        ? {
+            donationLineItems: cartState.items.map((item) => ({
+              id: item.id,
+              type: item.type,
+              name: item.name,
+              unitPrice: item.unitPrice,
+              quantity: item.quantity ?? 1,
+              totalPrice: item.totalPrice,
+              projectName: item.projectName,
+              phase: item.phase,
+              itemId: item.itemId,
+            })),
+          }
+        : {}),
     };
 
     const submitPromise = (async () => {
@@ -859,7 +941,16 @@ const Donation = () => {
         donationIntentInFlightRef.current = null;
       }
     }
-  }, [donationType, formSubmitUrl, getFinalDonationAmount, language, paymentMethod, showError, t]);
+  }, [
+    donationType,
+    formSubmitUrl,
+    getFinalDonationAmount,
+    language,
+    paymentMethod,
+    showError,
+    t,
+    cartState.items,
+  ]);
 
   // Auto-add general donation when URL param exists and cart has items
   useEffect(() => {
@@ -1290,7 +1381,13 @@ const Donation = () => {
   };
 
   // Helper function to process donation and send to webhook
-  const processDonation = async (paymentId?: string) => {
+  const processDonation = async (
+    paymentId?: string,
+    options?: {
+      paymentMethod?: "paypal" | "sepa" | "card" | "stripe-card" | "stripe-sepa" | "bank-transfer" | "no-payment";
+      paymentStatus?: "paid" | "unpaid" | "pending" | "failed";
+    },
+  ) => {
     try {
       console.log("=== Processing Donation ===");
       console.log("Payment ID:", paymentId);
@@ -1330,13 +1427,16 @@ const Donation = () => {
       const totalAmount = donationItems.reduce((sum, item) => sum + item.totalPrice, 0);
       console.log("💰 Total donation amount:", totalAmount);
 
+      const resolvedPaymentMethod = options?.paymentMethod ?? paymentMethod;
+      const resolvedPaymentStatus = options?.paymentStatus ?? "paid";
+
       console.log("📤 Sending donation to webhook...");
       // Send to webhook
       const result = await donationWebhookService.sendDonation({
         items: donationItems,
         totalAmount: totalAmount,
         donationType: donationType,
-        paymentMethod: paymentMethod,
+        paymentMethod: resolvedPaymentMethod,
         donorEmail: formData.email || undefined,
         donorName: getDonationDonorDisplayName({
           donorType: formData.donorType === "company" ? "company" : "private",
@@ -1346,7 +1446,7 @@ const Donation = () => {
         }) || undefined,
         donorSalutation: formData.donorType === "private" ? (formData.salutation || undefined) : undefined,
         paymentId: paymentId,
-        paymentStatus: 'paid', // PayPal payments are always 'paid' when we reach this point
+        paymentStatus: resolvedPaymentStatus,
         wantsReceipt: formData.wantsReceipt,
         isGift: formData.isGift,
         giftRecipientName: formData.isGift ? formData.giftRecipientName || undefined : undefined,
@@ -1387,19 +1487,47 @@ const Donation = () => {
     // No need to do anything else - buttons are already rendered
   };
 
-  const copySEPADetails = () => {
+  const copyBankTransferDetails = () => {
+    if (!registeredBankTransferRef) return;
     const finalAmount = donationType === "monthly"
       ? (amount || customAmount)
-      : (cartState.items.length > 0 
-          ? cartState.totalAmount.toString() 
+      : (cartState.items.length > 0
+          ? cartState.totalAmount.toString()
           : (amount || customAmount));
-    
-    const details = `IBAN: ${SEPA_BANK_ACCOUNT.iban}\nBIC: ${SEPA_BANK_ACCOUNT.bic}\nAccount Holder: ${SEPA_BANK_ACCOUNT.accountHolder}\nAmount: €${finalAmount}\nReference: ${sepaReference}`;
-    
+    const details = [
+      `IBAN: ${BANK_TRANSFER_ACCOUNT.iban}`,
+      `BIC: ${BANK_TRANSFER_ACCOUNT.bic}`,
+      `${t("donation.form.bankTransferRecipient")}: ${BANK_TRANSFER_ACCOUNT.accountHolder}`,
+      `${t("donation.form.bankTransferBank")}: ${BANK_TRANSFER_ACCOUNT.bankName}`,
+      `${t("donation.form.bankTransferAmount")}: €${finalAmount}`,
+      `${t("donation.form.sepaReference")}: ${registeredBankTransferRef}`,
+    ].join("\n");
+
     navigator.clipboard.writeText(details).then(() => {
-      setSepaDetailsCopied(true);
-      setTimeout(() => setSepaDetailsCopied(false), 2000);
+      setBankTransferDetailsCopied(true);
+      setTimeout(() => setBankTransferDetailsCopied(false), 2000);
     });
+  };
+
+  const handleRegisterBankTransfer = async () => {
+    if (donationType !== "one-time") return;
+    if (!validateForm()) return;
+    setIsRegisteringBankTransfer(true);
+    try {
+      const intentId = await createDonationIntent();
+      const ref = formatBankTransferReference(intentId);
+      setRegisteredBankTransferRef(ref);
+      await processDonation(intentId, {
+        paymentMethod: "bank-transfer",
+        paymentStatus: "pending",
+      });
+      setBankTransferDetailsCopied(false);
+      setShowBankTransferDetailsDialog(true);
+    } catch {
+      // createDonationIntent already surfaced validation / HTTP errors
+    } finally {
+      setIsRegisteringBankTransfer(false);
+    }
   };
 
   // PayPal payment handlers - memoized to prevent unnecessary re-renders
@@ -3026,6 +3154,15 @@ const Donation = () => {
                           </div>
                         </>
                       )}
+                      {donationType === "one-time" && (
+                        <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer flex-1 min-w-[150px]">
+                          <RadioGroupItem value="bank-transfer" id="payment-bank-transfer" />
+                          <Label htmlFor="payment-bank-transfer" className="flex-1 cursor-pointer flex items-center gap-2">
+                            <Landmark className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                            {t("donation.form.bankTransferPayment")}
+                          </Label>
+                        </div>
+                      )}
                       {/* 3. PayPal (available for both one-time and monthly payments) */}
                       {PAYPAL_CLIENT_ID && (
                         <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer flex-1 min-w-[150px]">
@@ -3053,7 +3190,7 @@ const Donation = () => {
                           key={`paypal-${donationType}`}
                         />
                         {/* Overlay to disable PayPal buttons when dialog is open */}
-                        {(showSuccessDialog || showErrorDialog || showWarningDialog) && (
+                        {(showSuccessDialog || showErrorDialog || showWarningDialog || showBankTransferDetailsDialog) && (
                           <div 
                             className="absolute inset-0 bg-background/90 backdrop-blur-sm z-[60] rounded-md flex items-center justify-center"
                             style={{ 
@@ -3230,6 +3367,38 @@ const Donation = () => {
                           return true;
                         }}
                       />
+                    )}
+
+                    {paymentMethod === "bank-transfer" && donationType === "one-time" && (
+                      <div className="w-full space-y-4 rounded-lg border border-border bg-muted/20 p-4">
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                          {t("donation.form.bankTransferNote")}
+                        </p>
+                        {!registeredBankTransferRef ? (
+                          <Button
+                            type="button"
+                            className="w-full"
+                            onClick={handleRegisterBankTransfer}
+                            disabled={isRegisteringBankTransfer}
+                          >
+                            {isRegisteringBankTransfer
+                              ? t("donation.form.bankTransferRegistering")
+                              : t("donation.form.bankTransferCta")}
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            className="w-full"
+                            onClick={() => {
+                              setBankTransferDetailsCopied(false);
+                              setShowBankTransferDetailsDialog(true);
+                            }}
+                          >
+                            {t("donation.form.bankTransferShowAgain")}
+                          </Button>
+                        )}
+                        <p className="text-xs text-muted-foreground">{t("donation.form.bankTransferInlineHint")}</p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -3528,6 +3697,65 @@ const Donation = () => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
               className="w-full sm:w-auto bg-primary hover:bg-primary/90"
+            >
+              {language === "de" ? "Verstanden" : "Got it"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bank transfer: payment details after registration */}
+      <AlertDialog
+        open={showBankTransferDetailsDialog && !!registeredBankTransferRef}
+        onOpenChange={(open) => {
+          setShowBankTransferDetailsDialog(open);
+        }}
+      >
+        <AlertDialogContent className="sm:max-w-lg max-h-[min(90vh,640px)] overflow-y-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-xl text-left">
+              <Landmark className="h-5 w-5 shrink-0 text-primary" aria-hidden />
+              {t("donation.form.bankTransferSuccessTitle")}
+            </AlertDialogTitle>
+          </AlertDialogHeader>
+          <div className="space-y-4 text-sm text-foreground">
+            <p className="text-muted-foreground leading-relaxed">
+              {t("donation.form.bankTransferSuccessMessage")}
+            </p>
+            <div className="rounded-md border border-border bg-muted/30 p-4">
+              <p className="mb-3 font-medium text-foreground">{t("donation.form.sepaDetails")}</p>
+              <dl className="grid gap-2 sm:grid-cols-[7.5rem_1fr] sm:gap-x-3">
+                <dt className="text-muted-foreground">IBAN</dt>
+                <dd className="font-mono text-xs break-all sm:col-start-2">{BANK_TRANSFER_ACCOUNT.iban}</dd>
+                <dt className="text-muted-foreground">BIC</dt>
+                <dd className="font-mono text-xs break-all sm:col-start-2">{BANK_TRANSFER_ACCOUNT.bic}</dd>
+                <dt className="text-muted-foreground">{t("donation.form.bankTransferRecipient")}</dt>
+                <dd className="sm:col-start-2">{BANK_TRANSFER_ACCOUNT.accountHolder}</dd>
+                <dt className="text-muted-foreground">{t("donation.form.bankTransferBank")}</dt>
+                <dd className="sm:col-start-2">{BANK_TRANSFER_ACCOUNT.bankName}</dd>
+                <dt className="text-muted-foreground">{t("donation.form.bankTransferAmount")}</dt>
+                <dd className="font-medium sm:col-start-2">
+                  €
+                  {cartState.items.length > 0
+                    ? cartState.totalAmount.toFixed(2)
+                    : parseFloat(amount || customAmount || "0").toFixed(2)}
+                </dd>
+                <dt className="text-muted-foreground">{t("donation.form.sepaReference")}</dt>
+                <dd className="font-mono text-xs break-all sm:col-start-2">{registeredBankTransferRef}</dd>
+              </dl>
+            </div>
+            <p className="text-xs text-muted-foreground">{t("donation.form.sepaInstructions")}</p>
+            <p className="text-xs text-muted-foreground border-t border-border pt-3">
+              {t("donation.form.bankTransferFootnote")}
+            </p>
+          </div>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+            <Button type="button" variant="outline" className="w-full" onClick={copyBankTransferDetails}>
+              {bankTransferDetailsCopied ? t("donation.form.sepaCopied") : t("donation.form.sepaCopy")}
+            </Button>
+            <AlertDialogAction
+              className="w-full bg-primary hover:bg-primary/90"
+              onClick={() => setShowBankTransferDetailsDialog(false)}
             >
               {language === "de" ? "Verstanden" : "Got it"}
             </AlertDialogAction>
