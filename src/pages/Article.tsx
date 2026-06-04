@@ -182,10 +182,11 @@ const Article = () => {
         <section className="pb-section bg-background">
           <div className="max-w-4xl mx-auto px-6">
             <div className="relative overflow-hidden rounded-lg aspect-video">
-              <img 
-                src={article.image} 
+              <img
+                src={article.image}
                 alt={article.title}
                 className="w-full h-full object-cover"
+                style={article.imagePosition ? { objectPosition: article.imagePosition } : undefined}
               />
             </div>
           </div>

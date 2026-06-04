@@ -17,9 +17,11 @@ import houseImage from "@/assets/project/community_house/house.webp";
 import house2Image from "@/assets/project/community_house/house_2.webp";
 import landWithPeopleImage from "@/assets/project/community_house/land_w_ppl.webp";
 // Aperol Hofflohmarkt images
+import aperolHeaderImage from "@/assets/fundraising/aperol_hofflohmarkt/header.webp";
 import aperolVan1Image from "@/assets/fundraising/aperol_hofflohmarkt/1.webp";
 import aperolTeamImage from "@/assets/fundraising/aperol_hofflohmarkt/2.webp";
 import aperolPosterImage from "@/assets/fundraising/aperol_hofflohmarkt/3.webp";
+import aperolExtra4Image from "@/assets/fundraising/aperol_hofflohmarkt/4.webp";
 // Soak pit update images (WebP format)
 import soakPitImage2 from "@/assets/project/2512_soak_pit_update/2.webp";
 import soakPitImage3 from "@/assets/project/2512_soak_pit_update/3.webp";
@@ -111,7 +113,7 @@ export interface NewsArticle {
   date: string;
   category: string;
   image: string;
-  imagePosition?: "top" | "center" | "bottom";
+  imagePosition?: string;
   featured: boolean;
   additionalImages?: string[];
   body?: ArticleBody;
@@ -321,7 +323,8 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
       author: t("news.article14.author"),
       date: "2026-06-04",
       category: t("news.categories.organization"),
-      image: aperolVan1Image,
+      image: aperolHeaderImage,
+      imagePosition: "center 20%",
       featured: true,
       body: {
         showQuote: false,
@@ -353,6 +356,11 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
                   type: "image",
                   src: aperolPosterImage,
                   alt: "Alma Bridge of Hope Poster am Van",
+                },
+                {
+                  type: "image",
+                  src: aperolExtra4Image,
+                  alt: "Hofflohmarkt Pullach",
                 },
               ],
             },
