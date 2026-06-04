@@ -106,17 +106,17 @@ export default function NewsletterForm({
     <form onSubmit={handleSubmit} className={className}>
       {/* Honeypot field (hidden) */}
       <input type="text" name="company" autoComplete="off" tabIndex={-1} style={{ display: "none" }} aria-hidden="true" />
-      <div className="space-y-3">
+      <div className="flex gap-2">
         <Input
           type="email"
           placeholder={placeholder}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="w-full"
+          className="flex-1 min-w-0"
         />
-        <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground" size="sm" disabled={isLoading}>
-          {isLoading ? "Wird gesendet..." : buttonLabel}
+        <Button type="submit" className="shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground" size="sm" disabled={isLoading}>
+          {isLoading ? "..." : buttonLabel}
         </Button>
       </div>
     </form>

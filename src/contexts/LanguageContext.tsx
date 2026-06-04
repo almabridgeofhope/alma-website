@@ -363,7 +363,15 @@ const translations = {
     "impressum.disclaimer.title": "Disclaimer",
     "impressum.disclaimer.content": "Despite careful content control, we assume no liability for the content of external links.",
     "impressum.disclaimer.links": "The operators of the linked pages are solely responsible for the content of the linked pages.",
-    
+
+    "impressum.bank.title": "Bank Account",
+    "impressum.bank.accountHolder": "Account holder",
+    "impressum.bank.bank": "Bank",
+    "impressum.bank.iban": "IBAN",
+    "impressum.bank.bic": "BIC",
+
+    "contact.info.bank": "Bank Account",
+
     // Privacy Policy
     "privacy.title": "Privacy Policy",
     "privacy.intro": "We are pleased about your interest in Alma Bridge of Hope e.V. The protection of your personal data is important to us. Below we inform you about the processing of personal data on our website and in the context of our donation management.",
@@ -1017,6 +1025,13 @@ const translations = {
     "news.article13.sections.outlook.title": "Outlook",
     "news.article13.sections.outlook.paragraphs": "We also have a lot planned for 2026: completing the Community House, advancing well construction, starting the farm project, and at the same time continuing to build the team both in Uganda and Germany. There is much to do. We look forward to the journey and to everyone who travels it with us. We wish you a healthy and successful 2026!|On behalf of the entire team,",
     "news.article13.sections.outlook.signature": "Aaron Hesser|Chairman, Alma Bridge of Hope e.V.",
+    "news.article14.title": "Aperol for a Good Cause",
+    "news.article14.excerpt": "Alma Bridge of Hope raises donations at courtyard flea markets in Munich – with Aperol Spritz and lots of conversations about the well project.",
+    "news.article14.content": "Alma Bridge of Hope raises donations at courtyard flea markets in Munich – with Aperol Spritz and lots of conversations about the well project.",
+    "news.article14.author": "Yuan Yi Danneil",
+    "news.article14.introduction": "The courtyard flea markets in München are back - and Alma Bridge of Hope is taking part with a fundraising campaign. To raise more money for building a well, a simple idea came up: why not use the great atmosphere at the flea markets to collect donations? So a small stand was quickly set up - easy to spot next to David's orange van. On offer: Aperol Spritz for a donation. There were also flyers, posters, and above all, lots of conversations.|Alma's members actively approached visitors and invited them to enjoy an Aperol \"for a good cause.\" The response was very positive: many people not only went for the drink but also showed genuine interest in learning more about the well project. People asked questions, listened, and donated. Especially nice to see: even some who didn't want an Aperol still supported the initiative with a donation.",
+    "news.article14.sections.results.title": "Over €400 Raised – and Counting",
+    "news.article14.sections.results.paragraphs": "The first stops - Pullach and the Westend - were a great success. Over €400 has already been raised, and the money will go directly toward building the well.|And this is just the beginning: Alma will be present at more courtyard flea markets across Munich. If you're visiting, you'll easily find the stand - just look out for the orange van. Alternatively, feel free to get in touch at info@almabridgeofhope.org.",
     "news.quote.text": "Building bridges of hope across continents through sustainable community development.",
     "news.quote.author": "Aaron Hesser, Alma Bridge of Hope e.V.",
     "news.donation.title": "Support Our Mission",
@@ -1395,7 +1410,15 @@ const translations = {
     "impressum.disclaimer.title": "Haftungsausschluss",
     "impressum.disclaimer.content": "Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links.",
     "impressum.disclaimer.links": "Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.",
-    
+
+    "impressum.bank.title": "Bankverbindung",
+    "impressum.bank.accountHolder": "Kontoinhaber",
+    "impressum.bank.bank": "Bank",
+    "impressum.bank.iban": "IBAN",
+    "impressum.bank.bic": "BIC",
+
+    "contact.info.bank": "Bankverbindung",
+
     // Privacy Policy
     "privacy.title": "Datenschutzerklärung",
     "privacy.intro": "Wir freuen uns über dein Interesse an Alma Bridge of Hope e.V. Der Schutz deiner personenbezogenen Daten ist uns ein wichtiges Anliegen. Nachfolgend informieren wir dich über die Verarbeitung personenbezogener Daten auf unserer Website sowie im Rahmen unserer Spendenverwaltung.",
@@ -2048,6 +2071,13 @@ const translations = {
     "news.article13.sections.outlook.title": "Ausblick",
     "news.article13.sections.outlook.paragraphs": "Auch in 2026 haben wir viel vor: Das Community House fertigstellen, den Brunnenbau vorantreiben, das Farmprojekt starten und gleichzeitig das Team sowohl in Uganda als auch in Deutschland weiter aufbauen. Es gibt viel zu tun. Wir freuen uns auf die Reise und über alle, die sie mit uns gehen. Wir wünschen Dir ein gesundes und Erfolgreiches 2026!|Im Namen des gesamten Teams,",
     "news.article13.sections.outlook.signature": "Aaron Hesser|Vorsitzender, Alma Bridge of Hope",
+    "news.article14.title": "Aperol für den guten Zweck",
+    "news.article14.excerpt": "Alma Bridge of Hope sammelt Spenden auf Hofflohmärkten in München – mit Aperol Spritz und vielen Gesprächen über das Brunnenprojekt.",
+    "news.article14.content": "Alma Bridge of Hope sammelt Spenden auf Hofflohmärkten in München – mit Aperol Spritz und vielen Gesprächen über das Brunnenprojekt.",
+    "news.article14.author": "Yuan Yi Danneil",
+    "news.article14.introduction": "Die Hofflohmärkte in München sind wieder gestartet - und Alma Bridge of Hope ist mit einer Spendenaktion dabei. Um mehr Gelder für den Brunnenbau zu sammeln, entstand eine einfache Idee: Warum nicht die gute Stimmung auf den Flohmärkten nutzen und dabei Spenden sammeln? Also wurde kurzerhand ein kleiner Stand aufgebaut - gut sichtbar neben Davids orangenen Van. Im Angebot: Aperol Spritz auf Spendenbasis. Dazu gab es Flyer, Poster und vor allem viele Gespräche.|Die Mitglieder von Alma gingen aktiv auf Besucherinnen und Besucher zu und luden sie ein, einen Aperol „für den guten Zweck\" zu trinken. Die Resonanz war groß: Viele ließen sich nicht nur auf das Getränk ein, sondern hörten auch interessiert zu, was hinter dem Brunnenprojekt steckt. Es wurde nachgefragt, zugehört und gespendet. Besonders schön: Auch einige, die kein Aperol trinken wollten, unterstützten die Aktion mit einer Spende.",
+    "news.article14.sections.results.title": "Über 400 Euro gesammelt – und es geht weiter",
+    "news.article14.sections.results.paragraphs": "Die bisherigen Stationen - Pullach und das Westend - waren ein voller Erfolg. Über 400 Euro konnten bereits gesammelt werden. Das Geld fließt direkt in den Bau des Brunnens.|Und das war erst der Anfang: Alma wird auch auf weiteren Hofflohmärkten in München vertreten sein. Wer vorbeikommt, findet den Stand ganz leicht - einfach nach dem orangenen Van Ausschau halten. Alternativ könnt ihr euch auch bei uns unter info@almabridgeofhope.org melden.",
     "news.quote.text": "Wir bauen Brücken der Hoffnung zwischen Kontinenten durch nachhaltige Gemeindeentwicklung.",
     "news.quote.author": "Aaron Hesser, Alma Bridge of Hope",
     "news.donation.title": "Unterstütze unsere Mission",

@@ -83,6 +83,19 @@ const Impressum = () => {
                 </div>
               </section>
 
+              {/* Bank Account */}
+              <section>
+                <h2 className="text-2xl font-semibold text-foreground mb-4">
+                  {t("impressum.bank.title")}
+                </h2>
+                <div className="space-y-2 text-muted-foreground">
+                  <p><strong>{t("impressum.bank.accountHolder")}:</strong> Alma Bridge of Hope e.V.</p>
+                  <p><strong>{t("impressum.bank.bank")}:</strong> Wise</p>
+                  <p><strong>{t("impressum.bank.iban")}:</strong> BE37 9030 0023 0728</p>
+                  <p><strong>{t("impressum.bank.bic")}:</strong> TRWIBEB1XXX</p>
+                </div>
+              </section>
+
               {/* Disclaimer */}
               <section>
                 <h2 className="text-2xl font-semibold text-foreground mb-4">

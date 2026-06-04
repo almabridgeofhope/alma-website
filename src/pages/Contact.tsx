@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import PreloadImage from "@/components/PreloadImage";
-import { Mail, MapPin, Instagram, Loader2 } from "lucide-react";
+import { Mail, MapPin, Instagram, Loader2, Landmark } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import heroImage from "@/assets/nature/land_11.webp";
@@ -265,7 +265,7 @@ const Contact = () => {
                       <h3 className="text-lg font-semibold text-foreground mb-2">
                         {t("contact.info.social")}
                       </h3>
-                      <a 
+                      <a
                         href="https://instagram.com/almabridgeofhope"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -273,6 +273,25 @@ const Contact = () => {
                       >
                         @almabridgeofhope
                       </a>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-6 shadow-card">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-primary/10 rounded-lg">
+                      <Landmark className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
+                        {t("contact.info.bank")}
+                      </h3>
+                      <p className="text-muted-foreground text-sm space-y-0.5">
+                        <span className="block">Alma Bridge of Hope e.V.</span>
+                        <span className="block">Bank: Wise</span>
+                        <span className="block font-mono">IBAN: BE37 9030 0023 0728</span>
+                        <span className="block font-mono">BIC: TRWIBEB1XXX</span>
+                      </p>
                     </div>
                   </div>
                 </Card>

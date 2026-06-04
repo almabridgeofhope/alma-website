@@ -33,58 +33,64 @@ const Footer = () => {
   return (
     <footer className="bg-muted py-12">
       <div className="max-w-content mx-auto px-6">
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Brand */}
+        <div className="grid md:grid-cols-[2fr_1fr_1fr] gap-8">
+          {/* Brand + Newsletter */}
           <div>
             <div className="flex items-center mb-4">
               <img src={logo} alt="Alma Bridge of Hope e.V." width={48} height={48} className="h-12 w-12 object-contain" />
             </div>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-6">
               {t("footer.tagline")}
             </p>
+            <h4 className="font-semibold text-foreground mb-4">{t("newsletter.title")}</h4>
+            <NewsletterForm
+              placeholder={t("newsletter.placeholder")}
+              buttonLabel={t("newsletter.button")}
+              source="website-footer"
+            />
           </div>
 
           {/* Navigation */}
           <div>
             <h4 className="font-semibold text-foreground mb-4">{t("footer.nav.title")}</h4>
             <nav className="space-y-2">
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className="block text-muted-foreground hover:text-primary transition-colors"
                 onClick={(e) => handleFooterNavClick("/", e)}
               >
                 {t("nav.home")}
               </Link>
-              <Link 
-                to="/projects" 
+              <Link
+                to="/projects"
                 className="block text-muted-foreground hover:text-primary transition-colors"
                 onClick={(e) => handleFooterNavClick("/projects", e)}
               >
                 {t("nav.projects")}
               </Link>
-              <Link 
-                to="/about" 
+              <Link
+                to="/about"
                 className="block text-muted-foreground hover:text-primary transition-colors"
                 onClick={(e) => handleFooterNavClick("/about", e)}
               >
                 {t("nav.about")}
               </Link>
-              <Link 
-                to="/contact" 
+              <Link
+                to="/contact"
                 className="block text-muted-foreground hover:text-primary transition-colors"
                 onClick={(e) => handleFooterNavClick("/contact", e)}
               >
                 {t("nav.contact")}
               </Link>
-              <Link 
-                to="/membership" 
+              <Link
+                to="/membership"
                 className="block text-muted-foreground hover:text-primary transition-colors"
                 onClick={(e) => handleFooterNavClick("/membership", e)}
               >
                 {t("nav.membership")}
               </Link>
-              <a 
-                href="/flyer.pdf" 
+              <a
+                href="/flyer.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
@@ -96,14 +102,15 @@ const Footer = () => {
             </nav>
           </div>
 
-          {/* Newsletter */}
+          {/* Bank Account */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">{t("newsletter.title")}</h4>
-            <NewsletterForm
-              placeholder={t("newsletter.placeholder")}
-              buttonLabel={t("newsletter.button")}
-              source="website-footer"
-            />
+            <h4 className="font-semibold text-foreground mb-4">{t("impressum.bank.title")}</h4>
+            <div className="space-y-1 text-muted-foreground text-sm">
+              <p>Alma Bridge of Hope e.V.</p>
+              <p>Bank: Wise</p>
+              <p className="font-mono">IBAN: BE37 9030 0023 0728</p>
+              <p className="font-mono">BIC: TRWIBEB1XXX</p>
+            </div>
           </div>
         </div>
 

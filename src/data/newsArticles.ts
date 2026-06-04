@@ -16,6 +16,10 @@ import constructionHouse2Image from "@/assets/project/community_house/constructi
 import houseImage from "@/assets/project/community_house/house.webp";
 import house2Image from "@/assets/project/community_house/house_2.webp";
 import landWithPeopleImage from "@/assets/project/community_house/land_w_ppl.webp";
+// Aperol Hofflohmarkt images
+import aperolVan1Image from "@/assets/fundraising/aperol_hofflohmarkt/1.webp";
+import aperolTeamImage from "@/assets/fundraising/aperol_hofflohmarkt/2.webp";
+import aperolPosterImage from "@/assets/fundraising/aperol_hofflohmarkt/3.webp";
 // Soak pit update images (WebP format)
 import soakPitImage2 from "@/assets/project/2512_soak_pit_update/2.webp";
 import soakPitImage3 from "@/assets/project/2512_soak_pit_update/3.webp";
@@ -107,6 +111,7 @@ export interface NewsArticle {
   date: string;
   category: string;
   image: string;
+  imagePosition?: "top" | "center" | "bottom";
   featured: boolean;
   additionalImages?: string[];
   body?: ArticleBody;
@@ -308,6 +313,53 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
   );
 
   const articles: NewsArticle[] = [
+    {
+      id: "14",
+      title: t("news.article14.title"),
+      excerpt: t("news.article14.excerpt"),
+      content: t("news.article14.content"),
+      author: t("news.article14.author"),
+      date: "2026-06-04",
+      category: t("news.categories.organization"),
+      image: aperolVan1Image,
+      featured: true,
+      body: {
+        showQuote: false,
+        introduction: splitToArray(
+          t("news.article14.introduction"),
+          "news.article14.introduction"
+        ),
+        sections: [
+          {
+            title: t("news.article14.sections.results.title"),
+            paragraphs: splitToArray(
+              t("news.article14.sections.results.paragraphs"),
+              "news.article14.sections.results.paragraphs"
+            ),
+            photoGallery: {
+              layout: "carousel",
+              media: [
+                {
+                  type: "image",
+                  src: aperolVan1Image,
+                  alt: "Alma-Stand neben dem orangenen Van am Hofflohmarkt Pullach",
+                },
+                {
+                  type: "image",
+                  src: aperolTeamImage,
+                  alt: "Das Alma-Team beim Hofflohmarkt",
+                },
+                {
+                  type: "image",
+                  src: aperolPosterImage,
+                  alt: "Alma Bridge of Hope Poster am Van",
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
     {
       id: "13",
       title: t("news.article13.title"),
