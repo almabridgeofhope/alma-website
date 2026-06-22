@@ -47,6 +47,14 @@ import christmasImage4 from "@/assets/project/2512_soak_pit_update/2512_christma
 import christmasheaderImage from "@/assets/project/2512_soak_pit_update/2512_christmas/WhatsApp Image 2025-12-25 at 18.40.39.jpeg";
 import christmasImage6 from "@/assets/project/2512_soak_pit_update/2512_christmas/WhatsApp Image 2025-12-25 at 18.40.40.jpeg";
 import christmasImage7 from "@/assets/project/2512_soak_pit_update/2512_christmas/WhatsApp Image 2025-12-25 at 18.40.43.jpeg";
+// Well construction update images (June 2026)
+import wellUpdateHeaderImage from "@/assets/project/2606_well_update/header.webp";
+import wellUpdateDiggingImage from "@/assets/project/2606_well_update/1_digging.webp";
+import wellUpdateDescendingImage from "@/assets/project/2606_well_update/2_descending.webp";
+import wellUpdateShaftLadderImage from "@/assets/project/2606_well_update/3_shaft_ladder.webp";
+import wellUpdateDepthImage from "@/assets/project/2606_well_update/4_depth.webp";
+import wellUpdateBrickLinedImage from "@/assets/project/2606_well_update/5_brick_lined.webp";
+import wellUpdateSealedImage from "@/assets/project/2606_well_update/6_sealed.webp";
 
 export interface ArticleSubsection {
   title: string;
@@ -315,6 +323,85 @@ export const getNewsArticles = (t: (key: string) => string): NewsArticle[] => {
   );
 
   const articles: NewsArticle[] = [
+    {
+      id: "15",
+      title: t("news.article15.title"),
+      excerpt: t("news.article15.excerpt"),
+      content: t("news.article15.content"),
+      author: t("news.article15.author"),
+      date: "2026-06-30",
+      category: t("news.categories.construction_progress"),
+      image: wellUpdateHeaderImage,
+      imagePosition: "center 75%",
+      featured: true,
+      body: {
+        showQuote: false,
+        introduction: splitToArray(
+          t("news.article15.introduction"),
+          "news.article15.introduction"
+        ),
+        sections: [
+          {
+            title: t("news.article15.sections.construction.title"),
+            paragraphs: splitToArray(
+              t("news.article15.sections.construction.paragraphs"),
+              "news.article15.sections.construction.paragraphs"
+            ),
+            photoGallery: {
+              layout: "carousel",
+              media: [
+                {
+                  type: "image",
+                  src: wellUpdateDiggingImage,
+                  alt: t("news.article15.gallery.digging.alt"),
+                },
+                {
+                  type: "image",
+                  src: wellUpdateDescendingImage,
+                  alt: t("news.article15.gallery.descending.alt"),
+                },
+                {
+                  type: "image",
+                  src: wellUpdateShaftLadderImage,
+                  alt: t("news.article15.gallery.shaft_ladder.alt"),
+                },
+                {
+                  type: "image",
+                  src: wellUpdateDepthImage,
+                  alt: t("news.article15.gallery.depth.alt"),
+                },
+                {
+                  type: "image",
+                  src: wellUpdateBrickLinedImage,
+                  alt: t("news.article15.gallery.brick_lined.alt"),
+                },
+                {
+                  type: "image",
+                  src: wellUpdateSealedImage,
+                  alt: t("news.article15.gallery.sealed.alt"),
+                },
+              ],
+            },
+          },
+          {
+            title: t("news.article15.sections.next_step.title"),
+            paragraphs: splitToArray(
+              t("news.article15.sections.next_step.paragraphs"),
+              "news.article15.sections.next_step.paragraphs"
+            ),
+          },
+        ],
+        conclusion: splitToArray(
+          t("news.article15.conclusion"),
+          "news.article15.conclusion"
+        ),
+        conclusionCTA: {
+          text: t("news.article15.conclusion_cta"),
+          url: "/donation",
+          buttonLabel: t("news.article15.conclusion_cta_button"),
+        },
+      },
+    },
     {
       id: "14",
       title: t("news.article14.title"),

@@ -43,10 +43,11 @@ const NewsList = ({
             >
               {/* Image */}
               <div className="relative overflow-hidden aspect-video">
-                <img 
-                  src={article.image} 
+                <img
+                  src={article.image}
                   alt={article.title}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  style={article.imagePosition ? { objectPosition: article.imagePosition } : undefined}
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
                 <div className="absolute top-3 left-3 flex flex-col gap-2">
