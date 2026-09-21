@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RECEIPTS_BUCKET, supabase } from "@/lib/supabase";
-import type { Assignment, ProjectItem, Transfer, TransferSummary } from "./types";
+import type { Assignment, Phase, Project, ProjectItem, Transfer, TransferSummary } from "./types";
 
 const TRANSFER_KATEGORIE = "spendentransfer";
 
@@ -9,7 +9,7 @@ const TRANSFER_COLUMNS =
 const ASSIGNMENT_COLUMNS =
   "payment_log_id, item_id, qty_paid, amount_paid_ugx, external_transaction_id, expenditure_id, created_at";
 const ITEM_COLUMNS =
-  "project_item_id, phase, item_name, status, qty_needed, qty_paid, qty_open, total_ugx, paid_ugx, open_ugx, open_eur";
+  "project_item_id, project_id, projekt, phase, item_name, status, qty_needed, qty_paid, qty_open, total_ugx, paid_ugx, open_ugx, open_eur";
 
 export const queryKeys = {
   transfers: ["admin", "transfers"] as const,
@@ -288,3 +288,56 @@ export const useIsAppMember = (enabled: boolean) =>
       return data === true;
     },
   });
+
+/** Projekte und Phasen fuer die Filter und fuer das Anlegen neuer Positionen. */
+export const useProjects = () =>
+  useQuery({
+    queryKey: ["admin", "projects"] as const,
+    queryFn: async (): Promise<Project[]> => {
+      const { data, error } = await supabase.from("projects").select("project_id, name").order("project_id");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Project[];
+    },
+  });
+
+export const usePhases = () =>
+  useQuery({
+    queryKey: ["admin", "phases"] as const,
+    queryFn: async (): Promise<Phase[]> => {
+      const { data, error } = await supabase
+        .from("project_phase_translations")
+        .select("phase_id, phase_de")
+        .order("phase_de");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as Phase[];
+    },
+  });
+
+export interface NewProjectItem {
+  projectId: string;
+  phaseId: string;
+  titleDe: string;
+  titleEn: string | null;
+  qtyNeeded: number;
+  unitCostUgx: number;
+}
+
+/** Legt Position und Uebersetzung in einem Aufruf an und gibt die neue ID zurueck. */
+export const useCreateProjectItem = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: NewProjectItem): Promise<string> => {
+      const { data, error } = await supabase.rpc("create_project_item", {
+        p_project_id: input.projectId,
+        p_phase_id: input.phaseId,
+        p_title_de: input.titleDe,
+        p_qty_needed: input.qtyNeeded,
+        p_unit_cost_ugx: input.unitCostUgx,
+        p_title_en: input.titleEn,
+      });
+      if (error) throw new Error(error.message);
+      return data as string;
+    },
+    onSuccess: () => client.invalidateQueries({ queryKey: queryKeys.items }),
+  });
+};

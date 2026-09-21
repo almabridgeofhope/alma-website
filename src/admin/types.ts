@@ -16,6 +16,8 @@ export interface Transfer {
 /** Zeile aus v_project_items. */
 export interface ProjectItem {
   project_item_id: string;
+  project_id: string;
+  projekt: string | null;
   phase: string | null;
   item_name: string | null;
   status: string | null;
@@ -44,4 +46,14 @@ export interface TransferSummary extends Transfer {
   assignmentCount: number;
   assignedUgx: number;
   receiptCount: number;
+}
+
+export interface Phase {
+  phase_id: string;
+  phase_de: string | null;
+}
+
+export interface Project {
+  project_id: string;
+  name: string;
 }

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Check, Loader2, Plus, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -15,11 +15,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import NewProjectItemDialog from "./NewProjectItemDialog";
 import { formatQty, formatUgx, parseAmount } from "./format";
-import { unitCostUgx, useCreateAssignment } from "./queries";
+import { unitCostUgx, useCreateAssignment, usePhases } from "./queries";
 import type { ProjectItem } from "./types";
 
-const ALL_PHASES = "alle";
+const ALL = "alle";
 
 interface OpenItemsPickerProps {
   transferId: string;
@@ -28,27 +29,62 @@ interface OpenItemsPickerProps {
 }
 
 const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPickerProps) => {
+  const phases = usePhases();
   const [search, setSearch] = useState("");
-  const [phase, setPhase] = useState(ALL_PHASES);
+  const [projectId, setProjectId] = useState(ALL);
+  const [phase, setPhase] = useState(ALL);
   const [selected, setSelected] = useState<ProjectItem | null>(null);
+  const [isNewItemOpen, setIsNewItemOpen] = useState(false);
+  const [newItemId, setNewItemId] = useState<string | null>(null);
 
-  const phases = useMemo(
-    () => Array.from(new Set(items.map((item) => item.phase).filter((value): value is string => !!value))).sort(),
-    [items],
-  );
+  const open = useMemo(() => items.filter((item) => item.qty_open > 0), [items]);
+
+  const projects = useMemo(() => {
+    const byId = new Map<string, string>();
+    items.forEach((item) => byId.set(item.project_id, item.projekt ?? item.project_id));
+    return Array.from(byId, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [items]);
+
+  // Nur Phasen anbieten, in denen das gewählte Projekt überhaupt etwas offen hat.
+  const phaseOptions = useMemo(() => {
+    const names = open
+      .filter((item) => projectId === ALL || item.project_id === projectId)
+      .map((item) => item.phase)
+      .filter((value): value is string => !!value);
+    return Array.from(new Set(names)).sort();
+  }, [open, projectId]);
+
+  useEffect(() => {
+    if (phase !== ALL && !phaseOptions.includes(phase)) setPhase(ALL);
+  }, [phaseOptions, phase]);
+
+  // Eine frisch angelegte Position geht direkt in den Zuordnungsdialog.
+  useEffect(() => {
+    if (newItemId === null) return;
+    const created = items.find((item) => item.project_item_id === newItemId);
+    if (created) {
+      setSelected(created);
+      setNewItemId(null);
+    }
+  }, [items, newItemId]);
 
   const visible = useMemo(() => {
     const needle = search.trim().toLowerCase();
-    return items
-      .filter((item) => item.qty_open > 0)
-      .filter((item) => phase === ALL_PHASES || item.phase === phase)
+    return open
+      .filter((item) => projectId === ALL || item.project_id === projectId)
+      .filter((item) => phase === ALL || item.phase === phase)
       .filter(
         (item) =>
           needle === "" ||
           (item.item_name ?? "").toLowerCase().includes(needle) ||
           item.project_item_id.toLowerCase().includes(needle),
       );
-  }, [items, phase, search]);
+  }, [open, projectId, phase, search]);
+
+  const openUgx = visible.reduce((sum, item) => sum + item.open_ugx, 0);
+
+  const phaseIdOfName = (name: string): string | undefined =>
+    (phases.data ?? []).find((entry) => entry.phase_de === name)?.phase_id;
 
   return (
     <>
@@ -67,25 +103,47 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
           />
         </div>
 
-        <Select value={phase} onValueChange={setPhase}>
-          <SelectTrigger aria-label="Nach Phase filtern">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL_PHASES}>Alle Phasen</SelectItem>
-            {phases.map((option) => (
-              <SelectItem key={option} value={option}>
-                {option}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Select value={projectId} onValueChange={setProjectId}>
+            <SelectTrigger aria-label="Nach Projekt filtern">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Alle Projekte</SelectItem>
+              {projects.map((project) => (
+                <SelectItem key={project.id} value={project.id}>
+                  {project.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <p className="text-xs text-muted-foreground">
-          {visible.length} von {items.filter((item) => item.qty_open > 0).length} offenen Positionen
-        </p>
+          <Select value={phase} onValueChange={setPhase}>
+            <SelectTrigger aria-label="Nach Phase filtern">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Alle Phasen</SelectItem>
+              {phaseOptions.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <ScrollArea className="h-[28rem] rounded-md border border-border">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {visible.length} von {open.length} offen · {formatUgx(openUgx)}
+          </p>
+          <Button variant="outline" size="sm" onClick={() => setIsNewItemOpen(true)}>
+            <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
+            Neue Position
+          </Button>
+        </div>
+
+        <ScrollArea className="h-[26rem] rounded-md border border-border">
           <ul className="divide-y divide-border">
             {visible.map((item) => (
               <li key={item.project_item_id}>
@@ -97,8 +155,10 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{item.item_name ?? item.project_item_id}</p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {item.phase ?? "ohne Phase"} · offen {formatQty(item.qty_open)} ·{" "}
-                      {formatUgx(item.open_ugx)}
+                      {item.projekt ?? item.project_id} · {item.phase ?? "ohne Phase"}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      offen {formatQty(item.qty_open)} · {formatUgx(item.open_ugx)}
                     </p>
                     {assignedItemIds.has(item.project_item_id) && (
                       <Badge variant="secondary" className="mt-1">
@@ -113,18 +173,24 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
             ))}
 
             {visible.length === 0 && (
-              <li className="p-6 text-center text-sm text-muted-foreground">Keine offene Position gefunden.</li>
+              <li className="p-6 text-center text-sm text-muted-foreground">
+                Keine offene Position gefunden.
+              </li>
             )}
           </ul>
         </ScrollArea>
       </div>
 
+      <NewProjectItemDialog
+        open={isNewItemOpen}
+        onOpenChange={setIsNewItemOpen}
+        defaultProjectId={projectId === ALL ? undefined : projectId}
+        defaultPhaseId={phase === ALL ? undefined : phaseIdOfName(phase)}
+        onCreated={setNewItemId}
+      />
+
       {selected && (
-        <AddAssignmentDialog
-          transferId={transferId}
-          item={selected}
-          onClose={() => setSelected(null)}
-        />
+        <AddAssignmentDialog transferId={transferId} item={selected} onClose={() => setSelected(null)} />
       )}
     </>
   );
@@ -179,7 +245,7 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
   };
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
+    <Dialog open onOpenChange={(next) => !next && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{item.item_name ?? item.project_item_id}</DialogTitle>

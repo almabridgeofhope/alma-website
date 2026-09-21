@@ -1,8 +1,11 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +13,8 @@ import StatTile from "@/admin/StatTile";
 import { useNoIndex } from "@/admin/useNoIndex";
 import { useProjectItems } from "@/admin/queries";
 import { formatEur, formatQty, formatUgx } from "@/admin/format";
+import type { ProjectItem } from "@/admin/types";
+import { cn } from "@/lib/utils";
 
 const STATUS_LABELS: Record<string, string> = {
   outstanding: "offen",
@@ -17,19 +22,87 @@ const STATUS_LABELS: Record<string, string> = {
   paid: "bezahlt",
 };
 
-type Filter = "offen" | "bezahlt" | "alle";
+const ALL = "alle";
+
+type StatusFilter = "offen" | "bezahlt" | "alle";
+
+interface Summe {
+  schluessel: string;
+  name: string;
+  positionen: number;
+  offenePositionen: number;
+  gesamtUgx: number;
+  bezahltUgx: number;
+  offenUgx: number;
+  offenEur: number;
+}
+
+const summieren = (schluessel: string, name: string, rows: ProjectItem[]): Summe => ({
+  schluessel,
+  name,
+  positionen: rows.length,
+  offenePositionen: rows.filter((item) => item.qty_open > 0).length,
+  gesamtUgx: rows.reduce((sum, item) => sum + (item.total_ugx ?? 0), 0),
+  bezahltUgx: rows.reduce((sum, item) => sum + (item.paid_ugx ?? 0), 0),
+  offenUgx: rows.reduce((sum, item) => sum + item.open_ugx, 0),
+  offenEur: rows.reduce((sum, item) => sum + (item.open_eur ?? 0), 0),
+});
+
+const anteilBezahlt = (summe: Summe): number =>
+  summe.gesamtUgx > 0 ? Math.round((summe.bezahltUgx / summe.gesamtUgx) * 100) : 0;
+
+const gruppieren = (rows: ProjectItem[], schluessel: (item: ProjectItem) => string): Map<string, ProjectItem[]> => {
+  const gruppen = new Map<string, ProjectItem[]>();
+  rows.forEach((item) => {
+    const key = schluessel(item);
+    gruppen.set(key, [...(gruppen.get(key) ?? []), item]);
+  });
+  return gruppen;
+};
 
 const AdminItems = () => {
   useNoIndex("Positionen · Projektabrechnung");
   const items = useProjectItems();
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<Filter>("offen");
+  const [projectId, setProjectId] = useState(ALL);
+  const [phase, setPhase] = useState(ALL);
+  const [status, setStatus] = useState<StatusFilter>("offen");
+
+  // Eigene Memo, damit die Auswertungen unten nicht bei jedem Render neu rechnen.
+  const alle = useMemo(() => items.data ?? [], [items.data]);
+
+  const projects = useMemo(() => {
+    const byId = new Map<string, string>();
+    alle.forEach((item) => byId.set(item.project_id, item.projekt ?? item.project_id));
+    return Array.from(byId, ([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+  }, [alle]);
+
+  const phaseOptions = useMemo(() => {
+    const names = alle
+      .filter((item) => projectId === ALL || item.project_id === projectId)
+      .map((item) => item.phase)
+      .filter((value): value is string => !!value);
+    return Array.from(new Set(names)).sort();
+  }, [alle, projectId]);
+
+  /** Die Aufschlüsselung folgt dem Projektfilter, nicht dem Status- oder Suchfilter. */
+  const proProjekt = useMemo(() => {
+    const relevant = alle.filter((item) => projectId === ALL || item.project_id === projectId);
+    return Array.from(gruppieren(relevant, (item) => item.project_id), ([id, rows]) => ({
+      projekt: summieren(id, rows[0]?.projekt ?? id, rows),
+      phasen: Array.from(gruppieren(rows, (item) => item.phase ?? "ohne Phase"), ([name, phaseRows]) =>
+        summieren(name, name, phaseRows),
+      ).sort((a, b) => b.offenUgx - a.offenUgx),
+    })).sort((a, b) => b.projekt.offenUgx - a.projekt.offenUgx);
+  }, [alle, projectId]);
 
   const rows = useMemo(() => {
     const needle = search.trim().toLowerCase();
-    return (items.data ?? [])
+    return alle
+      .filter((item) => projectId === ALL || item.project_id === projectId)
+      .filter((item) => phase === ALL || item.phase === phase)
       .filter((item) =>
-        filter === "alle" ? true : filter === "offen" ? item.qty_open > 0 : item.qty_open === 0,
+        status === "alle" ? true : status === "offen" ? item.qty_open > 0 : item.qty_open === 0,
       )
       .filter(
         (item) =>
@@ -38,16 +111,9 @@ const AdminItems = () => {
           (item.phase ?? "").toLowerCase().includes(needle) ||
           item.project_item_id.toLowerCase().includes(needle),
       );
-  }, [items.data, filter, search]);
+  }, [alle, projectId, phase, status, search]);
 
-  const totals = useMemo(() => {
-    const all = items.data ?? [];
-    return {
-      openEur: all.reduce((sum, item) => sum + (item.open_eur ?? 0), 0),
-      openUgx: all.reduce((sum, item) => sum + item.open_ugx, 0),
-      paidUgx: all.reduce((sum, item) => sum + (item.paid_ugx ?? 0), 0),
-    };
-  }, [items.data]);
+  const gesamt = summieren("gesamt", "Gesamt", alle);
 
   return (
     <div className="space-y-8">
@@ -59,10 +125,63 @@ const AdminItems = () => {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatTile label="Noch offen" value={formatEur(totals.openEur)} hint="zum aktuellen Kurs" />
-        <StatTile label="Noch offen" value={formatUgx(totals.openUgx)} hint="in Schilling" />
-        <StatTile label="Bereits bezahlt" value={formatUgx(totals.paidUgx)} hint="in Schilling" />
+        <StatTile label="Noch offen" value={formatEur(gesamt.offenEur)} hint="zum aktuellen Kurs" />
+        <StatTile label="Noch offen" value={formatUgx(gesamt.offenUgx)} hint="in Schilling" />
+        <StatTile
+          label="Bereits bezahlt"
+          value={`${anteilBezahlt(gesamt)} %`}
+          hint={`${formatUgx(gesamt.bezahltUgx)} von ${formatUgx(gesamt.gesamtUgx)}`}
+          tone="positive"
+        />
       </div>
+
+      {items.isPending ? (
+        <Skeleton className="h-64 w-full" />
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {proProjekt.map(({ projekt, phasen }) => (
+            <Card key={projekt.schluessel} className="shadow-card">
+              <CardHeader className="pb-3">
+                <div className="flex items-baseline justify-between gap-3">
+                  <CardTitle className="text-base">{projekt.name}</CardTitle>
+                  <span className="text-sm tabular-nums text-muted-foreground">
+                    {formatEur(projekt.offenEur)} offen
+                  </span>
+                </div>
+                <Progress value={anteilBezahlt(projekt)} className="mt-2 h-2" />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {anteilBezahlt(projekt)} % bezahlt · {projekt.offenePositionen} von {projekt.positionen}{" "}
+                  Positionen offen
+                </p>
+              </CardHeader>
+
+              <CardContent className="space-y-1">
+                {phasen.map((p) => (
+                  <button
+                    key={p.schluessel}
+                    type="button"
+                    onClick={() => {
+                      setProjectId(projekt.schluessel);
+                      setPhase(p.name);
+                      setStatus(p.offenUgx > 0 ? "offen" : "alle");
+                    }}
+                    className={cn(
+                      "flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-accent",
+                      phase === p.name && "bg-primary-light",
+                    )}
+                  >
+                    <span className="min-w-0 flex-1 truncate text-sm">{p.name}</span>
+                    <Progress value={anteilBezahlt(p)} className="h-1.5 w-20 shrink-0" />
+                    <span className="w-28 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
+                      {p.offenUgx > 0 ? formatUgx(p.offenUgx) : "vollständig"}
+                    </span>
+                  </button>
+                ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 sm:max-w-xs">
@@ -79,7 +198,41 @@ const AdminItems = () => {
           />
         </div>
 
-        <Tabs value={filter} onValueChange={(value) => setFilter(value as Filter)}>
+        <Select
+          value={projectId}
+          onValueChange={(value) => {
+            setProjectId(value);
+            setPhase(ALL);
+          }}
+        >
+          <SelectTrigger className="w-48" aria-label="Nach Projekt filtern">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Alle Projekte</SelectItem>
+            {projects.map((project) => (
+              <SelectItem key={project.id} value={project.id}>
+                {project.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={phase} onValueChange={setPhase}>
+          <SelectTrigger className="w-56" aria-label="Nach Phase filtern">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Alle Phasen</SelectItem>
+            {phaseOptions.map((option) => (
+              <SelectItem key={option} value={option}>
+                {option}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Tabs value={status} onValueChange={(value) => setStatus(value as StatusFilter)}>
           <TabsList>
             <TabsTrigger value="offen">Offen</TabsTrigger>
             <TabsTrigger value="bezahlt">Bezahlt</TabsTrigger>
@@ -88,6 +241,20 @@ const AdminItems = () => {
         </Tabs>
 
         <p className="text-sm text-muted-foreground">{rows.length} Positionen</p>
+
+        {(projectId !== ALL || phase !== ALL || search !== "") && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setProjectId(ALL);
+              setPhase(ALL);
+              setSearch("");
+            }}
+          >
+            Filter zurücksetzen
+          </Button>
+        )}
       </div>
 
       <Card className="shadow-card">
@@ -118,7 +285,7 @@ const AdminItems = () => {
                       <TableCell>
                         <p className="font-medium leading-tight">{item.item_name ?? item.project_item_id}</p>
                         <p className="text-xs text-muted-foreground">
-                          {item.project_item_id}
+                          {item.project_item_id} · {item.projekt ?? item.project_id}
                           {item.phase ? ` · ${item.phase}` : ""}
                         </p>
                       </TableCell>
