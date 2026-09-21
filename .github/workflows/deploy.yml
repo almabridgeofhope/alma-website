@@ -12,6 +12,8 @@ name: Deploy React App to GitHub Pages
 # VITE_GOOGLE_API_KEY            - Google Sheets API Key
 # VITE_GOOGLE_SHEET_ID           - Google Sheet ID
 # VITE_DONATION_WEBHOOK_URL      - Donation Webhook Apps Script URL
+# VITE_SUPABASE_URL              - Supabase project URL (interner Bereich /admin)
+# VITE_SUPABASE_PUBLISHABLE_KEY  - Supabase publishable key (oeffentlich, RLS schuetzt die Daten)
 #
 # Backend Secrets (synced to Apps Script automatically):
 # VITE_STRIPE_TEST_SECRET_KEY    - Stripe Test Secret Key (sk_test_...)
@@ -110,6 +112,8 @@ jobs:
         VITE_FORM_SUBMIT_URL: ${{ secrets.VITE_FORM_SUBMIT_URL || vars.VITE_FORM_SUBMIT_URL }}
         VITE_NEWSLETTER_ENDPOINT: ${{ secrets.VITE_NEWSLETTER_ENDPOINT }}
         VITE_DONATION_WEBHOOK_URL: ${{ secrets.VITE_DONATION_WEBHOOK_URL }}
+        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         VITE_SEPA_IBAN: ${{ secrets.VITE_SEPA_IBAN }}
         VITE_SEPA_BIC: ${{ secrets.VITE_SEPA_BIC }}
         VITE_SEPA_ACCOUNT_HOLDER: ${{ secrets.VITE_SEPA_ACCOUNT_HOLDER }}

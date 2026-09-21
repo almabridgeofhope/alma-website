@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, Navigate, useNavigate } from "react-router-dom";
-import React, { useEffect } from "react";
+import React, { Suspense, useEffect } from "react";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ShoppingCartProvider } from "@/contexts/ShoppingCartContext";
 import { CartSidebar } from "@/components/CartSidebar";
@@ -25,6 +25,15 @@ import Membership from "./pages/Membership";
 import MembershipSuccess from "./pages/MembershipSuccess";
 import GiftDonations from "./pages/GiftDonations";
 import NotFound from "./pages/NotFound";
+
+// Der Verwaltungsbereich wird nachgeladen, damit der Supabase-Client nicht im
+// öffentlichen Bundle landet.
+const AdminLogin = React.lazy(() => import("./pages/admin/AdminLogin"));
+const AdminLayout = React.lazy(() => import("./admin/AdminLayout"));
+const AdminTransfers = React.lazy(() => import("./pages/admin/AdminTransfers"));
+const AdminTransferDetail = React.lazy(() => import("./pages/admin/AdminTransferDetail"));
+const AdminItems = React.lazy(() => import("./pages/admin/AdminItems"));
+const RequireAuth = React.lazy(() => import("./admin/RequireAuth"));
 
 const queryClient = new QueryClient();
 
@@ -152,9 +161,18 @@ const IndexHtmlRedirect = () => {
   return <Navigate to="/" replace />;
 };
 
+const AdminFallback = () => (
+  <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+    Wird geladen …
+  </div>
+);
+
 const AppContent = () => {
   const location = useLocation();
   const isDonationPage = location.pathname === '/donation';
+  // Der interne Bereich trägt seine eigene Navigation und kennt weder Warenkorb
+  // noch Cookie-Banner.
+  const isAdminArea = location.pathname.startsWith('/admin');
 
   // Debug: Log route changes
   useEffect(() => {
@@ -187,8 +205,8 @@ const AppContent = () => {
   return (
     <>
       <ScrollToTop />
-      <CookieBanner />
-      <Navigation />
+      {!isAdminArea && <CookieBanner />}
+      {!isAdminArea && <Navigation />}
       <Routes>
         <Route path="/" element={<Index />} />
         {/* Redirect /index.html to / to prevent 404 flash, but only if no redirect path is stored */}
@@ -205,12 +223,36 @@ const AppContent = () => {
         <Route path="/donation" element={<Donation />} />
         <Route path="/donation/success" element={<DonationSuccess />} />
         <Route path="/spenden-statt-geschenke" element={<GiftDonations />} />
+        {/* Interner Bereich: Projektabrechnung */}
+        <Route
+          path="/admin/login"
+          element={
+            <Suspense fallback={<AdminFallback />}>
+              <AdminLogin />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <Suspense fallback={<AdminFallback />}>
+              <RequireAuth>
+                <AdminLayout />
+              </RequireAuth>
+            </Suspense>
+          }
+        >
+          <Route index element={<Navigate to="/admin/transfers" replace />} />
+          <Route path="transfers" element={<AdminTransfers />} />
+          <Route path="transfers/:transferId" element={<AdminTransferDetail />} />
+          <Route path="positionen" element={<AdminItems />} />
+        </Route>
         {/* Redirect all /dev/* routes to their non-dev equivalents */}
         <Route path="/dev/*" element={<DevRedirect />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-      {!isDonationPage && <CartSidebar basePath="" />}
+      {!isDonationPage && !isAdminArea && <CartSidebar basePath="" />}
       <NetworkRecovery />
     </>
   );
