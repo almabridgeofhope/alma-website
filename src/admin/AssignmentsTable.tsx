@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, FileText, Loader2, Paperclip, Trash2 } from "lucide-react";
+import { useReceiptPicker } from "./useReceiptPicker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,10 +20,9 @@ import {
   assignmentUgx,
   isReceiptFile,
   openReceipt,
-  receiptLabel,
   useDeleteAssignment,
+  useSetAssignmentReceipt,
   useUpdateAssignment,
-  useUploadAssignmentReceipt,
 } from "./queries";
 import type { Assignment, ProjectItem } from "./types";
 
@@ -35,10 +35,10 @@ interface AssignmentsTableProps {
 const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTableProps) => {
   const updateAssignment = useUpdateAssignment(transferId);
   const deleteAssignment = useDeleteAssignment(transferId);
-  const uploadReceipt = useUploadAssignmentReceipt(transferId);
+  const setReceipt = useSetAssignmentReceipt(transferId);
+  const { pick, isPicking } = useReceiptPicker();
   const [pendingDelete, setPendingDelete] = useState<Assignment | null>(null);
-  const [uploadingId, setUploadingId] = useState<string | null>(null);
-  const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const patch = async (id: string, next: Partial<Assignment>, label: string) => {
     try {
@@ -53,16 +53,17 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
     }
   };
 
-  const upload = async (paymentLogId: string, file: File | undefined) => {
-    if (!file) return;
-    setUploadingId(paymentLogId);
+  const belegWaehlen = async (paymentLogId: string) => {
+    const datei = await pick();
+    if (!datei) return;
+    setBusyId(paymentLogId);
     try {
-      await uploadReceipt.mutateAsync({ paymentLogId, file });
-      toast.success("Beleg hochgeladen.");
+      await setReceipt.mutateAsync({ paymentLogId, receiptUrl: datei.url });
+      toast.success(`Beleg „${datei.name}" verknüpft.`);
     } catch (error) {
       toast.error((error as Error).message);
     } finally {
-      setUploadingId(null);
+      setBusyId(null);
     }
   };
 
@@ -144,27 +145,16 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
                   </TableCell>
 
                   <TableCell>
-                    <input
-                      ref={(element) => {
-                        fileInputs.current[assignment.payment_log_id] = element;
-                      }}
-                      type="file"
-                      accept="application/pdf,image/*"
-                      className="sr-only"
-                      onChange={(event) => upload(assignment.payment_log_id, event.target.files?.[0])}
-                    />
                     <div className="flex items-center gap-1">
                       {hasFile && receipt && (
                         <Button
                           variant="link"
                           size="sm"
-                          className="h-auto max-w-[12rem] justify-start truncate px-0"
-                          onClick={() =>
-                            openReceipt(receipt).catch((error: Error) => toast.error(error.message))
-                          }
+                          className="h-auto px-0"
+                          onClick={() => openReceipt(receipt)}
                         >
                           <FileText className="mr-1 h-4 w-4 shrink-0" aria-hidden="true" />
-                          <span className="truncate">{receiptLabel(receipt)}</span>
+                          öffnen
                         </Button>
                       )}
 
@@ -185,15 +175,15 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
                       <Button
                         variant="ghost"
                         size="sm"
-                        disabled={uploadingId === assignment.payment_log_id}
-                        onClick={() => fileInputs.current[assignment.payment_log_id]?.click()}
+                        disabled={isPicking || busyId === assignment.payment_log_id}
+                        onClick={() => belegWaehlen(assignment.payment_log_id)}
                       >
-                        {uploadingId === assignment.payment_log_id ? (
+                        {busyId === assignment.payment_log_id ? (
                           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                         ) : (
                           <Paperclip className="h-4 w-4" aria-hidden="true" />
                         )}
-                        <span className="sr-only">{hasFile ? "Beleg ersetzen" : "Beleg hochladen"}</span>
+                        <span className="sr-only">{hasFile ? "Beleg ersetzen" : "Beleg hinzufügen"}</span>
                       </Button>
                     </div>
                   </TableCell>

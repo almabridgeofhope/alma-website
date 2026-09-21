@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { RECEIPTS_BUCKET, supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import type { Assignment, Phase, Project, ProjectItem, Transfer, TransferSummary } from "./types";
 
 const TRANSFER_KATEGORIE = "spendentransfer";
@@ -149,21 +149,20 @@ export interface NewAssignment {
   itemId: string;
   qtyPaid: number;
   amountPaidUgx: number | null;
-  /** Der Beleg ist Pflicht: erst die Datei, dann die Zeile. */
-  receipt: File;
+  /** Der Beleg ist Pflicht: der Link auf die Datei in Google Drive. */
+  receiptUrl: string;
 }
 
 export const useCreateAssignment = (transferId: string) => {
   const refresh = useRefresh(transferId);
   return useMutation({
     mutationFn: async (input: NewAssignment) => {
-      const path = await uploadToBucket(receiptPath(input.transferId, input.receipt), input.receipt);
       const { error } = await supabase.from("payment_log").insert({
         external_transaction_id: input.transferId,
         item_id: input.itemId,
         qty_paid: input.qtyPaid,
         amount_paid_ugx: input.amountPaidUgx,
-        expenditure_id: path,
+        expenditure_id: input.receiptUrl,
       });
       if (error) throw new Error(error.message);
     },
@@ -193,40 +192,18 @@ export const useDeleteAssignment = (transferId: string) => {
   });
 };
 
-/** Dateinamen entschärfen, damit der Pfad im Bucket lesbar bleibt. */
-const safeFileName = (name: string): string =>
-  name
-    .normalize("NFKD")
-    .replace(/[^\w.-]+/g, "_")
-    .slice(-80);
-
-/** Der Zeitstempel haelt den Pfad eindeutig, auch bevor die Zeile eine ID hat. */
-const receiptPath = (transferId: string, file: File): string =>
-  `${transferId}/${Date.now()}__${safeFileName(file.name)}`;
-
-/** Ein Beleg mit Datei traegt einen Pfad; kurze Altwerte sind blosse Nummern. */
+/** Ein echter Beleg ist ein Link auf die Datei in Drive; kurze Altwerte sind blosse Nummern. */
 export const isReceiptFile = (expenditureId: string | null): boolean =>
-  expenditureId !== null && (expenditureId.includes("/") || expenditureId.startsWith("http"));
-
-/** Was in der Zeile steht: Dateiname statt vollem Pfad. */
-export const receiptLabel = (expenditureId: string): string =>
-  expenditureId.split("/").pop()?.split("__").pop() ?? expenditureId;
-
-async function uploadToBucket(path: string, file: File): Promise<string> {
-  const { error } = await supabase.storage.from(RECEIPTS_BUCKET).upload(path, file, { upsert: true });
-  if (error) throw new Error(error.message);
-  return path;
-}
+  expenditureId !== null && expenditureId.startsWith("http");
 
 /** Quittung aus Uganda an einer bestehenden Zuordnung ersetzen oder nachreichen. */
-export const useUploadAssignmentReceipt = (transferId: string) => {
+export const useSetAssignmentReceipt = (transferId: string) => {
   const refresh = useRefresh(transferId);
   return useMutation({
-    mutationFn: async ({ paymentLogId, file }: { paymentLogId: string; file: File }) => {
-      const path = await uploadToBucket(receiptPath(transferId, file), file);
+    mutationFn: async ({ paymentLogId, receiptUrl }: { paymentLogId: string; receiptUrl: string }) => {
       const { error } = await supabase
         .from("payment_log")
-        .update({ expenditure_id: path })
+        .update({ expenditure_id: receiptUrl })
         .eq("payment_log_id", paymentLogId);
       if (error) throw new Error(error.message);
     },
@@ -235,14 +212,13 @@ export const useUploadAssignmentReceipt = (transferId: string) => {
 };
 
 /** Bank- oder Wise-Beleg an der Überweisung selbst. */
-export const useUploadTransferReceipt = (transferId: string) => {
+export const useSetTransferReceipt = (transferId: string) => {
   const refresh = useRefresh(transferId);
   return useMutation({
-    mutationFn: async (file: File) => {
-      const path = await uploadToBucket(`${transferId}/ueberweisung__${safeFileName(file.name)}`, file);
+    mutationFn: async (receiptUrl: string) => {
       const { error } = await supabase
         .from("transactions")
-        .update({ receipt_url: path })
+        .update({ receipt_url: receiptUrl })
         .eq("external_transaction_id", transferId);
       if (error) throw new Error(error.message);
     },
@@ -250,15 +226,9 @@ export const useUploadTransferReceipt = (transferId: string) => {
   });
 };
 
-/** Altbestand kann eine fertige URL enthalten, Uploads liegen als Pfad im Bucket. */
+/** Belege liegen in Drive, gespeichert ist der Link darauf. */
 export async function openReceipt(receipt: string): Promise<void> {
-  if (receipt.startsWith("http")) {
-    window.open(receipt, "_blank", "noopener");
-    return;
-  }
-  const { data, error } = await supabase.storage.from(RECEIPTS_BUCKET).createSignedUrl(receipt, 60);
-  if (error) throw new Error(error.message);
-  window.open(data.signedUrl, "_blank", "noopener");
+  window.open(receipt, "_blank", "noopener");
 }
 
 /** Aktueller Planungskurs aus app_config — dieselbe Zahl, mit der v_project_items rechnet. */

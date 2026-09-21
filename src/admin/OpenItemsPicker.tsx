@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Check, Loader2, Plus, Search } from "lucide-react";
+import { Check, FileText, Loader2, Plus, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +16,8 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import NewProjectItemDialog from "./NewProjectItemDialog";
+import { useReceiptPicker } from "./useReceiptPicker";
+import type { DriveFile } from "@/lib/googleDrive";
 import { formatQty, formatUgx, parseAmount } from "./format";
 import { unitCostUgx, useCreateAssignment, usePhases } from "./queries";
 import type { ProjectItem } from "./types";
@@ -209,7 +211,8 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
   const [qty, setQty] = useState(String(item.qty_open).replace(".", ","));
   const [amount, setAmount] = useState(String(suggestedAmount));
   const [amountTouched, setAmountTouched] = useState(false);
-  const [receipt, setReceipt] = useState<File | null>(null);
+  const [receipt, setReceipt] = useState<DriveFile | null>(null);
+  const { pick, isPicking } = useReceiptPicker();
 
   const changeQty = (next: string) => {
     setQty(next);
@@ -236,7 +239,7 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
         itemId: item.project_item_id,
         qtyPaid: parsedQty,
         amountPaidUgx: parseAmount(amount),
-        receipt,
+        receiptUrl: receipt.url,
       });
       toast.success(`${item.item_name ?? item.project_item_id} zugeordnet.`);
       onClose();
@@ -285,17 +288,29 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="receipt">Beleg</Label>
-            <Input
-              id="receipt"
-              type="file"
-              required
-              accept="application/pdf,image/*"
-              className="cursor-pointer file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-muted file:px-2 file:py-1 file:text-sm"
-              onChange={(event) => setReceipt(event.target.files?.[0] ?? null)}
-            />
+            <Label>Beleg</Label>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isPicking}
+                onClick={async () => {
+                  const datei = await pick();
+                  if (datei) setReceipt(datei);
+                }}
+              >
+                {isPicking ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <FileText className="mr-2 h-4 w-4" aria-hidden="true" />
+                )}
+                {receipt ? "Anderen Beleg wählen" : "Beleg aus Drive"}
+              </Button>
+              {receipt && <span className="min-w-0 truncate text-sm">{receipt.name}</span>}
+            </div>
             <p className="text-xs text-muted-foreground">
-              Pflicht: die Quittung aus Uganda, PDF oder Foto. Sie wird der Nachweis dieser Zuordnung.
+              Pflicht: die Quittung aus Uganda. Im Auswahlfenster lässt sie sich hochladen oder aus dem
+              Belegordner wählen.
             </p>
           </div>
 

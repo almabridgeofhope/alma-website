@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { AlertCircle, ArrowLeft, FileText, Loader2, Paperclip } from "lucide-react";
@@ -10,6 +10,7 @@ import AssignmentsTable from "@/admin/AssignmentsTable";
 import OpenItemsPicker from "@/admin/OpenItemsPicker";
 import StatTile from "@/admin/StatTile";
 import { useNoIndex } from "@/admin/useNoIndex";
+import { useReceiptPicker } from "@/admin/useReceiptPicker";
 import { absolute, formatDate, formatEur, formatUgx } from "@/admin/format";
 import {
   assignmentUgx,
@@ -18,7 +19,7 @@ import {
   useEurRate,
   useProjectItems,
   useTransferSummaries,
-  useUploadTransferReceipt,
+  useSetTransferReceipt,
 } from "@/admin/queries";
 
 const AdminTransferDetail = () => {
@@ -29,9 +30,9 @@ const AdminTransferDetail = () => {
   const items = useProjectItems();
   const assignments = useAssignments(transferId);
   const rate = useEurRate();
-  const uploadTransferReceipt = useUploadTransferReceipt(transferId);
-  const fileInput = useRef<HTMLInputElement>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const setTransferReceipt = useSetTransferReceipt(transferId);
+  const { pick, isPicking } = useReceiptPicker();
+  const [isSaving, setIsSaving] = useState(false);
 
   const transfer = (transfers.data ?? []).find(
     (candidate) => candidate.external_transaction_id === transferId,
@@ -51,16 +52,17 @@ const AdminTransferDetail = () => {
   const transferredEur = absolute(transfer?.amount);
   const assignedEur = rate.data ? assignedUgx / rate.data : null;
 
-  const uploadReceipt = async (file: File | undefined) => {
-    if (!file) return;
-    setIsUploading(true);
+  const belegWaehlen = async () => {
+    const datei = await pick();
+    if (!datei) return;
+    setIsSaving(true);
     try {
-      await uploadTransferReceipt.mutateAsync(file);
-      toast.success("Überweisungsbeleg hochgeladen.");
+      await setTransferReceipt.mutateAsync(datei.url);
+      toast.success(`Überweisungsbeleg „${datei.name}" verknüpft.`);
     } catch (error) {
       toast.error((error as Error).message);
     } finally {
-      setIsUploading(false);
+      setIsSaving(false);
     }
   };
 
@@ -148,30 +150,19 @@ const AdminTransferDetail = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() =>
-                  openReceipt(transfer.receipt_url as string).catch((error: Error) =>
-                    toast.error(error.message),
-                  )
-                }
+                onClick={() => openReceipt(transfer.receipt_url as string)}
               >
                 <FileText className="mr-2 h-4 w-4" aria-hidden="true" />
                 Öffnen
               </Button>
             )}
-            <input
-              ref={fileInput}
-              type="file"
-              accept="application/pdf,image/*"
-              className="sr-only"
-              onChange={(event) => uploadReceipt(event.target.files?.[0])}
-            />
-            <Button variant="secondary" size="sm" disabled={isUploading} onClick={() => fileInput.current?.click()}>
-              {isUploading ? (
+            <Button variant="secondary" size="sm" disabled={isPicking || isSaving} onClick={belegWaehlen}>
+              {isSaving || isPicking ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
               ) : (
                 <Paperclip className="mr-2 h-4 w-4" aria-hidden="true" />
               )}
-              {transfer.receipt_url ? "Ersetzen" : "Hochladen"}
+              {transfer.receipt_url ? "Ersetzen" : "Aus Drive wählen"}
             </Button>
           </div>
         </CardContent>
