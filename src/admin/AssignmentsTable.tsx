@@ -45,11 +45,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
       await updateAssignment.mutateAsync({ id, patch: next });
       toast.success(`${label} gespeichert.`);
     } catch (error) {
-      // Die Belegpflicht schlaegt hier zu, wenn eine Altzeile ohne Beleg bearbeitet wird.
-      const message = (error as Error).message.includes("payment_log_beleg_pflicht")
-        ? "Diese Zuordnung hat noch keinen Beleg. Bitte zuerst einen hochladen."
-        : (error as Error).message;
-      toast.error(message);
+      toast.error((error as Error).message);
     }
   };
 

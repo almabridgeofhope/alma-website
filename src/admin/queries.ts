@@ -149,8 +149,8 @@ export interface NewAssignment {
   itemId: string;
   qtyPaid: number;
   amountPaidUgx: number | null;
-  /** Der Beleg ist Pflicht: der Link auf die Datei in Google Drive. */
-  receiptUrl: string;
+  /** Link auf die Datei in Google Drive, sofern die Quittung schon vorliegt. */
+  receiptUrl: string | null;
 }
 
 export const useCreateAssignment = (transferId: string) => {

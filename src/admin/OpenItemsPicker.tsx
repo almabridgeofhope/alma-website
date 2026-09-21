@@ -228,10 +228,6 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
       toast.error("Die Menge muss größer als 0 sein.");
       return;
     }
-    if (receipt === null) {
-      toast.error("Ohne Beleg lässt sich die Position nicht zuordnen.");
-      return;
-    }
 
     try {
       await createAssignment.mutateAsync({
@@ -239,7 +235,7 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
         itemId: item.project_item_id,
         qtyPaid: parsedQty,
         amountPaidUgx: parseAmount(amount),
-        receiptUrl: receipt.url,
+        receiptUrl: receipt?.url ?? null,
       });
       toast.success(`${item.item_name ?? item.project_item_id} zugeordnet.`);
       onClose();
@@ -309,8 +305,8 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
               {receipt && <span className="min-w-0 truncate text-sm">{receipt.name}</span>}
             </div>
             <p className="text-xs text-muted-foreground">
-              Pflicht: die Quittung aus Uganda. Im Auswahlfenster lässt sie sich hochladen oder aus dem
-              Belegordner wählen.
+              Die Quittung aus Uganda. Im Auswahlfenster lässt sie sich hochladen oder aus dem
+              Belegordner wählen — sie kann auch später nachgereicht werden.
             </p>
           </div>
 
@@ -318,7 +314,7 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
             <Button type="button" variant="ghost" onClick={onClose}>
               Abbrechen
             </Button>
-            <Button type="submit" disabled={createAssignment.isPending || receipt === null}>
+            <Button type="submit" disabled={createAssignment.isPending}>
               {createAssignment.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
               )}

@@ -12,7 +12,8 @@
 const trimmed = (value?: string): string => (value ?? "").trim();
 
 export const GOOGLE_CLIENT_ID = trimmed(import.meta.env.VITE_GOOGLE_CLIENT_ID);
-export const GOOGLE_API_KEY = trimmed(import.meta.env.VITE_GOOGLE_API_KEY);
+// Eigener Name, weil VITE_GOOGLE_API_KEY im oeffentlichen Teil den Sheets gehoert.
+export const GOOGLE_API_KEY = trimmed(import.meta.env.VITE_GOOGLE_PICKER_API_KEY);
 export const GOOGLE_APP_ID = trimmed(import.meta.env.VITE_GOOGLE_APP_ID);
 export const DRIVE_FOLDER_ID = trimmed(import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID);
 

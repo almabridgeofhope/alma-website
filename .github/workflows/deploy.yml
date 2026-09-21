@@ -15,7 +15,7 @@ name: Deploy React App to GitHub Pages
 # VITE_SUPABASE_URL              - Supabase project URL (interner Bereich /admin)
 # VITE_SUPABASE_PUBLISHABLE_KEY  - Supabase publishable key (oeffentlich, RLS schuetzt die Daten)
 # VITE_GOOGLE_CLIENT_ID          - OAuth-Client des Google-Cloud-Projekts (Belege in Drive)
-# VITE_GOOGLE_API_KEY            - API-Key fuer den Google Picker
+# VITE_GOOGLE_PICKER_API_KEY     - API-Key fuer den Google Picker (nicht VITE_GOOGLE_API_KEY, das sind die Sheets)
 # VITE_GOOGLE_APP_ID             - Projektnummer des Google-Cloud-Projekts
 # VITE_GOOGLE_DRIVE_FOLDER_ID    - Ordner in Drive, in dem die Belege liegen
 #
@@ -119,7 +119,7 @@ jobs:
         VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
         VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
-        VITE_GOOGLE_API_KEY: ${{ secrets.VITE_GOOGLE_API_KEY }}
+        VITE_GOOGLE_PICKER_API_KEY: ${{ secrets.VITE_GOOGLE_PICKER_API_KEY }}
         VITE_GOOGLE_APP_ID: ${{ secrets.VITE_GOOGLE_APP_ID }}
         VITE_GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.VITE_GOOGLE_DRIVE_FOLDER_ID }}
         VITE_SEPA_IBAN: ${{ secrets.VITE_SEPA_IBAN }}
