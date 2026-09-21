@@ -140,7 +140,7 @@ const AdminTransferDetail = () => {
           <div>
             <p className="text-sm font-medium">Überweisungsbeleg</p>
             <p className="text-xs text-muted-foreground">
-              Bank- oder Wise-Beleg der Überweisung selbst, einer je Transfer.
+              Beleg des Spendentransfers, einer je Transfer.
             </p>
           </div>
           <div className="flex items-center gap-2">
