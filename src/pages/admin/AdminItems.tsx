@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import NewProjectItemDialog from "@/admin/NewProjectItemDialog";
 import StatTile from "@/admin/StatTile";
 import { useNoIndex } from "@/admin/useNoIndex";
 import { useProjectItems } from "@/admin/queries";
@@ -67,6 +68,7 @@ const AdminItems = () => {
   const [projectId, setProjectId] = useState(ALL);
   const [phase, setPhase] = useState(ALL);
   const [status, setStatus] = useState<StatusFilter>("offen");
+  const [isNewItemOpen, setIsNewItemOpen] = useState(false);
 
   // Eigene Memo, damit die Auswertungen unten nicht bei jedem Render neu rechnen.
   const alle = useMemo(() => items.data ?? [], [items.data]);
@@ -117,11 +119,17 @@ const AdminItems = () => {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Projektpositionen</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Zahlungsstand je Position. Die Mengen pflegt die Zuordnung an der Überweisung.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Projektpositionen</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Zahlungsstand je Position. Die Mengen pflegt die Zuordnung an der Überweisung.
+          </p>
+        </div>
+        <Button onClick={() => setIsNewItemOpen(true)}>
+          <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+          Neue Position
+        </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -256,6 +264,18 @@ const AdminItems = () => {
           </Button>
         )}
       </div>
+
+      <NewProjectItemDialog
+        open={isNewItemOpen}
+        onOpenChange={setIsNewItemOpen}
+        defaultProjectId={projectId === ALL ? undefined : projectId}
+        onCreated={(newId) => {
+          // Die neue Position soll sofort sichtbar sein, egal wie gefiltert war.
+          setSearch(newId);
+          setStatus("alle");
+          setPhase(ALL);
+        }}
+      />
 
       <Card className="shadow-card">
         <CardContent className="px-0 py-0 sm:px-6 sm:py-4">

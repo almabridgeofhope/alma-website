@@ -187,6 +187,7 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
         defaultProjectId={projectId === ALL ? undefined : projectId}
         defaultPhaseId={phase === ALL ? undefined : phaseIdOfName(phase)}
         onCreated={setNewItemId}
+        submitLabel="Anlegen und zuordnen"
       />
 
       {selected && (

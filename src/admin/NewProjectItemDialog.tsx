@@ -23,6 +23,8 @@ interface NewProjectItemDialogProps {
   defaultProjectId?: string;
   defaultPhaseId?: string;
   onCreated: (projectItemId: string) => void;
+  /** Im Abrechnungsbildschirm folgt direkt die Zuordnung, in der Uebersicht nicht. */
+  submitLabel?: string;
 }
 
 const NewProjectItemDialog = ({
@@ -31,6 +33,7 @@ const NewProjectItemDialog = ({
   defaultProjectId,
   defaultPhaseId,
   onCreated,
+  submitLabel = "Anlegen",
 }: NewProjectItemDialogProps) => {
   const projects = useProjects();
   const phases = usePhases();
@@ -188,7 +191,7 @@ const NewProjectItemDialog = ({
             </Button>
             <Button type="submit" disabled={createItem.isPending}>
               {createItem.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
-              Anlegen und zuordnen
+              {submitLabel}
             </Button>
           </DialogFooter>
         </form>
