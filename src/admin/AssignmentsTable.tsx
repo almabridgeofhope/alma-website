@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { FileText, Loader2, Paperclip, Trash2 } from "lucide-react";
+import { AlertTriangle, FileText, Loader2, Paperclip, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,13 +12,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import EditableAmount from "./EditableAmount";
 import { formatUgx } from "./format";
 import {
   assignmentUgx,
+  isReceiptFile,
   openReceipt,
+  receiptLabel,
   useDeleteAssignment,
   useUpdateAssignment,
   useUploadAssignmentReceipt,
@@ -44,7 +45,11 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
       await updateAssignment.mutateAsync({ id, patch: next });
       toast.success(`${label} gespeichert.`);
     } catch (error) {
-      toast.error((error as Error).message);
+      // Die Belegpflicht schlaegt hier zu, wenn eine Altzeile ohne Beleg bearbeitet wird.
+      const message = (error as Error).message.includes("payment_log_beleg_pflicht")
+        ? "Diese Zuordnung hat noch keinen Beleg. Bitte zuerst einen hochladen."
+        : (error as Error).message;
+      toast.error(message);
     }
   };
 
@@ -90,7 +95,6 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
               <TableHead>Position</TableHead>
               <TableHead className="text-right">Menge</TableHead>
               <TableHead className="text-right">Ist-Betrag</TableHead>
-              <TableHead>Belegnr.</TableHead>
               <TableHead>Beleg</TableHead>
               <TableHead className="w-10" />
             </TableRow>
@@ -98,6 +102,8 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
           <TableBody>
             {assignments.map((assignment) => {
               const item = itemById.get(assignment.item_id ?? "");
+              const receipt = assignment.expenditure_id;
+              const hasFile = isReceiptFile(receipt);
               return (
                 <TableRow key={assignment.payment_log_id}>
                   <TableCell>
@@ -138,20 +144,6 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
                   </TableCell>
 
                   <TableCell>
-                    <Input
-                      aria-label="Belegnummer"
-                      className="h-9 w-24"
-                      defaultValue={assignment.expenditure_id ?? ""}
-                      onBlur={(event) => {
-                        const next = event.target.value.trim() === "" ? null : event.target.value.trim();
-                        if (next !== assignment.expenditure_id) {
-                          patch(assignment.payment_log_id, { expenditure_id: next }, "Belegnummer");
-                        }
-                      }}
-                    />
-                  </TableCell>
-
-                  <TableCell>
                     <input
                       ref={(element) => {
                         fileInputs.current[assignment.payment_log_id] = element;
@@ -162,20 +154,34 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
                       onChange={(event) => upload(assignment.payment_log_id, event.target.files?.[0])}
                     />
                     <div className="flex items-center gap-1">
-                      {assignment.receipt_url && (
+                      {hasFile && receipt && (
                         <Button
-                          variant="ghost"
+                          variant="link"
                           size="sm"
+                          className="h-auto max-w-[12rem] justify-start truncate px-0"
                           onClick={() =>
-                            openReceipt(assignment.receipt_url as string).catch((error: Error) =>
-                              toast.error(error.message),
-                            )
+                            openReceipt(receipt).catch((error: Error) => toast.error(error.message))
                           }
                         >
-                          <FileText className="mr-1 h-4 w-4" aria-hidden="true" />
-                          Öffnen
+                          <FileText className="mr-1 h-4 w-4 shrink-0" aria-hidden="true" />
+                          <span className="truncate">{receiptLabel(receipt)}</span>
                         </Button>
                       )}
+
+                      {!hasFile && receipt && (
+                        <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <AlertTriangle className="h-3.5 w-3.5 text-secondary-foreground" aria-hidden="true" />
+                          Nr. {receipt}
+                        </span>
+                      )}
+
+                      {!receipt && (
+                        <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                          <AlertTriangle className="h-3.5 w-3.5 text-destructive" aria-hidden="true" />
+                          fehlt
+                        </span>
+                      )}
+
                       <Button
                         variant="ghost"
                         size="sm"
@@ -187,9 +193,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
                         ) : (
                           <Paperclip className="h-4 w-4" aria-hidden="true" />
                         )}
-                        <span className="sr-only">
-                          {assignment.receipt_url ? "Beleg ersetzen" : "Beleg hochladen"}
-                        </span>
+                        <span className="sr-only">{hasFile ? "Beleg ersetzen" : "Beleg hochladen"}</span>
                       </Button>
                     </div>
                   </TableCell>
@@ -216,7 +220,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
           <AlertDialogHeader>
             <AlertDialogTitle>Zuordnung entfernen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Die Position gilt danach wieder als offen. Ein hochgeladener Beleg bleibt im Speicher, ist
+              Die Position gilt danach wieder als offen. Der hochgeladene Beleg bleibt im Speicher, ist
               aber nicht mehr verknüpft.
             </AlertDialogDescription>
           </AlertDialogHeader>

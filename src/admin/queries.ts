@@ -7,7 +7,7 @@ const TRANSFER_KATEGORIE = "spendentransfer";
 const TRANSFER_COLUMNS =
   "transaction_id, external_transaction_id, date, konto, amount, currency, original_amount, original_currency, exchange_rate, reference, receipt_url";
 const ASSIGNMENT_COLUMNS =
-  "payment_log_id, item_id, qty_paid, amount_paid_ugx, external_transaction_id, expenditure_id, receipt_url, created_at";
+  "payment_log_id, item_id, qty_paid, amount_paid_ugx, external_transaction_id, expenditure_id, created_at";
 const ITEM_COLUMNS =
   "project_item_id, phase, item_name, status, qty_needed, qty_paid, qty_open, total_ugx, paid_ugx, open_ugx, open_eur";
 
@@ -30,11 +30,13 @@ export const assignmentUgx = (assignment: Assignment, item?: ProjectItem): numbe
   return (assignment.qty_paid ?? 0) * unitCostUgx(item);
 };
 
+// Gelesen wird die View, weil Transfers nach Uganda in zwei Konventionen gebucht sind
+// (kategorie = spendentransfer und die XE-Zahlungen unter ausgabe). Geschrieben wird
+// weiterhin in transactions.
 async function fetchTransfers(): Promise<Transfer[]> {
   const { data, error } = await supabase
-    .from("transactions")
+    .from("v_uganda_transfers")
     .select(TRANSFER_COLUMNS)
-    .eq("kategorie", TRANSFER_KATEGORIE)
     .order("date", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []) as Transfer[];
@@ -76,7 +78,7 @@ export const useTransferSummaries = () => {
           ...transfer,
           assignmentCount: own.length,
           assignedUgx: own.reduce((sum, a) => sum + assignmentUgx(a, itemById.get(a.item_id ?? "")), 0),
-          receiptCount: own.filter((a) => a.receipt_url !== null).length,
+          receiptCount: own.filter((a) => isReceiptFile(a.expenditure_id)).length,
         };
       });
     },
@@ -147,19 +149,21 @@ export interface NewAssignment {
   itemId: string;
   qtyPaid: number;
   amountPaidUgx: number | null;
-  expenditureId: string | null;
+  /** Der Beleg ist Pflicht: erst die Datei, dann die Zeile. */
+  receipt: File;
 }
 
 export const useCreateAssignment = (transferId: string) => {
   const refresh = useRefresh(transferId);
   return useMutation({
     mutationFn: async (input: NewAssignment) => {
+      const path = await uploadToBucket(receiptPath(input.transferId, input.receipt), input.receipt);
       const { error } = await supabase.from("payment_log").insert({
         external_transaction_id: input.transferId,
         item_id: input.itemId,
         qty_paid: input.qtyPaid,
         amount_paid_ugx: input.amountPaidUgx,
-        expenditure_id: input.expenditureId,
+        expenditure_id: path,
       });
       if (error) throw new Error(error.message);
     },
@@ -196,21 +200,33 @@ const safeFileName = (name: string): string =>
     .replace(/[^\w.-]+/g, "_")
     .slice(-80);
 
+/** Der Zeitstempel haelt den Pfad eindeutig, auch bevor die Zeile eine ID hat. */
+const receiptPath = (transferId: string, file: File): string =>
+  `${transferId}/${Date.now()}__${safeFileName(file.name)}`;
+
+/** Ein Beleg mit Datei traegt einen Pfad; kurze Altwerte sind blosse Nummern. */
+export const isReceiptFile = (expenditureId: string | null): boolean =>
+  expenditureId !== null && (expenditureId.includes("/") || expenditureId.startsWith("http"));
+
+/** Was in der Zeile steht: Dateiname statt vollem Pfad. */
+export const receiptLabel = (expenditureId: string): string =>
+  expenditureId.split("/").pop()?.split("__").pop() ?? expenditureId;
+
 async function uploadToBucket(path: string, file: File): Promise<string> {
   const { error } = await supabase.storage.from(RECEIPTS_BUCKET).upload(path, file, { upsert: true });
   if (error) throw new Error(error.message);
   return path;
 }
 
-/** Quittung aus Uganda an einer Zuordnung. */
+/** Quittung aus Uganda an einer bestehenden Zuordnung ersetzen oder nachreichen. */
 export const useUploadAssignmentReceipt = (transferId: string) => {
   const refresh = useRefresh(transferId);
   return useMutation({
     mutationFn: async ({ paymentLogId, file }: { paymentLogId: string; file: File }) => {
-      const path = await uploadToBucket(`${transferId}/${paymentLogId}__${safeFileName(file.name)}`, file);
+      const path = await uploadToBucket(receiptPath(transferId, file), file);
       const { error } = await supabase
         .from("payment_log")
-        .update({ receipt_url: path })
+        .update({ expenditure_id: path })
         .eq("payment_log_id", paymentLogId);
       if (error) throw new Error(error.message);
     },

@@ -35,8 +35,8 @@ export interface Assignment {
   qty_paid: number | null;
   amount_paid_ugx: number | null;
   external_transaction_id: string;
+  /** Pfad des Belegs im Bucket. Kurze Altwerte sind Belegnummern ohne Datei. */
   expenditure_id: string | null;
-  receipt_url: string | null;
   created_at: string;
 }
 

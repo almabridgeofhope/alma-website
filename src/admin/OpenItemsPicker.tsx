@@ -142,7 +142,7 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
   const [qty, setQty] = useState(String(item.qty_open).replace(".", ","));
   const [amount, setAmount] = useState(String(suggestedAmount));
   const [amountTouched, setAmountTouched] = useState(false);
-  const [expenditureId, setExpenditureId] = useState("");
+  const [receipt, setReceipt] = useState<File | null>(null);
 
   const changeQty = (next: string) => {
     setQty(next);
@@ -158,6 +158,10 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
       toast.error("Die Menge muss größer als 0 sein.");
       return;
     }
+    if (receipt === null) {
+      toast.error("Ohne Beleg lässt sich die Position nicht zuordnen.");
+      return;
+    }
 
     try {
       await createAssignment.mutateAsync({
@@ -165,7 +169,7 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
         itemId: item.project_item_id,
         qtyPaid: parsedQty,
         amountPaidUgx: parseAmount(amount),
-        expenditureId: expenditureId.trim() === "" ? null : expenditureId.trim(),
+        receipt,
       });
       toast.success(`${item.item_name ?? item.project_item_id} zugeordnet.`);
       onClose();
@@ -214,21 +218,25 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="expenditure">
-              Belegnummer <span className="text-muted-foreground">(optional)</span>
-            </Label>
+            <Label htmlFor="receipt">Beleg</Label>
             <Input
-              id="expenditure"
-              value={expenditureId}
-              onChange={(event) => setExpenditureId(event.target.value)}
+              id="receipt"
+              type="file"
+              required
+              accept="application/pdf,image/*"
+              className="cursor-pointer file:mr-3 file:cursor-pointer file:rounded file:border-0 file:bg-muted file:px-2 file:py-1 file:text-sm"
+              onChange={(event) => setReceipt(event.target.files?.[0] ?? null)}
             />
+            <p className="text-xs text-muted-foreground">
+              Pflicht: die Quittung aus Uganda, PDF oder Foto. Sie wird der Nachweis dieser Zuordnung.
+            </p>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={onClose}>
               Abbrechen
             </Button>
-            <Button type="submit" disabled={createAssignment.isPending}>
+            <Button type="submit" disabled={createAssignment.isPending || receipt === null}>
               {createAssignment.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
               )}
