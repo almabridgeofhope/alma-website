@@ -37,6 +37,32 @@ const RequireAuth = React.lazy(() => import("./admin/RequireAuth"));
 
 const queryClient = new QueryClient();
 
+// 404.html legt den urspruenglich angefragten Pfad in sessionStorage ab und schickt
+// den Browser auf /index.html. Zwei Komponenten lesen ihn: Handle404Redirect springt
+// dorthin, IndexHtmlRedirect faellt auf / zurueck, wenn nichts abgelegt wurde.
+//
+// Bisher entschied darueber ein Wettlauf — Handle404Redirect raeumte den Eintrag weg
+// und navigierte im naechsten Frame (~16 ms), IndexHtmlRedirect schaute nach 10 ms
+// nach und sah nichts mehr. Wer zuerst kam, gewann, und auf GitHub Pages landete ein
+// Deep Link deshalb auf der Startseite statt auf der angefragten Seite.
+//
+// Jetzt liest ihn genau einer zuerst, gemerkt fuer den ganzen Seitenaufbau.
+let pendingRedirectRead = false;
+let pendingRedirect: string | null = null;
+
+const takePendingRedirect = (): string | null => {
+  if (!pendingRedirectRead) {
+    pendingRedirectRead = true;
+    try {
+      pendingRedirect = sessionStorage.getItem('404-redirect-path');
+      sessionStorage.removeItem('404-redirect-path');
+    } catch {
+      pendingRedirect = null;
+    }
+  }
+  return pendingRedirect;
+};
+
 // Component to handle 404 redirects from GitHub Pages and browser history
 const Handle404Redirect = () => {
   const navigate = useNavigate();
@@ -49,7 +75,7 @@ const Handle404Redirect = () => {
       return;
     }
     
-    const redirectPath = sessionStorage.getItem('404-redirect-path');
+    const redirectPath = takePendingRedirect();
     
     // If we have a redirect path, process it
     if (redirectPath) {
@@ -70,9 +96,8 @@ const Handle404Redirect = () => {
         (targetSearchNormalized === currentSearchNormalized || !targetSearch);
       
       if (isOnTargetPath) {
-        // Already on target, just clear the stored path
+        // Already on target, nothing to do
         console.log('[Handle404Redirect] Already on target path:', redirectPath);
-        sessionStorage.removeItem('404-redirect-path');
         redirectHandled.current = true;
         return;
       }
@@ -87,12 +112,9 @@ const Handle404Redirect = () => {
       if (shouldRedirect) {
         console.log('[Handle404Redirect] Redirecting from', currentPathname || currentRoute, 'to:', redirectPath);
         redirectHandled.current = true;
-        sessionStorage.removeItem('404-redirect-path');
-        
-        // Use requestAnimationFrame to ensure navigation happens after React Router is ready
-        requestAnimationFrame(() => {
-          navigate(redirectPath, { replace: true });
-        });
+        // Direkt im Effekt, nicht im naechsten Frame: sonst kommt der Fallback
+        // von IndexHtmlRedirect zuerst und landet auf der Startseite.
+        navigate(redirectPath, { replace: true });
         return;
       }
     }
@@ -137,27 +159,12 @@ const DevRedirect = () => {
 
 // Conditional redirect for /index.html - only redirect to / if we don't have a stored redirect path
 const IndexHtmlRedirect = () => {
-  const [shouldRedirect, setShouldRedirect] = React.useState(false);
-  
-  useEffect(() => {
-    // Check for redirect path with a small delay to let Handle404Redirect process first
-    const checkRedirect = () => {
-      const redirectPath = sessionStorage.getItem('404-redirect-path');
-      // If we have a redirect path, don't redirect to / - let Handle404Redirect handle it
-      if (!redirectPath) {
-        setShouldRedirect(true);
-      }
-    };
-    
-    // Small delay to ensure Handle404Redirect runs first
-    const timer = setTimeout(checkRedirect, 10);
-    return () => clearTimeout(timer);
-  }, []);
-  
-  if (!shouldRedirect) {
+  // Liegt ein Pfad aus der 404-Weiterleitung vor, uebernimmt Handle404Redirect.
+  // Sonst ist /index.html direkt aufgerufen worden und gehoert auf /.
+  if (takePendingRedirect()) {
     return null;
   }
-  
+
   return <Navigate to="/" replace />;
 };
 
