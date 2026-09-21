@@ -260,3 +260,15 @@ export const useEurRate = () =>
       return Number.isFinite(rate) && rate > 0 ? rate : null;
     },
   });
+
+/** Angemeldet heisst noch nicht freigeschaltet — die Freigabeliste entscheidet. */
+export const useIsAppMember = (enabled: boolean) =>
+  useQuery({
+    queryKey: ["admin", "is-member"] as const,
+    enabled,
+    queryFn: async (): Promise<boolean> => {
+      const { data, error } = await supabase.rpc("is_app_member");
+      if (error) throw new Error(error.message);
+      return data === true;
+    },
+  });
