@@ -15,10 +15,31 @@ export const GOOGLE_CLIENT_ID = trimmed(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 // Eigener Name, weil VITE_GOOGLE_API_KEY im oeffentlichen Teil den Sheets gehoert.
 export const GOOGLE_API_KEY = trimmed(import.meta.env.VITE_GOOGLE_PICKER_API_KEY);
 export const GOOGLE_APP_ID = trimmed(import.meta.env.VITE_GOOGLE_APP_ID);
-export const DRIVE_FOLDER_ID = trimmed(import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID);
+
+/** Faellt auf den alten Sammelordner zurueck, solange die getrennten Ordner nicht gesetzt sind. */
+const ordnerId = (eigener?: string, sammel?: string): string => trimmed(eigener) || trimmed(sammel);
+
+export const DRIVE_FOLDER_UEBERWEISUNGEN = ordnerId(
+  import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_UEBERWEISUNGEN,
+  import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID,
+);
+export const DRIVE_FOLDER_POSITIONEN = ordnerId(
+  import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_POSITIONEN,
+  import.meta.env.VITE_GOOGLE_DRIVE_FOLDER_ID,
+);
+
+/** Welcher Beleg gemeint ist — der Transfer selbst oder eine bezahlte Position. */
+export type BelegArt = "ueberweisung" | "position";
+
+const ordnerFuer = (art: BelegArt): string =>
+  art === "ueberweisung" ? DRIVE_FOLDER_UEBERWEISUNGEN : DRIVE_FOLDER_POSITIONEN;
 
 export const isDriveConfigured =
-  GOOGLE_CLIENT_ID !== "" && GOOGLE_API_KEY !== "" && GOOGLE_APP_ID !== "" && DRIVE_FOLDER_ID !== "";
+  GOOGLE_CLIENT_ID !== "" &&
+  GOOGLE_API_KEY !== "" &&
+  GOOGLE_APP_ID !== "" &&
+  DRIVE_FOLDER_UEBERWEISUNGEN !== "" &&
+  DRIVE_FOLDER_POSITIONEN !== "";
 
 const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
 const GIS_SRC = "https://accounts.google.com/gsi/client";
@@ -100,23 +121,30 @@ const pickerLaden = async (): Promise<void> => {
 };
 
 /**
- * Öffnet den Picker im Belegordner. Rückgabe ist die gewählte oder gerade
- * hochgeladene Datei, oder null, wenn abgebrochen wurde.
+ * Öffnet den Picker im Belegordner der jeweiligen Art. Rückgabe ist die gewählte
+ * oder gerade hochgeladene Datei, oder null, wenn abgebrochen wurde.
+ *
+ * Es gibt zwei getrennte Ordner: Überweisungsbelege gehören zur Buchung, die
+ * Quittungen aus Uganda zu den einzelnen Positionen.
+ *
+ * Der Dateityp ist bewusst nicht eingeschränkt — PDF und JPEG sind der Alltag,
+ * aber was aus Uganda kommt, ist mal ein PNG, mal ein Foto aus einer App.
  */
-export async function belegWaehlen(): Promise<DriveFile | null> {
+export async function belegWaehlen(art: BelegArt): Promise<DriveFile | null> {
   if (!isDriveConfigured) {
     throw new Error("Google Drive ist in dieser Umgebung nicht konfiguriert.");
   }
 
+  const ordner = ordnerFuer(art);
   const token = await tokenHolen();
   await pickerLaden();
   const picker = window.google.picker;
 
   return new Promise<DriveFile | null>((resolve, reject) => {
     try {
-      const hochladen = new picker.DocsUploadView().setParent(DRIVE_FOLDER_ID);
+      const hochladen = new picker.DocsUploadView().setParent(ordner);
       const vorhandene = new picker.DocsView(picker.ViewId.DOCS)
-        .setParent(DRIVE_FOLDER_ID)
+        .setParent(ordner)
         .setIncludeFolders(true)
         .setSelectFolderEnabled(false);
 
@@ -124,7 +152,11 @@ export async function belegWaehlen(): Promise<DriveFile | null> {
         .setAppId(GOOGLE_APP_ID)
         .setOAuthToken(token)
         .setDeveloperKey(GOOGLE_API_KEY)
-        .setTitle("Beleg hochladen oder auswählen")
+        .setTitle(
+          art === "ueberweisung"
+            ? "Überweisungsbeleg hochladen oder auswählen"
+            : "Positionsbeleg hochladen oder auswählen",
+        )
         .addView(hochladen)
         .addView(vorhandene)
         .setCallback((daten: any) => {

@@ -54,7 +54,7 @@ const AdminTransferDetail = () => {
   const assignedEur = rate.data ? assignedUgx / rate.data : null;
 
   const belegWaehlen = async () => {
-    const datei = await pick();
+    const datei = await pick("ueberweisung");
     if (!datei) return;
     setIsSaving(true);
     try {

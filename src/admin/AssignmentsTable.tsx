@@ -85,7 +85,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
   };
 
   const belegWaehlen = async (paymentLogId: string) => {
-    const datei = await pick();
+    const datei = await pick("position");
     if (!datei) return;
     setBusyId(paymentLogId);
     try {
