@@ -311,3 +311,31 @@ export const useCreateProjectItem = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: queryKeys.items }),
   });
 };
+
+export interface TransferPatch {
+  buchung_nr?: number | null;
+  zweck?: string | null;
+  original_amount?: number | null;
+  original_currency?: string | null;
+  exchange_rate?: number | null;
+}
+
+/**
+ * Bearbeitet die Buchungsangaben einer Überweisung.
+ *
+ * Adressiert wird über transaction_id, nicht über die Referenz: vier Altzeilen
+ * haben keine, und die Referenz ist nicht der Schlüssel der Tabelle.
+ */
+export const useUpdateTransfer = (transferId: string) => {
+  const refresh = useRefresh(transferId);
+  return useMutation({
+    mutationFn: async ({ transactionId, patch }: { transactionId: string; patch: TransferPatch }) => {
+      const { error } = await supabase
+        .from("transactions")
+        .update(patch)
+        .eq("transaction_id", transactionId);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: refresh,
+  });
+};

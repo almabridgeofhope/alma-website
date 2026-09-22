@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import AssignmentsTable from "@/admin/AssignmentsTable";
 import OpenItemsPicker from "@/admin/OpenItemsPicker";
 import StatTile from "@/admin/StatTile";
+import TransferBuchung from "@/admin/TransferBuchung";
 import { useNoIndex } from "@/admin/useNoIndex";
 import { useReceiptPicker } from "@/admin/useReceiptPicker";
 import { absolute, formatDate, formatEur, formatUgx } from "@/admin/format";
@@ -150,6 +151,8 @@ const AdminTransferDetail = () => {
           />
         )}
       </div>
+
+      <TransferBuchung transfer={transfer} transferId={transferId} />
 
       <Card className="shadow-card">
         <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
