@@ -91,6 +91,7 @@ const AdminTransfers = () => {
                     <TableHead>Referenz</TableHead>
                     <TableHead>Konto</TableHead>
                     <TableHead className="text-right">Betrag</TableHead>
+                    <TableHead className="text-right">Gebühr</TableHead>
                     <TableHead className="text-right">Zugeordnet</TableHead>
                     <TableHead className="text-right">Positionen</TableHead>
                     <TableHead>Belege</TableHead>
@@ -109,6 +110,9 @@ const AdminTransfers = () => {
                         <TableCell className="text-muted-foreground">{transfer.konto}</TableCell>
                         <TableCell className="whitespace-nowrap text-right tabular-nums">
                           {formatEur(absolute(transfer.amount))}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-right tabular-nums text-muted-foreground">
+                          {transfer.fee_eur > 0 ? formatEur(transfer.fee_eur) : "–"}
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-right tabular-nums text-muted-foreground">
                           {transfer.assignedUgx > 0 ? formatUgx(transfer.assignedUgx) : "–"}

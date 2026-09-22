@@ -11,6 +11,8 @@ export interface Transfer {
   exchange_rate: number | null;
   reference: string | null;
   receipt_url: string | null;
+  /** Transaktionskosten, die als eigene Zeilen gebucht sind und hier angehaengt werden. */
+  fee_eur: number;
 }
 
 /** Zeile aus v_project_items. */

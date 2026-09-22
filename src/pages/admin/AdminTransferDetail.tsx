@@ -109,7 +109,15 @@ const AdminTransferDetail = () => {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="Überwiesen" value={formatEur(transferredEur)} hint={transfer.konto} />
+        <StatTile
+          label="Überwiesen"
+          value={formatEur(transferredEur)}
+          hint={
+            transfer.fee_eur > 0
+              ? `${transfer.konto} · ${formatEur(transfer.fee_eur)} Gebühr`
+              : transfer.konto
+          }
+        />
         <StatTile
           label="Angekommen"
           value={receivedUgx === null ? "nicht erfasst" : formatUgx(receivedUgx)}
