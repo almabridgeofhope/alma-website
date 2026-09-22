@@ -89,7 +89,7 @@ const AdminTransfers = () => {
                   <TableRow>
                     <TableHead className="w-14 text-right">Nr.</TableHead>
                     <TableHead>Datum</TableHead>
-                    <TableHead>Referenz</TableHead>
+                    <TableHead className="w-40">Referenz</TableHead>
                     <TableHead>Konto</TableHead>
                     <TableHead className="text-right">Betrag</TableHead>
                     <TableHead className="text-right">Gebühr</TableHead>
@@ -108,10 +108,16 @@ const AdminTransfers = () => {
                           {transfer.buchung_nr ?? "–"}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">{formatDate(transfer.date)}</TableCell>
-                        <TableCell className="font-medium">
-                          {id ?? <Badge variant="outline">ohne Referenz</Badge>}
+                        <TableCell className="max-w-[10rem] font-medium">
+                          {id ? (
+                            <p className="truncate" title={id}>
+                              {id}
+                            </p>
+                          ) : (
+                            <Badge variant="outline">ohne Referenz</Badge>
+                          )}
                           {transfer.zweck && (
-                            <p className="max-w-[18rem] truncate text-xs font-normal text-muted-foreground">
+                            <p className="truncate text-xs font-normal text-muted-foreground" title={transfer.zweck}>
                               {transfer.zweck}
                             </p>
                           )}
