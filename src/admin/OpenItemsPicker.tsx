@@ -207,18 +207,40 @@ interface AddAssignmentDialogProps {
 
 const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogProps) => {
   const createAssignment = useCreateAssignment(transferId);
-  const suggestedAmount = Math.round(item.qty_open * unitCostUgx(item));
   const [qty, setQty] = useState(String(item.qty_open).replace(".", ","));
-  const [amount, setAmount] = useState(String(suggestedAmount));
-  const [amountTouched, setAmountTouched] = useState(false);
+  const [unit, setUnit] = useState(String(Math.round(unitCostUgx(item))));
+  const [amount, setAmount] = useState(String(Math.round(item.qty_open * unitCostUgx(item))));
   const [receipt, setReceipt] = useState<DriveFile | null>(null);
   const { pick, isPicking } = useReceiptPicker();
 
+  // Die drei Felder halten sich gegenseitig aktuell. Gespeichert wird nur der
+  // Gesamtbetrag — Menge mal Einzelbetrag ergibt ihn, und wer den Gesamtbetrag
+  // eintraegt, rechnet den Einzelbetrag zurueck.
+  const totalOf = (qtyInput: string, unitInput: string): string => {
+    const parsedQty = parseAmount(qtyInput);
+    const parsedUnit = parseAmount(unitInput);
+    return parsedQty === null || parsedUnit === null ? "" : String(Math.round(parsedQty * parsedUnit));
+  };
+
   const changeQty = (next: string) => {
     setQty(next);
-    if (amountTouched) return;
-    const parsed = parseAmount(next);
-    setAmount(parsed === null ? "" : String(Math.round(parsed * unitCostUgx(item))));
+    setAmount(totalOf(next, unit));
+  };
+
+  const changeUnit = (next: string) => {
+    setUnit(next);
+    setAmount(totalOf(qty, next));
+  };
+
+  const changeAmount = (next: string) => {
+    setAmount(next);
+    const parsedQty = parseAmount(qty);
+    const parsedTotal = parseAmount(next);
+    if (parsedQty === null || parsedQty <= 0 || parsedTotal === null) {
+      setUnit("");
+      return;
+    }
+    setUnit(String(Math.round((parsedTotal / parsedQty) * 100) / 100).replace(".", ","));
   };
 
   const submit = async (event: React.FormEvent) => {
@@ -246,7 +268,7 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{item.item_name ?? item.project_item_id}</DialogTitle>
           <DialogDescription>
@@ -256,7 +278,7 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
         </DialogHeader>
 
         <form onSubmit={submit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
               <Label htmlFor="qty">Bezahlte Menge</Label>
               <Input
@@ -270,15 +292,22 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount">Ist-Betrag in UGX</Label>
+              <Label htmlFor="unit">Ist je Einheit</Label>
+              <Input
+                id="unit"
+                inputMode="decimal"
+                value={unit}
+                onChange={(event) => changeUnit(event.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="amount">Ist gesamt in UGX</Label>
               <Input
                 id="amount"
                 inputMode="decimal"
                 value={amount}
-                onChange={(event) => {
-                  setAmountTouched(true);
-                  setAmount(event.target.value);
-                }}
+                onChange={(event) => changeAmount(event.target.value)}
               />
             </div>
           </div>

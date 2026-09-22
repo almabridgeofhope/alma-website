@@ -23,6 +23,16 @@ export const unitCostUgx = (item: Pick<ProjectItem, "total_ugx" | "qty_needed">)
   return qty > 0 ? (item.total_ugx ?? 0) / qty : 0;
 };
 
+/**
+ * Ist-Betrag je Einheit. Steht nicht in der Datenbank, sondern ergibt sich aus
+ * Gesamtbetrag und Menge — gespeichert wird weiterhin nur der Gesamtbetrag.
+ */
+export const assignmentUnitUgx = (assignment: Assignment): number | null => {
+  const qty = assignment.qty_paid ?? 0;
+  if (assignment.amount_paid_ugx === null || qty <= 0) return null;
+  return Math.round((assignment.amount_paid_ugx / qty) * 100) / 100;
+};
+
 /** Was eine Zuordnung gekostet hat: der erfasste Ist-Betrag, sonst Menge mal Stückpreis. */
 export const assignmentUgx = (assignment: Assignment, item?: ProjectItem): number => {
   if (assignment.amount_paid_ugx !== null) return assignment.amount_paid_ugx;

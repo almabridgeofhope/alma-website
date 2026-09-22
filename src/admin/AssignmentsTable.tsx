@@ -18,8 +18,10 @@ import EditableAmount from "./EditableAmount";
 import { formatUgx } from "./format";
 import {
   assignmentUgx,
+  assignmentUnitUgx,
   isReceiptFile,
   openReceipt,
+  unitCostUgx,
   useDeleteAssignment,
   useSetAssignmentReceipt,
   useUpdateAssignment,
@@ -47,6 +49,39 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
     } catch (error) {
       toast.error((error as Error).message);
     }
+  };
+
+  // Menge, Einzelbetrag und Gesamtbetrag haengen aneinander: gespeichert wird nur der
+  // Gesamtbetrag, die beiden anderen Felder rechnen ihn um. Der Einzelbetrag ist dabei
+  // der bleibende Wert — wer die Menge aendert, meint selten einen anderen Stueckpreis.
+  const changeQty = (assignment: Assignment, next: number | null) => {
+    if (next === null || next <= 0) {
+      toast.error("Die Menge muss größer als 0 sein.");
+      return;
+    }
+    const unit = assignmentUnitUgx(assignment);
+    if (unit === null) {
+      patch(assignment.payment_log_id, { qty_paid: next }, "Menge");
+      return;
+    }
+    patch(
+      assignment.payment_log_id,
+      { qty_paid: next, amount_paid_ugx: Math.round(unit * next) },
+      "Menge und Ist-Betrag",
+    );
+  };
+
+  const changeUnit = (assignment: Assignment, next: number | null) => {
+    if (next === null) {
+      patch(assignment.payment_log_id, { amount_paid_ugx: null }, "Ist-Betrag");
+      return;
+    }
+    const qty = assignment.qty_paid ?? 0;
+    if (qty <= 0) {
+      toast.error("Ohne Menge lässt sich der Einzelbetrag nicht umrechnen.");
+      return;
+    }
+    patch(assignment.payment_log_id, { amount_paid_ugx: Math.round(next * qty) }, "Ist-Betrag");
   };
 
   const belegWaehlen = async (paymentLogId: string) => {
@@ -91,7 +126,8 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
             <TableRow>
               <TableHead>Position</TableHead>
               <TableHead className="text-right">Menge</TableHead>
-              <TableHead className="text-right">Ist-Betrag</TableHead>
+              <TableHead className="text-right">Ist je Einheit</TableHead>
+              <TableHead className="text-right">Ist gesamt</TableHead>
               <TableHead>Beleg</TableHead>
               <TableHead className="w-10" />
             </TableRow>
@@ -116,21 +152,31 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
                       label="Menge"
                       value={assignment.qty_paid}
                       allowEmpty={false}
-                      onCommit={(next) =>
-                        next !== null && next > 0
-                          ? patch(assignment.payment_log_id, { qty_paid: next }, "Menge")
-                          : toast.error("Die Menge muss größer als 0 sein.")
-                      }
+                      onCommit={(next) => changeQty(assignment, next)}
                     />
                   </TableCell>
 
                   <TableCell className="text-right">
                     <EditableAmount
-                      label="Ist-Betrag in UGX"
+                      label="Ist-Betrag je Einheit in UGX"
+                      value={assignmentUnitUgx(assignment)}
+                      placeholder={item ? String(Math.round(unitCostUgx(item))) : "UGX"}
+                      onCommit={(next) => changeUnit(assignment, next)}
+                    />
+                    {assignmentUnitUgx(assignment) === null && item && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        geplant {formatUgx(Math.round(unitCostUgx(item)))}
+                      </p>
+                    )}
+                  </TableCell>
+
+                  <TableCell className="text-right">
+                    <EditableAmount
+                      label="Ist-Betrag gesamt in UGX"
                       value={assignment.amount_paid_ugx}
                       placeholder={item ? String(Math.round(assignmentUgx(assignment, item))) : "UGX"}
                       onCommit={(next) =>
-                        patch(assignment.payment_log_id, { amount_paid_ugx: next }, "Betrag")
+                        patch(assignment.payment_log_id, { amount_paid_ugx: next }, "Ist-Betrag")
                       }
                     />
                     {assignment.amount_paid_ugx === null && item && (
