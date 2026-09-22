@@ -87,6 +87,7 @@ const AdminTransfers = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-14 text-right">Nr.</TableHead>
                     <TableHead>Datum</TableHead>
                     <TableHead>Referenz</TableHead>
                     <TableHead>Konto</TableHead>
@@ -103,9 +104,17 @@ const AdminTransfers = () => {
                     const id = transfer.external_transaction_id;
                     return (
                       <TableRow key={transfer.transaction_id} className={id ? "cursor-pointer" : undefined}>
+                        <TableCell className="text-right tabular-nums text-muted-foreground">
+                          {transfer.buchung_nr ?? "–"}
+                        </TableCell>
                         <TableCell className="whitespace-nowrap">{formatDate(transfer.date)}</TableCell>
                         <TableCell className="font-medium">
                           {id ?? <Badge variant="outline">ohne Referenz</Badge>}
+                          {transfer.zweck && (
+                            <p className="max-w-[18rem] truncate text-xs font-normal text-muted-foreground">
+                              {transfer.zweck}
+                            </p>
+                          )}
                         </TableCell>
                         <TableCell className="text-muted-foreground">{transfer.konto}</TableCell>
                         <TableCell className="whitespace-nowrap text-right tabular-nums">

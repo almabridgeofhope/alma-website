@@ -5,7 +5,7 @@ import type { Assignment, Phase, Project, ProjectItem, Transfer, TransferSummary
 const TRANSFER_KATEGORIE = "spendentransfer";
 
 const TRANSFER_COLUMNS =
-  "transaction_id, external_transaction_id, date, konto, amount, currency, original_amount, original_currency, exchange_rate, reference, receipt_url, fee_eur";
+  "transaction_id, buchung_nr, zweck, external_transaction_id, date, konto, amount, currency, original_amount, original_currency, exchange_rate, reference, receipt_url, fee_eur";
 const ASSIGNMENT_COLUMNS =
   "payment_log_id, item_id, qty_paid, amount_paid_ugx, external_transaction_id, expenditure_id, created_at";
 const ITEM_COLUMNS =

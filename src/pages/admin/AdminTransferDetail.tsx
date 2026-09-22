@@ -101,11 +101,17 @@ const AdminTransferDetail = () => {
           <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
           Überweisungen
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold">{transfer.external_transaction_id}</h1>
+        <h1 className="mt-2 text-2xl font-semibold">
+          {transfer.buchung_nr !== null && (
+            <span className="mr-2 text-muted-foreground">Nr. {transfer.buchung_nr}</span>
+          )}
+          {transfer.external_transaction_id}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {formatDate(transfer.date)} · {transfer.konto}
           {transfer.reference ? ` · ${transfer.reference}` : ""}
         </p>
+        {transfer.zweck && <p className="mt-1 text-sm">{transfer.zweck}</p>}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

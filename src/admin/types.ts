@@ -1,6 +1,9 @@
 /** Überweisung nach Uganda: transactions mit kategorie = 'spendentransfer'. */
 export interface Transfer {
   transaction_id: string;
+  /** Laufende Nummer aus der Buchhaltung, fuehrende Kennung der Buchung. */
+  buchung_nr: number | null;
+  zweck: string | null;
   external_transaction_id: string | null;
   date: string;
   konto: string;
