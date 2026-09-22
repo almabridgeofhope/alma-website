@@ -23,10 +23,10 @@ const TransferBuchung = ({ transfer, transferId }: TransferBuchungProps) => {
   const speichern = async (patch: Parameters<typeof updateTransfer.mutateAsync>[0]["patch"], label: string) => {
     try {
       await updateTransfer.mutateAsync({ transactionId: transfer.transaction_id, patch });
-      toast.success(`${label} gespeichert.`);
+      toast.success(`${label} saved.`);
     } catch (error) {
       const message = (error as Error).message.includes("transactions_buchung_nr_uniq")
-        ? "Diese Buchungsnummer ist schon vergeben."
+        ? "That entry number is already taken."
         : (error as Error).message;
       toast.error(message);
     }
@@ -36,20 +36,20 @@ const TransferBuchung = ({ transfer, transferId }: TransferBuchungProps) => {
     <Card className="shadow-card">
       <CardContent className="grid gap-4 py-4 sm:grid-cols-[8rem,14rem,1fr]">
         <div className="space-y-1.5">
-          <Label>Buchungsnummer</Label>
+          <Label>Entry no.</Label>
           <EditableAmount
-            label="Buchungsnummer"
+            label="Entry number"
             value={transfer.buchung_nr}
             onCommit={(next) =>
-              speichern({ buchung_nr: next === null ? null : Math.round(next) }, "Buchungsnummer")
+              speichern({ buchung_nr: next === null ? null : Math.round(next) }, "Entry number")
             }
           />
         </div>
 
         <div className="space-y-1.5">
-          <Label>Angekommen in UGX</Label>
+          <Label>Received in UGX</Label>
           <EditableAmount
-            label="Angekommener Betrag in UGX"
+            label="Amount received in UGX"
             value={transfer.original_amount === null ? null : absolute(transfer.original_amount)}
             onCommit={(next) =>
               // Der Kurs folgt dem Betrag, sonst stehen beide Zahlen im Widerspruch.
@@ -61,17 +61,17 @@ const TransferBuchung = ({ transfer, transferId }: TransferBuchungProps) => {
                       original_currency: "ugx",
                       exchange_rate: eur > 0 ? Number((next / eur).toFixed(6)) : null,
                     },
-                "Angekommener Betrag",
+                "Amount received",
               )
             }
           />
           <p className="text-xs text-muted-foreground">
-            Kurs {transfer.exchange_rate ? formatQty(Math.round(transfer.exchange_rate)) : "–"}
+            Rate {transfer.exchange_rate ? formatQty(Math.round(transfer.exchange_rate)) : "–"}
           </p>
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="zweck">Zweck</Label>
+          <Label htmlFor="zweck">Purpose</Label>
           <Input
             id="zweck"
             className="h-9"
@@ -79,7 +79,7 @@ const TransferBuchung = ({ transfer, transferId }: TransferBuchungProps) => {
             onChange={(event) => setZweck(event.target.value)}
             onBlur={() => {
               const next = zweck.trim() === "" ? null : zweck.trim();
-              if (next !== transfer.zweck) speichern({ zweck: next }, "Zweck");
+              if (next !== transfer.zweck) speichern({ zweck: next }, "Purpose");
             }}
           />
         </div>

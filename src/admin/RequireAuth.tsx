@@ -20,7 +20,7 @@ const RequireAuth = ({ children }: { children: React.ReactNode }) => {
       <Centered>
         <div role="status" aria-live="polite" className="flex items-center gap-2 text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-          <span className="text-sm">Zugang wird geprüft …</span>
+          <span className="text-sm">Checking access …</span>
         </div>
       </Centered>
     );
@@ -39,15 +39,15 @@ const RequireAuth = ({ children }: { children: React.ReactNode }) => {
             <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-secondary-light">
               <ShieldAlert className="h-5 w-5 text-secondary-foreground" aria-hidden="true" />
             </div>
-            <CardTitle>Kein Zugriff</CardTitle>
+            <CardTitle>No access</CardTitle>
             <CardDescription>
-              Das Konto {session.user.email} ist angemeldet, aber nicht für die Projektabrechnung
-              freigeschaltet.
+              The account {session.user.email} is signed in but not cleared for project
+              accounting.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button variant="outline" onClick={() => supabase.auth.signOut()}>
-              Abmelden
+              Sign out
             </Button>
           </CardContent>
         </Card>

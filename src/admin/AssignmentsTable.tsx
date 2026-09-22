@@ -45,7 +45,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
   const patch = async (id: string, next: Partial<Assignment>, label: string) => {
     try {
       await updateAssignment.mutateAsync({ id, patch: next });
-      toast.success(`${label} gespeichert.`);
+      toast.success(`${label} saved.`);
     } catch (error) {
       toast.error((error as Error).message);
     }
@@ -56,32 +56,32 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
   // der bleibende Wert — wer die Menge aendert, meint selten einen anderen Stueckpreis.
   const changeQty = (assignment: Assignment, next: number | null) => {
     if (next === null || next <= 0) {
-      toast.error("Die Menge muss größer als 0 sein.");
+      toast.error("The quantity must be greater than 0.");
       return;
     }
     const unit = assignmentUnitUgx(assignment);
     if (unit === null) {
-      patch(assignment.payment_log_id, { qty_paid: next }, "Menge");
+      patch(assignment.payment_log_id, { qty_paid: next }, "Quantity");
       return;
     }
     patch(
       assignment.payment_log_id,
       { qty_paid: next, amount_paid_ugx: Math.round(unit * next) },
-      "Menge und Ist-Betrag",
+      "Quantity and actual amount",
     );
   };
 
   const changeUnit = (assignment: Assignment, next: number | null) => {
     if (next === null) {
-      patch(assignment.payment_log_id, { amount_paid_ugx: null }, "Ist-Betrag");
+      patch(assignment.payment_log_id, { amount_paid_ugx: null }, "Actual amount");
       return;
     }
     const qty = assignment.qty_paid ?? 0;
     if (qty <= 0) {
-      toast.error("Ohne Menge lässt sich der Einzelbetrag nicht umrechnen.");
+      toast.error("Without a quantity the per-unit amount cannot be converted.");
       return;
     }
-    patch(assignment.payment_log_id, { amount_paid_ugx: Math.round(next * qty) }, "Ist-Betrag");
+    patch(assignment.payment_log_id, { amount_paid_ugx: Math.round(next * qty) }, "Actual amount");
   };
 
   const belegWaehlen = async (paymentLogId: string) => {
@@ -90,7 +90,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
     setBusyId(paymentLogId);
     try {
       await setReceipt.mutateAsync({ paymentLogId, receiptUrl: datei.url });
-      toast.success(`Beleg „${datei.name}" verknüpft.`);
+      toast.success(`Receipt “${datei.name}” linked.`);
     } catch (error) {
       toast.error((error as Error).message);
     } finally {
@@ -102,7 +102,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
     if (!pendingDelete) return;
     try {
       await deleteAssignment.mutateAsync(pendingDelete.payment_log_id);
-      toast.success("Zuordnung entfernt.");
+      toast.success("Assignment removed.");
     } catch (error) {
       toast.error((error as Error).message);
     } finally {
@@ -113,7 +113,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
   if (assignments.length === 0) {
     return (
       <p className="py-10 text-center text-sm text-muted-foreground">
-        Noch nichts zugeordnet. Rechts eine offene Position auswählen.
+        Nothing assigned yet. Pick an open item on the right.
       </p>
     );
   }
@@ -124,11 +124,11 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Position</TableHead>
-              <TableHead className="text-right">Menge</TableHead>
-              <TableHead className="text-right">Ist je Einheit</TableHead>
-              <TableHead className="text-right">Ist gesamt</TableHead>
-              <TableHead>Beleg</TableHead>
+              <TableHead>Item</TableHead>
+              <TableHead className="text-right">Qty</TableHead>
+              <TableHead className="text-right">Actual per unit</TableHead>
+              <TableHead className="text-right">Actual total</TableHead>
+              <TableHead>Receipt</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
@@ -149,7 +149,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
 
                   <TableCell className="text-right">
                     <EditableAmount
-                      label="Menge"
+                      label="Quantity"
                       value={assignment.qty_paid}
                       allowEmpty={false}
                       onCommit={(next) => changeQty(assignment, next)}
@@ -158,21 +158,21 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
 
                   <TableCell className="text-right">
                     <EditableAmount
-                      label="Ist-Betrag je Einheit in UGX"
+                      label="Actual amount per unit in UGX"
                       value={assignmentUnitUgx(assignment)}
                       placeholder={item ? String(Math.round(unitCostUgx(item))) : "UGX"}
                       onCommit={(next) => changeUnit(assignment, next)}
                     />
                     {assignmentUnitUgx(assignment) === null && item && (
                       <p className="mt-1 text-xs text-muted-foreground">
-                        geplant {formatUgx(Math.round(unitCostUgx(item)))}
+                        planned {formatUgx(Math.round(unitCostUgx(item)))}
                       </p>
                     )}
                   </TableCell>
 
                   <TableCell className="text-right">
                     <EditableAmount
-                      label="Ist-Betrag gesamt in UGX"
+                      label="Actual amount in UGX"
                       value={assignment.amount_paid_ugx}
                       placeholder={item ? String(Math.round(assignmentUgx(assignment, item))) : "UGX"}
                       onCommit={(next) =>
@@ -181,7 +181,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
                     />
                     {assignment.amount_paid_ugx === null && item && (
                       <p className="mt-1 text-xs text-muted-foreground">
-                        geschätzt {formatUgx(assignmentUgx(assignment, item))}
+                        estimated {formatUgx(assignmentUgx(assignment, item))}
                       </p>
                     )}
                   </TableCell>
@@ -196,21 +196,21 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
                           onClick={() => openReceipt(receipt)}
                         >
                           <FileText className="mr-1 h-4 w-4 shrink-0" aria-hidden="true" />
-                          öffnen
+                          open
                         </Button>
                       )}
 
                       {!hasFile && receipt && (
                         <span className="flex items-center gap-1 text-sm text-muted-foreground">
                           <AlertTriangle className="h-3.5 w-3.5 text-secondary-foreground" aria-hidden="true" />
-                          Nr. {receipt}
+                          No. {receipt}
                         </span>
                       )}
 
                       {!receipt && (
                         <span className="flex items-center gap-1 text-sm text-muted-foreground">
                           <AlertTriangle className="h-3.5 w-3.5 text-destructive" aria-hidden="true" />
-                          fehlt
+                          missing
                         </span>
                       )}
 
@@ -225,7 +225,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
                         ) : (
                           <Paperclip className="h-4 w-4" aria-hidden="true" />
                         )}
-                        <span className="sr-only">{hasFile ? "Beleg ersetzen" : "Beleg hinzufügen"}</span>
+                        <span className="sr-only">{hasFile ? "Replace receipt" : "Add receipt"}</span>
                       </Button>
                     </div>
                   </TableCell>
@@ -235,7 +235,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
                       variant="ghost"
                       size="sm"
                       onClick={() => setPendingDelete(assignment)}
-                      aria-label="Zuordnung entfernen"
+                      aria-label="Remove assignment"
                     >
                       <Trash2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                     </Button>
@@ -250,15 +250,15 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
       <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Zuordnung entfernen?</AlertDialogTitle>
+            <AlertDialogTitle>Remove assignment?</AlertDialogTitle>
             <AlertDialogDescription>
-              Die Position gilt danach wieder als offen. Der hochgeladene Beleg bleibt im Speicher, ist
-              aber nicht mehr verknüpft.
+              The item counts as open again afterwards. The uploaded receipt stays in Drive but is
+              no longer linked.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={remove}>Entfernen</AlertDialogAction>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={remove}>Remove</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

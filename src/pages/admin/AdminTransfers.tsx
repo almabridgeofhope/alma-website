@@ -14,7 +14,7 @@ import NewTransferDialog from "@/admin/NewTransferDialog";
 import StatTile from "@/admin/StatTile";
 
 const AdminTransfers = () => {
-  useNoIndex("Überweisungen · Projektabrechnung");
+  useNoIndex("Transfers · Project accounting");
   const items = useProjectItems();
   const transfers = useTransferSummaries();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -33,37 +33,37 @@ const AdminTransfers = () => {
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Überweisungen nach Uganda</h1>
+          <h1 className="text-2xl font-semibold text-foreground">Transfers to Uganda</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Jede Überweisung wird den Positionen zugeordnet, die damit bezahlt wurden.
+            Every transfer is assigned to the items it paid for.
           </p>
         </div>
         <Button onClick={() => setIsDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-          Überweisung erfassen
+          Record transfer
         </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatTile label="Offener Bedarf" value={formatEur(openNeed.eur)} hint="zum aktuellen Kurs" />
-        <StatTile label="Offene Positionen" value={String(openNeed.count)} hint="mit Restmenge" />
+        <StatTile label="Open need" value={formatEur(openNeed.eur)} hint="at the current rate" />
+        <StatTile label="Open items" value={String(openNeed.count)} hint="with a remaining quantity" />
         <StatTile
-          label="Ohne Zuordnung"
+          label="Unassigned"
           value={String(unassigned)}
-          hint="Überweisungen ohne Position"
+          hint="transfers without an item"
           tone={unassigned > 0 ? "warning" : "default"}
         />
       </div>
 
       <Card className="shadow-card">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Alle Überweisungen</CardTitle>
+          <CardTitle className="text-base">All transfers</CardTitle>
         </CardHeader>
         <CardContent className="px-0 sm:px-6">
           {transfers.isError && (
             <Alert variant="destructive" className="mx-4 mb-4 sm:mx-0">
               <AlertCircle className="h-4 w-4" aria-hidden="true" />
-              <AlertTitle>Laden fehlgeschlagen</AlertTitle>
+              <AlertTitle>Loading failed</AlertTitle>
               <AlertDescription>{(transfers.error as Error).message}</AlertDescription>
             </Alert>
           )}
@@ -78,7 +78,7 @@ const AdminTransfers = () => {
 
           {transfers.isSuccess && transfers.data.length === 0 && (
             <p className="px-4 py-8 text-center text-sm text-muted-foreground sm:px-0">
-              Noch keine Überweisung erfasst.
+              No transfer recorded yet.
             </p>
           )}
 
@@ -87,15 +87,15 @@ const AdminTransfers = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-14 text-right">Nr.</TableHead>
-                    <TableHead>Datum</TableHead>
-                    <TableHead className="w-40">Referenz</TableHead>
-                    <TableHead>Konto</TableHead>
-                    <TableHead className="text-right">Betrag</TableHead>
-                    <TableHead className="text-right">Gebühr</TableHead>
-                    <TableHead className="text-right">Zugeordnet</TableHead>
-                    <TableHead className="text-right">Positionen</TableHead>
-                    <TableHead>Belege</TableHead>
+                    <TableHead className="w-14 text-right">No.</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="w-40">Reference</TableHead>
+                    <TableHead>Account</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">Fee</TableHead>
+                    <TableHead className="text-right">Assigned</TableHead>
+                    <TableHead className="text-right">Items</TableHead>
+                    <TableHead>Receipts</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
@@ -114,7 +114,7 @@ const AdminTransfers = () => {
                               {id}
                             </p>
                           ) : (
-                            <Badge variant="outline">ohne Referenz</Badge>
+                            <Badge variant="outline">no reference</Badge>
                           )}
                           {transfer.zweck && (
                             <p className="truncate text-xs font-normal text-muted-foreground" title={transfer.zweck}>
@@ -143,7 +143,7 @@ const AdminTransfers = () => {
                           <span className="flex items-center gap-1 text-sm text-muted-foreground">
                             <FileText className="h-3.5 w-3.5" aria-hidden="true" />
                             {transfer.receiptCount}
-                            {transfer.receipt_url && <Badge variant="secondary">Bankbeleg</Badge>}
+                            {transfer.receipt_url && <Badge variant="secondary">bank receipt</Badge>}
                           </span>
                         </TableCell>
                         <TableCell>
@@ -151,7 +151,7 @@ const AdminTransfers = () => {
                             <Link
                               to={`/admin/transfers/${encodeURIComponent(id)}`}
                               className="flex items-center justify-end text-primary hover:underline"
-                              aria-label={`Überweisung ${id} öffnen`}
+                              aria-label={`Open transfer ${id}`}
                             >
                               <ChevronRight className="h-4 w-4" aria-hidden="true" />
                             </Link>
@@ -170,10 +170,10 @@ const AdminTransfers = () => {
       {transfers.isSuccess && transfers.data.some((transfer) => !transfer.external_transaction_id) && (
         <Alert>
           <AlertCircle className="h-4 w-4" aria-hidden="true" />
-          <AlertTitle>Überweisungen ohne Referenz</AlertTitle>
+          <AlertTitle>Transfers without a reference</AlertTitle>
           <AlertDescription>
-            Zuordnungen hängen an der Referenz der Überweisung. Solange sie fehlt, lässt sich die
-            Überweisung nicht öffnen — die Referenz muss direkt in der Datenbank nachgetragen werden.
+            Assignments hang on the transfer reference. While it is missing the transfer cannot be
+            opened — the reference has to be added directly in the database.
           </AlertDescription>
         </Alert>
       )}

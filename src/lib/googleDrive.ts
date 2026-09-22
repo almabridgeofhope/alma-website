@@ -70,7 +70,7 @@ const skriptLaden = (src: string): Promise<void> => {
     element.src = src;
     element.async = true;
     element.onload = () => resolve();
-    element.onerror = () => reject(new Error(`Google-Skript nicht erreichbar: ${src}`));
+    element.onerror = () => reject(new Error(`Google script not reachable: ${src}`));
     document.head.appendChild(element);
   });
 
@@ -95,13 +95,13 @@ const tokenHolen = async (): Promise<string> => {
       scope: DRIVE_SCOPE,
       callback: (antwort: { access_token?: string; error?: string }) => {
         if (antwort.error || !antwort.access_token) {
-          reject(new Error("Google hat den Zugriff nicht bestätigt."));
+          reject(new Error("Google did not confirm access."));
           return;
         }
         zugriffsToken = antwort.access_token;
         resolve(antwort.access_token);
       },
-      error_callback: () => reject(new Error("Die Google-Anmeldung wurde abgebrochen.")),
+      error_callback: () => reject(new Error("The Google sign-in was cancelled.")),
     });
 
     client.requestAccessToken({ prompt: "" });
@@ -115,7 +115,7 @@ const pickerLaden = async (): Promise<void> => {
   await new Promise<void>((resolve, reject) => {
     window.gapi.load("picker", {
       callback: () => resolve(),
-      onerror: () => reject(new Error("Der Google Picker liess sich nicht laden.")),
+      onerror: () => reject(new Error("The Google Picker could not be loaded.")),
     });
   });
 };
@@ -132,7 +132,7 @@ const pickerLaden = async (): Promise<void> => {
  */
 export async function belegWaehlen(art: BelegArt): Promise<DriveFile | null> {
   if (!isDriveConfigured) {
-    throw new Error("Google Drive ist in dieser Umgebung nicht konfiguriert.");
+    throw new Error("Google Drive is not configured in this environment.");
   }
 
   const ordner = ordnerFuer(art);
@@ -154,8 +154,8 @@ export async function belegWaehlen(art: BelegArt): Promise<DriveFile | null> {
         .setDeveloperKey(GOOGLE_API_KEY)
         .setTitle(
           art === "ueberweisung"
-            ? "Überweisungsbeleg hochladen oder auswählen"
-            : "Positionsbeleg hochladen oder auswählen",
+            ? "Upload or choose a transfer receipt"
+            : "Upload or choose an item receipt",
         )
         .addView(hochladen)
         .addView(vorhandene)

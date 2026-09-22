@@ -25,7 +25,7 @@ import {
 
 const AdminTransferDetail = () => {
   const { transferId = "" } = useParams();
-  useNoIndex(`${transferId} · Projektabrechnung`);
+  useNoIndex(`${transferId} · Project accounting`);
 
   const transfers = useTransferSummaries();
   const items = useProjectItems();
@@ -59,7 +59,7 @@ const AdminTransferDetail = () => {
     setIsSaving(true);
     try {
       await setTransferReceipt.mutateAsync(datei.url);
-      toast.success(`Überweisungsbeleg „${datei.name}" verknüpft.`);
+      toast.success(`Transfer receipt “${datei.name}” linked.`);
     } catch (error) {
       toast.error((error as Error).message);
     } finally {
@@ -81,11 +81,11 @@ const AdminTransferDetail = () => {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" aria-hidden="true" />
-        <AlertTitle>Überweisung nicht gefunden</AlertTitle>
+        <AlertTitle>Transfer not found</AlertTitle>
         <AlertDescription>
-          Zu der Referenz {transferId} gibt es keine Überweisung.{" "}
+          There is no transfer with the reference {transferId}.{" "}
           <Link to="/admin/transfers" className="underline">
-            Zurück zur Liste
+            Back to the list
           </Link>
         </AlertDescription>
       </Alert>
@@ -100,11 +100,11 @@ const AdminTransferDetail = () => {
           className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
-          Überweisungen
+          Transfers
         </Link>
         <h1 className="mt-2 text-2xl font-semibold">
           {transfer.buchung_nr !== null && (
-            <span className="mr-2 text-muted-foreground">Nr. {transfer.buchung_nr}</span>
+            <span className="mr-2 text-muted-foreground">No. {transfer.buchung_nr}</span>
           )}
           {transfer.external_transaction_id}
         </h1>
@@ -117,36 +117,36 @@ const AdminTransferDetail = () => {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatTile
-          label="Überwiesen"
+          label="Transferred"
           value={formatEur(transferredEur)}
           hint={
             transfer.fee_eur > 0
-              ? `${transfer.konto} · ${formatEur(transfer.fee_eur)} Gebühr`
+              ? `${transfer.konto} · ${formatEur(transfer.fee_eur)} fee`
               : transfer.konto
           }
         />
         <StatTile
-          label="Angekommen"
-          value={receivedUgx === null ? "nicht erfasst" : formatUgx(receivedUgx)}
-          hint={transfer.exchange_rate ? `Kurs ${transfer.exchange_rate}` : "kein Kurs hinterlegt"}
+          label="Received"
+          value={receivedUgx === null ? "not recorded" : formatUgx(receivedUgx)}
+          hint={transfer.exchange_rate ? `Rate ${transfer.exchange_rate}` : "no rate on file"}
         />
         <StatTile
-          label="Zugeordnet"
+          label="Assigned"
           value={formatUgx(assignedUgx)}
-          hint={assignedEur === null ? undefined : `${formatEur(assignedEur)} zum Planungskurs`}
+          hint={assignedEur === null ? undefined : `${formatEur(assignedEur)} at the planning rate`}
         />
         {receivedUgx === null ? (
           <StatTile
-            label="Rest in Euro"
+            label="Remainder in euros"
             value={assignedEur === null ? "–" : formatEur(transferredEur - assignedEur)}
-            hint="überwiesen minus zugeordnet"
+            hint="transferred minus assigned"
             tone="warning"
           />
         ) : (
           <StatTile
-            label="Rest in UGX"
+            label="Remainder in UGX"
             value={formatUgx(receivedUgx - assignedUgx)}
-            hint="angekommen minus zugeordnet"
+            hint="received minus assigned"
             tone={Math.abs(receivedUgx - assignedUgx) < 1 ? "positive" : "warning"}
           />
         )}
@@ -157,9 +157,9 @@ const AdminTransferDetail = () => {
       <Card className="shadow-card">
         <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
           <div>
-            <p className="text-sm font-medium">Überweisungsbeleg</p>
+            <p className="text-sm font-medium">Transfer receipt</p>
             <p className="text-xs text-muted-foreground">
-              Beleg des Spendentransfers, einer je Transfer.
+              Receipt for the donation transfer, one per transfer.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -170,7 +170,7 @@ const AdminTransferDetail = () => {
                 onClick={() => openReceipt(transfer.receipt_url as string)}
               >
                 <FileText className="mr-2 h-4 w-4" aria-hidden="true" />
-                Öffnen
+                Open
               </Button>
             )}
             <Button variant="secondary" size="sm" disabled={isPicking || isSaving} onClick={belegWaehlen}>
@@ -179,7 +179,7 @@ const AdminTransferDetail = () => {
               ) : (
                 <Paperclip className="mr-2 h-4 w-4" aria-hidden="true" />
               )}
-              {transfer.receipt_url ? "Ersetzen" : "Aus Drive wählen"}
+              {transfer.receipt_url ? "Replace" : "Choose from Drive"}
             </Button>
           </div>
         </CardContent>
@@ -188,7 +188,7 @@ const AdminTransferDetail = () => {
       <div className="grid gap-6 lg:grid-cols-5">
         <Card className="shadow-card lg:col-span-3">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Zugeordnete Positionen</CardTitle>
+            <CardTitle className="text-base">Assigned items</CardTitle>
           </CardHeader>
           <CardContent className="px-0 sm:px-6">
             {assignments.isPending ? (
@@ -205,7 +205,7 @@ const AdminTransferDetail = () => {
 
         <Card className="shadow-card lg:col-span-2">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Offene Positionen</CardTitle>
+            <CardTitle className="text-base">Open items</CardTitle>
           </CardHeader>
           <CardContent>
             <OpenItemsPicker

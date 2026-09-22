@@ -98,8 +98,8 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
           />
           <Input
             className="pl-9"
-            placeholder="Position oder ID suchen"
-            aria-label="Offene Positionen nach Name oder ID durchsuchen"
+            placeholder="Search item or ID"
+            aria-label="Search open items by name or ID"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -107,11 +107,11 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
 
         <div className="grid gap-2 sm:grid-cols-2">
           <Select value={projectId} onValueChange={setProjectId}>
-            <SelectTrigger aria-label="Nach Projekt filtern">
+            <SelectTrigger aria-label="Filter by project">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>Alle Projekte</SelectItem>
+              <SelectItem value={ALL}>All projects</SelectItem>
               {projects.map((project) => (
                 <SelectItem key={project.id} value={project.id}>
                   {project.name}
@@ -121,11 +121,11 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
           </Select>
 
           <Select value={phase} onValueChange={setPhase}>
-            <SelectTrigger aria-label="Nach Phase filtern">
+            <SelectTrigger aria-label="Filter by phase">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={ALL}>Alle Phasen</SelectItem>
+              <SelectItem value={ALL}>All phases</SelectItem>
               {phaseOptions.map((option) => (
                 <SelectItem key={option} value={option}>
                   {option}
@@ -137,11 +137,11 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
 
         <div className="flex items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">
-            {visible.length} von {open.length} offen · {formatUgx(openUgx)}
+            {visible.length} of {open.length} open · {formatUgx(openUgx)}
           </p>
           <Button variant="outline" size="sm" onClick={() => setIsNewItemOpen(true)}>
             <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
-            Neue Position
+            New item
           </Button>
         </div>
 
@@ -158,15 +158,15 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
                     <p className="truncate text-sm font-medium">{item.item_name ?? item.project_item_id}</p>
                     <p className="truncate text-xs text-muted-foreground">
                       {item.project_item_id} · {item.projekt ?? item.project_id} ·{" "}
-                      {item.phase ?? "ohne Phase"}
+                      {item.phase ?? "no phase"}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      offen {formatQty(item.qty_open)} · {formatUgx(item.open_ugx)}
+                      open {formatQty(item.qty_open)} · {formatUgx(item.open_ugx)}
                     </p>
                     {assignedItemIds.has(item.project_item_id) && (
                       <Badge variant="secondary" className="mt-1">
                         <Check className="mr-1 h-3 w-3" aria-hidden="true" />
-                        bereits zugeordnet
+                        already assigned
                       </Badge>
                     )}
                   </div>
@@ -177,7 +177,7 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
 
             {visible.length === 0 && (
               <li className="p-6 text-center text-sm text-muted-foreground">
-                Keine offene Position gefunden.
+                No open item found.
               </li>
             )}
           </ul>
@@ -190,7 +190,7 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
         defaultProjectId={projectId === ALL ? undefined : projectId}
         defaultPhaseId={phase === ALL ? undefined : phaseIdOfName(phase)}
         onCreated={setNewItemId}
-        submitLabel="Anlegen und zuordnen"
+        submitLabel="Create and assign"
       />
 
       {selected && (
@@ -208,7 +208,7 @@ interface AddAssignmentDialogProps {
 
 const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogProps) => {
   const createAssignment = useCreateAssignment(transferId);
-  const [qty, setQty] = useState(String(item.qty_open).replace(".", ","));
+  const [qty, setQty] = useState(String(item.qty_open));
   const [unit, setUnit] = useState(String(Math.round(unitCostUgx(item))));
   const [amount, setAmount] = useState(String(Math.round(item.qty_open * unitCostUgx(item))));
   const [receipt, setReceipt] = useState<DriveFile | null>(null);
@@ -241,14 +241,14 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
       setUnit("");
       return;
     }
-    setUnit(String(Math.round((parsedTotal / parsedQty) * 100) / 100).replace(".", ","));
+    setUnit(String(Math.round((parsedTotal / parsedQty) * 100) / 100));
   };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     const parsedQty = parseAmount(qty);
     if (parsedQty === null || parsedQty <= 0) {
-      toast.error("Die Menge muss größer als 0 sein.");
+      toast.error("The quantity must be greater than 0.");
       return;
     }
 
@@ -260,7 +260,7 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
         amountPaidUgx: parseAmount(amount),
         receiptUrl: receipt?.url ?? null,
       });
-      toast.success(`${item.item_name ?? item.project_item_id} zugeordnet.`);
+      toast.success(`${item.item_name ?? item.project_item_id} assigned.`);
       onClose();
     } catch (error) {
       toast.error((error as Error).message);
@@ -273,15 +273,15 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
         <DialogHeader>
           <DialogTitle>{item.item_name ?? item.project_item_id}</DialogTitle>
           <DialogDescription>
-            {item.project_item_id} · offen {formatQty(item.qty_open)} von {formatQty(item.qty_needed)} ·
-            Stückpreis {formatUgx(Math.round(unitCostUgx(item)))}
+            {item.project_item_id} · open {formatQty(item.qty_open)} of {formatQty(item.qty_needed)} ·
+            unit price {formatUgx(Math.round(unitCostUgx(item)))}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={submit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="qty">Bezahlte Menge</Label>
+              <Label htmlFor="qty">Quantity paid</Label>
               <Input
                 id="qty"
                 inputMode="decimal"
@@ -293,7 +293,7 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="unit">Ist je Einheit</Label>
+              <Label htmlFor="unit">Actual per unit</Label>
               <Input
                 id="unit"
                 inputMode="decimal"
@@ -303,7 +303,7 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount">Ist gesamt in UGX</Label>
+              <Label htmlFor="amount">Actual total in UGX</Label>
               <Input
                 id="amount"
                 inputMode="decimal"
@@ -314,7 +314,7 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
           </div>
 
           <div className="space-y-2">
-            <Label>Beleg</Label>
+            <Label>Receipt</Label>
             <div className="flex items-center gap-2">
               <Button
                 type="button"
@@ -330,25 +330,25 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
                 ) : (
                   <FileText className="mr-2 h-4 w-4" aria-hidden="true" />
                 )}
-                {receipt ? "Anderen Beleg wählen" : "Beleg aus Drive"}
+                {receipt ? "Choose another receipt" : "Receipt from Drive"}
               </Button>
               {receipt && <span className="min-w-0 truncate text-sm">{receipt.name}</span>}
             </div>
             <p className="text-xs text-muted-foreground">
-              Die Quittung aus Uganda. Im Auswahlfenster lässt sie sich hochladen oder aus dem
-              Belegordner wählen — sie kann auch später nachgereicht werden.
+              The receipt from Uganda. The picker can upload it or take it from the receipt folder
+              — it can also be added later.
             </p>
           </div>
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={onClose}>
-              Abbrechen
+              Cancel
             </Button>
             <Button type="submit" disabled={createAssignment.isPending}>
               {createAssignment.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
               )}
-              Zuordnen
+              Assign
             </Button>
           </DialogFooter>
         </form>

@@ -17,7 +17,7 @@ export const useReceiptPicker = () => {
     try {
       const drive = await import("@/lib/googleDrive");
       if (!drive.isDriveConfigured) {
-        toast.error("Google Drive ist in dieser Umgebung nicht eingerichtet.");
+        toast.error("Google Drive is not set up in this environment.");
         return null;
       }
       return await drive.belegWaehlen(art);
