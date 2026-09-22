@@ -6,8 +6,8 @@ import { useSession } from "./useSession";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-  { to: "/admin/transfers", label: "Überweisungen" },
-  { to: "/admin/positionen", label: "Positionen" },
+  { to: "/admin/transfers", label: "Transfers" },
+  { to: "/admin/positionen", label: "Items" },
 ];
 
 const AdminLayout = () => {
@@ -25,10 +25,10 @@ const AdminLayout = () => {
         <div className="mx-auto flex h-16 max-w-content items-center gap-6 px-4 sm:px-6">
           <div className="flex min-w-0 items-baseline gap-2">
             <span className="text-base font-semibold text-primary">Alma</span>
-            <span className="truncate text-sm text-muted-foreground">Projektabrechnung</span>
+            <span className="truncate text-sm text-muted-foreground">Project accounting</span>
           </div>
 
-          <nav className="flex items-center gap-1" aria-label="Bereiche">
+          <nav className="flex items-center gap-1" aria-label="Sections">
             {NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.to}
@@ -59,7 +59,7 @@ const AdminLayout = () => {
             </span>
             <Button variant="ghost" size="sm" onClick={signOut}>
               <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
-              Abmelden
+              Sign out
             </Button>
           </div>
         </div>

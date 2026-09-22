@@ -13,7 +13,7 @@ interface EditableAmountProps {
 /** Zahl im Feld, gespeichert wird beim Verlassen oder mit Enter — kein Speichern-Knopf je Zeile. */
 const EditableAmount = ({ value, onCommit, label, placeholder, allowEmpty = true }: EditableAmountProps) => {
   const asText = (input: number | null): string =>
-    input === null ? "" : String(input).replace(".", ",");
+    input === null ? "" : String(input);
   const [draft, setDraft] = useState(() => asText(value));
 
   useEffect(() => setDraft(asText(value)), [value]);

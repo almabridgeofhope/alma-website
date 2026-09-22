@@ -18,9 +18,9 @@ import type { ProjectItem } from "@/admin/types";
 import { cn } from "@/lib/utils";
 
 const STATUS_LABELS: Record<string, string> = {
-  outstanding: "offen",
-  partially_paid: "teilweise",
-  paid: "bezahlt",
+  outstanding: "open",
+  partially_paid: "partly paid",
+  paid: "paid",
 };
 
 const ALL = "alle";
@@ -62,7 +62,7 @@ const gruppieren = (rows: ProjectItem[], schluessel: (item: ProjectItem) => stri
 };
 
 const AdminItems = () => {
-  useNoIndex("Positionen · Projektabrechnung");
+  useNoIndex("Items · Project accounting");
   const items = useProjectItems();
   const [search, setSearch] = useState("");
   const [projectId, setProjectId] = useState(ALL);
@@ -115,30 +115,30 @@ const AdminItems = () => {
       );
   }, [alle, projectId, phase, status, search]);
 
-  const gesamt = summieren("gesamt", "Gesamt", alle);
+  const gesamt = summieren("gesamt", "Total", alle);
 
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Projektpositionen</h1>
+          <h1 className="text-2xl font-semibold">Project items</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Zahlungsstand je Position. Die Mengen pflegt die Zuordnung an der Überweisung.
+            Payment status per item. The quantities come from the assignments on each transfer.
           </p>
         </div>
         <Button onClick={() => setIsNewItemOpen(true)}>
           <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-          Neue Position
+          New item
         </Button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatTile label="Noch offen" value={formatEur(gesamt.offenEur)} hint="zum aktuellen Kurs" />
-        <StatTile label="Noch offen" value={formatUgx(gesamt.offenUgx)} hint="in Schilling" />
+        <StatTile label="Still open" value={formatEur(gesamt.offenEur)} hint="at the current rate" />
+        <StatTile label="Still open" value={formatUgx(gesamt.offenUgx)} hint="in shillings" />
         <StatTile
-          label="Bereits bezahlt"
+          label="Already paid"
           value={`${anteilBezahlt(gesamt)} %`}
-          hint={`${formatUgx(gesamt.bezahltUgx)} von ${formatUgx(gesamt.gesamtUgx)}`}
+          hint={`${formatUgx(gesamt.bezahltUgx)} of ${formatUgx(gesamt.gesamtUgx)}`}
           tone="positive"
         />
       </div>
@@ -153,13 +153,13 @@ const AdminItems = () => {
                 <div className="flex items-baseline justify-between gap-3">
                   <CardTitle className="text-base">{projekt.name}</CardTitle>
                   <span className="text-sm tabular-nums text-muted-foreground">
-                    {formatEur(projekt.offenEur)} offen
+                    {formatEur(projekt.offenEur)} open
                   </span>
                 </div>
                 <Progress value={anteilBezahlt(projekt)} className="mt-2 h-2" />
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {anteilBezahlt(projekt)} % bezahlt · {projekt.offenePositionen} von {projekt.positionen}{" "}
-                  Positionen offen
+                  {anteilBezahlt(projekt)} % paid · {projekt.offenePositionen} of {projekt.positionen}{" "}
+                  items open
                 </p>
               </CardHeader>
 
@@ -181,7 +181,7 @@ const AdminItems = () => {
                     <span className="min-w-0 flex-1 truncate text-sm">{p.name}</span>
                     <Progress value={anteilBezahlt(p)} className="h-1.5 w-20 shrink-0" />
                     <span className="w-28 shrink-0 text-right text-sm tabular-nums text-muted-foreground">
-                      {p.offenUgx > 0 ? formatUgx(p.offenUgx) : "vollständig"}
+                      {p.offenUgx > 0 ? formatUgx(p.offenUgx) : "complete"}
                     </span>
                   </button>
                 ))}
@@ -199,8 +199,8 @@ const AdminItems = () => {
           />
           <Input
             className="pl-9"
-            placeholder="Position, Phase oder ID"
-            aria-label="Positionen durchsuchen"
+            placeholder="Item, phase or ID"
+            aria-label="Search items"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -213,11 +213,11 @@ const AdminItems = () => {
             setPhase(ALL);
           }}
         >
-          <SelectTrigger className="w-48" aria-label="Nach Projekt filtern">
+          <SelectTrigger className="w-48" aria-label="Filter by project">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Alle Projekte</SelectItem>
+            <SelectItem value={ALL}>All projects</SelectItem>
             {projects.map((project) => (
               <SelectItem key={project.id} value={project.id}>
                 {project.name}
@@ -227,11 +227,11 @@ const AdminItems = () => {
         </Select>
 
         <Select value={phase} onValueChange={setPhase}>
-          <SelectTrigger className="w-56" aria-label="Nach Phase filtern">
+          <SelectTrigger className="w-56" aria-label="Filter by phase">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value={ALL}>Alle Phasen</SelectItem>
+            <SelectItem value={ALL}>All phases</SelectItem>
             {phaseOptions.map((option) => (
               <SelectItem key={option} value={option}>
                 {option}
@@ -242,13 +242,13 @@ const AdminItems = () => {
 
         <Tabs value={status} onValueChange={(value) => setStatus(value as StatusFilter)}>
           <TabsList>
-            <TabsTrigger value="offen">Offen</TabsTrigger>
-            <TabsTrigger value="bezahlt">Bezahlt</TabsTrigger>
-            <TabsTrigger value="alle">Alle</TabsTrigger>
+            <TabsTrigger value="offen">Open</TabsTrigger>
+            <TabsTrigger value="bezahlt">Paid</TabsTrigger>
+            <TabsTrigger value="alle">All</TabsTrigger>
           </TabsList>
         </Tabs>
 
-        <p className="text-sm text-muted-foreground">{rows.length} Positionen</p>
+        <p className="text-sm text-muted-foreground">{rows.length} items</p>
 
         {(projectId !== ALL || phase !== ALL || search !== "") && (
           <Button
@@ -260,7 +260,7 @@ const AdminItems = () => {
               setSearch("");
             }}
           >
-            Filter zurücksetzen
+            Reset filters
           </Button>
         )}
       </div>
@@ -290,13 +290,13 @@ const AdminItems = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Position</TableHead>
+                    <TableHead>Item</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Benötigt</TableHead>
-                    <TableHead className="text-right">Bezahlt</TableHead>
-                    <TableHead className="text-right">Offen</TableHead>
-                    <TableHead className="text-right">Offen UGX</TableHead>
-                    <TableHead className="text-right">Offen EUR</TableHead>
+                    <TableHead className="text-right">Needed</TableHead>
+                    <TableHead className="text-right">Paid</TableHead>
+                    <TableHead className="text-right">Open</TableHead>
+                    <TableHead className="text-right">Open UGX</TableHead>
+                    <TableHead className="text-right">Open EUR</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -329,7 +329,7 @@ const AdminItems = () => {
                   {rows.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                        Keine Position gefunden.
+                        No item found.
                       </TableCell>
                     </TableRow>
                   )}

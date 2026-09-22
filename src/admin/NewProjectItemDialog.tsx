@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatEur, formatUgx, parseAmount } from "./format";
-import { useCreateProjectItem, useEurRate, usePhases, useProjects } from "./queries";
+import { phaseLabel, useCreateProjectItem, useEurRate, usePhases, useProjects } from "./queries";
 
 interface NewProjectItemDialogProps {
   open: boolean;
@@ -33,7 +33,7 @@ const NewProjectItemDialog = ({
   defaultProjectId,
   defaultPhaseId,
   onCreated,
-  submitLabel = "Anlegen",
+  submitLabel = "Create",
 }: NewProjectItemDialogProps) => {
   const projects = useProjects();
   const phases = usePhases();
@@ -54,11 +54,11 @@ const NewProjectItemDialog = ({
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (projectId === "" || phaseId === "") {
-      toast.error("Bitte Projekt und Phase wählen.");
+      toast.error("Please choose a project and a phase.");
       return;
     }
     if (parsedQty === null || parsedQty <= 0 || parsedCost === null || parsedCost < 0) {
-      toast.error("Menge und Stückpreis müssen Zahlen sein, die Menge größer als 0.");
+      toast.error("Quantity and unit price must be numbers, and the quantity greater than 0.");
       return;
     }
 
@@ -66,12 +66,12 @@ const NewProjectItemDialog = ({
       const newId = await createItem.mutateAsync({
         projectId,
         phaseId,
-        titleDe,
-        titleEn: titleEn.trim() === "" ? null : titleEn.trim(),
+        titleEn,
+        titleDe: titleDe.trim() === "" ? null : titleDe.trim(),
         qtyNeeded: parsedQty,
         unitCostUgx: parsedCost,
       });
-      toast.success(`Position ${newId} angelegt.`);
+toast.success(`Item ${newId} created.`);
       setTitleDe("");
       setTitleEn("");
       setQty("1");
@@ -87,19 +87,19 @@ const NewProjectItemDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Neue Position</DialogTitle>
+          <DialogTitle>New item</DialogTitle>
           <DialogDescription>
-            Für Ausgaben, die im Plan fehlen. Die ID vergibt die Datenbank nach dem Kürzel der Phase.
+            For spending that is missing from the plan. The database assigns the ID from the phase code.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={submit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="new-project">Projekt</Label>
+              <Label htmlFor="new-project">Project</Label>
               <Select value={projectId} onValueChange={setProjectId}>
                 <SelectTrigger id="new-project">
-                  <SelectValue placeholder="wählen" />
+                  <SelectValue placeholder="choose" />
                 </SelectTrigger>
                 <SelectContent>
                   {(projects.data ?? []).map((project) => (
@@ -115,12 +115,12 @@ const NewProjectItemDialog = ({
               <Label htmlFor="new-phase">Phase</Label>
               <Select value={phaseId} onValueChange={setPhaseId}>
                 <SelectTrigger id="new-phase">
-                  <SelectValue placeholder="wählen" />
+                  <SelectValue placeholder="choose" />
                 </SelectTrigger>
                 <SelectContent>
                   {(phases.data ?? []).map((phase) => (
                     <SelectItem key={phase.phase_id} value={phase.phase_id}>
-                      {phase.phase_de ?? phase.phase_id}
+                      {phaseLabel(phase)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -129,30 +129,30 @@ const NewProjectItemDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="new-title-de">Bezeichnung</Label>
-            <Input
-              id="new-title-de"
-              required
-              value={titleDe}
-              onChange={(event) => setTitleDe(event.target.value)}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="new-title-en">
-              Bezeichnung englisch <span className="text-muted-foreground">(optional)</span>
-            </Label>
+            <Label htmlFor="new-title-en">Name</Label>
             <Input
               id="new-title-en"
-              placeholder="leer = wie oben"
+              required
               value={titleEn}
               onChange={(event) => setTitleEn(event.target.value)}
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="new-title-de">
+              Name in German <span className="text-muted-foreground">(optional)</span>
+            </Label>
+            <Input
+              id="new-title-de"
+              placeholder="empty = same as above"
+              value={titleDe}
+              onChange={(event) => setTitleDe(event.target.value)}
+            />
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="new-qty">Menge</Label>
+              <Label htmlFor="new-qty">Quantity</Label>
               <Input
                 id="new-qty"
                 inputMode="decimal"
@@ -163,12 +163,12 @@ const NewProjectItemDialog = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="new-cost">Stückpreis in UGX</Label>
+              <Label htmlFor="new-cost">Unit price in UGX</Label>
               <Input
                 id="new-cost"
                 inputMode="decimal"
                 required
-                placeholder="250.000"
+                placeholder="250,000"
                 value={unitCost}
                 onChange={(event) => setUnitCost(event.target.value)}
               />
@@ -176,7 +176,7 @@ const NewProjectItemDialog = ({
           </div>
 
           <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
-            Gesamt:{" "}
+            Total:{" "}
             <span className="tabular-nums text-foreground">
               {total === null ? "–" : formatUgx(total)}
             </span>
@@ -187,7 +187,7 @@ const NewProjectItemDialog = ({
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Abbrechen
+              Cancel
             </Button>
             <Button type="submit" disabled={createItem.isPending}>
               {createItem.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}

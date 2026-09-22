@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { RECEIPTS_BUCKET, supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 import type { Assignment, Phase, Project, ProjectItem, Transfer, TransferSummary } from "./types";
 
 const TRANSFER_KATEGORIE = "spendentransfer";
 
 const TRANSFER_COLUMNS =
-  "transaction_id, external_transaction_id, date, konto, amount, currency, original_amount, original_currency, exchange_rate, reference, receipt_url";
+  "transaction_id, buchung_nr, zweck, external_transaction_id, date, konto, amount, currency, original_amount, original_currency, exchange_rate, reference, receipt_url, fee_eur";
 const ASSIGNMENT_COLUMNS =
   "payment_log_id, item_id, qty_paid, amount_paid_ugx, external_transaction_id, expenditure_id, created_at";
 const ITEM_COLUMNS =
@@ -21,6 +21,16 @@ export const queryKeys = {
 export const unitCostUgx = (item: Pick<ProjectItem, "total_ugx" | "qty_needed">): number => {
   const qty = item.qty_needed ?? 0;
   return qty > 0 ? (item.total_ugx ?? 0) / qty : 0;
+};
+
+/**
+ * Ist-Betrag je Einheit. Steht nicht in der Datenbank, sondern ergibt sich aus
+ * Gesamtbetrag und Menge — gespeichert wird weiterhin nur der Gesamtbetrag.
+ */
+export const assignmentUnitUgx = (assignment: Assignment): number | null => {
+  const qty = assignment.qty_paid ?? 0;
+  if (assignment.amount_paid_ugx === null || qty <= 0) return null;
+  return Math.round((assignment.amount_paid_ugx / qty) * 100) / 100;
 };
 
 /** Was eine Zuordnung gekostet hat: der erfasste Ist-Betrag, sonst Menge mal Stückpreis. */
@@ -149,21 +159,20 @@ export interface NewAssignment {
   itemId: string;
   qtyPaid: number;
   amountPaidUgx: number | null;
-  /** Der Beleg ist Pflicht: erst die Datei, dann die Zeile. */
-  receipt: File;
+  /** Link auf die Datei in Google Drive, sofern die Quittung schon vorliegt. */
+  receiptUrl: string | null;
 }
 
 export const useCreateAssignment = (transferId: string) => {
   const refresh = useRefresh(transferId);
   return useMutation({
     mutationFn: async (input: NewAssignment) => {
-      const path = await uploadToBucket(receiptPath(input.transferId, input.receipt), input.receipt);
       const { error } = await supabase.from("payment_log").insert({
         external_transaction_id: input.transferId,
         item_id: input.itemId,
         qty_paid: input.qtyPaid,
         amount_paid_ugx: input.amountPaidUgx,
-        expenditure_id: path,
+        expenditure_id: input.receiptUrl,
       });
       if (error) throw new Error(error.message);
     },
@@ -193,40 +202,18 @@ export const useDeleteAssignment = (transferId: string) => {
   });
 };
 
-/** Dateinamen entschärfen, damit der Pfad im Bucket lesbar bleibt. */
-const safeFileName = (name: string): string =>
-  name
-    .normalize("NFKD")
-    .replace(/[^\w.-]+/g, "_")
-    .slice(-80);
-
-/** Der Zeitstempel haelt den Pfad eindeutig, auch bevor die Zeile eine ID hat. */
-const receiptPath = (transferId: string, file: File): string =>
-  `${transferId}/${Date.now()}__${safeFileName(file.name)}`;
-
-/** Ein Beleg mit Datei traegt einen Pfad; kurze Altwerte sind blosse Nummern. */
+/** Ein echter Beleg ist ein Link auf die Datei in Drive; kurze Altwerte sind blosse Nummern. */
 export const isReceiptFile = (expenditureId: string | null): boolean =>
-  expenditureId !== null && (expenditureId.includes("/") || expenditureId.startsWith("http"));
-
-/** Was in der Zeile steht: Dateiname statt vollem Pfad. */
-export const receiptLabel = (expenditureId: string): string =>
-  expenditureId.split("/").pop()?.split("__").pop() ?? expenditureId;
-
-async function uploadToBucket(path: string, file: File): Promise<string> {
-  const { error } = await supabase.storage.from(RECEIPTS_BUCKET).upload(path, file, { upsert: true });
-  if (error) throw new Error(error.message);
-  return path;
-}
+  expenditureId !== null && expenditureId.startsWith("http");
 
 /** Quittung aus Uganda an einer bestehenden Zuordnung ersetzen oder nachreichen. */
-export const useUploadAssignmentReceipt = (transferId: string) => {
+export const useSetAssignmentReceipt = (transferId: string) => {
   const refresh = useRefresh(transferId);
   return useMutation({
-    mutationFn: async ({ paymentLogId, file }: { paymentLogId: string; file: File }) => {
-      const path = await uploadToBucket(receiptPath(transferId, file), file);
+    mutationFn: async ({ paymentLogId, receiptUrl }: { paymentLogId: string; receiptUrl: string }) => {
       const { error } = await supabase
         .from("payment_log")
-        .update({ expenditure_id: path })
+        .update({ expenditure_id: receiptUrl })
         .eq("payment_log_id", paymentLogId);
       if (error) throw new Error(error.message);
     },
@@ -235,14 +222,13 @@ export const useUploadAssignmentReceipt = (transferId: string) => {
 };
 
 /** Bank- oder Wise-Beleg an der Überweisung selbst. */
-export const useUploadTransferReceipt = (transferId: string) => {
+export const useSetTransferReceipt = (transferId: string) => {
   const refresh = useRefresh(transferId);
   return useMutation({
-    mutationFn: async (file: File) => {
-      const path = await uploadToBucket(`${transferId}/ueberweisung__${safeFileName(file.name)}`, file);
+    mutationFn: async (receiptUrl: string) => {
       const { error } = await supabase
         .from("transactions")
-        .update({ receipt_url: path })
+        .update({ receipt_url: receiptUrl })
         .eq("external_transaction_id", transferId);
       if (error) throw new Error(error.message);
     },
@@ -250,15 +236,9 @@ export const useUploadTransferReceipt = (transferId: string) => {
   });
 };
 
-/** Altbestand kann eine fertige URL enthalten, Uploads liegen als Pfad im Bucket. */
+/** Belege liegen in Drive, gespeichert ist der Link darauf. */
 export async function openReceipt(receipt: string): Promise<void> {
-  if (receipt.startsWith("http")) {
-    window.open(receipt, "_blank", "noopener");
-    return;
-  }
-  const { data, error } = await supabase.storage.from(RECEIPTS_BUCKET).createSignedUrl(receipt, 60);
-  if (error) throw new Error(error.message);
-  window.open(data.signedUrl, "_blank", "noopener");
+  window.open(receipt, "_blank", "noopener");
 }
 
 /** Aktueller Planungskurs aus app_config — dieselbe Zahl, mit der v_project_items rechnet. */
@@ -300,14 +280,18 @@ export const useProjects = () =>
     },
   });
 
+/** Angezeigt wird die englische Bezeichnung — die Abrechnung laeuft mit Uganda. */
+export const phaseLabel = (phase: Phase): string =>
+  phase.phase_en ?? phase.phase_de ?? phase.phase_id;
+
 export const usePhases = () =>
   useQuery({
     queryKey: ["admin", "phases"] as const,
     queryFn: async (): Promise<Phase[]> => {
       const { data, error } = await supabase
         .from("project_phase_translations")
-        .select("phase_id, phase_de")
-        .order("phase_de");
+        .select("phase_id, phase_de, phase_en")
+        .order("phase_en");
       if (error) throw new Error(error.message);
       return (data ?? []) as Phase[];
     },
@@ -316,8 +300,9 @@ export const usePhases = () =>
 export interface NewProjectItem {
   projectId: string;
   phaseId: string;
-  titleDe: string;
-  titleEn: string | null;
+  /** Fuehrende Bezeichnung: die Abrechnung laeuft mit Uganda, also englisch. */
+  titleEn: string;
+  titleDe: string | null;
   qtyNeeded: number;
   unitCostUgx: number;
 }
@@ -339,5 +324,33 @@ export const useCreateProjectItem = () => {
       return data as string;
     },
     onSuccess: () => client.invalidateQueries({ queryKey: queryKeys.items }),
+  });
+};
+
+export interface TransferPatch {
+  buchung_nr?: number | null;
+  zweck?: string | null;
+  original_amount?: number | null;
+  original_currency?: string | null;
+  exchange_rate?: number | null;
+}
+
+/**
+ * Bearbeitet die Buchungsangaben einer Überweisung.
+ *
+ * Adressiert wird über transaction_id, nicht über die Referenz: vier Altzeilen
+ * haben keine, und die Referenz ist nicht der Schlüssel der Tabelle.
+ */
+export const useUpdateTransfer = (transferId: string) => {
+  const refresh = useRefresh(transferId);
+  return useMutation({
+    mutationFn: async ({ transactionId, patch }: { transactionId: string; patch: TransferPatch }) => {
+      const { error } = await supabase
+        .from("transactions")
+        .update(patch)
+        .eq("transaction_id", transactionId);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: refresh,
   });
 };

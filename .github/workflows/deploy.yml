@@ -14,6 +14,12 @@ name: Deploy React App to GitHub Pages
 # VITE_DONATION_WEBHOOK_URL      - Donation Webhook Apps Script URL
 # VITE_SUPABASE_URL              - Supabase project URL (interner Bereich /admin)
 # VITE_SUPABASE_PUBLISHABLE_KEY  - Supabase publishable key (oeffentlich, RLS schuetzt die Daten)
+# VITE_GOOGLE_CLIENT_ID          - OAuth-Client des Google-Cloud-Projekts (Belege in Drive)
+# VITE_GOOGLE_PICKER_API_KEY     - API-Key fuer den Google Picker (nicht VITE_GOOGLE_API_KEY, das sind die Sheets)
+# VITE_GOOGLE_APP_ID             - Projektnummer des Google-Cloud-Projekts
+# VITE_GOOGLE_DRIVE_FOLDER_ID    - Rueckfall: ein Ordner fuer alle Belege
+# VITE_GOOGLE_DRIVE_FOLDER_UEBERWEISUNGEN - Drive-Ordner der Ueberweisungsbelege
+# VITE_GOOGLE_DRIVE_FOLDER_POSITIONEN     - Drive-Ordner der Positionsbelege
 #
 # Backend Secrets (synced to Apps Script automatically):
 # VITE_STRIPE_TEST_SECRET_KEY    - Stripe Test Secret Key (sk_test_...)
@@ -114,6 +120,12 @@ jobs:
         VITE_DONATION_WEBHOOK_URL: ${{ secrets.VITE_DONATION_WEBHOOK_URL }}
         VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
         VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
+        VITE_GOOGLE_PICKER_API_KEY: ${{ secrets.VITE_GOOGLE_PICKER_API_KEY }}
+        VITE_GOOGLE_APP_ID: ${{ secrets.VITE_GOOGLE_APP_ID }}
+        VITE_GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.VITE_GOOGLE_DRIVE_FOLDER_ID }}
+        VITE_GOOGLE_DRIVE_FOLDER_UEBERWEISUNGEN: ${{ secrets.VITE_GOOGLE_DRIVE_FOLDER_UEBERWEISUNGEN }}
+        VITE_GOOGLE_DRIVE_FOLDER_POSITIONEN: ${{ secrets.VITE_GOOGLE_DRIVE_FOLDER_POSITIONEN }}
         VITE_SEPA_IBAN: ${{ secrets.VITE_SEPA_IBAN }}
         VITE_SEPA_BIC: ${{ secrets.VITE_SEPA_BIC }}
         VITE_SEPA_ACCOUNT_HOLDER: ${{ secrets.VITE_SEPA_ACCOUNT_HOLDER }}

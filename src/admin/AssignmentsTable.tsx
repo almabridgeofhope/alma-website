@@ -1,6 +1,7 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, FileText, Loader2, Paperclip, Trash2 } from "lucide-react";
+import { useReceiptPicker } from "./useReceiptPicker";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,12 +18,13 @@ import EditableAmount from "./EditableAmount";
 import { formatUgx } from "./format";
 import {
   assignmentUgx,
+  assignmentUnitUgx,
   isReceiptFile,
   openReceipt,
-  receiptLabel,
+  unitCostUgx,
   useDeleteAssignment,
+  useSetAssignmentReceipt,
   useUpdateAssignment,
-  useUploadAssignmentReceipt,
 } from "./queries";
 import type { Assignment, ProjectItem } from "./types";
 
@@ -35,34 +37,64 @@ interface AssignmentsTableProps {
 const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTableProps) => {
   const updateAssignment = useUpdateAssignment(transferId);
   const deleteAssignment = useDeleteAssignment(transferId);
-  const uploadReceipt = useUploadAssignmentReceipt(transferId);
+  const setReceipt = useSetAssignmentReceipt(transferId);
+  const { pick, isPicking } = useReceiptPicker();
   const [pendingDelete, setPendingDelete] = useState<Assignment | null>(null);
-  const [uploadingId, setUploadingId] = useState<string | null>(null);
-  const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
 
   const patch = async (id: string, next: Partial<Assignment>, label: string) => {
     try {
       await updateAssignment.mutateAsync({ id, patch: next });
-      toast.success(`${label} gespeichert.`);
+      toast.success(`${label} saved.`);
     } catch (error) {
-      // Die Belegpflicht schlaegt hier zu, wenn eine Altzeile ohne Beleg bearbeitet wird.
-      const message = (error as Error).message.includes("payment_log_beleg_pflicht")
-        ? "Diese Zuordnung hat noch keinen Beleg. Bitte zuerst einen hochladen."
-        : (error as Error).message;
-      toast.error(message);
+      toast.error((error as Error).message);
     }
   };
 
-  const upload = async (paymentLogId: string, file: File | undefined) => {
-    if (!file) return;
-    setUploadingId(paymentLogId);
+  // Menge, Einzelbetrag und Gesamtbetrag haengen aneinander: gespeichert wird nur der
+  // Gesamtbetrag, die beiden anderen Felder rechnen ihn um. Der Einzelbetrag ist dabei
+  // der bleibende Wert — wer die Menge aendert, meint selten einen anderen Stueckpreis.
+  const changeQty = (assignment: Assignment, next: number | null) => {
+    if (next === null || next <= 0) {
+      toast.error("The quantity must be greater than 0.");
+      return;
+    }
+    const unit = assignmentUnitUgx(assignment);
+    if (unit === null) {
+      patch(assignment.payment_log_id, { qty_paid: next }, "Quantity");
+      return;
+    }
+    patch(
+      assignment.payment_log_id,
+      { qty_paid: next, amount_paid_ugx: Math.round(unit * next) },
+      "Quantity and actual amount",
+    );
+  };
+
+  const changeUnit = (assignment: Assignment, next: number | null) => {
+    if (next === null) {
+      patch(assignment.payment_log_id, { amount_paid_ugx: null }, "Actual amount");
+      return;
+    }
+    const qty = assignment.qty_paid ?? 0;
+    if (qty <= 0) {
+      toast.error("Without a quantity the per-unit amount cannot be converted.");
+      return;
+    }
+    patch(assignment.payment_log_id, { amount_paid_ugx: Math.round(next * qty) }, "Actual amount");
+  };
+
+  const belegWaehlen = async (paymentLogId: string) => {
+    const datei = await pick("position");
+    if (!datei) return;
+    setBusyId(paymentLogId);
     try {
-      await uploadReceipt.mutateAsync({ paymentLogId, file });
-      toast.success("Beleg hochgeladen.");
+      await setReceipt.mutateAsync({ paymentLogId, receiptUrl: datei.url });
+      toast.success(`Receipt “${datei.name}” linked.`);
     } catch (error) {
       toast.error((error as Error).message);
     } finally {
-      setUploadingId(null);
+      setBusyId(null);
     }
   };
 
@@ -70,7 +102,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
     if (!pendingDelete) return;
     try {
       await deleteAssignment.mutateAsync(pendingDelete.payment_log_id);
-      toast.success("Zuordnung entfernt.");
+      toast.success("Assignment removed.");
     } catch (error) {
       toast.error((error as Error).message);
     } finally {
@@ -81,7 +113,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
   if (assignments.length === 0) {
     return (
       <p className="py-10 text-center text-sm text-muted-foreground">
-        Noch nichts zugeordnet. Rechts eine offene Position auswählen.
+        Nothing assigned yet. Pick an open item on the right.
       </p>
     );
   }
@@ -92,10 +124,11 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Position</TableHead>
-              <TableHead className="text-right">Menge</TableHead>
-              <TableHead className="text-right">Ist-Betrag</TableHead>
-              <TableHead>Beleg</TableHead>
+              <TableHead>Item</TableHead>
+              <TableHead className="text-right">Qty</TableHead>
+              <TableHead className="text-right">Actual per unit</TableHead>
+              <TableHead className="text-right">Actual total</TableHead>
+              <TableHead>Receipt</TableHead>
               <TableHead className="w-10" />
             </TableRow>
           </TableHeader>
@@ -116,84 +149,83 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
 
                   <TableCell className="text-right">
                     <EditableAmount
-                      label="Menge"
+                      label="Quantity"
                       value={assignment.qty_paid}
                       allowEmpty={false}
-                      onCommit={(next) =>
-                        next !== null && next > 0
-                          ? patch(assignment.payment_log_id, { qty_paid: next }, "Menge")
-                          : toast.error("Die Menge muss größer als 0 sein.")
-                      }
+                      onCommit={(next) => changeQty(assignment, next)}
                     />
                   </TableCell>
 
                   <TableCell className="text-right">
                     <EditableAmount
-                      label="Ist-Betrag in UGX"
+                      label="Actual amount per unit in UGX"
+                      value={assignmentUnitUgx(assignment)}
+                      placeholder={item ? String(Math.round(unitCostUgx(item))) : "UGX"}
+                      onCommit={(next) => changeUnit(assignment, next)}
+                    />
+                    {assignmentUnitUgx(assignment) === null && item && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        planned {formatUgx(Math.round(unitCostUgx(item)))}
+                      </p>
+                    )}
+                  </TableCell>
+
+                  <TableCell className="text-right">
+                    <EditableAmount
+                      label="Actual amount in UGX"
                       value={assignment.amount_paid_ugx}
                       placeholder={item ? String(Math.round(assignmentUgx(assignment, item))) : "UGX"}
                       onCommit={(next) =>
-                        patch(assignment.payment_log_id, { amount_paid_ugx: next }, "Betrag")
+                        patch(assignment.payment_log_id, { amount_paid_ugx: next }, "Ist-Betrag")
                       }
                     />
                     {assignment.amount_paid_ugx === null && item && (
                       <p className="mt-1 text-xs text-muted-foreground">
-                        geschätzt {formatUgx(assignmentUgx(assignment, item))}
+                        estimated {formatUgx(assignmentUgx(assignment, item))}
                       </p>
                     )}
                   </TableCell>
 
                   <TableCell>
-                    <input
-                      ref={(element) => {
-                        fileInputs.current[assignment.payment_log_id] = element;
-                      }}
-                      type="file"
-                      accept="application/pdf,image/*"
-                      className="sr-only"
-                      onChange={(event) => upload(assignment.payment_log_id, event.target.files?.[0])}
-                    />
                     <div className="flex items-center gap-1">
                       {hasFile && receipt && (
                         <Button
                           variant="link"
                           size="sm"
-                          className="h-auto max-w-[12rem] justify-start truncate px-0"
-                          onClick={() =>
-                            openReceipt(receipt).catch((error: Error) => toast.error(error.message))
-                          }
+                          className="h-auto px-0"
+                          onClick={() => openReceipt(receipt)}
                         >
                           <FileText className="mr-1 h-4 w-4 shrink-0" aria-hidden="true" />
-                          <span className="truncate">{receiptLabel(receipt)}</span>
+                          open
                         </Button>
                       )}
 
                       {!hasFile && receipt && (
                         <span className="flex items-center gap-1 text-sm text-muted-foreground">
                           <AlertTriangle className="h-3.5 w-3.5 text-secondary-foreground" aria-hidden="true" />
-                          Nr. {receipt}
+                          No. {receipt}
                         </span>
                       )}
 
                       {!receipt && (
                         <span className="flex items-center gap-1 text-sm text-muted-foreground">
                           <AlertTriangle className="h-3.5 w-3.5 text-destructive" aria-hidden="true" />
-                          fehlt
+                          missing
                         </span>
                       )}
 
                       <Button
                         variant="ghost"
                         size="sm"
-                        disabled={uploadingId === assignment.payment_log_id}
-                        onClick={() => fileInputs.current[assignment.payment_log_id]?.click()}
+                        disabled={isPicking || busyId === assignment.payment_log_id}
+                        onClick={() => belegWaehlen(assignment.payment_log_id)}
                       >
-                        {uploadingId === assignment.payment_log_id ? (
+                        {busyId === assignment.payment_log_id ? (
                           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                         ) : (
                           <Paperclip className="h-4 w-4" aria-hidden="true" />
                         )}
-                        <span className="sr-only">{hasFile ? "Beleg ersetzen" : "Beleg hochladen"}</span>
+                        <span className="sr-only">{hasFile ? "Replace receipt" : "Add receipt"}</span>
                       </Button>
                     </div>
                   </TableCell>
@@ -203,7 +235,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
                       variant="ghost"
                       size="sm"
                       onClick={() => setPendingDelete(assignment)}
-                      aria-label="Zuordnung entfernen"
+                      aria-label="Remove assignment"
                     >
                       <Trash2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
                     </Button>
@@ -218,15 +250,15 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
       <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Zuordnung entfernen?</AlertDialogTitle>
+            <AlertDialogTitle>Remove assignment?</AlertDialogTitle>
             <AlertDialogDescription>
-              Die Position gilt danach wieder als offen. Der hochgeladene Beleg bleibt im Speicher, ist
-              aber nicht mehr verknüpft.
+              The item counts as open again afterwards. The uploaded receipt stays in Drive but is
+              no longer linked.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={remove}>Entfernen</AlertDialogAction>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={remove}>Remove</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

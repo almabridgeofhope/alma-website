@@ -50,7 +50,7 @@ const NewTransferDialog = ({ open, onOpenChange }: NewTransferDialogProps) => {
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (eur === null || eur <= 0) {
-      toast.error("Bitte einen Betrag in Euro eintragen.");
+      toast.error("Please enter an amount in euros.");
       return;
     }
 
@@ -64,7 +64,7 @@ const NewTransferDialog = ({ open, onOpenChange }: NewTransferDialogProps) => {
         original_amount: ugx,
         exchange_rate: rate === null ? null : Number(rate.toFixed(6)),
       });
-      toast.success(`Überweisung ${reference.trim()} erfasst.`);
+      toast.success(`Transfer ${reference.trim()} recorded.`);
       reset();
       onOpenChange(false);
     } catch (error) {
@@ -76,17 +76,17 @@ const NewTransferDialog = ({ open, onOpenChange }: NewTransferDialogProps) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Überweisung erfassen</DialogTitle>
+          <DialogTitle>Record transfer</DialogTitle>
           <DialogDescription>
-            Für Transfers, die nicht automatisch aus Wise kommen. Die Referenz ist der Schlüssel, an dem
-            später die Zuordnungen hängen.
+            For transfers that do not arrive automatically from Wise. The reference is the key the
+            assignments hang on later.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={submit} className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="reference">Referenz</Label>
+              <Label htmlFor="reference">Reference</Label>
               <Input
                 id="reference"
                 required
@@ -97,7 +97,7 @@ const NewTransferDialog = ({ open, onOpenChange }: NewTransferDialogProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="date">Datum</Label>
+              <Label htmlFor="date">Date</Label>
               <Input
                 id="date"
                 type="date"
@@ -108,7 +108,7 @@ const NewTransferDialog = ({ open, onOpenChange }: NewTransferDialogProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="konto">Konto</Label>
+              <Label htmlFor="konto">Account</Label>
               <Select value={konto} onValueChange={setKonto}>
                 <SelectTrigger id="konto">
                   <SelectValue />
@@ -124,12 +124,12 @@ const NewTransferDialog = ({ open, onOpenChange }: NewTransferDialogProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="amount-eur">Betrag in Euro</Label>
+              <Label htmlFor="amount-eur">Amount in euros</Label>
               <Input
                 id="amount-eur"
                 inputMode="decimal"
                 required
-                placeholder="700,00"
+                placeholder="700.00"
                 value={amountEur}
                 onChange={(event) => setAmountEur(event.target.value)}
               />
@@ -137,28 +137,28 @@ const NewTransferDialog = ({ open, onOpenChange }: NewTransferDialogProps) => {
 
             <div className="space-y-2">
               <Label htmlFor="amount-ugx">
-                Angekommen in UGX <span className="text-muted-foreground">(optional)</span>
+                Received in UGX <span className="text-muted-foreground">(optional)</span>
               </Label>
               <Input
                 id="amount-ugx"
                 inputMode="decimal"
-                placeholder="2.749.600"
+                placeholder="2,749,600"
                 value={amountUgx}
                 onChange={(event) => setAmountUgx(event.target.value)}
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Kurs</Label>
+              <Label>Rate</Label>
               <p className="flex h-10 items-center rounded-md border border-dashed border-border px-3 text-sm text-muted-foreground tabular-nums">
-                {rate === null ? "aus Betrag und UGX" : formatQty(Number(rate.toFixed(2)))}
+                {rate === null ? "from amount and UGX" : formatQty(Number(rate.toFixed(2)))}
               </p>
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="purpose">
-              Verwendungszweck <span className="text-muted-foreground">(optional)</span>
+              Purpose <span className="text-muted-foreground">(optional)</span>
             </Label>
             <Input
               id="purpose"
@@ -169,11 +169,11 @@ const NewTransferDialog = ({ open, onOpenChange }: NewTransferDialogProps) => {
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Abbrechen
+              Cancel
             </Button>
             <Button type="submit" disabled={createTransfer.isPending}>
               {createTransfer.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
-              Erfassen
+              Record
             </Button>
           </DialogFooter>
         </form>

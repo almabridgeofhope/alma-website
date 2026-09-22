@@ -11,7 +11,7 @@ import { useSession } from "@/admin/useSession";
 import { useNoIndex } from "@/admin/useNoIndex";
 
 const AdminLogin = () => {
-  useNoIndex("Anmelden · Projektabrechnung");
+  useNoIndex("Sign in · Project accounting");
   const { session, isLoading } = useSession();
   const location = useLocation();
   const [email, setEmail] = useState("");
@@ -31,7 +31,7 @@ const AdminLogin = () => {
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     setIsSubmitting(false);
     if (signInError) {
-      setError("Anmeldung fehlgeschlagen. Bitte E-Mail und Passwort prüfen.");
+      setError("Sign-in failed. Please check the email address and password.");
     }
   };
 
@@ -39,24 +39,24 @@ const AdminLogin = () => {
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4">
       <Card className="w-full max-w-sm shadow-card">
         <CardHeader>
-          <CardTitle className="text-primary">Projektabrechnung</CardTitle>
-          <CardDescription>Interner Bereich von Alma Bridge of Hope.</CardDescription>
+          <CardTitle className="text-primary">Project accounting</CardTitle>
+          <CardDescription>Internal area of Alma Bridge of Hope.</CardDescription>
         </CardHeader>
 
         <CardContent>
           {!isSupabaseConfigured && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" aria-hidden="true" />
-              <AlertTitle>Nicht konfiguriert</AlertTitle>
+              <AlertTitle>Not configured</AlertTitle>
               <AlertDescription>
-                VITE_SUPABASE_URL und VITE_SUPABASE_PUBLISHABLE_KEY fehlen in dieser Umgebung.
+                VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are missing in this environment.
               </AlertDescription>
             </Alert>
           )}
 
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">E-Mail</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -69,7 +69,7 @@ const AdminLogin = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Passwort</Label>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -88,7 +88,7 @@ const AdminLogin = () => {
 
             <Button type="submit" className="w-full" disabled={isSubmitting || !isSupabaseConfigured}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
-              Anmelden
+              Sign in
             </Button>
           </form>
         </CardContent>

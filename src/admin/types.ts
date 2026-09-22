@@ -1,6 +1,9 @@
 /** Überweisung nach Uganda: transactions mit kategorie = 'spendentransfer'. */
 export interface Transfer {
   transaction_id: string;
+  /** Laufende Nummer aus der Buchhaltung, fuehrende Kennung der Buchung. */
+  buchung_nr: number | null;
+  zweck: string | null;
   external_transaction_id: string | null;
   date: string;
   konto: string;
@@ -11,6 +14,8 @@ export interface Transfer {
   exchange_rate: number | null;
   reference: string | null;
   receipt_url: string | null;
+  /** Transaktionskosten, die als eigene Zeilen gebucht sind und hier angehaengt werden. */
+  fee_eur: number;
 }
 
 /** Zeile aus v_project_items. */
@@ -51,6 +56,7 @@ export interface TransferSummary extends Transfer {
 export interface Phase {
   phase_id: string;
   phase_de: string | null;
+  phase_en: string | null;
 }
 
 export interface Project {
