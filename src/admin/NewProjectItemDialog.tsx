@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatEur, formatUgx, parseAmount } from "./format";
-import { useCreateProjectItem, useEurRate, usePhases, useProjects } from "./queries";
+import { phaseLabel, useCreateProjectItem, useEurRate, usePhases, useProjects } from "./queries";
 
 interface NewProjectItemDialogProps {
   open: boolean;
@@ -66,8 +66,8 @@ const NewProjectItemDialog = ({
       const newId = await createItem.mutateAsync({
         projectId,
         phaseId,
-        titleDe,
-        titleEn: titleEn.trim() === "" ? null : titleEn.trim(),
+        titleEn,
+        titleDe: titleDe.trim() === "" ? null : titleDe.trim(),
         qtyNeeded: parsedQty,
         unitCostUgx: parsedCost,
       });
@@ -120,7 +120,7 @@ const NewProjectItemDialog = ({
                 <SelectContent>
                   {(phases.data ?? []).map((phase) => (
                     <SelectItem key={phase.phase_id} value={phase.phase_id}>
-                      {phase.phase_de ?? phase.phase_id}
+                      {phaseLabel(phase)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -129,24 +129,24 @@ const NewProjectItemDialog = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="new-title-de">Bezeichnung</Label>
+            <Label htmlFor="new-title-en">Bezeichnung englisch</Label>
             <Input
-              id="new-title-de"
+              id="new-title-en"
               required
-              value={titleDe}
-              onChange={(event) => setTitleDe(event.target.value)}
+              value={titleEn}
+              onChange={(event) => setTitleEn(event.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="new-title-en">
-              Bezeichnung englisch <span className="text-muted-foreground">(optional)</span>
+            <Label htmlFor="new-title-de">
+              Bezeichnung deutsch <span className="text-muted-foreground">(optional)</span>
             </Label>
             <Input
-              id="new-title-en"
+              id="new-title-de"
               placeholder="leer = wie oben"
-              value={titleEn}
-              onChange={(event) => setTitleEn(event.target.value)}
+              value={titleDe}
+              onChange={(event) => setTitleDe(event.target.value)}
             />
           </div>
 

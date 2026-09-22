@@ -280,14 +280,18 @@ export const useProjects = () =>
     },
   });
 
+/** Angezeigt wird die englische Bezeichnung — die Abrechnung laeuft mit Uganda. */
+export const phaseLabel = (phase: Phase): string =>
+  phase.phase_en ?? phase.phase_de ?? phase.phase_id;
+
 export const usePhases = () =>
   useQuery({
     queryKey: ["admin", "phases"] as const,
     queryFn: async (): Promise<Phase[]> => {
       const { data, error } = await supabase
         .from("project_phase_translations")
-        .select("phase_id, phase_de")
-        .order("phase_de");
+        .select("phase_id, phase_de, phase_en")
+        .order("phase_en");
       if (error) throw new Error(error.message);
       return (data ?? []) as Phase[];
     },
@@ -296,8 +300,9 @@ export const usePhases = () =>
 export interface NewProjectItem {
   projectId: string;
   phaseId: string;
-  titleDe: string;
-  titleEn: string | null;
+  /** Fuehrende Bezeichnung: die Abrechnung laeuft mit Uganda, also englisch. */
+  titleEn: string;
+  titleDe: string | null;
   qtyNeeded: number;
   unitCostUgx: number;
 }

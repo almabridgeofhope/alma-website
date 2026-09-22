@@ -56,6 +56,7 @@ export interface TransferSummary extends Transfer {
 export interface Phase {
   phase_id: string;
   phase_de: string | null;
+  phase_en: string | null;
 }
 
 export interface Project {

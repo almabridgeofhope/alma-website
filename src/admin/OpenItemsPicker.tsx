@@ -19,7 +19,7 @@ import NewProjectItemDialog from "./NewProjectItemDialog";
 import { useReceiptPicker } from "./useReceiptPicker";
 import type { DriveFile } from "@/lib/googleDrive";
 import { formatQty, formatUgx, parseAmount } from "./format";
-import { unitCostUgx, useCreateAssignment, usePhases } from "./queries";
+import { phaseLabel, unitCostUgx, useCreateAssignment, usePhases } from "./queries";
 import type { ProjectItem } from "./types";
 
 const ALL = "alle";
@@ -86,7 +86,7 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
   const openUgx = visible.reduce((sum, item) => sum + item.open_ugx, 0);
 
   const phaseIdOfName = (name: string): string | undefined =>
-    (phases.data ?? []).find((entry) => entry.phase_de === name)?.phase_id;
+    (phases.data ?? []).find((entry) => phaseLabel(entry) === name)?.phase_id;
 
   return (
     <>
@@ -98,8 +98,8 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
           />
           <Input
             className="pl-9"
-            placeholder="Position suchen"
-            aria-label="Offene Positionen durchsuchen"
+            placeholder="Position oder ID suchen"
+            aria-label="Offene Positionen nach Name oder ID durchsuchen"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
@@ -157,7 +157,8 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{item.item_name ?? item.project_item_id}</p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {item.projekt ?? item.project_id} · {item.phase ?? "ohne Phase"}
+                      {item.project_item_id} · {item.projekt ?? item.project_id} ·{" "}
+                      {item.phase ?? "ohne Phase"}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
                       offen {formatQty(item.qty_open)} · {formatUgx(item.open_ugx)}
@@ -320,7 +321,7 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
                 variant="outline"
                 disabled={isPicking}
                 onClick={async () => {
-                  const datei = await pick();
+                  const datei = await pick("position");
                   if (datei) setReceipt(datei);
                 }}
               >
