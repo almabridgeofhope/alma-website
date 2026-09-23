@@ -9,7 +9,7 @@ const TRANSFER_COLUMNS =
 const ASSIGNMENT_COLUMNS =
   "payment_log_id, item_id, qty_paid, amount_paid_ugx, external_transaction_id, expenditure_id, created_at";
 const ITEM_COLUMNS =
-  "project_item_id, project_id, projekt, phase, item_name, status, qty_needed, qty_paid, qty_open, total_ugx, paid_ugx, open_ugx, open_eur";
+  "project_item_id, project_id, projekt, projekt_status, phase, item_name, status, qty_needed, qty_paid, qty_open, total_ugx, paid_ugx, open_ugx, open_eur";
 
 export const queryKeys = {
   transfers: ["admin", "transfers"] as const,

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { to: "/admin/transfers", label: "Transfers" },
   { to: "/admin/positionen", label: "Items" },
+  { to: "/admin/finanzen", label: "Finance" },
 ];
 
 const AdminLayout = () => {

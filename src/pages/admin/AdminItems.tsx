@@ -71,7 +71,13 @@ const AdminItems = () => {
   const [isNewItemOpen, setIsNewItemOpen] = useState(false);
 
   // Eigene Memo, damit die Auswertungen unten nicht bei jedem Render neu rechnen.
-  const alle = useMemo(() => items.data ?? [], [items.data]);
+  // Gezeigt wird nur, woran gerade gearbeitet wird: Projekte mit Status ongoing.
+  // Geplante Projekte wie der Farm wuerden die Liste fuellen, ohne dass jemand
+  // etwas damit tut — in der Finanzvorschau bleiben sie sichtbar.
+  const alle = useMemo(
+    () => (items.data ?? []).filter((item) => item.projekt_status === "ongoing"),
+    [items.data],
+  );
 
   const projects = useMemo(() => {
     const byId = new Map<string, string>();
