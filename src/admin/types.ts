@@ -23,6 +23,8 @@ export interface ProjectItem {
   project_item_id: string;
   project_id: string;
   projekt: string | null;
+  /** Status des Projekts: nur 'ongoing' wird in der Positionsliste gezeigt. */
+  projekt_status: string | null;
   phase: string | null;
   item_name: string | null;
   status: string | null;
@@ -62,4 +64,75 @@ export interface Phase {
 export interface Project {
   project_id: string;
   name: string;
+}
+
+/** Zeile aus v_monatsbilanz: Ist-Zahlen je Monat plus fortgeschriebener Bestand. */
+export interface MonthBalance {
+  monat: string;
+  einnahmen: number;
+  ausgaben: number;
+  spendentransfer: number;
+  transfergebuehren: number;
+  umbuchungen: number;
+  netto: number;
+  buchungen: number;
+  bestand: number;
+}
+
+/** Zeile aus v_kontoabgleich: abgelesener Kontostand gegen die Buchungen. */
+export interface AccountCheck {
+  konto: string;
+  stichtag: string | null;
+  saldo_gemessen: number | null;
+  summe_gebucht: number;
+  startsaldo_implizit: number | null;
+  buchungen: number | null;
+  notiz: string | null;
+}
+
+/** Zeile aus v_beitragskonto: Soll gegen Ist je Mitglied. */
+export interface DuesAccount {
+  contact_id: string;
+  name: string | null;
+  beitrag_eur: number;
+  mitglied_seit: string;
+  monate: number;
+  soll: number;
+  ist: number;
+  saldo: number;
+  davon_beitrag: number;
+  davon_spende: number;
+  rueckstand: number;
+  rueckstand_monate: number;
+  letzte_zahlung: string | null;
+  zahlungen: number;
+}
+
+/** Zeile aus v_finanzvorschau: ab wann eine Phase finanziert ist. */
+export interface ForecastRow {
+  rang: number;
+  projekt: string;
+  phase: string;
+  offen_eur: number;
+  offen_high: number | null;
+  kosten_kumuliert: number;
+  monate_erwartet: number | null;
+  monate_konservativ: number | null;
+  finanziert_ab_erwartet: string | null;
+  finanziert_ab_konservativ: string | null;
+}
+
+/** Zeile aus plan_einnahmen: eine erwartete Einnahme ausserhalb der Beitraege. */
+export interface PlannedIncome {
+  plan_id: string;
+  bezeichnung: string;
+  kategorie: string;
+  betrag_eur: number;
+  rhythmus: string;
+  von_datum: string;
+  bis_datum: string | null;
+  sicherheit: string;
+  contact_id: string | null;
+  project_id: string | null;
+  kommentar: string | null;
 }

@@ -33,6 +33,7 @@ const AdminLayout = React.lazy(() => import("./admin/AdminLayout"));
 const AdminTransfers = React.lazy(() => import("./pages/admin/AdminTransfers"));
 const AdminTransferDetail = React.lazy(() => import("./pages/admin/AdminTransferDetail"));
 const AdminItems = React.lazy(() => import("./pages/admin/AdminItems"));
+const AdminFinance = React.lazy(() => import("./pages/admin/AdminFinance"));
 const RequireAuth = React.lazy(() => import("./admin/RequireAuth"));
 
 const queryClient = new QueryClient();
@@ -246,6 +247,7 @@ const AppContent = () => {
           <Route path="transfers" element={<AdminTransfers />} />
           <Route path="transfers/:transferId" element={<AdminTransferDetail />} />
           <Route path="positionen" element={<AdminItems />} />
+          <Route path="finanzen" element={<AdminFinance />} />
         </Route>
         {/* Redirect all /dev/* routes to their non-dev equivalents */}
         <Route path="/dev/*" element={<DevRedirect />} />
