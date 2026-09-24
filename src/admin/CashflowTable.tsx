@@ -2,13 +2,15 @@ import { useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { formatEur } from "./format";
-import { AUSGABE_ARTEN, EINNAHME_ARTEN, findeArt } from "./cashflowArten";
-import type { CashflowRow } from "./types";
+import { AUSGABE_ARTEN, EINNAHME_ARTEN } from "./cashflowArten";
+import type { CashflowRow, CoverageRow } from "./types";
 
 const monatLang = new Intl.DateTimeFormat("en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
 
 interface Zeile {
   monat: string;
+  /** Deckung auf allen Konten zum Monatsende, aus v_kontodeckung. */
+  bestand?: number;
   label: string;
   geplant: boolean;
   jeArt: Record<string, number>;
@@ -32,8 +34,14 @@ const Marker = ({ farbe }: { farbe: string }) => (
  * Reihenfolge — sonst muss man beim Blick nach unten neu zuordnen. Monate, die
  * ueberwiegend gerechnet sind, stehen gedaempft.
  */
-const CashflowTable = ({ zeilen, monateZurueck = 12, monateVoraus = 12 }: {
+const CashflowTable = ({
+  zeilen,
+  deckung,
+  monateZurueck = 12,
+  monateVoraus = 6,
+}: {
   zeilen: CashflowRow[];
+  deckung: CoverageRow[];
   monateZurueck?: number;
   monateVoraus?: number;
 }) => {
@@ -77,8 +85,14 @@ const CashflowTable = ({ zeilen, monateZurueck = 12, monateVoraus = 12 }: {
       if (!zeile.gemessen) eintrag.geplant = true;
     });
 
+    const bestandJeMonat = new Map(deckung.map((eintrag) => [eintrag.monat, Number(eintrag.bestand)]));
+
     const fertig = Array.from(jeMonat.values())
-      .map((eintrag) => ({ ...eintrag, netto: eintrag.einnahmen - eintrag.ausgaben }))
+      .map((eintrag) => ({
+        ...eintrag,
+        netto: eintrag.einnahmen - eintrag.ausgaben,
+        bestand: bestandJeMonat.get(eintrag.monat),
+      }))
       .sort((a, b) => b.monat.localeCompare(a.monat));
 
     // Zwei Summen statt einer: Gemessenes und Gerechnetes in einer Zahl zu addieren
@@ -103,7 +117,7 @@ const CashflowTable = ({ zeilen, monateZurueck = 12, monateVoraus = 12 }: {
         { titel: "Total planned", werte: summiere(fertig.filter((z) => z.geplant)) },
       ].filter((zeile) => zeile.werte.einnahmen !== 0 || zeile.werte.ausgaben !== 0),
     };
-  }, [zeilen, monateZurueck, monateVoraus]);
+  }, [zeilen, deckung, monateZurueck, monateVoraus]);
 
   if (tabelle.length === 0) return null;
 
@@ -123,6 +137,7 @@ const CashflowTable = ({ zeilen, monateZurueck = 12, monateVoraus = 12 }: {
               </TableHead>
             ))}
             <TableHead className="text-right">Net</TableHead>
+            <TableHead className="whitespace-nowrap text-right">Balance</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -146,6 +161,13 @@ const CashflowTable = ({ zeilen, monateZurueck = 12, monateVoraus = 12 }: {
               >
                 {formatEur(zeile.netto)}
               </TableCell>
+              <TableCell className="text-right tabular-nums">
+                {zeile.bestand === undefined ? (
+                  <span className="text-muted-foreground">–</span>
+                ) : (
+                  formatEur(zeile.bestand)
+                )}
+              </TableCell>
             </TableRow>
           ))}
           {summen.map((zeile, index) => (
@@ -162,6 +184,7 @@ const CashflowTable = ({ zeilen, monateZurueck = 12, monateVoraus = 12 }: {
               >
                 {formatEur(zeile.werte.netto)}
               </TableCell>
+              <TableCell />
             </TableRow>
           ))}
         </TableBody>

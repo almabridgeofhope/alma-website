@@ -137,18 +137,6 @@ export interface PlannedIncome {
   kommentar: string | null;
 }
 
-/** Zeile aus v_liquiditaetsvorschau: Bestand und freier Betrag je Monat. */
-export interface LiquidityRow {
-  monat: string;
-  einnahmen_fix: number;
-  einnahmen_erwartet: number;
-  verwaltungskosten: number;
-  puffer: number;
-  bestand_erwartet: number;
-  bestand_konservativ: number;
-  frei_erwartet: number;
-  frei_konservativ: number;
-}
 
 /** Zeile aus plan_ausgaben: eine laufende oder geplante Ausgabe. */
 export interface PlannedCost {
@@ -177,4 +165,12 @@ export interface CashflowRow {
   gemessen: boolean;
   /** Immer positiv; die Richtung steht in der eigenen Spalte. */
   betrag: number;
+}
+
+/** Zeile aus v_kontodeckung: Bestand auf allen Konten zum Monatsende. */
+export interface CoverageRow {
+  monat: string;
+  bestand: number;
+  /** true = an den abgelesenen Kontostaenden verankert, false = fortgeschrieben. */
+  gemessen: boolean;
 }

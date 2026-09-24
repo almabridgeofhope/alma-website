@@ -1,8 +1,9 @@
 import { useMemo } from "react";
 import {
   Bar,
-  BarChart,
   CartesianGrid,
+  ComposedChart,
+  Line,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -10,8 +11,8 @@ import {
   YAxis,
 } from "recharts";
 import { formatEur } from "./format";
-import { AUSGABE_ARTEN, EINNAHME_ARTEN, findeArt, serienKey } from "./cashflowArten";
-import type { CashflowRow } from "./types";
+import { AUSGABE_ARTEN, BESTAND_FARBE, EINNAHME_ARTEN, findeArt, serienKey } from "./cashflowArten";
+import type { CashflowRow, CoverageRow } from "./types";
 
 const monatKurz = new Intl.DateTimeFormat("en-GB", { month: "short", year: "2-digit", timeZone: "UTC" });
 const monatLang = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
@@ -42,8 +43,12 @@ const TooltipInhalt = ({
   if (!active || !payload?.length) return null;
   const punkt = payload[0].payload;
 
+  const bestand = payload.find((eintrag) =>
+    String(eintrag.dataKey).startsWith("bestand"),
+  )?.value;
+
   const zeilen = payload
-    .filter((eintrag) => Number(eintrag.value) !== 0)
+    .filter((eintrag) => Number(eintrag.value) !== 0 && !String(eintrag.dataKey).startsWith("bestand"))
     .map((eintrag) => {
       const [richtung, art, stand] = String(eintrag.dataKey).split(":");
       return {
@@ -86,6 +91,12 @@ const TooltipInhalt = ({
         <span>Net</span>
         <span className="tabular-nums">{formatEur(netto)}</span>
       </p>
+      {bestand !== undefined && (
+        <p className="flex items-baseline justify-between gap-4 text-muted-foreground">
+          <span>Balance on all accounts</span>
+          <span className="tabular-nums">{formatEur(Number(bestand))}</span>
+        </p>
+      )}
     </div>
   );
 };
@@ -102,10 +113,19 @@ const TooltipInhalt = ({
  * Monat) und die durchlaufenden Posten (sie gleichen eine Ausgabe aus und stehen
  * sonst auf beiden Seiten).
  */
-const CashflowChart = ({ zeilen, monateZurueck = 12, monateVoraus = 12 }: {
+const CashflowChart = ({
+  zeilen,
+  deckung,
+  monateZurueck = 12,
+  monateVoraus = 6,
+  ausgeblendet = [],
+}: {
   zeilen: CashflowRow[];
+  deckung: CoverageRow[];
   monateZurueck?: number;
   monateVoraus?: number;
+  /** Arten, die der Betrachter weggeklickt hat — sie verzerren sonst den Massstab. */
+  ausgeblendet?: string[];
 }) => {
   const { punkte, serien, jetztLabel } = useMemo(() => {
     const jetzt = new Date();
@@ -117,7 +137,7 @@ const CashflowChart = ({ zeilen, monateZurueck = 12, monateVoraus = 12 }: {
 
     const imFenster = zeilen.filter((zeile) => {
       const datum = new Date(zeile.monat);
-      return datum >= von && datum <= bis;
+      return datum >= von && datum <= bis && !ausgeblendet.includes(zeile.art);
     });
 
     const jeMonat = new Map<string, Punkt>();
@@ -139,6 +159,17 @@ const CashflowChart = ({ zeilen, monateZurueck = 12, monateVoraus = 12 }: {
       punkt[key] = (Number(punkt[key]) || 0) + (zeile.richtung === "aus" ? -betrag : betrag);
     });
 
+    // Die Deckung als zwei Serien: durchgezogen, solange gemessen, dann gestrichelt.
+    // Am Uebergang traegt der laufende Monat beide Werte, sonst reisst die Linie.
+    const letzterGemessene = deckung.filter((d) => d.gemessen).at(-1)?.monat;
+    deckung.forEach((eintrag) => {
+      const punkt = jeMonat.get(eintrag.monat);
+      if (!punkt) return;
+      const wert = Number(eintrag.bestand);
+      if (eintrag.gemessen) punkt.bestandIst = wert;
+      if (!eintrag.gemessen || eintrag.monat === letzterGemessene) punkt.bestandPlan = wert;
+    });
+
     // Stapelreihenfolge: das Stabilste an der Nulllinie, gemessen vor geplant.
     const reihenfolge = [
       ...EINNAHME_ARTEN.map((art) => ({ richtung: "ein" as const, art: art.key })),
@@ -157,7 +188,7 @@ const CashflowChart = ({ zeilen, monateZurueck = 12, monateVoraus = 12 }: {
       serien: sortiert,
       jetztLabel: monatKurz.format(monatsErster),
     };
-  }, [zeilen, monateZurueck, monateVoraus]);
+  }, [zeilen, deckung, monateZurueck, monateVoraus, ausgeblendet]);
 
   if (punkte.length === 0) return null;
 
@@ -165,7 +196,7 @@ const CashflowChart = ({ zeilen, monateZurueck = 12, monateVoraus = 12 }: {
 
   return (
     <ResponsiveContainer width="100%" height={340}>
-      <BarChart data={punkte} stackOffset="sign" margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
+      <ComposedChart data={punkte} stackOffset="sign" margin={{ top: 8, right: 8, bottom: 0, left: 8 }}>
         <defs>
           {geplanteArten.map((art) => {
             const farbe = findeArt(art).farbe;
@@ -236,7 +267,31 @@ const CashflowChart = ({ zeilen, monateZurueck = 12, monateVoraus = 12 }: {
             maxBarSize={38}
           />
         ))}
-      </BarChart>
+
+        {/* Die Deckung liegt auf derselben Achse wie die Balken. Eine zweite Skala
+            waere bequemer und falsch: mit ihr laesst sich jede Aussage erzeugen. */}
+        <Line
+          type="monotone"
+          dataKey="bestandIst"
+          stroke={BESTAND_FARBE}
+          strokeWidth={2}
+          dot={false}
+          connectNulls
+          isAnimationActive={false}
+          name="Balance"
+        />
+        <Line
+          type="monotone"
+          dataKey="bestandPlan"
+          stroke={BESTAND_FARBE}
+          strokeWidth={2}
+          strokeDasharray="5 3"
+          dot={false}
+          connectNulls
+          isAnimationActive={false}
+          name="Balance, projected"
+        />
+      </ComposedChart>
     </ResponsiveContainer>
   );
 };

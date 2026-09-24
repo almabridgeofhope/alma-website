@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { AccountCheck, CashflowRow, DuesAccount, ForecastRow, LiquidityRow, MonthBalance, PlannedCost, PlannedIncome } from "./types";
+import type { AccountCheck, CashflowRow, CoverageRow, DuesAccount, ForecastRow, MonthBalance, PlannedCost, PlannedIncome } from "./types";
 
 export const financeKeys = {
   monatsbilanz: ["admin", "finance", "monatsbilanz"] as const,
@@ -60,18 +60,6 @@ export const useForecast = () =>
     },
   });
 
-export const useLiquidity = () =>
-  useQuery({
-    queryKey: financeKeys.liquiditaet,
-    queryFn: async (): Promise<LiquidityRow[]> => {
-      const { data, error } = await supabase
-        .from("v_liquiditaetsvorschau")
-        .select("*")
-        .order("monat");
-      if (error) throw new Error(error.message);
-      return (data ?? []) as LiquidityRow[];
-    },
-  });
 
 export const usePlannedIncome = () =>
   useQuery({
@@ -86,21 +74,6 @@ export const usePlannedIncome = () =>
     },
   });
 
-/** Erwartete Einnahmen des laufenden Monats, je Quelle — macht die Kurve nachvollziehbar. */
-export const useExpectedBreakdown = () =>
-  useQuery({
-    queryKey: [...financeKeys.erwartung, "quellen"] as const,
-    queryFn: async (): Promise<{ bezeichnung: string; kategorie: string; sicherheit: string; betrag: number }[]> => {
-      const monatsanfang = new Date();
-      monatsanfang.setUTCDate(1);
-      const { data, error } = await supabase
-        .from("v_einnahmen_erwartung")
-        .select("bezeichnung, kategorie, sicherheit, betrag")
-        .eq("monat", monatsanfang.toISOString().slice(0, 10));
-      if (error) throw new Error(error.message);
-      return (data ?? []) as { bezeichnung: string; kategorie: string; sicherheit: string; betrag: number }[];
-    },
-  });
 
 /**
  * Erwartete Einnahmen des laufenden Monats, nach Sicherheit getrennt.
@@ -128,28 +101,6 @@ export const useExpectedThisMonth = () =>
     },
   });
 
-/**
- * Was in diesem Monat schon eingegangen ist — steckt bereits im Kontostand.
- * Ohne die durchlaufenden Posten: die gleichen eine ausgelegte Ausgabe aus und
- * stehen nie fuer ein Projekt zur Verfuegung. v_liquiditaetsvorschau rechnet
- * genauso, sonst widerspraeche die Erklaerung der Kurve.
- */
-export const useReceivedThisMonth = () =>
-  useQuery({
-    queryKey: [...financeKeys.erwartung, "ist-monat"] as const,
-    queryFn: async (): Promise<number> => {
-      const monatsanfang = new Date();
-      monatsanfang.setUTCDate(1);
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("amount")
-        .eq("kategorie", "einnahme")
-        .neq("einnahmeart", "durchlaufend")
-        .gte("date", monatsanfang.toISOString().slice(0, 10));
-      if (error) throw new Error(error.message);
-      return (data ?? []).reduce((sum, zeile) => sum + Number((zeile as { amount: number }).amount), 0);
-    },
-  });
 
 export const usePlannedCosts = () =>
   useQuery({
@@ -216,5 +167,19 @@ export const useCashflow = () =>
         .order("monat");
       if (error) throw new Error(error.message);
       return (data ?? []) as CashflowRow[];
+    },
+  });
+
+/** Bestand auf allen Konten je Monat — gemessen bis heute, danach fortgeschrieben. */
+export const useAccountCoverage = () =>
+  useQuery({
+    queryKey: [...financeKeys.erwartung, "deckung"] as const,
+    queryFn: async (): Promise<CoverageRow[]> => {
+      const { data, error } = await supabase
+        .from("v_kontodeckung")
+        .select("monat, bestand, gemessen")
+        .order("monat");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as CoverageRow[];
     },
   });

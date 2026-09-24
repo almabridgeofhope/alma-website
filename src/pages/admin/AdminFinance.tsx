@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,22 +8,18 @@ import CashflowChart from "@/admin/CashflowChart";
 import CashflowLegend from "@/admin/CashflowLegend";
 import CashflowTable from "@/admin/CashflowTable";
 import EditableAmount from "@/admin/EditableAmount";
-import LiquidityAssumptions from "@/admin/LiquidityAssumptions";
-import LiquidityTimeline from "@/admin/LiquidityTimeline";
 import StatTile from "@/admin/StatTile";
 import { useNoIndex } from "@/admin/useNoIndex";
 import { formatDate, formatEur } from "@/admin/format";
 import {
   useAccountChecks,
   useDuesAccounts,
-  useExpectedBreakdown,
   useExpectedThisMonth,
   useForecast,
-  useLiquidity,
   useMonthBalances,
   usePlannedCosts,
+  useAccountCoverage,
   useCashflow,
-  useReceivedThisMonth,
   usePlannedIncome,
   useUpdateCostAmount,
   useUpdatePlannedAmount,
@@ -75,11 +71,19 @@ const AdminFinance = () => {
   const vorschau = useForecast();
   const plan = usePlannedIncome();
   const erwartung = useExpectedThisMonth();
-  const liquiditaet = useLiquidity();
-  const quellen = useExpectedBreakdown();
   const kosten = usePlannedCosts();
-  const eingegangen = useReceivedThisMonth();
   const verlauf = useCashflow();
+  const deckung = useAccountCoverage();
+
+  /**
+   * Weggeklickte Arten. Steht hier und nicht im Diagramm, weil die Legende sie
+   * umschaltet und beide denselben Stand brauchen.
+   */
+  const [ausgeblendet, setAusgeblendet] = useState<string[]>([]);
+  const artUmschalten = (art: string) =>
+    setAusgeblendet((bisher) =>
+      bisher.includes(art) ? bisher.filter((eintrag) => eintrag !== art) : [...bisher, art],
+    );
   const kostenAendern = useUpdateCostAmount();
   const betragAendern = useUpdatePlannedAmount();
 
@@ -185,73 +189,33 @@ const AdminFinance = () => {
 
       <Abschnitt
         titel="Money in and out"
-        erklaerung="One timeline, one axis. Income above the line, running costs below — the gap to the line is the month's surplus. Left of today is what happened, right of it is what the planning expects. Transfers to Uganda are not shown: they follow the projects, not the month. Pass-through items are left out as well, since they cancel an expense and would inflate both sides."
+        erklaerung="One timeline, one axis. Income above the line, money out below — the gap to the line is the month's surplus, and the dark line is what sits on all accounts at the end of each month. Left of today is what happened, right of it what the planning expects. Click a name in the legend to take it out of the picture; the transfers to Uganda are ten times everything else and squash the rest. Pass-through items are left out throughout, since they cancel an expense and would inflate both sides."
       >
         {verlauf.isLoading ? (
           <Skeleton className="h-80 w-full" />
         ) : (
           <>
-            <CashflowChart zeilen={verlauf.data ?? []} />
-            <CashflowLegend zeilen={verlauf.data ?? []} />
+            <CashflowChart
+              zeilen={verlauf.data ?? []}
+              deckung={deckung.data ?? []}
+              ausgeblendet={ausgeblendet}
+            />
+            <CashflowLegend
+              zeilen={verlauf.data ?? []}
+              ausgeblendet={ausgeblendet}
+              umschalten={artUmschalten}
+            />
             <div className="mt-6">
-              <CashflowTable zeilen={verlauf.data ?? []} />
+              <CashflowTable zeilen={verlauf.data ?? []} deckung={deckung.data ?? []} />
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
-              Costs before today are a single figure. Which payment is staff, fee or project is
-              decided when the bookings are assigned to the project items, and that is still
-              outstanding — breaking the past down now would be a guess, not a measurement.
+              Costs before today are a single figure apart from the transfers. Which payment is
+              staff, fee or project is decided when the bookings are assigned to the project items,
+              and that is still outstanding — breaking the past down now would be a guess, not a
+              measurement.
             </p>
           </>
         )}
-      </Abschnitt>
-
-      <Abschnitt
-        titel="Funds available over time"
-        erklaerung="What is left above the 500 EUR buffer, month by month. The dashed lines mark what a rank costs in total — where the curve crosses one, that stage is paid for. The grey line is the conservative scenario."
-      >
-        <LiquidityTimeline liquiditaet={liquiditaet.data ?? []} vorschau={vorschau.data ?? []} />
-        <LiquidityAssumptions
-          monat={liquiditaet.data?.[0]}
-          startbestand={bestand}
-          quellen={quellen.data ?? []}
-          bereitsEingegangen={eingegangen.data ?? 0}
-        />
-      </Abschnitt>
-
-      <Abschnitt
-        titel="Forecast"
-        erklaerung="Phases on the same rank are funded together and therefore finish at the same time. Expected counts fixed and likely income, conservative only fixed."
-      >
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">Rank</TableHead>
-              <TableHead>Project</TableHead>
-              <TableHead>Phase</TableHead>
-              <TableHead className="text-right">Open</TableHead>
-              <TableHead className="text-right">of it high</TableHead>
-              <TableHead className="text-right">Funded from</TableHead>
-              <TableHead className="text-right">Conservative</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {(vorschau.data ?? []).map((zeile) => (
-              <TableRow key={`${zeile.projekt}-${zeile.phase}`}>
-                <TableCell className="tabular-nums text-muted-foreground">{zeile.rang}</TableCell>
-                <TableCell>{zeile.projekt}</TableCell>
-                <TableCell>{zeile.phase}</TableCell>
-                <TableCell className="text-right tabular-nums">{formatEur(zeile.offen_eur)}</TableCell>
-                <TableCell className="text-right tabular-nums text-muted-foreground">
-                  {zeile.offen_high === null ? "–" : formatEur(zeile.offen_high)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">{formatMonth(zeile.finanziert_ab_erwartet)}</TableCell>
-                <TableCell className="text-right tabular-nums text-muted-foreground">
-                  {formatMonth(zeile.finanziert_ab_konservativ)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
       </Abschnitt>
 
       <Abschnitt

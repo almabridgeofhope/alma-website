@@ -12,6 +12,11 @@
  * Kontrast zur Flaeche — deshalb steht unter dem Diagramm die Tabelle mit denselben
  * Farben als Marker, und keine Aussage haengt allein an der Farbe.
  *
+ * Eine Ausnahme mit Absicht: `laufende_kosten` ist entsaettigt und faellt damit durch
+ * die Chroma-Pruefung. Das Grau ist die Aussage — diese Buchungen sind noch nicht
+ * aufgeschluesselt. Gegen ihren einzigen Nachbarn im Stapel trennt sie sauber
+ * (ΔE 15,3 normal, 13,5 bei Deuteranopie).
+ *
  * Fuer einen dunklen Modus braucht es eigene Stufen (Band L 0.48–0.67 statt
  * 0.43–0.77); die Oberflaeche hat heute keinen, deshalb steht hier nur der helle Satz.
  */
@@ -41,7 +46,16 @@ export const AUSGABE_ARTEN: Art[] = [
     farbe: "#7A7267",
     hinweis: "Not yet broken down",
   },
+  {
+    key: "projekttransfer",
+    label: "Transfers to Uganda",
+    farbe: "#8C3557",
+    hinweis: "Largest item — can be hidden",
+  },
 ];
+
+/** Die Kontodeckung ist keine Kategorie, sondern die Linie darueber. */
+export const BESTAND_FARBE = "#2B2B28";
 
 const ALLE = [...EINNAHME_ARTEN, ...AUSGABE_ARTEN];
 
