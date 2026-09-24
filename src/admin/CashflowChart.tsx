@@ -226,10 +226,17 @@ const CashflowChart = ({
           minTickGap={16}
           tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
         />
+        {/* Eng an den tatsaechlichen Werten statt auf runde Schritte aufgerundet:
+            sonst verschenkt die Flaeche ein Drittel ihrer Hoehe an leeren Raum, und
+            wer eine Kategorie wegklickt, sieht die Skala nicht mitgehen. */}
         <YAxis
           width={60}
           tickLine={false}
           axisLine={false}
+          domain={[
+            (unten: number) => Math.floor(Math.min(unten, 0) * 1.02),
+            (oben: number) => Math.ceil(Math.max(oben, 0) * 1.02),
+          ]}
           tickFormatter={(wert: number) => `€${achsenBetrag.format(wert)}`}
           tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
         />
