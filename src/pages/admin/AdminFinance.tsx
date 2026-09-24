@@ -189,7 +189,6 @@ const AdminFinance = () => {
 
       <Abschnitt
         titel="Money in and out"
-        erklaerung="One timeline, one axis. Income above the line, money out below — the gap to the line is the month's surplus, and the dark line is what sits on all accounts at the end of each month. Every step of that line is exactly the net of its bars, which is why nothing is left out: the transfers to Uganda and the pass-through items are in, because the accounts feel them. Click a name in the legend to take it out of the picture — the transfers are ten times everything else and squash the rest. Left of today is what happened, right of it what the planning expects."
       >
         {verlauf.isLoading ? (
           <Skeleton className="h-80 w-full" />
