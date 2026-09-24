@@ -1,9 +1,13 @@
-import { useMemo } from "react";
-import { AlertTriangle } from "lucide-react";
+import { useMemo, useState } from "react";
+import { AlertTriangle, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import CashflowChart from "@/admin/CashflowChart";
+import CashflowLegend from "@/admin/CashflowLegend";
+import CashflowTable from "@/admin/CashflowTable";
 import EditableAmount from "@/admin/EditableAmount";
 import StatTile from "@/admin/StatTile";
 import { useNoIndex } from "@/admin/useNoIndex";
@@ -13,8 +17,11 @@ import {
   useDuesAccounts,
   useExpectedThisMonth,
   useForecast,
-  useMonthBalances,
+  usePlannedCosts,
+  useAccountCoverage,
+  useCashflow,
   usePlannedIncome,
+  useUpdateCostAmount,
   useUpdatePlannedAmount,
 } from "@/admin/financeQueries";
 import { cn } from "@/lib/utils";
@@ -58,12 +65,26 @@ const Abschnitt = ({
 const AdminFinance = () => {
   useNoIndex("Finance · Project accounting");
 
-  const bilanz = useMonthBalances();
   const konten = useAccountChecks();
   const beitraege = useDuesAccounts();
   const vorschau = useForecast();
   const plan = usePlannedIncome();
   const erwartung = useExpectedThisMonth();
+  const kosten = usePlannedCosts();
+  const verlauf = useCashflow();
+  const deckung = useAccountCoverage();
+
+  /**
+   * Weggeklickte Arten. Steht hier und nicht im Diagramm, weil die Legende sie
+   * umschaltet und beide denselben Stand brauchen.
+   */
+  const [ausgeblendet, setAusgeblendet] = useState<string[]>([]);
+  const [tabelleOffen, setTabelleOffen] = useState(false);
+  const artUmschalten = (art: string) =>
+    setAusgeblendet((bisher) =>
+      bisher.includes(art) ? bisher.filter((eintrag) => eintrag !== art) : [...bisher, art],
+    );
+  const kostenAendern = useUpdateCostAmount();
   const betragAendern = useUpdatePlannedAmount();
 
   const bestand = useMemo(
@@ -81,6 +102,14 @@ const AdminFinance = () => {
     [vorschau.data],
   );
 
+  const monatskosten = useMemo(
+    () =>
+      (kosten.data ?? [])
+        .filter((zeile) => zeile.rhythmus === "monatlich")
+        .reduce((sum, zeile) => sum + Number(zeile.betrag_eur), 0),
+    [kosten.data],
+  );
+
   const imRueckstand = useMemo(
     () => (beitraege.data ?? []).filter((zeile) => Number(zeile.rueckstand) > 0),
     [beitraege.data],
@@ -91,7 +120,7 @@ const AdminFinance = () => {
     [konten.data],
   );
 
-  const laedt = bilanz.isLoading || konten.isLoading || beitraege.isLoading || vorschau.isLoading;
+  const laedt = konten.isLoading || beitraege.isLoading || vorschau.isLoading;
 
   if (laedt) {
     return (
@@ -159,39 +188,43 @@ const AdminFinance = () => {
       )}
 
       <Abschnitt
-        titel="Forecast"
-        erklaerung="Phases on the same rank are funded together and therefore finish at the same time. Expected counts fixed and likely income, conservative only fixed."
+        titel="Money in and out"
       >
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">Rank</TableHead>
-              <TableHead>Project</TableHead>
-              <TableHead>Phase</TableHead>
-              <TableHead className="text-right">Open</TableHead>
-              <TableHead className="text-right">of it high</TableHead>
-              <TableHead className="text-right">Funded from</TableHead>
-              <TableHead className="text-right">Conservative</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {(vorschau.data ?? []).map((zeile) => (
-              <TableRow key={`${zeile.projekt}-${zeile.phase}`}>
-                <TableCell className="tabular-nums text-muted-foreground">{zeile.rang}</TableCell>
-                <TableCell>{zeile.projekt}</TableCell>
-                <TableCell>{zeile.phase}</TableCell>
-                <TableCell className="text-right tabular-nums">{formatEur(zeile.offen_eur)}</TableCell>
-                <TableCell className="text-right tabular-nums text-muted-foreground">
-                  {zeile.offen_high === null ? "–" : formatEur(zeile.offen_high)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">{formatMonth(zeile.finanziert_ab_erwartet)}</TableCell>
-                <TableCell className="text-right tabular-nums text-muted-foreground">
-                  {formatMonth(zeile.finanziert_ab_konservativ)}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        {verlauf.isLoading ? (
+          <Skeleton className="h-80 w-full" />
+        ) : (
+          <>
+            <CashflowChart
+              zeilen={verlauf.data ?? []}
+              deckung={deckung.data ?? []}
+              ausgeblendet={ausgeblendet}
+            />
+            <CashflowLegend
+              zeilen={verlauf.data ?? []}
+              ausgeblendet={ausgeblendet}
+              umschalten={artUmschalten}
+            />
+            {/* Die Zahlen stehen im Diagramm; wer sie genau braucht, klappt auf. */}
+            <Collapsible open={tabelleOffen} onOpenChange={setTabelleOffen} className="mt-6">
+              <CollapsibleTrigger className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+                <ChevronRight
+                  className={cn("h-4 w-4 transition-transform", tabelleOffen && "rotate-90")}
+                  aria-hidden="true"
+                />
+                {tabelleOffen ? "Hide the figures" : "Show the figures month by month"}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-3">
+                <CashflowTable zeilen={verlauf.data ?? []} deckung={deckung.data ?? []} />
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Costs before today are a single figure apart from the transfers. Which payment is
+                  staff, fee or project is decided when the bookings are assigned to the project
+                  items, and that is still outstanding — breaking the past down now would be a
+                  guess, not a measurement.
+                </p>
+              </CollapsibleContent>
+            </Collapsible>
+          </>
+        )}
       </Abschnitt>
 
       <Abschnitt
@@ -254,6 +287,58 @@ const AdminFinance = () => {
       </Abschnitt>
 
       <Abschnitt
+        titel="Planned costs"
+        erklaerung="What goes out every month before anything reaches a project. The forecast subtracts this list — not an assumption in the config."
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Rhythm</TableHead>
+              <TableHead>From</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {(kosten.data ?? []).map((zeile) => (
+              <TableRow key={zeile.plan_id}>
+                <TableCell>
+                  <div className="font-medium">{zeile.bezeichnung}</div>
+                  {zeile.kommentar && <div className="text-xs text-muted-foreground">{zeile.kommentar}</div>}
+                </TableCell>
+                <TableCell className="text-muted-foreground">{zeile.kategorie}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {RHYTHM_LABELS[zeile.rhythmus] ?? zeile.rhythmus}
+                </TableCell>
+                <TableCell className="text-muted-foreground">{formatDate(zeile.von_datum)}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end">
+                    <EditableAmount
+                      label={`Amount for ${zeile.bezeichnung}`}
+                      value={zeile.betrag_eur}
+                      allowEmpty={false}
+                      onCommit={(next) => {
+                        if (next !== null) kostenAendern.mutate({ planId: zeile.plan_id, betrag: next });
+                      }}
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            <TableRow>
+              <TableCell colSpan={4} className="font-medium">
+                Per month
+              </TableCell>
+              <TableCell className="text-right font-medium tabular-nums">
+                {formatEur(monatskosten)}
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </Abschnitt>
+
+      <Abschnitt
         titel="Membership accounts"
         erklaerung="Dues owed since joining against everything that came in. Anything above is a donation, anything missing is arrears."
       >
@@ -303,39 +388,6 @@ const AdminFinance = () => {
         </Table>
       </Abschnitt>
 
-      <Abschnitt
-        titel="Monthly balance"
-        erklaerung="Actuals per month. The balance is anchored to the account balances read off the accounts."
-      >
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Month</TableHead>
-              <TableHead className="text-right">Income</TableHead>
-              <TableHead className="text-right">Costs</TableHead>
-              <TableHead className="text-right">To Uganda</TableHead>
-              <TableHead className="text-right">Net</TableHead>
-              <TableHead className="text-right">Balance</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {(bilanz.data ?? []).slice(0, 12).map((zeile) => (
-              <TableRow key={zeile.monat}>
-                <TableCell>{formatMonth(zeile.monat)}</TableCell>
-                <TableCell className="text-right tabular-nums text-primary">{formatEur(zeile.einnahmen)}</TableCell>
-                <TableCell className="text-right tabular-nums text-muted-foreground">
-                  {formatEur(zeile.ausgaben)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums text-muted-foreground">
-                  {formatEur(Number(zeile.spendentransfer) + Number(zeile.transfergebuehren))}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">{formatEur(zeile.netto)}</TableCell>
-                <TableCell className="text-right font-medium tabular-nums">{formatEur(zeile.bestand)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Abschnitt>
     </div>
   );
 };

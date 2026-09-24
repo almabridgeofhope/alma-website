@@ -66,18 +66,6 @@ export interface Project {
   name: string;
 }
 
-/** Zeile aus v_monatsbilanz: Ist-Zahlen je Monat plus fortgeschriebener Bestand. */
-export interface MonthBalance {
-  monat: string;
-  einnahmen: number;
-  ausgaben: number;
-  spendentransfer: number;
-  transfergebuehren: number;
-  umbuchungen: number;
-  netto: number;
-  buchungen: number;
-  bestand: number;
-}
 
 /** Zeile aus v_kontoabgleich: abgelesener Kontostand gegen die Buchungen. */
 export interface AccountCheck {
@@ -135,4 +123,42 @@ export interface PlannedIncome {
   contact_id: string | null;
   project_id: string | null;
   kommentar: string | null;
+}
+
+
+/** Zeile aus plan_ausgaben: eine laufende oder geplante Ausgabe. */
+export interface PlannedCost {
+  plan_id: string;
+  bezeichnung: string;
+  kategorie: string;
+  betrag_eur: number;
+  rhythmus: string;
+  von_datum: string;
+  bis_datum: string | null;
+  project_id: string | null;
+  kommentar: string | null;
+}
+
+/**
+ * Zeile aus v_finanzverlauf: ein Monat, eine Richtung, eine Art.
+ *
+ * Langformat, weil die Arten je Monat wechseln — in der Vergangenheit steht auf der
+ * Ausgabenseite nur `laufende_kosten`, in der Zukunft die geplanten Kategorien.
+ */
+export interface CashflowRow {
+  monat: string;
+  richtung: "ein" | "aus";
+  art: string;
+  /** true = tatsaechlich geflossen, false = aus der Planung gerechnet. */
+  gemessen: boolean;
+  /** Immer positiv; die Richtung steht in der eigenen Spalte. */
+  betrag: number;
+}
+
+/** Zeile aus v_kontodeckung: Bestand auf allen Konten zum Monatsende. */
+export interface CoverageRow {
+  monat: string;
+  bestand: number;
+  /** true = an den abgelesenen Kontostaenden verankert, false = fortgeschrieben. */
+  gemessen: boolean;
 }

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { AccountCheck, DuesAccount, ForecastRow, MonthBalance, PlannedIncome } from "./types";
+import type { AccountCheck, CashflowRow, CoverageRow, DuesAccount, ForecastRow, PlannedCost, PlannedIncome } from "./types";
 
 export const financeKeys = {
   monatsbilanz: ["admin", "finance", "monatsbilanz"] as const,
@@ -9,21 +9,10 @@ export const financeKeys = {
   vorschau: ["admin", "finance", "vorschau"] as const,
   planEinnahmen: ["admin", "finance", "plan-einnahmen"] as const,
   erwartung: ["admin", "finance", "erwartung"] as const,
+  liquiditaet: ["admin", "finance", "liquiditaet"] as const,
+  planAusgaben: ["admin", "finance", "plan-ausgaben"] as const,
 };
 
-/** Monatsbilanz, juengster Monat zuerst. */
-export const useMonthBalances = () =>
-  useQuery({
-    queryKey: financeKeys.monatsbilanz,
-    queryFn: async (): Promise<MonthBalance[]> => {
-      const { data, error } = await supabase
-        .from("v_monatsbilanz")
-        .select("monat, einnahmen, ausgaben, spendentransfer, transfergebuehren, umbuchungen, netto, buchungen, bestand")
-        .order("monat", { ascending: false });
-      if (error) throw new Error(error.message);
-      return (data ?? []) as MonthBalance[];
-    },
-  });
 
 export const useAccountChecks = () =>
   useQuery({
@@ -58,6 +47,7 @@ export const useForecast = () =>
     },
   });
 
+
 export const usePlannedIncome = () =>
   useQuery({
     queryKey: financeKeys.planEinnahmen,
@@ -70,6 +60,7 @@ export const usePlannedIncome = () =>
       return (data ?? []) as PlannedIncome[];
     },
   });
+
 
 /**
  * Erwartete Einnahmen des laufenden Monats, nach Sicherheit getrennt.
@@ -97,6 +88,37 @@ export const useExpectedThisMonth = () =>
     },
   });
 
+
+export const usePlannedCosts = () =>
+  useQuery({
+    queryKey: financeKeys.planAusgaben,
+    queryFn: async (): Promise<PlannedCost[]> => {
+      const { data, error } = await supabase
+        .from("plan_ausgaben")
+        .select("plan_id, bezeichnung, kategorie, betrag_eur, rhythmus, von_datum, bis_datum, project_id, kommentar")
+        .order("kategorie")
+        .order("bezeichnung");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as PlannedCost[];
+    },
+  });
+
+/** Betrag einer Ausgabenzeile aendern — dieselbe Zurueckhaltung wie bei den Einnahmen. */
+export const useUpdateCostAmount = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ planId, betrag }: { planId: string; betrag: number }) => {
+      const { error } = await supabase.from("plan_ausgaben").update({ betrag_eur: betrag }).eq("plan_id", planId);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: financeKeys.planAusgaben });
+      void client.invalidateQueries({ queryKey: financeKeys.liquiditaet });
+      void client.invalidateQueries({ queryKey: financeKeys.vorschau });
+    },
+  });
+};
+
 /**
  * Betrag einer Planzeile aendern. Alles andere — Rhythmus, Zeitraum, Sicherheit —
  * bleibt der Datenbank vorbehalten, solange es dafuer keine Maske gibt: ein halb
@@ -116,6 +138,35 @@ export const useUpdatePlannedAmount = () => {
       void client.invalidateQueries({ queryKey: financeKeys.planEinnahmen });
       void client.invalidateQueries({ queryKey: financeKeys.erwartung });
       void client.invalidateQueries({ queryKey: financeKeys.vorschau });
+      void client.invalidateQueries({ queryKey: financeKeys.liquiditaet });
     },
   });
 };
+
+/** Eingaenge und Ausgaenge je Monat, gemessen und gerechnet auf einer Zeitachse. */
+export const useCashflow = () =>
+  useQuery({
+    queryKey: [...financeKeys.erwartung, "verlauf"] as const,
+    queryFn: async (): Promise<CashflowRow[]> => {
+      const { data, error } = await supabase
+        .from("v_finanzverlauf")
+        .select("monat, richtung, art, gemessen, betrag")
+        .order("monat");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as CashflowRow[];
+    },
+  });
+
+/** Bestand auf allen Konten je Monat — gemessen bis heute, danach fortgeschrieben. */
+export const useAccountCoverage = () =>
+  useQuery({
+    queryKey: [...financeKeys.erwartung, "deckung"] as const,
+    queryFn: async (): Promise<CoverageRow[]> => {
+      const { data, error } = await supabase
+        .from("v_kontodeckung")
+        .select("monat, bestand, gemessen")
+        .order("monat");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as CoverageRow[];
+    },
+  });
