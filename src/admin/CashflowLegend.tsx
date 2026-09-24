@@ -19,10 +19,12 @@ const CashflowLegend = ({
   ausgeblendet: string[];
   umschalten: (art: string) => void;
 }) => {
-  const vorhanden = new Set(zeilen.map((zeile) => zeile.art));
+  // Nach Richtung getrennt: `durchlaufend` steht auf beiden Seiten und soll auch
+  // zweimal erscheinen — einmal als Zufluss, einmal als der Posten, den er ausgleicht.
+  const vorhanden = new Set(zeilen.map((zeile) => `${zeile.richtung}:${zeile.art}`));
   const gruppen = [
-    { titel: "In", arten: EINNAHME_ARTEN.filter((art) => vorhanden.has(art.key)) },
-    { titel: "Out", arten: AUSGABE_ARTEN.filter((art) => vorhanden.has(art.key)) },
+    { titel: "In", richtung: "ein", arten: EINNAHME_ARTEN.filter((art) => vorhanden.has(`ein:${art.key}`)) },
+    { titel: "Out", richtung: "aus", arten: AUSGABE_ARTEN.filter((art) => vorhanden.has(`aus:${art.key}`)) },
   ].filter((gruppe) => gruppe.arten.length > 0);
 
   if (gruppen.length === 0) return null;
@@ -36,7 +38,7 @@ const CashflowLegend = ({
             const aus = ausgeblendet.includes(art.key);
             return (
               <button
-                key={art.key}
+                key={`${gruppe.richtung}:${art.key}`}
                 type="button"
                 onClick={() => umschalten(art.key)}
                 aria-pressed={!aus}
@@ -66,6 +68,9 @@ const CashflowLegend = ({
           <line x1={0} y1={5} x2={16} y2={5} stroke={BESTAND_FARBE} strokeWidth={2} />
         </svg>
         balance on all accounts
+        {ausgeblendet.length > 0 && (
+          <span className="text-xs">— still the full picture, so it no longer matches the bars</span>
+        )}
       </span>
 
       <span className="flex items-center gap-1.5 text-muted-foreground">

@@ -59,9 +59,20 @@ const CashflowTable = ({
     });
 
     const vorhanden = new Set(imFenster.map((zeile) => zeile.art));
+    // Der Schluessel traegt die Richtung mit: `durchlaufend` gibt es auf beiden Seiten,
+    // und die duerfen sich nicht zu einer Zahl addieren.
+    const vorhandenJeRichtung = new Set(imFenster.map((zeile) => `${zeile.richtung}:${zeile.art}`));
     const spaltenListe = [
-      ...EINNAHME_ARTEN.filter((art) => vorhanden.has(art.key)).map((art) => ({ ...art, richtung: "ein" as const })),
-      ...AUSGABE_ARTEN.filter((art) => vorhanden.has(art.key)).map((art) => ({ ...art, richtung: "aus" as const })),
+      ...EINNAHME_ARTEN.filter((art) => vorhandenJeRichtung.has(`ein:${art.key}`)).map((art) => ({
+        ...art,
+        richtung: "ein" as const,
+        spalte: `ein:${art.key}`,
+      })),
+      ...AUSGABE_ARTEN.filter((art) => vorhandenJeRichtung.has(`aus:${art.key}`)).map((art) => ({
+        ...art,
+        richtung: "aus" as const,
+        spalte: `aus:${art.key}`,
+      })),
     ];
 
     const jeMonat = new Map<string, Zeile>();
@@ -79,7 +90,8 @@ const CashflowTable = ({
       }
       const eintrag = jeMonat.get(zeile.monat)!;
       const betrag = Number(zeile.betrag);
-      eintrag.jeArt[zeile.art] = (eintrag.jeArt[zeile.art] ?? 0) + betrag;
+      const schluessel = `${zeile.richtung}:${zeile.art}`;
+      eintrag.jeArt[schluessel] = (eintrag.jeArt[schluessel] ?? 0) + betrag;
       if (zeile.richtung === "ein") eintrag.einnahmen += betrag;
       else eintrag.ausgaben += betrag;
       if (!zeile.gemessen) eintrag.geplant = true;
@@ -101,7 +113,7 @@ const CashflowTable = ({
       const acc = { jeArt: {} as Record<string, number>, einnahmen: 0, ausgaben: 0 };
       auswahl.forEach((eintrag) => {
         spaltenListe.forEach((spalte) => {
-          acc.jeArt[spalte.key] = (acc.jeArt[spalte.key] ?? 0) + (eintrag.jeArt[spalte.key] ?? 0);
+          acc.jeArt[spalte.spalte] = (acc.jeArt[spalte.spalte] ?? 0) + (eintrag.jeArt[spalte.spalte] ?? 0);
         });
         acc.einnahmen += eintrag.einnahmen;
         acc.ausgaben += eintrag.ausgaben;
@@ -131,7 +143,7 @@ const CashflowTable = ({
           <TableRow>
             <TableHead className="sticky left-0 bg-card">Month</TableHead>
             {spalten.map((spalte) => (
-              <TableHead key={spalte.key} className="whitespace-nowrap text-right">
+              <TableHead key={spalte.spalte} className="whitespace-nowrap text-right">
                 <Marker farbe={spalte.farbe} />
                 {spalte.label}
               </TableHead>
@@ -148,9 +160,9 @@ const CashflowTable = ({
                 {zeile.geplant && <span className="ml-1.5 text-xs font-normal">planned</span>}
               </TableCell>
               {spalten.map((spalte) => (
-                <TableCell key={spalte.key} className="text-right tabular-nums">
-                  {spalte.richtung === "aus" && zeile.jeArt[spalte.key] ? "−" : ""}
-                  {betrag(zeile.jeArt[spalte.key])}
+                <TableCell key={spalte.spalte} className="text-right tabular-nums">
+                  {spalte.richtung === "aus" && zeile.jeArt[spalte.spalte] ? "−" : ""}
+                  {betrag(zeile.jeArt[spalte.spalte])}
                 </TableCell>
               ))}
               <TableCell
@@ -174,9 +186,9 @@ const CashflowTable = ({
             <TableRow key={zeile.titel} className={cn("font-medium", index === 0 && "border-t-2")}>
               <TableCell className="sticky left-0 whitespace-nowrap bg-card">{zeile.titel}</TableCell>
               {spalten.map((spalte) => (
-                <TableCell key={spalte.key} className="text-right tabular-nums">
-                  {spalte.richtung === "aus" && zeile.werte.jeArt[spalte.key] ? "−" : ""}
-                  {betrag(zeile.werte.jeArt[spalte.key])}
+                <TableCell key={spalte.spalte} className="text-right tabular-nums">
+                  {spalte.richtung === "aus" && zeile.werte.jeArt[spalte.spalte] ? "−" : ""}
+                  {betrag(zeile.werte.jeArt[spalte.spalte])}
                 </TableCell>
               ))}
               <TableCell
