@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import CashflowChart from "@/admin/CashflowChart";
@@ -78,6 +79,7 @@ const AdminFinance = () => {
    * umschaltet und beide denselben Stand brauchen.
    */
   const [ausgeblendet, setAusgeblendet] = useState<string[]>([]);
+  const [tabelleOffen, setTabelleOffen] = useState(false);
   const artUmschalten = (art: string) =>
     setAusgeblendet((bisher) =>
       bisher.includes(art) ? bisher.filter((eintrag) => eintrag !== art) : [...bisher, art],
@@ -203,15 +205,25 @@ const AdminFinance = () => {
               ausgeblendet={ausgeblendet}
               umschalten={artUmschalten}
             />
-            <div className="mt-6">
-              <CashflowTable zeilen={verlauf.data ?? []} deckung={deckung.data ?? []} />
-            </div>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Costs before today are a single figure apart from the transfers. Which payment is
-              staff, fee or project is decided when the bookings are assigned to the project items,
-              and that is still outstanding — breaking the past down now would be a guess, not a
-              measurement.
-            </p>
+            {/* Die Zahlen stehen im Diagramm; wer sie genau braucht, klappt auf. */}
+            <Collapsible open={tabelleOffen} onOpenChange={setTabelleOffen} className="mt-6">
+              <CollapsibleTrigger className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+                <ChevronRight
+                  className={cn("h-4 w-4 transition-transform", tabelleOffen && "rotate-90")}
+                  aria-hidden="true"
+                />
+                {tabelleOffen ? "Hide the figures" : "Show the figures month by month"}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-3">
+                <CashflowTable zeilen={verlauf.data ?? []} deckung={deckung.data ?? []} />
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Costs before today are a single figure apart from the transfers. Which payment is
+                  staff, fee or project is decided when the bookings are assigned to the project
+                  items, and that is still outstanding — breaking the past down now would be a
+                  guess, not a measurement.
+                </p>
+              </CollapsibleContent>
+            </Collapsible>
           </>
         )}
       </Abschnitt>

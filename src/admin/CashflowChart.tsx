@@ -18,6 +18,27 @@ const monatKurz = new Intl.DateTimeFormat("en-GB", { month: "short", year: "2-di
 const monatLang = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
 const achsenBetrag = new Intl.NumberFormat("en-GB", { notation: "compact", maximumFractionDigits: 1 });
 
+/** Schrittweiten, die man im Kopf nachrechnen kann. */
+const SCHRITTE = [25, 50, 100, 250, 500, 1000, 2000, 2500, 5000, 10000];
+
+/**
+ * Gleich grosse Abstaende statt einer Achse, die irgendwo endet.
+ *
+ * Recharts setzt seine Ticks selbst und rundet dabei grosszuegig auf. Hier wird die
+ * erste Schrittweite genommen, mit der hoechstens zehn Linien entstehen, und der
+ * Bereich auf ein Vielfaches davon aufgezogen — dann liegt jede Linie auf einer
+ * runden Zahl und alle haben denselben Abstand.
+ */
+const achsenRaster = (unten: number, oben: number) => {
+  const spanne = Math.max(oben - unten, 1);
+  const schritt = SCHRITTE.find((kandidat) => spanne / kandidat <= 10) ?? SCHRITTE[SCHRITTE.length - 1];
+  const von = Math.floor(unten / schritt) * schritt;
+  const bis = Math.ceil(oben / schritt) * schritt;
+  const ticks: number[] = [];
+  for (let wert = von; wert <= bis + schritt / 2; wert += schritt) ticks.push(wert);
+  return { domain: [von, bis] as [number, number], ticks };
+};
+
 /** Ein Monat als Diagrammpunkt: je Serie ein Feld, Ausgaben negativ. */
 interface Punkt {
   monat: string;
@@ -127,7 +148,7 @@ const CashflowChart = ({
   /** Arten, die der Betrachter weggeklickt hat — sie verzerren sonst den Massstab. */
   ausgeblendet?: string[];
 }) => {
-  const { punkte, serien, jetztLabel } = useMemo(() => {
+  const { punkte, serien, jetztLabel, raster } = useMemo(() => {
     const jetzt = new Date();
     const monatsErster = new Date(Date.UTC(jetzt.getUTCFullYear(), jetzt.getUTCMonth(), 1));
     const von = new Date(monatsErster);
@@ -183,10 +204,30 @@ const CashflowChart = ({
       });
     });
 
+    const geordnet = Array.from(jeMonat.values()).sort((a, b) => a.monat.localeCompare(b.monat));
+
+    // Der Achsenbereich muss die gestapelten Summen und die Linie fassen.
+    let unten = 0;
+    let oben = 0;
+    geordnet.forEach((punkt) => {
+      let positiv = 0;
+      let negativ = 0;
+      sortiert.forEach((serie) => {
+        const wert = Number(punkt[serie.key]) || 0;
+        if (wert > 0) positiv += wert;
+        else negativ += wert;
+      });
+      [positiv, negativ, Number(punkt.bestandIst) || 0, Number(punkt.bestandPlan) || 0].forEach((wert) => {
+        if (wert > oben) oben = wert;
+        if (wert < unten) unten = wert;
+      });
+    });
+
     return {
-      punkte: Array.from(jeMonat.values()).sort((a, b) => a.monat.localeCompare(b.monat)),
+      punkte: geordnet,
       serien: sortiert,
       jetztLabel: monatKurz.format(monatsErster),
+      raster: achsenRaster(unten, oben),
     };
   }, [zeilen, deckung, monateZurueck, monateVoraus, ausgeblendet]);
 
@@ -226,17 +267,16 @@ const CashflowChart = ({
           minTickGap={16}
           tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
         />
-        {/* Eng an den tatsaechlichen Werten statt auf runde Schritte aufgerundet:
-            sonst verschenkt die Flaeche ein Drittel ihrer Hoehe an leeren Raum, und
-            wer eine Kategorie wegklickt, sieht die Skala nicht mitgehen. */}
+        {/* Bereich und Linien werden selbst gesetzt, siehe achsenRaster: gleiche
+            Abstaende auf runden Zahlen, und die Skala geht mit, wenn man eine
+            Kategorie wegklickt. */}
         <YAxis
           width={60}
           tickLine={false}
           axisLine={false}
-          domain={[
-            (unten: number) => Math.floor(Math.min(unten, 0) * 1.02),
-            (oben: number) => Math.ceil(Math.max(oben, 0) * 1.02),
-          ]}
+          domain={raster.domain}
+          ticks={raster.ticks}
+          interval={0}
           tickFormatter={(wert: number) => `€${achsenBetrag.format(wert)}`}
           tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
         />
