@@ -12,10 +12,11 @@
  * Kontrast zur Flaeche — deshalb steht unter dem Diagramm die Tabelle mit denselben
  * Farben als Marker, und keine Aussage haengt allein an der Farbe.
  *
- * Zwei Ausnahmen mit Absicht: `sonstiges` und `durchlaufend` sind entsaettigt und
- * fallen damit durch die Chroma-Pruefung. Das Grau ist die Aussage — was sich nicht
- * zuordnen liess, und Geld, das dem Zweck nicht zur Verfuegung steht. Gegen ihre
- * Nachbarn im Stapel trennen beide sauber (ΔE 15,3 bzw. 21,5 bei Normalsicht).
+ * Drei Ausnahmen mit Absicht: `sonstiges`, `durchlaufend` und `nicht_zugeordnet` sind
+ * entsaettigt und fallen damit durch die Chroma-Pruefung. Das Grau ist die Aussage —
+ * was sich nicht zuordnen liess, Geld, das dem Zweck nicht zur Verfuegung steht, und
+ * ein Transfer, dessen Posten noch offen sind. Gegen ihre Nachbarn im Stapel trennen
+ * alle drei sauber (ΔE 15,3 / 21,5 / 20,0 bei Normalsicht).
  *
  * Fuer einen dunklen Modus braucht es eigene Stufen (Band L 0.48–0.67 statt
  * 0.43–0.77); die Oberflaeche hat heute keinen, deshalb steht hier nur der helle Satz.
@@ -61,7 +62,13 @@ export const AUSGABE_ARTEN: Art[] = [
     key: "projekttransfer",
     label: "Transfers to Uganda",
     farbe: "#8C3557",
-    hinweis: "Largest item — can be hidden",
+    hinweis: "Backed by assigned items",
+  },
+  {
+    key: "nicht_zugeordnet",
+    label: "Not yet assigned",
+    farbe: "#B5AFA4",
+    hinweis: "Transfer sent, items still open",
   },
 ];
 
