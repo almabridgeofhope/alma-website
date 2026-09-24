@@ -66,18 +66,6 @@ export interface Project {
   name: string;
 }
 
-/** Zeile aus v_monatsbilanz: Ist-Zahlen je Monat plus fortgeschriebener Bestand. */
-export interface MonthBalance {
-  monat: string;
-  einnahmen: number;
-  ausgaben: number;
-  spendentransfer: number;
-  transfergebuehren: number;
-  umbuchungen: number;
-  netto: number;
-  buchungen: number;
-  bestand: number;
-}
 
 /** Zeile aus v_kontoabgleich: abgelesener Kontostand gegen die Buchungen. */
 export interface AccountCheck {

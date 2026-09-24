@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { AccountCheck, CashflowRow, CoverageRow, DuesAccount, ForecastRow, MonthBalance, PlannedCost, PlannedIncome } from "./types";
+import type { AccountCheck, CashflowRow, CoverageRow, DuesAccount, ForecastRow, PlannedCost, PlannedIncome } from "./types";
 
 export const financeKeys = {
   monatsbilanz: ["admin", "finance", "monatsbilanz"] as const,
@@ -13,19 +13,6 @@ export const financeKeys = {
   planAusgaben: ["admin", "finance", "plan-ausgaben"] as const,
 };
 
-/** Monatsbilanz, juengster Monat zuerst. */
-export const useMonthBalances = () =>
-  useQuery({
-    queryKey: financeKeys.monatsbilanz,
-    queryFn: async (): Promise<MonthBalance[]> => {
-      const { data, error } = await supabase
-        .from("v_monatsbilanz")
-        .select("monat, einnahmen, ausgaben, spendentransfer, transfergebuehren, umbuchungen, netto, buchungen, bestand")
-        .order("monat", { ascending: false });
-      if (error) throw new Error(error.message);
-      return (data ?? []) as MonthBalance[];
-    },
-  });
 
 export const useAccountChecks = () =>
   useQuery({

@@ -16,7 +16,6 @@ import {
   useDuesAccounts,
   useExpectedThisMonth,
   useForecast,
-  useMonthBalances,
   usePlannedCosts,
   useAccountCoverage,
   useCashflow,
@@ -65,7 +64,6 @@ const Abschnitt = ({
 const AdminFinance = () => {
   useNoIndex("Finance · Project accounting");
 
-  const bilanz = useMonthBalances();
   const konten = useAccountChecks();
   const beitraege = useDuesAccounts();
   const vorschau = useForecast();
@@ -120,7 +118,7 @@ const AdminFinance = () => {
     [konten.data],
   );
 
-  const laedt = bilanz.isLoading || konten.isLoading || beitraege.isLoading || vorschau.isLoading;
+  const laedt = konten.isLoading || beitraege.isLoading || vorschau.isLoading;
 
   if (laedt) {
     return (
@@ -189,7 +187,7 @@ const AdminFinance = () => {
 
       <Abschnitt
         titel="Money in and out"
-        erklaerung="One timeline, one axis. Income above the line, money out below — the gap to the line is the month's surplus, and the dark line is what sits on all accounts at the end of each month. Left of today is what happened, right of it what the planning expects. Click a name in the legend to take it out of the picture; the transfers to Uganda are ten times everything else and squash the rest. Pass-through items are left out throughout, since they cancel an expense and would inflate both sides."
+        erklaerung="One timeline, one axis. Income above the line, money out below — the gap to the line is the month's surplus, and the dark line is what sits on all accounts at the end of each month. Every step of that line is exactly the net of its bars, which is why nothing is left out: the transfers to Uganda and the pass-through items are in, because the accounts feel them. Click a name in the legend to take it out of the picture — the transfers are ten times everything else and squash the rest. Left of today is what happened, right of it what the planning expects."
       >
         {verlauf.isLoading ? (
           <Skeleton className="h-80 w-full" />
@@ -329,39 +327,6 @@ const AdminFinance = () => {
         </Table>
       </Abschnitt>
 
-      <Abschnitt
-        titel="Monthly balance"
-        erklaerung="Actuals per month. The balance is anchored to the account balances read off the accounts."
-      >
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Month</TableHead>
-              <TableHead className="text-right">Income</TableHead>
-              <TableHead className="text-right">Costs</TableHead>
-              <TableHead className="text-right">To Uganda</TableHead>
-              <TableHead className="text-right">Net</TableHead>
-              <TableHead className="text-right">Balance</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {(bilanz.data ?? []).slice(0, 12).map((zeile) => (
-              <TableRow key={zeile.monat}>
-                <TableCell>{formatMonth(zeile.monat)}</TableCell>
-                <TableCell className="text-right tabular-nums text-primary">{formatEur(zeile.einnahmen)}</TableCell>
-                <TableCell className="text-right tabular-nums text-muted-foreground">
-                  {formatEur(zeile.ausgaben)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums text-muted-foreground">
-                  {formatEur(Number(zeile.spendentransfer) + Number(zeile.transfergebuehren))}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">{formatEur(zeile.netto)}</TableCell>
-                <TableCell className="text-right font-medium tabular-nums">{formatEur(zeile.bestand)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Abschnitt>
       <Abschnitt
         titel="Membership accounts"
         erklaerung="Dues owed since joining against everything that came in. Anything above is a donation, anything missing is arrears."

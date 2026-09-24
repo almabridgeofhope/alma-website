@@ -12,10 +12,11 @@
  * Kontrast zur Flaeche — deshalb steht unter dem Diagramm die Tabelle mit denselben
  * Farben als Marker, und keine Aussage haengt allein an der Farbe.
  *
- * Eine Ausnahme mit Absicht: `laufende_kosten` ist entsaettigt und faellt damit durch
- * die Chroma-Pruefung. Das Grau ist die Aussage — diese Buchungen sind noch nicht
- * aufgeschluesselt. Gegen ihren einzigen Nachbarn im Stapel trennt sie sauber
- * (ΔE 15,3 normal, 13,5 bei Deuteranopie).
+ * Zwei Ausnahmen mit Absicht: `laufende_kosten` und `durchlaufend` sind entsaettigt
+ * und fallen damit durch die Chroma-Pruefung. Das Grau ist die Aussage — die einen
+ * sind noch nicht aufgeschluesselt, die anderen sind kein Geld, das dem Zweck zur
+ * Verfuegung steht. Gegen ihre Nachbarn im Stapel trennen beide sauber (ΔE 15,3 bzw.
+ * 21,5 bei Normalsicht).
  *
  * Fuer einen dunklen Modus braucht es eigene Stufen (Band L 0.48–0.67 statt
  * 0.43–0.77); die Oberflaeche hat heute keinen, deshalb steht hier nur der helle Satz.
@@ -33,6 +34,12 @@ export const EINNAHME_ARTEN: Art[] = [
   { key: "beitrag", label: "Membership dues", farbe: "#0072B2" },
   { key: "dauerspende", label: "Recurring donations", farbe: "#009E73", hinweis: "Corporate partnerships" },
   { key: "einmalspende", label: "One-off donations", farbe: "#56B4E9" },
+  {
+    key: "durchlaufend",
+    label: "Pass-through",
+    farbe: "#66707E",
+    hinweis: "Covers an expense",
+  },
 ];
 
 export const AUSGABE_ARTEN: Art[] = [
