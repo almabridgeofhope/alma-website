@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "./useSession";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/alma-logo.svg";
 
 const NAV_ITEMS = [
   { to: "/admin/transfers", label: "Transfers" },
@@ -24,8 +25,14 @@ const AdminLayout = () => {
     <div className="min-h-screen bg-muted/40">
       <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="mx-auto flex h-16 max-w-content items-center gap-6 px-4 sm:px-6">
-          <div className="flex min-w-0 items-baseline gap-2">
-            <span className="text-base font-semibold text-primary">Alma</span>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <img
+              src={logo}
+              alt="Alma Bridge of Hope e.V."
+              width={36}
+              height={36}
+              className="h-9 w-9 shrink-0 object-contain"
+            />
             <span className="truncate text-sm text-muted-foreground">Project accounting</span>
           </div>
 
