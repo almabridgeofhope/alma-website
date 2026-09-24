@@ -4,17 +4,28 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import CashflowChart from "@/admin/CashflowChart";
+import CashflowLegend from "@/admin/CashflowLegend";
+import CashflowTable from "@/admin/CashflowTable";
 import EditableAmount from "@/admin/EditableAmount";
+import LiquidityAssumptions from "@/admin/LiquidityAssumptions";
+import LiquidityTimeline from "@/admin/LiquidityTimeline";
 import StatTile from "@/admin/StatTile";
 import { useNoIndex } from "@/admin/useNoIndex";
 import { formatDate, formatEur } from "@/admin/format";
 import {
   useAccountChecks,
   useDuesAccounts,
+  useExpectedBreakdown,
   useExpectedThisMonth,
   useForecast,
+  useLiquidity,
   useMonthBalances,
+  usePlannedCosts,
+  useCashflow,
+  useReceivedThisMonth,
   usePlannedIncome,
+  useUpdateCostAmount,
   useUpdatePlannedAmount,
 } from "@/admin/financeQueries";
 import { cn } from "@/lib/utils";
@@ -64,6 +75,12 @@ const AdminFinance = () => {
   const vorschau = useForecast();
   const plan = usePlannedIncome();
   const erwartung = useExpectedThisMonth();
+  const liquiditaet = useLiquidity();
+  const quellen = useExpectedBreakdown();
+  const kosten = usePlannedCosts();
+  const eingegangen = useReceivedThisMonth();
+  const verlauf = useCashflow();
+  const kostenAendern = useUpdateCostAmount();
   const betragAendern = useUpdatePlannedAmount();
 
   const bestand = useMemo(
@@ -79,6 +96,14 @@ const AdminFinance = () => {
   const offenerBedarf = useMemo(
     () => (vorschau.data ?? []).reduce((sum, zeile) => sum + Number(zeile.offen_eur), 0),
     [vorschau.data],
+  );
+
+  const monatskosten = useMemo(
+    () =>
+      (kosten.data ?? [])
+        .filter((zeile) => zeile.rhythmus === "monatlich")
+        .reduce((sum, zeile) => sum + Number(zeile.betrag_eur), 0),
+    [kosten.data],
   );
 
   const imRueckstand = useMemo(
@@ -157,6 +182,41 @@ const AdminFinance = () => {
           </CardContent>
         </Card>
       )}
+
+      <Abschnitt
+        titel="Money in and out"
+        erklaerung="One timeline, one axis. Income above the line, running costs below — the gap to the line is the month's surplus. Left of today is what happened, right of it is what the planning expects. Transfers to Uganda are not shown: they follow the projects, not the month. Pass-through items are left out as well, since they cancel an expense and would inflate both sides."
+      >
+        {verlauf.isLoading ? (
+          <Skeleton className="h-80 w-full" />
+        ) : (
+          <>
+            <CashflowChart zeilen={verlauf.data ?? []} />
+            <CashflowLegend zeilen={verlauf.data ?? []} />
+            <div className="mt-6">
+              <CashflowTable zeilen={verlauf.data ?? []} />
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Costs before today are a single figure. Which payment is staff, fee or project is
+              decided when the bookings are assigned to the project items, and that is still
+              outstanding — breaking the past down now would be a guess, not a measurement.
+            </p>
+          </>
+        )}
+      </Abschnitt>
+
+      <Abschnitt
+        titel="Funds available over time"
+        erklaerung="What is left above the 500 EUR buffer, month by month. The dashed lines mark what a rank costs in total — where the curve crosses one, that stage is paid for. The grey line is the conservative scenario."
+      >
+        <LiquidityTimeline liquiditaet={liquiditaet.data ?? []} vorschau={vorschau.data ?? []} />
+        <LiquidityAssumptions
+          monat={liquiditaet.data?.[0]}
+          startbestand={bestand}
+          quellen={quellen.data ?? []}
+          bereitsEingegangen={eingegangen.data ?? 0}
+        />
+      </Abschnitt>
 
       <Abschnitt
         titel="Forecast"
@@ -254,6 +314,91 @@ const AdminFinance = () => {
       </Abschnitt>
 
       <Abschnitt
+        titel="Planned costs"
+        erklaerung="What goes out every month before anything reaches a project. The forecast subtracts this list — not an assumption in the config."
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Rhythm</TableHead>
+              <TableHead>From</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {(kosten.data ?? []).map((zeile) => (
+              <TableRow key={zeile.plan_id}>
+                <TableCell>
+                  <div className="font-medium">{zeile.bezeichnung}</div>
+                  {zeile.kommentar && <div className="text-xs text-muted-foreground">{zeile.kommentar}</div>}
+                </TableCell>
+                <TableCell className="text-muted-foreground">{zeile.kategorie}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {RHYTHM_LABELS[zeile.rhythmus] ?? zeile.rhythmus}
+                </TableCell>
+                <TableCell className="text-muted-foreground">{formatDate(zeile.von_datum)}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end">
+                    <EditableAmount
+                      label={`Amount for ${zeile.bezeichnung}`}
+                      value={zeile.betrag_eur}
+                      allowEmpty={false}
+                      onCommit={(next) => {
+                        if (next !== null) kostenAendern.mutate({ planId: zeile.plan_id, betrag: next });
+                      }}
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+            <TableRow>
+              <TableCell colSpan={4} className="font-medium">
+                Per month
+              </TableCell>
+              <TableCell className="text-right font-medium tabular-nums">
+                {formatEur(monatskosten)}
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </Abschnitt>
+
+      <Abschnitt
+        titel="Monthly balance"
+        erklaerung="Actuals per month. The balance is anchored to the account balances read off the accounts."
+      >
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Month</TableHead>
+              <TableHead className="text-right">Income</TableHead>
+              <TableHead className="text-right">Costs</TableHead>
+              <TableHead className="text-right">To Uganda</TableHead>
+              <TableHead className="text-right">Net</TableHead>
+              <TableHead className="text-right">Balance</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {(bilanz.data ?? []).slice(0, 12).map((zeile) => (
+              <TableRow key={zeile.monat}>
+                <TableCell>{formatMonth(zeile.monat)}</TableCell>
+                <TableCell className="text-right tabular-nums text-primary">{formatEur(zeile.einnahmen)}</TableCell>
+                <TableCell className="text-right tabular-nums text-muted-foreground">
+                  {formatEur(zeile.ausgaben)}
+                </TableCell>
+                <TableCell className="text-right tabular-nums text-muted-foreground">
+                  {formatEur(Number(zeile.spendentransfer) + Number(zeile.transfergebuehren))}
+                </TableCell>
+                <TableCell className="text-right tabular-nums">{formatEur(zeile.netto)}</TableCell>
+                <TableCell className="text-right font-medium tabular-nums">{formatEur(zeile.bestand)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Abschnitt>
+      <Abschnitt
         titel="Membership accounts"
         erklaerung="Dues owed since joining against everything that came in. Anything above is a donation, anything missing is arrears."
       >
@@ -303,39 +448,6 @@ const AdminFinance = () => {
         </Table>
       </Abschnitt>
 
-      <Abschnitt
-        titel="Monthly balance"
-        erklaerung="Actuals per month. The balance is anchored to the account balances read off the accounts."
-      >
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Month</TableHead>
-              <TableHead className="text-right">Income</TableHead>
-              <TableHead className="text-right">Costs</TableHead>
-              <TableHead className="text-right">To Uganda</TableHead>
-              <TableHead className="text-right">Net</TableHead>
-              <TableHead className="text-right">Balance</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {(bilanz.data ?? []).slice(0, 12).map((zeile) => (
-              <TableRow key={zeile.monat}>
-                <TableCell>{formatMonth(zeile.monat)}</TableCell>
-                <TableCell className="text-right tabular-nums text-primary">{formatEur(zeile.einnahmen)}</TableCell>
-                <TableCell className="text-right tabular-nums text-muted-foreground">
-                  {formatEur(zeile.ausgaben)}
-                </TableCell>
-                <TableCell className="text-right tabular-nums text-muted-foreground">
-                  {formatEur(Number(zeile.spendentransfer) + Number(zeile.transfergebuehren))}
-                </TableCell>
-                <TableCell className="text-right tabular-nums">{formatEur(zeile.netto)}</TableCell>
-                <TableCell className="text-right font-medium tabular-nums">{formatEur(zeile.bestand)}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Abschnitt>
     </div>
   );
 };
