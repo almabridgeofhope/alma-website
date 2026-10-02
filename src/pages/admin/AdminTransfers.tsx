@@ -20,7 +20,9 @@ const AdminTransfers = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const openNeed = useMemo(() => {
-    const rows = items.data ?? [];
+    // Laufende Kosten (Projekt Other) sind kein offener Bedarf: ihre Positionen stehen auf
+    // Menge 500, damit sie nie aufgebraucht sind.
+    const rows = (items.data ?? []).filter((item) => item.projekt_status !== "laufend");
     return {
       eur: rows.reduce((sum, item) => sum + (item.open_eur ?? 0), 0),
       count: rows.filter((item) => item.qty_open > 0).length,
