@@ -23,7 +23,7 @@ export interface ProjectItem {
   project_item_id: string;
   project_id: string;
   projekt: string | null;
-  /** Status des Projekts: nur 'ongoing' wird in der Positionsliste gezeigt. */
+  /** Status des Projekts: nur 'ongoing' wird in der Positionsliste gezeigt, 'laufend' (laufende Kosten) zaehlt nie als offener Bedarf. */
   projekt_status: string | null;
   phase: string | null;
   item_name: string | null;
