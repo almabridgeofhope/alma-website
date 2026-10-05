@@ -99,7 +99,12 @@ const TooltipInhalt = ({
             />
             <span className="flex-1 truncate">
               {zeile.art.label}
-              {zeile.geplant && <span className="ml-1 text-xs text-muted-foreground">planned</span>}
+              {zeile.geplant && (
+                <span className="ml-1 text-xs text-muted-foreground">
+                  {/* Kooperationen zahlen schwankend: der Planwert ist ein Richtwert. */}
+                  {zeile.richtung === "ein" && zeile.art.key === "dauerspende" ? "guide value" : "planned"}
+                </span>
+              )}
             </span>
             <span className="shrink-0 tabular-nums">
               {zeile.richtung === "aus" ? "−" : "+"}

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { AccountCheck, CashflowRow, CoverageRow, DuesAccount, ForecastRow, PlannedCost, PlannedIncome } from "./types";
+import type { AccountCheck, CashflowRow, CoverageRow, DuesAccount, ForecastRow, PlannedCost, PlannedIncome, PlannedIncomeMonth } from "./types";
 
 export const financeKeys = {
   monatsbilanz: ["admin", "finance", "monatsbilanz"] as const,
@@ -60,6 +60,23 @@ export const usePlannedIncome = () =>
         .order("bezeichnung");
       if (error) throw new Error(error.message);
       return (data ?? []) as PlannedIncome[];
+    },
+  });
+
+/** Soll gegen Ist je Planzeile, der laufende Monat und die sechs davor. */
+export const usePlannedIncomeMonths = () =>
+  useQuery({
+    queryKey: [...financeKeys.planEinnahmen, "ist"] as const,
+    queryFn: async (): Promise<PlannedIncomeMonth[]> => {
+      const jetzt = new Date();
+      const von = new Date(Date.UTC(jetzt.getUTCFullYear(), jetzt.getUTCMonth() - 6, 1));
+      const { data, error } = await supabase
+        .from("v_plan_einnahmen_ist")
+        .select("plan_id, monat, soll, ist, zahlungen, erste_zahlung, erfuellt")
+        .gte("monat", von.toISOString().slice(0, 10))
+        .order("monat");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as PlannedIncomeMonth[];
     },
   });
 
