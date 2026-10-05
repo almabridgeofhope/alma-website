@@ -139,6 +139,21 @@ export interface PlannedIncome {
   kommentar: string | null;
 }
 
+/**
+ * Zeile aus v_plan_einnahmen_ist: eine monatliche Planzeile in einem Monat.
+ *
+ * Bei einer Kooperation ist der Planbetrag ein Richtwert: sobald im Monat eine Zahlung
+ * da ist (`erfuellt`), gilt der Monat als gedeckt, gleich in welcher Hoehe.
+ */
+export interface PlannedIncomeMonth {
+  plan_id: string;
+  monat: string;
+  soll: number;
+  ist: number;
+  zahlungen: number;
+  erste_zahlung: string | null;
+  erfuellt: boolean;
+}
 
 /** Zeile aus plan_ausgaben: eine laufende oder geplante Ausgabe. */
 export interface PlannedCost {

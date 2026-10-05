@@ -21,9 +21,11 @@ import {
   useAccountCoverage,
   useCashflow,
   usePlannedIncome,
+  usePlannedIncomeMonths,
   useUpdateCostAmount,
   useUpdatePlannedAmount,
 } from "@/admin/financeQueries";
+import type { PlannedIncomeMonth } from "@/admin/types";
 import { cn } from "@/lib/utils";
 
 const monatsformat = new Intl.DateTimeFormat("en-GB", { month: "short", year: "numeric" });
@@ -58,6 +60,28 @@ const RHYTHM_LABELS: Record<string, string> = {
   jaehrlich: "yearly",
 };
 
+const kurzesDatum = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" });
+
+/**
+ * Was eine monatliche Planzeile in diesem Monat gebracht hat und wie stark sie schwankt.
+ *
+ * Bei einer Kooperation ist der Planbetrag nur ein Richtwert. Die Spanne der letzten
+ * sechs Monate zeigt, wie weit der echte Betrag davon abweicht — gezaehlt werden nur
+ * Monate, in denen etwas kam.
+ */
+const planStatusJeZeile = (zeilen: PlannedIncomeMonth[]) => {
+  const jetzt = new Date();
+  const laufend = new Date(Date.UTC(jetzt.getUTCFullYear(), jetzt.getUTCMonth(), 1)).toISOString().slice(0, 10);
+  const jePlan = new Map<string, { diesenMonat?: PlannedIncomeMonth; frueher: number[] }>();
+  zeilen.forEach((zeile) => {
+    const eintrag = jePlan.get(zeile.plan_id) ?? { frueher: [] };
+    if (zeile.monat === laufend) eintrag.diesenMonat = zeile;
+    else if (zeile.erfuellt) eintrag.frueher.push(Number(zeile.ist));
+    jePlan.set(zeile.plan_id, eintrag);
+  });
+  return jePlan;
+};
+
 const Abschnitt = ({
   titel,
   erklaerung,
@@ -83,6 +107,8 @@ const AdminFinance = () => {
   const beitraege = useDuesAccounts();
   const vorschau = useForecast();
   const plan = usePlannedIncome();
+  const planIst = usePlannedIncomeMonths();
+  const planStatus = useMemo(() => planStatusJeZeile(planIst.data ?? []), [planIst.data]);
   const erwartung = useExpectedThisMonth();
   const kosten = usePlannedCosts();
   const verlauf = useCashflow();
@@ -308,7 +334,7 @@ const AdminFinance = () => {
 
       <Abschnitt
         titel="Planned income"
-        erklaerung="Everything expected that is not a membership fee. The amount can be edited here; rhythm, period and certainty are maintained in the database."
+        erklaerung="Everything expected that is not a membership fee. For a partnership the amount is a guide value: once this month's payment is in, the month counts as covered, whatever the amount. The amount can be edited here; rhythm, period and certainty are maintained in the database."
       >
         <Table>
           <TableHeader>
@@ -318,6 +344,7 @@ const AdminFinance = () => {
               <TableHead>Rhythm</TableHead>
               <TableHead>From</TableHead>
               <TableHead>Certainty</TableHead>
+              <TableHead>This month</TableHead>
               <TableHead className="text-right">Amount</TableHead>
             </TableRow>
           </TableHeader>
@@ -340,6 +367,23 @@ const AdminFinance = () => {
                     {CERTAINTY_LABELS[zeile.sicherheit] ?? zeile.sicherheit}
                   </Badge>
                 </TableCell>
+                <TableCell>
+                  {(() => {
+                    const monat = planStatus.get(zeile.plan_id)?.diesenMonat;
+                    if (!monat) return <span className="text-muted-foreground">–</span>;
+                    return monat.erfuellt ? (
+                      <div>
+                        <Badge variant="default">Received</Badge>
+                        <div className="mt-0.5 text-xs text-muted-foreground tabular-nums">
+                          {formatEur(monat.ist)}
+                          {monat.erste_zahlung && ` · ${kurzesDatum.format(new Date(monat.erste_zahlung))}`}
+                        </div>
+                      </div>
+                    ) : (
+                      <Badge variant="secondary">Open</Badge>
+                    );
+                  })()}
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end">
                     <EditableAmount
@@ -351,12 +395,22 @@ const AdminFinance = () => {
                       }}
                     />
                   </div>
+                  {zeile.kategorie === "kooperation" && (() => {
+                    const frueher = planStatus.get(zeile.plan_id)?.frueher ?? [];
+                    return (
+                      <div className="mt-0.5 text-xs text-muted-foreground tabular-nums">
+                        guide value
+                        {frueher.length > 1 &&
+                          ` · last 6 mo. ${formatEur(Math.min(...frueher))}–${formatEur(Math.max(...frueher))}`}
+                      </div>
+                    );
+                  })()}
                 </TableCell>
               </TableRow>
             ))}
             {(plan.data ?? []).length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
                   No planned income yet.
                 </TableCell>
               </TableRow>
