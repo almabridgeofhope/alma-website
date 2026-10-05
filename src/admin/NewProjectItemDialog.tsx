@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatEur, formatUgx, parseAmount } from "./format";
-import { phaseLabel, useCreateProjectItem, useEurRate, usePhases, useProjects } from "./queries";
+import { phaseLabel, useCreateProjectItem, useEurRate, useProjectPhases, useProjects } from "./queries";
 
 interface NewProjectItemDialogProps {
   open: boolean;
@@ -36,7 +36,7 @@ const NewProjectItemDialog = ({
   submitLabel = "Create",
 }: NewProjectItemDialogProps) => {
   const projects = useProjects();
-  const phases = usePhases();
+  const phases = useProjectPhases();
   const rate = useEurRate();
   const createItem = useCreateProjectItem();
 
@@ -47,13 +47,18 @@ const NewProjectItemDialog = ({
   const [qty, setQty] = useState("1");
   const [unitCost, setUnitCost] = useState("");
 
+  // Nur die Phasen des gewaehlten Projekts. Eine Phase aus einem anderen Projekt
+  // (etwa aus dem Filter oder nach einem Projektwechsel) gilt als nicht gewaehlt.
+  const projectPhases = (phases.data ?? []).filter((phase) => phase.project_id === projectId);
+  const selectedPhaseId = projectPhases.some((phase) => phase.phase_id === phaseId) ? phaseId : "";
+
   const parsedQty = parseAmount(qty);
   const parsedCost = parseAmount(unitCost);
   const total = parsedQty !== null && parsedCost !== null ? parsedQty * parsedCost : null;
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (projectId === "" || phaseId === "") {
+    if (projectId === "" || selectedPhaseId === "") {
       toast.error("Please choose a project and a phase.");
       return;
     }
@@ -65,7 +70,7 @@ const NewProjectItemDialog = ({
     try {
       const newId = await createItem.mutateAsync({
         projectId,
-        phaseId,
+        phaseId: selectedPhaseId,
         titleEn,
         titleDe: titleDe.trim() === "" ? null : titleDe.trim(),
         qtyNeeded: parsedQty,
@@ -113,12 +118,12 @@ toast.success(`Item ${newId} created.`);
 
             <div className="space-y-2">
               <Label htmlFor="new-phase">Phase</Label>
-              <Select value={phaseId} onValueChange={setPhaseId}>
+              <Select value={selectedPhaseId} onValueChange={setPhaseId} disabled={projectId === ""}>
                 <SelectTrigger id="new-phase">
-                  <SelectValue placeholder="choose" />
+                  <SelectValue placeholder={projectId === "" ? "choose a project first" : "choose"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {(phases.data ?? []).map((phase) => (
+                  {projectPhases.map((phase) => (
                     <SelectItem key={phase.phase_id} value={phase.phase_id}>
                       {phaseLabel(phase)}
                     </SelectItem>

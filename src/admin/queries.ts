@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { Assignment, Phase, Project, ProjectItem, Transfer, TransferSummary } from "./types";
+import type { Assignment, Phase, Project, ProjectItem, ProjectPhase, Transfer, TransferSummary } from "./types";
 
 const TRANSFER_KATEGORIE = "spendentransfer";
 
@@ -294,6 +294,36 @@ export const usePhases = () =>
         .order("phase_en");
       if (error) throw new Error(error.message);
       return (data ?? []) as Phase[];
+    },
+  });
+
+/**
+ * Phasen je Projekt aus den Stammdaten (project_phases), in ihrer Reihenfolge.
+ * Die Bezeichnung kommt aus project_phase_translations; einen Fremdschluessel
+ * zwischen beiden gibt es nicht, deshalb wird hier zusammengefuehrt. Inaktive
+ * Phasen bleiben drin — unter Other laufen die Positionen genau dort.
+ */
+export const useProjectPhases = () =>
+  useQuery({
+    queryKey: ["admin", "project-phases"] as const,
+    queryFn: async (): Promise<ProjectPhase[]> => {
+      const [assignments, translations] = await Promise.all([
+        supabase.from("project_phases").select("project_id, phase_id, rang"),
+        supabase.from("project_phase_translations").select("phase_id, phase_de, phase_en"),
+      ]);
+      if (assignments.error) throw new Error(assignments.error.message);
+      if (translations.error) throw new Error(translations.error.message);
+
+      const byId = new Map((translations.data ?? []).map((entry) => [entry.phase_id, entry as Phase]));
+      return (assignments.data ?? [])
+        .map((entry) => ({
+          phase_id: entry.phase_id,
+          phase_de: byId.get(entry.phase_id)?.phase_de ?? null,
+          phase_en: byId.get(entry.phase_id)?.phase_en ?? null,
+          project_id: entry.project_id,
+          rang: entry.rang,
+        }))
+        .sort((a, b) => a.rang - b.rang || phaseLabel(a).localeCompare(phaseLabel(b)));
     },
   });
 

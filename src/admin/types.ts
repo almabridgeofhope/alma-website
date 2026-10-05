@@ -61,6 +61,12 @@ export interface Phase {
   phase_en: string | null;
 }
 
+/** Phase mit ihrem Projekt, aus project_phases. */
+export interface ProjectPhase extends Phase {
+  project_id: string;
+  rang: number;
+}
+
 export interface Project {
   project_id: string;
   name: string;
