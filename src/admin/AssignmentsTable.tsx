@@ -208,9 +208,9 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
                       )}
 
                       {!receipt && (
-                        <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <span className="flex items-center" title="Receipt missing">
                           <AlertTriangle className="h-3.5 w-3.5 text-destructive" aria-hidden="true" />
-                          missing
+                          <span className="sr-only">Receipt missing</span>
                         </span>
                       )}
 
