@@ -21,7 +21,7 @@ export const useAccountChecks = () =>
       const { data, error } = await supabase
         .from("v_kontoabgleich")
         .select(
-          "konto, stichtag, saldo_gemessen, summe_gebucht, startsaldo_implizit, buchungen, notiz, saldo_verfuegbar, schwebend, abgelesen_um",
+          "konto, stichtag, saldo_gemessen, summe_gebucht, startsaldo_implizit, buchungen, notiz, saldo_verfuegbar, schwebend, abgelesen_um, differenz_erklaert",
         )
         .order("konto");
       if (error) throw new Error(error.message);
