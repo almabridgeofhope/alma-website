@@ -11,6 +11,7 @@ import { useNoIndex } from "@/admin/useNoIndex";
 import { useProjectItems, useTransferSummaries } from "@/admin/queries";
 import { absolute, formatDate, formatEur, formatUgx } from "@/admin/format";
 import NewTransferDialog from "@/admin/NewTransferDialog";
+import PlannedTransfersCard from "@/admin/PlannedTransfersCard";
 import StatTile from "@/admin/StatTile";
 
 const AdminTransfers = () => {
@@ -56,6 +57,8 @@ const AdminTransfers = () => {
           tone={unassigned > 0 ? "warning" : "default"}
         />
       </div>
+
+      <PlannedTransfersCard />
 
       <Card className="shadow-card">
         <CardHeader className="pb-3">

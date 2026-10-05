@@ -122,6 +122,22 @@ const TooltipInhalt = ({
   );
 };
 
+/** Markiert einen gerechneten Monat, in dem die Konten im Minus staenden. */
+const FehlbetragPunkt = ({ cx, cy, value, index }: { cx?: number; cy?: number; value?: number; index?: number }) =>
+  value !== undefined && value < 0 && cx !== undefined && cy !== undefined ? (
+    <circle
+      key={`fehlbetrag-${index}`}
+      cx={cx}
+      cy={cy}
+      r={4}
+      fill="hsl(var(--destructive))"
+      stroke="hsl(var(--card))"
+      strokeWidth={1.5}
+    />
+  ) : (
+    <g key={`kein-fehlbetrag-${index}`} />
+  );
+
 /**
  * Eingaenge nach oben, Ausgaenge nach unten, eine Achse, eine durchgehende Zeit.
  *
@@ -130,15 +146,15 @@ const TooltipInhalt = ({
  * was geflossen ist, rechts davon, was die Planung rechnet; das Geplante ist
  * schraffiert, damit der Unterschied auch ohne Farbe erkennbar bleibt.
  *
- * Nicht enthalten: die Transfers nach Uganda (sie folgen den Projekten, nicht dem
- * Monat) und die durchlaufenden Posten (sie gleichen eine Ausgabe aus und stehen
- * sonst auf beiden Seiten).
+ * Transfers nach Uganda stehen in der Zukunft nur, soweit sie als geplanter Transfer
+ * einem Monat zugeordnet sind. Faellt die gerechnete Deckung unter null, traegt die
+ * Linie dort einen Punkt: in dem Monat reicht das Geld fuer das Geplante nicht.
  */
 const CashflowChart = ({
   zeilen,
   deckung,
   monateZurueck = 12,
-  monateVoraus = 6,
+  monateVoraus = 12,
   ausgeblendet = [],
 }: {
   zeilen: CashflowRow[];
@@ -333,7 +349,7 @@ const CashflowChart = ({
           stroke={BESTAND_FARBE}
           strokeWidth={2}
           strokeDasharray="5 3"
-          dot={false}
+          dot={FehlbetragPunkt}
           connectNulls
           isAnimationActive={false}
           name="Balance, projected"

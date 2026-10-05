@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { AlertCircle, ArrowLeft, FileText, Loader2, Paperclip } from "lucide-react";
+import { AlertCircle, ArrowLeft, CalendarClock, FileText, Loader2, Paperclip } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import AddAssignmentDialog from "@/admin/AddAssignmentDialog";
 import AssignmentsTable from "@/admin/AssignmentsTable";
 import OpenItemsPicker from "@/admin/OpenItemsPicker";
 import StatTile from "@/admin/StatTile";
@@ -22,6 +24,14 @@ import {
   useTransferSummaries,
   useSetTransferReceipt,
 } from "@/admin/queries";
+import {
+  formatPlanMonth,
+  plannedQtyByItem,
+  useCarryOutPlannedTransfer,
+  usePlannedTransferItems,
+  usePlannedTransfers,
+} from "@/admin/planQueries";
+import type { ProjectItem } from "@/admin/types";
 
 const AdminTransferDetail = () => {
   const { transferId = "" } = useParams();
@@ -34,6 +44,8 @@ const AdminTransferDetail = () => {
   const setTransferReceipt = useSetTransferReceipt(transferId);
   const { pick, isPicking } = useReceiptPicker();
   const [isSaving, setIsSaving] = useState(false);
+  const [selected, setSelected] = useState<ProjectItem | null>(null);
+  const planItems = usePlannedTransferItems();
 
   const transfer = (transfers.data ?? []).find(
     (candidate) => candidate.external_transaction_id === transferId,
@@ -154,6 +166,8 @@ const AdminTransferDetail = () => {
 
       <TransferBuchung transfer={transfer} transferId={transferId} />
 
+      <FromPlan transferId={transferId} transferredEur={transferredEur} />
+
       <Card className="shadow-card">
         <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
           <div>
@@ -209,14 +223,86 @@ const AdminTransferDetail = () => {
           </CardHeader>
           <CardContent>
             <OpenItemsPicker
-              transferId={transferId}
               items={items.data ?? []}
-              assignedItemIds={new Set((assignments.data ?? []).map((a) => a.item_id ?? ""))}
+              onPick={setSelected}
+              markedItemIds={new Set((assignments.data ?? []).map((a) => a.item_id ?? ""))}
+              markedLabel="already assigned"
+              plannedQty={plannedQtyByItem(planItems.data ?? [])}
+              newItemLabel="Create and assign"
             />
           </CardContent>
         </Card>
       </div>
+
+      {selected && (
+        <AddAssignmentDialog transferId={transferId} item={selected} onClose={() => setSelected(null)} />
+      )}
     </div>
+  );
+};
+
+/**
+ * Ein geplanter Transfer wird hier zur Wirklichkeit: seine Positionen werden Zuordnungen
+ * dieser Ueberweisung. Steht nur da, solange es offene Plaene gibt.
+ */
+const FromPlan = ({ transferId, transferredEur }: { transferId: string; transferredEur: number }) => {
+  const plans = usePlannedTransfers();
+  const carryOut = useCarryOutPlannedTransfer(transferId);
+  const offen = (plans.data ?? []).filter((plan) => plan.status === "geplant");
+  const [planId, setPlanId] = useState<string>("");
+
+  if (offen.length === 0) return null;
+  const plan = offen.find((candidate) => candidate.plan_transfer_id === planId);
+
+  const uebernehmen = async () => {
+    if (!plan) return;
+    try {
+      const angelegt = await carryOut.mutateAsync(plan.plan_transfer_id);
+      toast.success(
+        angelegt === 1
+          ? `“${plan.bezeichnung}” carried out, 1 item assigned.`
+          : `“${plan.bezeichnung}” carried out, ${angelegt} items assigned.`,
+      );
+      setPlanId("");
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  };
+
+  return (
+    <Card className="shadow-card">
+      <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+        <div className="flex items-start gap-3">
+          <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <div>
+            <p className="text-sm font-medium">From a planned transfer</p>
+            <p className="text-xs text-muted-foreground">
+              {plan
+                ? `${plan.positionen} items, ${formatEur(plan.eur_wirksam)} planned against ${formatEur(transferredEur)} transferred. Quantities and amounts can be adjusted afterwards.`
+                : "Takes the planned items over as assignments and marks the plan as carried out."}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={planId} onValueChange={setPlanId}>
+            <SelectTrigger className="w-64" aria-label="Choose a planned transfer">
+              <SelectValue placeholder="Choose a plan" />
+            </SelectTrigger>
+            <SelectContent>
+              {offen.map((candidate) => (
+                <SelectItem key={candidate.plan_transfer_id} value={candidate.plan_transfer_id}>
+                  {formatPlanMonth(candidate.geplant_fuer)} · {candidate.bezeichnung}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="sm" disabled={!plan || carryOut.isPending} onClick={uebernehmen}>
+            {carryOut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+            Take over
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

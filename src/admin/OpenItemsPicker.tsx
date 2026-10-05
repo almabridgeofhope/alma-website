@@ -1,45 +1,61 @@
 import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
-import { Check, FileText, Loader2, Plus, Search } from "lucide-react";
+import { Check, Plus, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import NewProjectItemDialog from "./NewProjectItemDialog";
-import { useReceiptPicker } from "./useReceiptPicker";
-import type { DriveFile } from "@/lib/googleDrive";
-import { formatQty, formatUgx, parseAmount } from "./format";
-import { phaseLabel, unitCostUgx, useCreateAssignment, usePhases } from "./queries";
+import { formatQty, formatUgx } from "./format";
+import { phaseLabel, usePhases } from "./queries";
 import type { ProjectItem } from "./types";
 
 const ALL = "alle";
 
 interface OpenItemsPickerProps {
-  transferId: string;
   items: ProjectItem[];
-  assignedItemIds: Set<string>;
+  /** Was mit der gewaehlten Position geschieht, entscheidet die Seite: zuordnen oder vormerken. */
+  onPick: (item: ProjectItem) => void;
+  /** Positionen, die hier schon stehen — sie bleiben waehlbar, sind aber markiert. */
+  markedItemIds: Set<string>;
+  markedLabel: string;
+  /** Verplante Menge je Position in anderen geplanten Transfers. */
+  plannedQty?: Map<string, number>;
+  /**
+   * Beim Planen: nur anbieten, was noch nicht verplant ist, und keine laufenden Kosten —
+   * die stehen in den geplanten Kosten und zaehlten sonst doppelt.
+   */
+  forPlanning?: boolean;
+  newItemLabel: string;
 }
 
-const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPickerProps) => {
+const OpenItemsPicker = ({
+  items,
+  onPick,
+  markedItemIds,
+  markedLabel,
+  plannedQty,
+  forPlanning = false,
+  newItemLabel,
+}: OpenItemsPickerProps) => {
   const phases = usePhases();
   const [search, setSearch] = useState("");
   const [projectId, setProjectId] = useState(ALL);
   const [phase, setPhase] = useState(ALL);
-  const [selected, setSelected] = useState<ProjectItem | null>(null);
   const [isNewItemOpen, setIsNewItemOpen] = useState(false);
   const [newItemId, setNewItemId] = useState<string | null>(null);
 
-  const open = useMemo(() => items.filter((item) => item.qty_open > 0), [items]);
+  const planned = (item: ProjectItem): number => plannedQty?.get(item.project_item_id) ?? 0;
+
+  const open = useMemo(
+    () =>
+      items.filter((item) =>
+        forPlanning
+          ? item.projekt_status !== "laufend" && item.qty_open - (plannedQty?.get(item.project_item_id) ?? 0) > 0
+          : item.qty_open > 0,
+      ),
+    [items, forPlanning, plannedQty],
+  );
 
   const projects = useMemo(() => {
     const byId = new Map<string, string>();
@@ -60,15 +76,15 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
     if (phase !== ALL && !phaseOptions.includes(phase)) setPhase(ALL);
   }, [phaseOptions, phase]);
 
-  // Eine frisch angelegte Position geht direkt in den Zuordnungsdialog.
+  // Eine frisch angelegte Position geht direkt weiter, wie eine gewaehlte.
   useEffect(() => {
     if (newItemId === null) return;
     const created = items.find((item) => item.project_item_id === newItemId);
     if (created) {
-      setSelected(created);
+      onPick(created);
       setNewItemId(null);
     }
-  }, [items, newItemId]);
+  }, [items, newItemId, onPick]);
 
   const visible = useMemo(() => {
     const needle = search.trim().toLowerCase();
@@ -151,7 +167,7 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
               <li key={item.project_item_id}>
                 <button
                   type="button"
-                  onClick={() => setSelected(item)}
+                  onClick={() => onPick(item)}
                   className="flex w-full items-start gap-3 p-3 text-left transition-colors hover:bg-accent"
                 >
                   <div className="min-w-0 flex-1">
@@ -162,11 +178,12 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
                       open {formatQty(item.qty_open)} · {formatUgx(item.open_ugx)}
+                      {planned(item) > 0 && ` · ${formatQty(planned(item))} planned`}
                     </p>
-                    {assignedItemIds.has(item.project_item_id) && (
+                    {markedItemIds.has(item.project_item_id) && (
                       <Badge variant="secondary" className="mt-1">
                         <Check className="mr-1 h-3 w-3" aria-hidden="true" />
-                        already assigned
+                        {markedLabel}
                       </Badge>
                     )}
                   </div>
@@ -190,170 +207,9 @@ const OpenItemsPicker = ({ transferId, items, assignedItemIds }: OpenItemsPicker
         defaultProjectId={projectId === ALL ? undefined : projectId}
         defaultPhaseId={phase === ALL ? undefined : phaseIdOfName(phase)}
         onCreated={setNewItemId}
-        submitLabel="Create and assign"
+        submitLabel={newItemLabel}
       />
-
-      {selected && (
-        <AddAssignmentDialog transferId={transferId} item={selected} onClose={() => setSelected(null)} />
-      )}
     </>
-  );
-};
-
-interface AddAssignmentDialogProps {
-  transferId: string;
-  item: ProjectItem;
-  onClose: () => void;
-}
-
-const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogProps) => {
-  const createAssignment = useCreateAssignment(transferId);
-  const [qty, setQty] = useState(String(item.qty_open));
-  const [unit, setUnit] = useState(String(Math.round(unitCostUgx(item))));
-  const [amount, setAmount] = useState(String(Math.round(item.qty_open * unitCostUgx(item))));
-  const [receipt, setReceipt] = useState<DriveFile | null>(null);
-  const { pick, isPicking } = useReceiptPicker();
-
-  // Die drei Felder halten sich gegenseitig aktuell. Gespeichert wird nur der
-  // Gesamtbetrag — Menge mal Einzelbetrag ergibt ihn, und wer den Gesamtbetrag
-  // eintraegt, rechnet den Einzelbetrag zurueck.
-  const totalOf = (qtyInput: string, unitInput: string): string => {
-    const parsedQty = parseAmount(qtyInput);
-    const parsedUnit = parseAmount(unitInput);
-    return parsedQty === null || parsedUnit === null ? "" : String(Math.round(parsedQty * parsedUnit));
-  };
-
-  const changeQty = (next: string) => {
-    setQty(next);
-    setAmount(totalOf(next, unit));
-  };
-
-  const changeUnit = (next: string) => {
-    setUnit(next);
-    setAmount(totalOf(qty, next));
-  };
-
-  const changeAmount = (next: string) => {
-    setAmount(next);
-    const parsedQty = parseAmount(qty);
-    const parsedTotal = parseAmount(next);
-    if (parsedQty === null || parsedQty <= 0 || parsedTotal === null) {
-      setUnit("");
-      return;
-    }
-    setUnit(String(Math.round((parsedTotal / parsedQty) * 100) / 100));
-  };
-
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const parsedQty = parseAmount(qty);
-    if (parsedQty === null || parsedQty <= 0) {
-      toast.error("The quantity must be greater than 0.");
-      return;
-    }
-
-    try {
-      await createAssignment.mutateAsync({
-        transferId,
-        itemId: item.project_item_id,
-        qtyPaid: parsedQty,
-        amountPaidUgx: parseAmount(amount),
-        receiptUrl: receipt?.url ?? null,
-      });
-      toast.success(`${item.item_name ?? item.project_item_id} assigned.`);
-      onClose();
-    } catch (error) {
-      toast.error((error as Error).message);
-    }
-  };
-
-  return (
-    <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{item.item_name ?? item.project_item_id}</DialogTitle>
-          <DialogDescription>
-            {item.project_item_id} · open {formatQty(item.qty_open)} of {formatQty(item.qty_needed)} ·
-            unit price {formatUgx(Math.round(unitCostUgx(item)))}
-          </DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={submit} className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="qty">Quantity paid</Label>
-              <Input
-                id="qty"
-                inputMode="decimal"
-                autoFocus
-                required
-                value={qty}
-                onChange={(event) => changeQty(event.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="unit">Actual per unit</Label>
-              <Input
-                id="unit"
-                inputMode="decimal"
-                value={unit}
-                onChange={(event) => changeUnit(event.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="amount">Actual total in UGX</Label>
-              <Input
-                id="amount"
-                inputMode="decimal"
-                value={amount}
-                onChange={(event) => changeAmount(event.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Receipt</Label>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isPicking}
-                onClick={async () => {
-                  const datei = await pick("position");
-                  if (datei) setReceipt(datei);
-                }}
-              >
-                {isPicking ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-                ) : (
-                  <FileText className="mr-2 h-4 w-4" aria-hidden="true" />
-                )}
-                {receipt ? "Choose another receipt" : "Receipt from Drive"}
-              </Button>
-              {receipt && <span className="min-w-0 truncate text-sm">{receipt.name}</span>}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              The receipt from Uganda. The picker can upload it or take it from the receipt folder
-              — it can also be added later.
-            </p>
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={createAssignment.isPending}>
-              {createAssignment.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-              )}
-              Assign
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
   );
 };
 
