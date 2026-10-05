@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { AlertCircle, ArrowLeft, CalendarClock, FileText, Loader2, Paperclip } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,6 +33,7 @@ import {
   usePlannedTransfers,
 } from "@/admin/planQueries";
 import type { ProjectItem } from "@/admin/types";
+import { cn } from "@/lib/utils";
 
 const AdminTransferDetail = () => {
   const { transferId = "" } = useParams();
@@ -164,40 +166,44 @@ const AdminTransferDetail = () => {
         )}
       </div>
 
-      <TransferBuchung transfer={transfer} transferId={transferId} />
-
-      <FromPlan transferId={transferId} transferredEur={transferredEur} />
-
-      <Card className="shadow-card">
-        <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
-          <div>
-            <p className="text-sm font-medium">Transfer receipt</p>
-            <p className="text-xs text-muted-foreground">
-              Receipt for the donation transfer, one per transfer.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {transfer.receipt_url && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => openReceipt(transfer.receipt_url as string)}
-              >
-                <FileText className="mr-2 h-4 w-4" aria-hidden="true" />
-                Open
-              </Button>
-            )}
-            <Button variant="secondary" size="sm" disabled={isPicking || isSaving} onClick={belegWaehlen}>
-              {isSaving || isPicking ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <Paperclip className="mr-2 h-4 w-4" aria-hidden="true" />
+      {/* Buchungsangaben und Planuebernahme teilen sich eine Zeile; ohne offene Plaene nimmt die Buchung sie ganz. */}
+      <div className="flex flex-col gap-4 lg:flex-row">
+        <TransferBuchung transfer={transfer} transferId={transferId} className="lg:flex-[3]" />
+        <Card className="shadow-card lg:shrink-0">
+          <CardContent className="space-y-1.5 py-4">
+            <Label title="Receipt for the donation transfer, one per transfer">Bank receipt</Label>
+            <div className="flex items-center gap-2">
+              {transfer.receipt_url && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9"
+                  onClick={() => openReceipt(transfer.receipt_url as string)}
+                >
+                  <FileText className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Open
+                </Button>
               )}
-              {transfer.receipt_url ? "Replace" : "Choose from Drive"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="h-9"
+                disabled={isPicking || isSaving}
+                onClick={belegWaehlen}
+              >
+                {isSaving || isPicking ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <Paperclip className="mr-2 h-4 w-4" aria-hidden="true" />
+                )}
+                {transfer.receipt_url ? "Replace" : "From Drive"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        <FromPlan transferId={transferId} transferredEur={transferredEur} className="lg:flex-[2]" />
+      </div>
+
 
       <div className="grid gap-6 lg:grid-cols-5">
         <Card className="shadow-card lg:col-span-3">
@@ -245,7 +251,15 @@ const AdminTransferDetail = () => {
  * Ein geplanter Transfer wird hier zur Wirklichkeit: seine Positionen werden Zuordnungen
  * dieser Ueberweisung. Steht nur da, solange es offene Plaene gibt.
  */
-const FromPlan = ({ transferId, transferredEur }: { transferId: string; transferredEur: number }) => {
+const FromPlan = ({
+  transferId,
+  transferredEur,
+  className,
+}: {
+  transferId: string;
+  transferredEur: number;
+  className?: string;
+}) => {
   const plans = usePlannedTransfers();
   const carryOut = useCarryOutPlannedTransfer(transferId);
   const offen = (plans.data ?? []).filter((plan) => plan.status === "geplant");
@@ -270,8 +284,8 @@ const FromPlan = ({ transferId, transferredEur }: { transferId: string; transfer
   };
 
   return (
-    <Card className="shadow-card">
-      <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+    <Card className={cn("shadow-card", className)}>
+      <CardContent className="space-y-3 py-4">
         <div className="flex items-start gap-3">
           <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
           <div>
@@ -285,7 +299,7 @@ const FromPlan = ({ transferId, transferredEur }: { transferId: string; transfer
         </div>
         <div className="flex items-center gap-2">
           <Select value={planId} onValueChange={setPlanId}>
-            <SelectTrigger className="w-64" aria-label="Choose a planned transfer">
+            <SelectTrigger className="min-w-0 flex-1" aria-label="Choose a planned transfer">
               <SelectValue placeholder="Choose a plan" />
             </SelectTrigger>
             <SelectContent>
