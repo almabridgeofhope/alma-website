@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { parseAmount } from "./format";
+import { cn } from "@/lib/utils";
 
 interface EditableAmountProps {
   value: number | null;
@@ -8,10 +9,12 @@ interface EditableAmountProps {
   label: string;
   placeholder?: string;
   allowEmpty?: boolean;
+  /** Breite des Felds, standardmaessig w-28. */
+  className?: string;
 }
 
 /** Zahl im Feld, gespeichert wird beim Verlassen oder mit Enter — kein Speichern-Knopf je Zeile. */
-const EditableAmount = ({ value, onCommit, label, placeholder, allowEmpty = true }: EditableAmountProps) => {
+const EditableAmount = ({ value, onCommit, label, placeholder, allowEmpty = true, className = "w-28" }: EditableAmountProps) => {
   const asText = (input: number | null): string =>
     input === null ? "" : String(input);
   const [draft, setDraft] = useState(() => asText(value));
@@ -32,7 +35,7 @@ const EditableAmount = ({ value, onCommit, label, placeholder, allowEmpty = true
       aria-label={label}
       inputMode="decimal"
       placeholder={placeholder}
-      className="h-9 w-28 text-right tabular-nums"
+      className={cn("h-9 text-right tabular-nums", className)}
       value={draft}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={commit}

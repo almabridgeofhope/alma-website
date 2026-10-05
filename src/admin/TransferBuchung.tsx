@@ -7,14 +7,16 @@ import EditableAmount from "./EditableAmount";
 import { absolute, formatQty } from "./format";
 import { useUpdateTransfer } from "./queries";
 import type { Transfer } from "./types";
+import { cn } from "@/lib/utils";
 
 interface TransferBuchungProps {
   transfer: Transfer;
   transferId: string;
+  className?: string;
 }
 
 /** Buchungsnummer, angekommener Betrag und Zweck — direkt bearbeitbar. */
-const TransferBuchung = ({ transfer, transferId }: TransferBuchungProps) => {
+const TransferBuchung = ({ transfer, transferId, className }: TransferBuchungProps) => {
   const updateTransfer = useUpdateTransfer(transferId);
   const [zweck, setZweck] = useState(transfer.zweck ?? "");
 
@@ -33,12 +35,13 @@ const TransferBuchung = ({ transfer, transferId }: TransferBuchungProps) => {
   };
 
   return (
-    <Card className="shadow-card">
-      <CardContent className="grid gap-4 py-4 sm:grid-cols-[8rem,14rem,1fr]">
+    <Card className={cn("shadow-card", className)}>
+      <CardContent className="grid gap-4 py-4 sm:grid-cols-[auto,auto,minmax(0,1fr)]">
         <div className="space-y-1.5">
           <Label>Entry no.</Label>
           <EditableAmount
             label="Entry number"
+            className="w-20"
             value={transfer.buchung_nr}
             onCommit={(next) =>
               speichern({ buchung_nr: next === null ? null : Math.round(next) }, "Entry number")
@@ -50,6 +53,7 @@ const TransferBuchung = ({ transfer, transferId }: TransferBuchungProps) => {
           <Label>Received in UGX</Label>
           <EditableAmount
             label="Amount received in UGX"
+            className="w-36"
             value={transfer.original_amount === null ? null : absolute(transfer.original_amount)}
             onCommit={(next) =>
               // Der Kurs folgt dem Betrag, sonst stehen beide Zahlen im Widerspruch.
