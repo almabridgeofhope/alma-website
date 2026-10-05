@@ -148,8 +148,12 @@ const AdminFinance = () => {
     [beitraege.data],
   );
 
+  /** Geklaerte Differenzen (abgeloestes MLP-Konto) gelten nicht als offen. */
   const offeneDifferenzen = useMemo(
-    () => (konten.data ?? []).filter((konto) => Math.abs(Number(konto.startsaldo_implizit ?? 0)) > 0.02),
+    () =>
+      (konten.data ?? []).filter(
+        (konto) => !konto.differenz_erklaert && Math.abs(Number(konto.startsaldo_implizit ?? 0)) > 0.02,
+      ),
     [konten.data],
   );
 

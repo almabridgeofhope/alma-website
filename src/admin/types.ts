@@ -82,6 +82,8 @@ export interface AccountCheck {
   schwebend: number | null;
   /** Stand laut Anbieter. PayPal hinkt hier einige Stunden hinterher. */
   abgelesen_um: string | null;
+  /** Die Differenz ist geklaert (Notiz sagt warum) und gilt nicht als offen. */
+  differenz_erklaert: boolean;
 }
 
 /** Zeile aus v_beitragskonto: Soll gegen Ist je Mitglied. */
