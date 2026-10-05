@@ -20,7 +20,9 @@ export const useAccountChecks = () =>
     queryFn: async (): Promise<AccountCheck[]> => {
       const { data, error } = await supabase
         .from("v_kontoabgleich")
-        .select("konto, stichtag, saldo_gemessen, summe_gebucht, startsaldo_implizit, buchungen, notiz")
+        .select(
+          "konto, stichtag, saldo_gemessen, summe_gebucht, startsaldo_implizit, buchungen, notiz, saldo_verfuegbar, schwebend, abgelesen_um",
+        )
         .order("konto");
       if (error) throw new Error(error.message);
       return (data ?? []) as AccountCheck[];

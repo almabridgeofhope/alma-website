@@ -76,6 +76,12 @@ export interface AccountCheck {
   startsaldo_implizit: number | null;
   buchungen: number | null;
   notiz: string | null;
+  /** saldo_gemessen ohne den schwebenden Teil: was tatsaechlich auf dem Konto liegt. */
+  saldo_verfuegbar: number | null;
+  /** Noch nicht verfuegbar (Stripe pending, PayPal withheld), in saldo_gemessen enthalten. */
+  schwebend: number | null;
+  /** Stand laut Anbieter. PayPal hinkt hier einige Stunden hinterher. */
+  abgelesen_um: string | null;
 }
 
 /** Zeile aus v_beitragskonto: Soll gegen Ist je Mitglied. */

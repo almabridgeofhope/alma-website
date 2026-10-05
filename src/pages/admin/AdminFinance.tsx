@@ -27,6 +27,20 @@ import {
 import { cn } from "@/lib/utils";
 
 const monatsformat = new Intl.DateTimeFormat("en-GB", { month: "short", year: "numeric" });
+const ableseformat = new Intl.DateTimeFormat("en-GB", {
+  day: "2-digit",
+  month: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+});
+
+const formatReading = (value: string | null): string => (value ? ableseformat.format(new Date(value)) : "–");
+
+const KONTO_NAMEN: Record<string, string> = {
+  stripe: "Stripe",
+  paypal: "PayPal",
+  wise: "Wise",
+};
 
 const formatMonth = (value: string | null): string =>
   value ? monatsformat.format(new Date(value)) : "–";
@@ -87,9 +101,28 @@ const AdminFinance = () => {
   const kostenAendern = useUpdateCostAmount();
   const betragAendern = useUpdatePlannedAmount();
 
-  const bestand = useMemo(
-    () => (konten.data ?? []).reduce((sum, konto) => sum + Number(konto.saldo_gemessen ?? 0), 0),
+  /** Nur Konten mit Geld darauf: das abgeloeste MLP-Konto steht dauerhaft auf null. */
+  const kontenMitStand = useMemo(
+    () =>
+      (konten.data ?? []).filter(
+        (konto) => Number(konto.saldo_verfuegbar ?? 0) !== 0 || Number(konto.schwebend ?? 0) !== 0,
+      ),
     [konten.data],
+  );
+
+  const bestand = useMemo(
+    () => kontenMitStand.reduce((sum, konto) => sum + Number(konto.saldo_verfuegbar ?? 0), 0),
+    [kontenMitStand],
+  );
+
+  /** Der aelteste Stand bestimmt, wie aktuell die Summe ist. */
+  const aeltesterStand = useMemo(
+    () =>
+      kontenMitStand
+        .map((konto) => konto.abgelesen_um)
+        .filter((zeit): zeit is string => zeit !== null)
+        .sort()[0] ?? null,
+    [kontenMitStand],
   );
 
   const beitragssoll = useMemo(
@@ -146,7 +179,27 @@ const AdminFinance = () => {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="Balance today" value={formatEur(bestand)} hint="All accounts, as last read" />
+        <StatTile
+          label="Balance today"
+          value={formatEur(bestand)}
+          hint={`Available on all accounts, as of ${formatReading(aeltesterStand)}`}
+          details={
+            <div className="space-y-2 text-sm">
+              {kontenMitStand.map((konto) => (
+                <div key={konto.konto}>
+                  <div className="flex items-baseline justify-between gap-4">
+                    <span className="font-medium">{KONTO_NAMEN[konto.konto] ?? konto.konto}</span>
+                    <span className="tabular-nums">{formatEur(Number(konto.saldo_verfuegbar))}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    as of {formatReading(konto.abgelesen_um)}
+                    {Number(konto.schwebend) > 0 && ` · ${formatEur(Number(konto.schwebend))} pending, not counted`}
+                  </p>
+                </div>
+              ))}
+            </div>
+          }
+        />
         <StatTile
           label="Expected per month"
           value={formatEur(erwartung.data?.erwartet ?? 0)}
