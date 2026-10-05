@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import EditableAmount from "./EditableAmount";
-import { absolute, formatQty } from "./format";
+import { absolute, formatQty, formatUgx } from "./format";
 import { useUpdateTransfer } from "./queries";
 import type { Transfer } from "./types";
 import { cn } from "@/lib/utils";
@@ -15,12 +15,14 @@ interface TransferBuchungProps {
   className?: string;
 }
 
-/** Buchungsnummer, angekommener Betrag und Zweck — direkt bearbeitbar. */
+/** Buchungsnummer, bestaetigter angekommener Betrag und Zweck — direkt bearbeitbar. */
 const TransferBuchung = ({ transfer, transferId, className }: TransferBuchungProps) => {
   const updateTransfer = useUpdateTransfer(transferId);
   const [zweck, setZweck] = useState(transfer.zweck ?? "");
 
-  const eur = absolute(transfer.amount);
+  // Ohne Bestaetigung ist ein UGX-Betrag nur der Vorschlag des Wise-Syncs.
+  const bestaetigt = transfer.erhalten_bestaetigt_am !== null && transfer.original_amount !== null;
+  const vorschlag = !bestaetigt && transfer.original_amount !== null ? absolute(transfer.original_amount) : null;
 
   const speichern = async (patch: Parameters<typeof updateTransfer.mutateAsync>[0]["patch"], label: string) => {
     try {
@@ -54,24 +56,38 @@ const TransferBuchung = ({ transfer, transferId, className }: TransferBuchungPro
           <EditableAmount
             label="Amount received in UGX"
             className="w-36"
-            value={transfer.original_amount === null ? null : absolute(transfer.original_amount)}
+            value={bestaetigt ? absolute(transfer.original_amount) : null}
             onCommit={(next) =>
-              // Der Kurs folgt dem Betrag, sonst stehen beide Zahlen im Widerspruch.
+              // Eintragen ist Bestaetigen; den Kurs rechnet die Datenbank daraus.
               speichern(
                 next === null
-                  ? { original_amount: null, original_currency: null, exchange_rate: null }
+                  ? { original_amount: null, original_currency: null, erhalten_bestaetigt_am: null }
                   : {
                       original_amount: -Math.abs(next),
                       original_currency: "ugx",
-                      exchange_rate: eur > 0 ? Number((next / eur).toFixed(6)) : null,
+                      erhalten_bestaetigt_am: transfer.erhalten_bestaetigt_am ?? new Date().toISOString(),
                     },
                 "Amount received",
               )
             }
           />
-          <p className="text-xs text-muted-foreground">
-            Rate {transfer.exchange_rate ? formatQty(Math.round(transfer.exchange_rate)) : "–"}
-          </p>
+          {bestaetigt ? (
+            <p className="text-xs text-muted-foreground">
+              Rate {transfer.exchange_rate ? formatQty(Math.round(transfer.exchange_rate)) : "–"}
+            </p>
+          ) : vorschlag !== null ? (
+            <button
+              type="button"
+              className="text-xs text-primary hover:underline"
+              onClick={() =>
+                speichern({ erhalten_bestaetigt_am: new Date().toISOString() }, "Amount received")
+              }
+            >
+              Wise says {formatUgx(vorschlag)} · confirm
+            </button>
+          ) : (
+            <p className="text-xs text-muted-foreground">Not confirmed yet</p>
+          )}
         </div>
 
         <div className="space-y-1.5">

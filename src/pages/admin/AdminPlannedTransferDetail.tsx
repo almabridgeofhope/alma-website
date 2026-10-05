@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { AlertCircle, ArrowLeft, Loader2, Trash2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, Send, Trash2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   AlertDialog,
@@ -43,10 +43,12 @@ import {
   usePlannedTransfers,
   useRemovePlannedItem,
   useUpdatePlannedItem,
+  useMarkPlannedTransferSent,
   useUpdatePlannedTransfer,
   type PlannedTransferPatch,
+  type SentResult,
 } from "@/admin/planQueries";
-import type { ProjectItem } from "@/admin/types";
+import type { PlannedTransfer, ProjectItem } from "@/admin/types";
 
 const AdminPlannedTransferDetail = () => {
   const { planId = "" } = useParams();
@@ -222,6 +224,8 @@ const AdminPlannedTransferDetail = () => {
           </div>
         )}
       </div>
+
+      {bearbeitbar && <Gesendet plan={plan} />}
 
       {gekappt.length > 0 && (
         <Alert>
@@ -433,6 +437,101 @@ const AddPlanItemDialog = ({ planId, item, frei, onClose }: AddPlanItemDialogPro
         </form>
       </DialogContent>
     </Dialog>
+  );
+};
+
+/**
+ * Beim Ueberweisen die Auftragsnummer von XE oder Wise eintragen. Kommt die Abbuchung mit
+ * dieser Nummer herein, ordnet die Datenbank die Positionen selbst zu.
+ */
+const Gesendet = ({ plan }: { plan: PlannedTransfer }) => {
+  const markSent = useMarkPlannedTransferSent();
+  const [referenz, setReferenz] = useState("");
+
+  const senden = async (next: string | null) => {
+    try {
+      const ergebnis = await markSent.mutateAsync({ planId: plan.plan_transfer_id, referenz: next });
+      const meldung: Record<SentResult, string> = {
+        waiting: `Marked as sent as ${next}. The items are assigned as soon as the debit comes in.`,
+        "carried out": `The debit ${next} was already there — plan carried out.`,
+        failed: "Marked as sent, but the assignment failed — see the note on the plan.",
+        withdrawn: "No longer marked as sent.",
+      };
+      if (ergebnis === "failed") toast.error(meldung[ergebnis]);
+      else toast.success(meldung[ergebnis]);
+      setReferenz("");
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  };
+
+  if (plan.gesendet_referenz) {
+    return (
+      <Card className="shadow-card">
+        <CardContent className="space-y-3 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <Send className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <div>
+                <p className="text-sm font-medium">
+                  Sent as <span className="font-mono">{plan.gesendet_referenz}</span>
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {plan.gesendet_am ? `Marked on ${formatDate(plan.gesendet_am)}. ` : ""}
+                  Waiting for the debit — the items are assigned automatically when it comes in.
+                </p>
+              </div>
+            </div>
+            <Button variant="ghost" size="sm" disabled={markSent.isPending} onClick={() => senden(null)}>
+              Undo
+            </Button>
+          </div>
+          {plan.automatik_fehler && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" aria-hidden="true" />
+              <AlertTitle>The debit came in, but the items could not be assigned</AlertTitle>
+              <AlertDescription>{plan.automatik_fehler}</AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="shadow-card">
+      <CardContent className="flex flex-wrap items-center justify-between gap-3 py-4">
+        <div className="flex items-start gap-3">
+          <Send className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <div>
+            <p className="text-sm font-medium">Sent?</p>
+            <p className="text-xs text-muted-foreground">
+              Enter the order number from XE or Wise (C2…). The items are assigned as soon as the debit
+              with that number comes in.
+            </p>
+          </div>
+        </div>
+        <form
+          className="flex items-center gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (referenz.trim() !== "") void senden(referenz.trim());
+          }}
+        >
+          <Input
+            aria-label="Order number"
+            placeholder="C21330281"
+            className="h-9 w-40 font-mono"
+            value={referenz}
+            onChange={(event) => setReferenz(event.target.value)}
+          />
+          <Button type="submit" size="sm" disabled={referenz.trim() === "" || markSent.isPending}>
+            {markSent.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+            Mark as sent
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

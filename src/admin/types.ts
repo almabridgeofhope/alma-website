@@ -16,6 +16,9 @@ export interface Transfer {
   receipt_url: string | null;
   /** Transaktionskosten, die als eigene Zeilen gebucht sind und hier angehaengt werden. */
   fee_eur: number;
+  /** Erst mit Bestaetigung gilt original_amount als angekommen und es gibt einen Kurs. */
+  erhalten_bestaetigt_am: string | null;
+  erledigt_am: string | null;
 }
 
 /** Zeile aus v_project_items. */
@@ -223,6 +226,11 @@ export interface PlannedTransfer {
   ist_eur: number | null;
   ausgefuehrt_am: string | null;
   created_at: string;
+  /** Auftragsnummer von XE oder Wise, unter der der Plan ueberwiesen wurde. */
+  gesendet_referenz: string | null;
+  gesendet_am: string | null;
+  /** Warum die automatische Ausfuehrung beim Eingang der Abbuchung gescheitert ist. */
+  automatik_fehler: string | null;
 }
 
 /** Zeile aus v_plan_transfer_positionen. */
