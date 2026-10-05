@@ -153,6 +153,18 @@ const AdminFinance = () => {
     [konten.data],
   );
 
+  /**
+   * Die Luecke ist der tiefste Punkt der gerechneten Deckung, sobald sie unter null
+   * faellt — so viel muesste bis dahin zusaetzlich hereinkommen, damit alles Geplante
+   * bezahlt werden kann.
+   */
+  const luecke = useMemo(() => {
+    const imMinus = (deckung.data ?? []).filter((zeile) => !zeile.gemessen && Number(zeile.bestand) < 0);
+    if (imMinus.length === 0) return null;
+    const tiefster = imMinus.reduce((tief, zeile) => (Number(zeile.bestand) < Number(tief.bestand) ? zeile : tief));
+    return { ab: imMinus[0].monat, tiefster: tiefster.monat, betrag: -Number(tiefster.bestand) };
+  }, [deckung.data]);
+
   const laedt = konten.isLoading || beitraege.isLoading || vorschau.isLoading;
 
   if (laedt) {
@@ -257,6 +269,16 @@ const AdminFinance = () => {
               ausgeblendet={ausgeblendet}
               umschalten={artUmschalten}
             />
+            {luecke && (
+              <p className="mt-4 flex items-start gap-2 text-sm">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" aria-hidden="true" />
+                <span>
+                  From {formatMonth(luecke.ab)} the plans are not covered. At the lowest point in{" "}
+                  {formatMonth(luecke.tiefster)} the accounts would be{" "}
+                  <span className="font-medium tabular-nums">{formatEur(luecke.betrag)}</span> short.
+                </span>
+              </p>
+            )}
             {/* Die Zahlen stehen im Diagramm; wer sie genau braucht, klappt auf. */}
             <Collapsible open={tabelleOffen} onOpenChange={setTabelleOffen} className="mt-6">
               <CollapsibleTrigger className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">

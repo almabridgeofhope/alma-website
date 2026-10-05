@@ -168,3 +168,47 @@ export interface CoverageRow {
   /** true = an den abgelesenen Kontostaenden verankert, false = fortgeschrieben. */
   gemessen: boolean;
 }
+
+/** Zeile aus v_plan_transfers: ein geplanter Transfer mit Summen. */
+export interface PlannedTransfer {
+  plan_transfer_id: string;
+  /** Monatserster des geplanten Monats. */
+  geplant_fuer: string;
+  /** Der Monat, in dem die Vorschau ihn zaehlt — bei einem ueberfaelligen Plan der laufende. */
+  faellig_monat: string;
+  ueberfaellig: boolean;
+  bezeichnung: string;
+  status: "geplant" | "ausgefuehrt" | "verworfen";
+  kommentar: string | null;
+  positionen: number;
+  ugx_geplant: number;
+  eur_geplant: number;
+  /** Was davon noch zaehlt: gekappt auf das Offene, 0 sobald ausgefuehrt. */
+  eur_wirksam: number;
+  transaction_id: string | null;
+  external_transaction_id: string | null;
+  ist_datum: string | null;
+  ist_eur: number | null;
+  ausgefuehrt_am: string | null;
+  created_at: string;
+}
+
+/** Zeile aus v_plan_transfer_positionen. */
+export interface PlannedTransferItem {
+  plan_transfer_id: string;
+  item_id: string;
+  projekt: string | null;
+  phase: string | null;
+  item_name: string | null;
+  status: PlannedTransfer["status"];
+  faellig_monat: string;
+  qty_geplant: number;
+  /** Geplante Menge, gekappt auf das, was offen und nicht frueher verplant ist. */
+  qty_wirksam: number;
+  /** Nur gesetzt, wenn vom Stueckpreis abgewichen wird. */
+  betrag_ugx: number | null;
+  ugx_geplant: number;
+  ugx_wirksam: number;
+  eur_geplant: number;
+  eur_wirksam: number;
+}

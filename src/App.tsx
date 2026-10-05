@@ -32,6 +32,7 @@ const AdminLogin = React.lazy(() => import("./pages/admin/AdminLogin"));
 const AdminLayout = React.lazy(() => import("./admin/AdminLayout"));
 const AdminTransfers = React.lazy(() => import("./pages/admin/AdminTransfers"));
 const AdminTransferDetail = React.lazy(() => import("./pages/admin/AdminTransferDetail"));
+const AdminPlannedTransferDetail = React.lazy(() => import("./pages/admin/AdminPlannedTransferDetail"));
 const AdminItems = React.lazy(() => import("./pages/admin/AdminItems"));
 const AdminFinance = React.lazy(() => import("./pages/admin/AdminFinance"));
 const RequireAuth = React.lazy(() => import("./admin/RequireAuth"));
@@ -253,6 +254,7 @@ const AppContent = () => {
           <Route index element={<Navigate to="/admin/transfers" replace />} />
           <Route path="transfers" element={<AdminTransfers />} />
           <Route path="transfers/:transferId" element={<AdminTransferDetail />} />
+          <Route path="planned-transfers/:planId" element={<AdminPlannedTransferDetail />} />
           <Route path="positionen" element={<AdminItems />} />
           <Route path="finanzen" element={<AdminFinance />} />
         </Route>
