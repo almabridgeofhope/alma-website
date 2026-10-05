@@ -125,7 +125,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
           <TableHeader>
             <TableRow>
               <TableHead>Item</TableHead>
-              <TableHead className="text-right">Qty</TableHead>
+              <TableHead className="w-20 text-right">Qty</TableHead>
               <TableHead className="text-right">Actual per unit</TableHead>
               <TableHead className="text-right">Actual total</TableHead>
               <TableHead>Receipt</TableHead>
@@ -150,6 +150,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
                   <TableCell className="text-right">
                     <EditableAmount
                       label="Quantity"
+                      className="w-16"
                       value={assignment.qty_paid}
                       allowEmpty={false}
                       onCommit={(next) => changeQty(assignment, next)}
