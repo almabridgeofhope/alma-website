@@ -22,6 +22,7 @@ import {
   useCashflow,
   usePlannedIncome,
   usePlannedIncomeMonths,
+  usePartnershipArrears,
   useUpdateCostAmount,
   useUpdatePlannedAmount,
 } from "@/admin/financeQueries";
@@ -103,6 +104,11 @@ const AdminFinance = () => {
   const plan = usePlannedIncome();
   const planIst = usePlannedIncomeMonths();
   const planStatus = useMemo(() => planStatusJeZeile(planIst.data ?? []), [planIst.data]);
+  const rueckstand = usePartnershipArrears();
+  const rueckstandJePlan = useMemo(
+    () => new Map((rueckstand.data ?? []).map((zeile) => [zeile.plan_id, zeile])),
+    [rueckstand.data],
+  );
   const erwartung = useExpectedThisMonth();
   const kosten = usePlannedCosts();
   const verlauf = useCashflow();
@@ -358,7 +364,7 @@ const AdminFinance = () => {
 
       <Abschnitt
         titel="Planned income"
-        erklaerung="Everything expected, membership fees included. For a partnership the amount is a guide value: once this month's payment is in, the month counts as covered, whatever the amount. Membership fees are set per member; the other amounts can be edited here, rhythm and period are maintained in the database."
+        erklaerung="Everything expected, membership fees included. For a partnership the amount is a guide value: every payment covers a month, whatever the amount, and a month without payment stays open until it is paid. Membership fees are set per member; the other amounts can be edited here, rhythm and period are maintained in the database."
       >
         <Table>
           <TableHeader>
@@ -404,6 +410,22 @@ const AdminFinance = () => {
                 <TableCell className="text-muted-foreground">{formatDate(zeile.von_datum)}</TableCell>
                 <TableCell>
                   {(() => {
+                    // Kooperation: ein ausgebliebener Monat bleibt offen, bis nachgezahlt ist.
+                    const offen = rueckstandJePlan.get(zeile.plan_id);
+                    if (zeile.kategorie === "kooperation" && offen && Number(offen.offen_monate) > 0) {
+                      return (
+                        <div>
+                          <Badge variant="secondary">
+                            {offen.offen_monate === 1 ? "1 month open" : `${offen.offen_monate} months open`}
+                          </Badge>
+                          <div className="mt-0.5 text-xs text-muted-foreground tabular-nums">
+                            {formatEur(offen.offen_eur)}
+                            {offen.letzter_eingang &&
+                              ` · last ${kurzesDatum.format(new Date(offen.letzter_eingang))}`}
+                          </div>
+                        </div>
+                      );
+                    }
                     const monat = planStatus.get(zeile.plan_id)?.diesenMonat;
                     if (!monat) return <span className="text-muted-foreground">–</span>;
                     return monat.erfuellt ? (

@@ -151,6 +151,19 @@ export interface PlannedIncomeMonth {
   erfuellt: boolean;
 }
 
+/**
+ * Zeile aus v_kooperation_rueckstand: faellige Monate gegen Zahlungseingaenge. Ein Monat
+ * ohne Zahlung bleibt offen, bis nachgezahlt ist.
+ */
+export interface PartnershipArrears {
+  plan_id: string;
+  faellig_monate: number;
+  eingaenge: number;
+  offen_monate: number;
+  offen_eur: number;
+  letzter_eingang: string | null;
+}
+
 /** Zeile aus plan_ausgaben: eine laufende oder geplante Ausgabe. */
 export interface PlannedCost {
   plan_id: string;

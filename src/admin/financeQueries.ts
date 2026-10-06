@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { AccountCheck, CashflowRow, CoverageRow, DuesAccount, ForecastRow, PlannedCost, PlannedIncome, PlannedIncomeMonth } from "./types";
+import type { AccountCheck, CashflowRow, CoverageRow, DuesAccount, ForecastRow, PartnershipArrears, PlannedCost, PlannedIncome, PlannedIncomeMonth } from "./types";
 
 export const financeKeys = {
   monatsbilanz: ["admin", "finance", "monatsbilanz"] as const,
@@ -11,6 +11,7 @@ export const financeKeys = {
   erwartung: ["admin", "finance", "erwartung"] as const,
   liquiditaet: ["admin", "finance", "liquiditaet"] as const,
   planAusgaben: ["admin", "finance", "plan-ausgaben"] as const,
+  kooperationRueckstand: ["admin", "finance", "kooperation-rueckstand"] as const,
 };
 
 
@@ -64,6 +65,19 @@ export const usePlannedIncome = () =>
   });
 
 /** Soll gegen Ist je Planzeile, der laufende Monat und die sechs davor. */
+/** Offene Monate je Kooperation — so viel erwartet der Verlauf im laufenden Monat. */
+export const usePartnershipArrears = () =>
+  useQuery({
+    queryKey: financeKeys.kooperationRueckstand,
+    queryFn: async (): Promise<PartnershipArrears[]> => {
+      const { data, error } = await supabase
+        .from("v_kooperation_rueckstand")
+        .select("plan_id, faellig_monate, eingaenge, offen_monate, offen_eur, letzter_eingang");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as PartnershipArrears[];
+    },
+  });
+
 export const usePlannedIncomeMonths = () =>
   useQuery({
     queryKey: [...financeKeys.planEinnahmen, "ist"] as const,
