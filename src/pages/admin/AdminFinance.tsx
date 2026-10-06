@@ -163,9 +163,8 @@ const AdminFinance = () => {
 
   /**
    * Die Mitgliedsbeitraege als eine Planzeile: Summe der Saetze aller Mitglieder, und
-   * ob der Beitrag dieses Monats schon da ist. Einzeln stehen sie beim Aufklappen.
+   * ob der Beitrag dieses Monats schon da ist. Einzeln stehen sie unter Membership accounts.
    */
-  const [mitgliederOffen, setMitgliederOffen] = useState(false);
   const mitgliedschaft = useMemo(() => {
     const jetzt = new Date();
     const monatsbeginn = new Date(Date.UTC(jetzt.getUTCFullYear(), jetzt.getUTCMonth(), 1)).toISOString().slice(0, 10);
@@ -380,21 +379,11 @@ const AdminFinance = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            <TableRow
-              className="cursor-pointer"
-              onClick={() => setMitgliederOffen((offen) => !offen)}
-              aria-expanded={mitgliederOffen}
-            >
+            <TableRow>
               <TableCell>
-                <div className="flex items-center gap-1.5 font-medium">
-                  <ChevronRight
-                    className={cn("h-4 w-4 shrink-0 transition-transform", mitgliederOffen && "rotate-90")}
-                    aria-hidden="true"
-                  />
-                  Membership fees
-                </div>
-                <div className="pl-[1.375rem] text-xs text-muted-foreground">
-                  {mitgliedschaft.zeilen.length} members · {mitgliederOffen ? "hide" : "show"} each member
+                <div className="font-medium">Membership fees</div>
+                <div className="text-xs text-muted-foreground">
+                  {mitgliedschaft.zeilen.length} members, each listed under membership accounts
                 </div>
               </TableCell>
               <TableCell className="text-muted-foreground">beitrag</TableCell>
@@ -410,26 +399,6 @@ const AdminFinance = () => {
               </TableCell>
               <TableCell className="text-right font-medium tabular-nums">{formatEur(mitgliedschaft.summe)}</TableCell>
             </TableRow>
-            {mitgliederOffen &&
-              mitgliedschaft.zeilen.map((zeile) => (
-                <TableRow key={zeile.contact_id} className="bg-muted/40 hover:bg-muted/40">
-                  <TableCell className="pl-10">{zeile.name ?? zeile.contact_id}</TableCell>
-                  <TableCell />
-                  <TableCell />
-                  <TableCell className="text-muted-foreground">{formatDate(zeile.mitglied_seit)}</TableCell>
-                  <TableCell />
-                  <TableCell>
-                    {zeile.bezahlt ? (
-                      <span className="text-xs text-muted-foreground tabular-nums">
-                        Received · {kurzesDatum.format(new Date(zeile.letzte_zahlung as string))}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">Open</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">{formatEur(zeile.beitrag_eur)}</TableCell>
-                </TableRow>
-              ))}
             {(plan.data ?? []).map((zeile) => (
               <TableRow key={zeile.plan_id}>
                 <TableCell>
