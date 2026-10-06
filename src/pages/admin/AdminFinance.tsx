@@ -161,6 +161,37 @@ const AdminFinance = () => {
     [vorschau.data],
   );
 
+  /**
+   * Die Mitgliedsbeitraege als eine Planzeile: Summe der Saetze aller Mitglieder, und
+   * ob der Beitrag dieses Monats schon da ist. Einzeln stehen sie beim Aufklappen.
+   */
+  const [mitgliederOffen, setMitgliederOffen] = useState(false);
+  const mitgliedschaft = useMemo(() => {
+    const jetzt = new Date();
+    const monatsbeginn = new Date(Date.UTC(jetzt.getUTCFullYear(), jetzt.getUTCMonth(), 1)).toISOString().slice(0, 10);
+    const zeilen = (beitraege.data ?? [])
+      .map((zeile) => ({ ...zeile, bezahlt: zeile.letzte_zahlung !== null && zeile.letzte_zahlung >= monatsbeginn }))
+      .sort((a, b) => Number(b.beitrag_eur) - Number(a.beitrag_eur) || (a.name ?? "").localeCompare(b.name ?? ""));
+    return {
+      zeilen,
+      summe: zeilen.reduce((sum, zeile) => sum + Number(zeile.beitrag_eur), 0),
+      bezahlt: zeilen.filter((zeile) => zeile.bezahlt).length,
+      seit: zeilen.reduce<string | null>(
+        (frueheste, zeile) => (frueheste === null || zeile.mitglied_seit < frueheste ? zeile.mitglied_seit : frueheste),
+        null,
+      ),
+    };
+  }, [beitraege.data]);
+
+  const monatseinnahmen = useMemo(
+    () =>
+      mitgliedschaft.summe +
+      (plan.data ?? [])
+        .filter((zeile) => zeile.rhythmus === "monatlich")
+        .reduce((sum, zeile) => sum + Number(zeile.betrag_eur), 0),
+    [plan.data, mitgliedschaft.summe],
+  );
+
   const monatskosten = useMemo(
     () =>
       (kosten.data ?? [])
@@ -334,7 +365,7 @@ const AdminFinance = () => {
 
       <Abschnitt
         titel="Planned income"
-        erklaerung="Everything expected that is not a membership fee. For a partnership the amount is a guide value: once this month's payment is in, the month counts as covered, whatever the amount. The amount can be edited here; rhythm, period and certainty are maintained in the database."
+        erklaerung="Everything expected, membership fees included. For a partnership the amount is a guide value: once this month's payment is in, the month counts as covered, whatever the amount. Membership fees are set per member; the other amounts can be edited here, rhythm, period and certainty are maintained in the database."
       >
         <Table>
           <TableHeader>
@@ -349,6 +380,56 @@ const AdminFinance = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
+            <TableRow
+              className="cursor-pointer"
+              onClick={() => setMitgliederOffen((offen) => !offen)}
+              aria-expanded={mitgliederOffen}
+            >
+              <TableCell>
+                <div className="flex items-center gap-1.5 font-medium">
+                  <ChevronRight
+                    className={cn("h-4 w-4 shrink-0 transition-transform", mitgliederOffen && "rotate-90")}
+                    aria-hidden="true"
+                  />
+                  Membership fees
+                </div>
+                <div className="pl-[1.375rem] text-xs text-muted-foreground">
+                  {mitgliedschaft.zeilen.length} members · {mitgliederOffen ? "hide" : "show"} each member
+                </div>
+              </TableCell>
+              <TableCell className="text-muted-foreground">beitrag</TableCell>
+              <TableCell className="text-muted-foreground">{RHYTHM_LABELS.monatlich}</TableCell>
+              <TableCell className="text-muted-foreground">{formatDate(mitgliedschaft.seit)}</TableCell>
+              <TableCell>
+                <Badge variant="default">{CERTAINTY_LABELS.fix}</Badge>
+              </TableCell>
+              <TableCell>
+                <Badge variant={mitgliedschaft.bezahlt === mitgliedschaft.zeilen.length ? "default" : "secondary"}>
+                  {mitgliedschaft.bezahlt} of {mitgliedschaft.zeilen.length} paid
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right font-medium tabular-nums">{formatEur(mitgliedschaft.summe)}</TableCell>
+            </TableRow>
+            {mitgliederOffen &&
+              mitgliedschaft.zeilen.map((zeile) => (
+                <TableRow key={zeile.contact_id} className="bg-muted/40 hover:bg-muted/40">
+                  <TableCell className="pl-10">{zeile.name ?? zeile.contact_id}</TableCell>
+                  <TableCell />
+                  <TableCell />
+                  <TableCell className="text-muted-foreground">{formatDate(zeile.mitglied_seit)}</TableCell>
+                  <TableCell />
+                  <TableCell>
+                    {zeile.bezahlt ? (
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        Received · {kurzesDatum.format(new Date(zeile.letzte_zahlung as string))}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Open</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">{formatEur(zeile.beitrag_eur)}</TableCell>
+                </TableRow>
+              ))}
             {(plan.data ?? []).map((zeile) => (
               <TableRow key={zeile.plan_id}>
                 <TableCell>
@@ -408,13 +489,12 @@ const AdminFinance = () => {
                 </TableCell>
               </TableRow>
             ))}
-            {(plan.data ?? []).length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
-                  No planned income yet.
-                </TableCell>
-              </TableRow>
-            )}
+            <TableRow>
+              <TableCell colSpan={6} className="font-medium">
+                Per month
+              </TableCell>
+              <TableCell className="text-right font-medium tabular-nums">{formatEur(monatseinnahmen)}</TableCell>
+            </TableRow>
           </TableBody>
         </Table>
       </Abschnitt>
