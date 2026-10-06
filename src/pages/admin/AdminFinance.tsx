@@ -47,12 +47,6 @@ const KONTO_NAMEN: Record<string, string> = {
 const formatMonth = (value: string | null): string =>
   value ? monatsformat.format(new Date(value)) : "–";
 
-const CERTAINTY_LABELS: Record<string, string> = {
-  fix: "fixed",
-  wahrscheinlich: "likely",
-  moeglich: "possible",
-};
-
 const RHYTHM_LABELS: Record<string, string> = {
   einmalig: "one-off",
   monatlich: "monthly",
@@ -274,8 +268,8 @@ const AdminFinance = () => {
         />
         <StatTile
           label="Expected per month"
-          value={formatEur(erwartung.data?.erwartet ?? 0)}
-          hint={`${formatEur(erwartung.data?.fix ?? 0)} of it fixed`}
+          value={formatEur(erwartung.data?.gesamt ?? 0)}
+          hint={`${formatEur(erwartung.data?.beitraege ?? 0)} of it membership fees`}
           tone="positive"
         />
         <StatTile
@@ -364,7 +358,7 @@ const AdminFinance = () => {
 
       <Abschnitt
         titel="Planned income"
-        erklaerung="Everything expected, membership fees included. For a partnership the amount is a guide value: once this month's payment is in, the month counts as covered, whatever the amount. Membership fees are set per member; the other amounts can be edited here, rhythm, period and certainty are maintained in the database."
+        erklaerung="Everything expected, membership fees included. For a partnership the amount is a guide value: once this month's payment is in, the month counts as covered, whatever the amount. Membership fees are set per member; the other amounts can be edited here, rhythm and period are maintained in the database."
       >
         <Table>
           <TableHeader>
@@ -373,7 +367,6 @@ const AdminFinance = () => {
               <TableHead>Category</TableHead>
               <TableHead>Rhythm</TableHead>
               <TableHead>From</TableHead>
-              <TableHead>Certainty</TableHead>
               <TableHead>This month</TableHead>
               <TableHead className="text-right">Amount</TableHead>
             </TableRow>
@@ -389,9 +382,6 @@ const AdminFinance = () => {
               <TableCell className="text-muted-foreground">beitrag</TableCell>
               <TableCell className="text-muted-foreground">{RHYTHM_LABELS.monatlich}</TableCell>
               <TableCell className="text-muted-foreground">{formatDate(mitgliedschaft.seit)}</TableCell>
-              <TableCell>
-                <Badge variant="default">{CERTAINTY_LABELS.fix}</Badge>
-              </TableCell>
               <TableCell>
                 <Badge variant={mitgliedschaft.bezahlt === mitgliedschaft.zeilen.length ? "default" : "secondary"}>
                   {mitgliedschaft.bezahlt} of {mitgliedschaft.zeilen.length} paid
@@ -412,11 +402,6 @@ const AdminFinance = () => {
                   {RHYTHM_LABELS[zeile.rhythmus] ?? zeile.rhythmus}
                 </TableCell>
                 <TableCell className="text-muted-foreground">{formatDate(zeile.von_datum)}</TableCell>
-                <TableCell>
-                  <Badge variant={zeile.sicherheit === "fix" ? "default" : "secondary"}>
-                    {CERTAINTY_LABELS[zeile.sicherheit] ?? zeile.sicherheit}
-                  </Badge>
-                </TableCell>
                 <TableCell>
                   {(() => {
                     const monat = planStatus.get(zeile.plan_id)?.diesenMonat;
@@ -459,7 +444,7 @@ const AdminFinance = () => {
               </TableRow>
             ))}
             <TableRow>
-              <TableCell colSpan={6} className="font-medium">
+              <TableCell colSpan={5} className="font-medium">
                 Per month
               </TableCell>
               <TableCell className="text-right font-medium tabular-nums">{formatEur(monatseinnahmen)}</TableCell>

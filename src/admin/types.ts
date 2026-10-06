@@ -110,21 +110,18 @@ export interface DuesAccount {
   zahlungen: number;
 }
 
-/** Zeile aus v_finanzvorschau: ab wann eine Phase finanziert ist. */
+/** Zeile aus v_finanzvorschau: offener Bedarf je aktiver Phase. */
 export interface ForecastRow {
   rang: number;
   projekt: string;
   phase: string;
   offen_eur: number;
   offen_high: number | null;
-  kosten_kumuliert: number;
-  monate_erwartet: number | null;
-  monate_konservativ: number | null;
-  finanziert_ab_erwartet: string | null;
-  finanziert_ab_konservativ: string | null;
+  /** Teil des Bedarfs, den geplante Transfers schon binden. */
+  verplant_eur: number;
 }
 
-/** Zeile aus plan_einnahmen: eine erwartete Einnahme ausserhalb der Beitraege. */
+/** Zeile aus plan_einnahmen: eine erwartete Einnahme ausserhalb der Beitraege (die kommen aus den Mitgliedern). */
 export interface PlannedIncome {
   plan_id: string;
   bezeichnung: string;
@@ -133,7 +130,6 @@ export interface PlannedIncome {
   rhythmus: string;
   von_datum: string;
   bis_datum: string | null;
-  sicherheit: string;
   contact_id: string | null;
   project_id: string | null;
   kommentar: string | null;
