@@ -413,11 +413,16 @@ const AdminFinance = () => {
                     // Kooperation: ein ausgebliebener Monat bleibt offen, bis nachgezahlt ist.
                     const offen = rueckstandJePlan.get(zeile.plan_id);
                     if (zeile.kategorie === "kooperation" && offen && Number(offen.offen_monate) > 0) {
+                      // Der laufende Monat ist nur noch nicht dran; zurueck liegt, was darueber hinaus fehlt.
+                      const diesenMonatOffen = !planStatus.get(zeile.plan_id)?.diesenMonat?.erfuellt;
+                      const zurueck = Math.max(Number(offen.offen_monate) - (diesenMonatOffen ? 1 : 0), 0);
+                      const teile = [
+                        zurueck === 1 ? "1 month behind" : zurueck > 1 ? `${zurueck} months behind` : null,
+                        diesenMonatOffen ? (zurueck > 0 ? "this month open" : "This month open") : null,
+                      ].filter(Boolean);
                       return (
                         <div>
-                          <Badge variant="secondary">
-                            {offen.offen_monate === 1 ? "1 month open" : `${offen.offen_monate} months open`}
-                          </Badge>
+                          <Badge variant={zurueck > 0 ? "destructive" : "secondary"}>{teile.join(" · ")}</Badge>
                           <div className="mt-0.5 text-xs text-muted-foreground tabular-nums">
                             {formatEur(offen.offen_eur)}
                             {offen.letzter_eingang &&
