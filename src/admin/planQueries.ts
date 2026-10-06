@@ -4,7 +4,7 @@ import { queryKeys } from "./queries";
 import type { PlannedTransfer, PlannedTransferItem } from "./types";
 
 const PLAN_COLUMNS =
-  "plan_transfer_id, geplant_fuer, faellig_monat, ueberfaellig, bezeichnung, status, kommentar, positionen, ugx_geplant, eur_geplant, eur_wirksam, transaction_id, external_transaction_id, ist_datum, ist_eur, ausgefuehrt_am, created_at";
+  "plan_transfer_id, geplant_fuer, faellig_monat, ueberfaellig, bezeichnung, status, kommentar, positionen, ugx_geplant, eur_geplant, eur_wirksam, transaction_id, external_transaction_id, ist_datum, ist_eur, ausgefuehrt_am, created_at, gesendet_referenz, gesendet_am, automatik_fehler";
 const PLAN_ITEM_COLUMNS =
   "plan_transfer_id, item_id, projekt, phase, item_name, status, faellig_monat, qty_geplant, qty_wirksam, betrag_ugx, ugx_geplant, ugx_wirksam, eur_geplant, eur_wirksam";
 
@@ -169,6 +169,34 @@ export const useCarryOutPlannedTransfer = (transferId: string) => {
       void client.invalidateQueries({ queryKey: queryKeys.items });
       void client.invalidateQueries({ queryKey: queryKeys.transfers });
       void client.invalidateQueries({ queryKey: queryKeys.assignments(transferId) });
+    },
+  });
+};
+
+export type SentResult = "waiting" | "carried out" | "failed" | "withdrawn";
+
+/**
+ * Markiert den Plan als ueberwiesen unter der Auftragsnummer von XE oder Wise. Liegt die
+ * Abbuchung schon vor, fuehrt die Datenbank ihn sofort aus, sonst beim Eingang. Eine
+ * leere Nummer nimmt die Markierung zurueck.
+ */
+export const useMarkPlannedTransferSent = () => {
+  const refresh = useRefresh();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { planId: string; referenz: string | null }): Promise<SentResult> => {
+      const { data, error } = await supabase.rpc("fn_plan_transfer_als_gesendet", {
+        p_plan_transfer_id: input.planId,
+        p_referenz: input.referenz,
+      });
+      if (error) throw new Error(error.message);
+      return data as SentResult;
+    },
+    onSuccess: () => {
+      refresh();
+      void client.invalidateQueries({ queryKey: queryKeys.items });
+      void client.invalidateQueries({ queryKey: queryKeys.transfers });
+      void client.invalidateQueries({ queryKey: ["admin", "assignments"] });
     },
   });
 };

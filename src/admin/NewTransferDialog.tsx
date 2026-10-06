@@ -62,7 +62,6 @@ const NewTransferDialog = ({ open, onOpenChange }: NewTransferDialogProps) => {
         amount: eur,
         reference: purpose.trim() === "" ? null : purpose.trim(),
         original_amount: ugx,
-        exchange_rate: rate === null ? null : Number(rate.toFixed(6)),
       });
       toast.success(`Transfer ${reference.trim()} recorded.`);
       reset();

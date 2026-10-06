@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { AlertCircle, ArrowLeft, CalendarClock, FileText, Loader2, Paperclip } from "lucide-react";
+import { AlertCircle, ArrowLeft, CalendarClock, CheckCircle2, FileText, Loader2, Paperclip } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +25,7 @@ import {
   useProjectItems,
   useTransferSummaries,
   useSetTransferReceipt,
+  useUpdateTransfer,
 } from "@/admin/queries";
 import {
   formatPlanMonth,
@@ -32,7 +34,7 @@ import {
   usePlannedTransferItems,
   usePlannedTransfers,
 } from "@/admin/planQueries";
-import type { ProjectItem } from "@/admin/types";
+import type { ProjectItem, Transfer } from "@/admin/types";
 import { cn } from "@/lib/utils";
 
 const AdminTransferDetail = () => {
@@ -63,9 +65,23 @@ const AdminTransferDetail = () => {
     0,
   );
 
-  const receivedUgx = transfer?.original_amount === null ? null : absolute(transfer?.original_amount);
+  // Angekommen ist nur, was bestaetigt wurde — ein UGX-Betrag vom Wise-Sync zaehlt noch nicht.
+  const receivedUgx =
+    transfer?.erhalten_bestaetigt_am && transfer.original_amount !== null
+      ? absolute(transfer.original_amount)
+      : null;
   const transferredEur = absolute(transfer?.amount);
   const assignedEur = rate.data ? assignedUgx / rate.data : null;
+
+  // Was noch nicht zugeordnet ist: in UGX, sobald die Ankunft bestaetigt ist, sonst in Euro.
+  const rest =
+    receivedUgx !== null
+      ? Math.abs(receivedUgx - assignedUgx) >= 1
+        ? `${formatUgx(receivedUgx - assignedUgx)} not assigned yet`
+        : null
+      : assignedEur !== null && Math.abs(transferredEur - assignedEur) >= 0.5
+        ? `${formatEur(transferredEur - assignedEur)} not assigned yet`
+        : null;
 
   const belegWaehlen = async () => {
     const datei = await pick("ueberweisung");
@@ -108,25 +124,28 @@ const AdminTransferDetail = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link
-          to="/admin/transfers"
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
-          Transfers
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold">
-          {transfer.buchung_nr !== null && (
-            <span className="mr-2 text-muted-foreground">No. {transfer.buchung_nr}</span>
-          )}
-          {transfer.external_transaction_id}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {formatDate(transfer.date)} · {transfer.konto}
-          {transfer.reference ? ` · ${transfer.reference}` : ""}
-        </p>
-        {transfer.zweck && <p className="mt-1 text-sm">{transfer.zweck}</p>}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <Link
+            to="/admin/transfers"
+            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" />
+            Transfers
+          </Link>
+          <h1 className="mt-2 text-2xl font-semibold">
+            {transfer.buchung_nr !== null && (
+              <span className="mr-2 text-muted-foreground">No. {transfer.buchung_nr}</span>
+            )}
+            {transfer.external_transaction_id}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {formatDate(transfer.date)} · {transfer.konto}
+            {transfer.reference ? ` · ${transfer.reference}` : ""}
+          </p>
+          {transfer.zweck && <p className="mt-1 text-sm">{transfer.zweck}</p>}
+        </div>
+        <Erledigt transfer={transfer} transferId={transferId} rest={rest} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -141,8 +160,8 @@ const AdminTransferDetail = () => {
         />
         <StatTile
           label="Received"
-          value={receivedUgx === null ? "not recorded" : formatUgx(receivedUgx)}
-          hint={transfer.exchange_rate ? `Rate ${transfer.exchange_rate}` : "no rate on file"}
+          value={receivedUgx === null ? "not confirmed" : formatUgx(receivedUgx)}
+          hint={transfer.exchange_rate ? `Rate ${transfer.exchange_rate}` : "rate follows the confirmation"}
         />
         <StatTile
           label="Assigned"
@@ -243,6 +262,42 @@ const AdminTransferDetail = () => {
       {selected && (
         <AddAssignmentDialog transferId={transferId} item={selected} onClose={() => setSelected(null)} />
       )}
+    </div>
+  );
+};
+
+/** Erledigt ist ein eigenes Kennzeichen: ein Rest darf stehen bleiben, er wird nur genannt. */
+const Erledigt = ({ transfer, transferId, rest }: { transfer: Transfer; transferId: string; rest: string | null }) => {
+  const updateTransfer = useUpdateTransfer(transferId);
+  const erledigt = transfer.erledigt_am !== null;
+
+  const umschalten = async () => {
+    try {
+      await updateTransfer.mutateAsync({
+        transactionId: transfer.transaction_id,
+        patch: { erledigt_am: erledigt ? null : new Date().toISOString() },
+      });
+      toast.success(erledigt ? "Transfer reopened." : rest ? `Marked as done — ${rest}.` : "Marked as done.");
+    } catch (error) {
+      toast.error((error as Error).message);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex items-center gap-2">
+        {erledigt && (
+          <Badge variant="secondary">
+            <CheckCircle2 className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+            done {formatDate(transfer.erledigt_am as string)}
+          </Badge>
+        )}
+        <Button variant={erledigt ? "ghost" : "outline"} size="sm" disabled={updateTransfer.isPending} onClick={umschalten}>
+          {updateTransfer.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />}
+          {erledigt ? "Reopen" : "Mark as done"}
+        </Button>
+      </div>
+      {rest && !erledigt && <p className="text-xs text-muted-foreground">{rest}</p>}
     </div>
   );
 };

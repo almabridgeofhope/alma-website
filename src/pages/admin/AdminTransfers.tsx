@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, ChevronRight, FileText, Plus } from "lucide-react";
+import { AlertCircle, CheckCircle2, ChevronRight, FileText, Plus } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -115,8 +115,14 @@ const AdminTransfers = () => {
                         <TableCell className="whitespace-nowrap">{formatDate(transfer.date)}</TableCell>
                         <TableCell className="max-w-[10rem] font-medium">
                           {id ? (
-                            <p className="truncate" title={id}>
-                              {id}
+                            <p className="flex items-center gap-1.5 truncate" title={id}>
+                              <span className="truncate">{id}</span>
+                              {transfer.erledigt_am && (
+                                <CheckCircle2
+                                  className="h-3.5 w-3.5 shrink-0 text-primary"
+                                  aria-label="done"
+                                />
+                              )}
                             </p>
                           ) : (
                             <Badge variant="outline">no reference</Badge>

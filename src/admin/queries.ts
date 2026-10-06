@@ -5,7 +5,7 @@ import type { Assignment, Phase, Project, ProjectItem, ProjectPhase, Transfer, T
 const TRANSFER_KATEGORIE = "spendentransfer";
 
 const TRANSFER_COLUMNS =
-  "transaction_id, buchung_nr, zweck, external_transaction_id, date, konto, amount, currency, original_amount, original_currency, exchange_rate, reference, receipt_url, fee_eur";
+  "transaction_id, buchung_nr, zweck, external_transaction_id, date, konto, amount, currency, original_amount, original_currency, exchange_rate, reference, receipt_url, fee_eur, erhalten_bestaetigt_am, erledigt_am";
 const ASSIGNMENT_COLUMNS =
   "payment_log_id, item_id, qty_paid, amount_paid_ugx, external_transaction_id, expenditure_id, created_at";
 const ITEM_COLUMNS =
@@ -126,8 +126,8 @@ export interface NewTransfer {
   konto: string;
   amount: number;
   reference: string | null;
+  /** Wer den UGX-Betrag beim Erfassen eintraegt, bestaetigt damit die Ankunft. */
   original_amount: number | null;
-  exchange_rate: number | null;
 }
 
 export const useCreateTransfer = () => {
@@ -146,7 +146,7 @@ export const useCreateTransfer = () => {
         reference: input.reference,
         original_amount: input.original_amount === null ? null : -Math.abs(input.original_amount),
         original_currency: input.original_amount === null ? null : "ugx",
-        exchange_rate: input.exchange_rate,
+        erhalten_bestaetigt_am: input.original_amount === null ? null : new Date().toISOString(),
       });
       if (error) throw new Error(error.message);
     },
@@ -362,7 +362,9 @@ export interface TransferPatch {
   zweck?: string | null;
   original_amount?: number | null;
   original_currency?: string | null;
-  exchange_rate?: number | null;
+  /** Den Kurs rechnet die Datenbank aus Betrag und Bestaetigung, er wird nicht mitgeschickt. */
+  erhalten_bestaetigt_am?: string | null;
+  erledigt_am?: string | null;
 }
 
 /**

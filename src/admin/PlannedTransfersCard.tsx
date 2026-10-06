@@ -15,6 +15,8 @@ import type { PlannedTransfer } from "./types";
 export const PlanStatus = ({ plan }: { plan: PlannedTransfer }) => {
   if (plan.status === "ausgefuehrt") return <Badge variant="outline">carried out</Badge>;
   if (plan.status === "verworfen") return <Badge variant="outline">discarded</Badge>;
+  if (plan.automatik_fehler) return <Badge variant="destructive">assignment failed</Badge>;
+  if (plan.gesendet_referenz) return <Badge variant="default">sent</Badge>;
   if (plan.ueberfaellig) return <Badge variant="destructive">overdue</Badge>;
   return <Badge variant="secondary">planned</Badge>;
 };
