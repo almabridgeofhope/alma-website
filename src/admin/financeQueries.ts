@@ -56,7 +56,7 @@ export const usePlannedIncome = () =>
     queryFn: async (): Promise<PlannedIncome[]> => {
       const { data, error } = await supabase
         .from("plan_einnahmen")
-        .select("plan_id, bezeichnung, kategorie, betrag_eur, rhythmus, von_datum, bis_datum, sicherheit, contact_id, project_id, kommentar")
+        .select("plan_id, bezeichnung, kategorie, betrag_eur, rhythmus, von_datum, bis_datum, contact_id, project_id, kommentar")
         .order("bezeichnung");
       if (error) throw new Error(error.message);
       return (data ?? []) as PlannedIncome[];
@@ -82,27 +82,27 @@ export const usePlannedIncomeMonths = () =>
 
 
 /**
- * Erwartete Einnahmen des laufenden Monats, nach Sicherheit getrennt.
+ * Erwartete Einnahmen des laufenden Monats, davon die Mitgliedsbeitraege.
  * Die View liefert 24 Monate; fuer die Kacheln zaehlt der aktuelle.
  */
 export const useExpectedThisMonth = () =>
   useQuery({
     queryKey: financeKeys.erwartung,
-    queryFn: async (): Promise<{ fix: number; erwartet: number }> => {
+    queryFn: async (): Promise<{ gesamt: number; beitraege: number }> => {
       const monatsanfang = new Date();
       monatsanfang.setUTCDate(1);
       const schluessel = monatsanfang.toISOString().slice(0, 10);
       const { data, error } = await supabase
         .from("v_einnahmen_erwartung")
-        .select("sicherheit, betrag")
+        .select("kategorie, betrag")
         .eq("monat", schluessel);
       if (error) throw new Error(error.message);
-      const zeilen = (data ?? []) as { sicherheit: string; betrag: number }[];
-      const summe = (filter: (s: string) => boolean) =>
-        zeilen.filter((z) => filter(z.sicherheit)).reduce((sum, z) => sum + Number(z.betrag), 0);
+      const zeilen = (data ?? []) as { kategorie: string; betrag: number }[];
+      const summe = (filter: (k: string) => boolean) =>
+        zeilen.filter((z) => filter(z.kategorie)).reduce((sum, z) => sum + Number(z.betrag), 0);
       return {
-        fix: summe((s) => s === "fix"),
-        erwartet: summe((s) => s === "fix" || s === "wahrscheinlich"),
+        gesamt: summe(() => true),
+        beitraege: summe((k) => k === "beitrag"),
       };
     },
   });
@@ -139,7 +139,7 @@ export const useUpdateCostAmount = () => {
 };
 
 /**
- * Betrag einer Planzeile aendern. Alles andere — Rhythmus, Zeitraum, Sicherheit —
+ * Betrag einer Planzeile aendern. Alles andere — Rhythmus, Zeitraum —
  * bleibt der Datenbank vorbehalten, solange es dafuer keine Maske gibt: ein halb
  * gepflegter Plan ist schlechter als einer, den man bewusst in SQL anfasst.
  */

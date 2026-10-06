@@ -47,12 +47,6 @@ const KONTO_NAMEN: Record<string, string> = {
 const formatMonth = (value: string | null): string =>
   value ? monatsformat.format(new Date(value)) : "–";
 
-const CERTAINTY_LABELS: Record<string, string> = {
-  fix: "fixed",
-  wahrscheinlich: "likely",
-  moeglich: "possible",
-};
-
 const RHYTHM_LABELS: Record<string, string> = {
   einmalig: "one-off",
   monatlich: "monthly",
@@ -161,6 +155,36 @@ const AdminFinance = () => {
     [vorschau.data],
   );
 
+  /**
+   * Die Mitgliedsbeitraege als eine Planzeile: Summe der Saetze aller Mitglieder, und
+   * ob der Beitrag dieses Monats schon da ist. Einzeln stehen sie unter Membership accounts.
+   */
+  const mitgliedschaft = useMemo(() => {
+    const jetzt = new Date();
+    const monatsbeginn = new Date(Date.UTC(jetzt.getUTCFullYear(), jetzt.getUTCMonth(), 1)).toISOString().slice(0, 10);
+    const zeilen = (beitraege.data ?? [])
+      .map((zeile) => ({ ...zeile, bezahlt: zeile.letzte_zahlung !== null && zeile.letzte_zahlung >= monatsbeginn }))
+      .sort((a, b) => Number(b.beitrag_eur) - Number(a.beitrag_eur) || (a.name ?? "").localeCompare(b.name ?? ""));
+    return {
+      zeilen,
+      summe: zeilen.reduce((sum, zeile) => sum + Number(zeile.beitrag_eur), 0),
+      bezahlt: zeilen.filter((zeile) => zeile.bezahlt).length,
+      seit: zeilen.reduce<string | null>(
+        (frueheste, zeile) => (frueheste === null || zeile.mitglied_seit < frueheste ? zeile.mitglied_seit : frueheste),
+        null,
+      ),
+    };
+  }, [beitraege.data]);
+
+  const monatseinnahmen = useMemo(
+    () =>
+      mitgliedschaft.summe +
+      (plan.data ?? [])
+        .filter((zeile) => zeile.rhythmus === "monatlich")
+        .reduce((sum, zeile) => sum + Number(zeile.betrag_eur), 0),
+    [plan.data, mitgliedschaft.summe],
+  );
+
   const monatskosten = useMemo(
     () =>
       (kosten.data ?? [])
@@ -244,8 +268,8 @@ const AdminFinance = () => {
         />
         <StatTile
           label="Expected per month"
-          value={formatEur(erwartung.data?.erwartet ?? 0)}
-          hint={`${formatEur(erwartung.data?.fix ?? 0)} of it fixed`}
+          value={formatEur(erwartung.data?.gesamt ?? 0)}
+          hint={`${formatEur(erwartung.data?.beitraege ?? 0)} of it membership fees`}
           tone="positive"
         />
         <StatTile
@@ -334,7 +358,7 @@ const AdminFinance = () => {
 
       <Abschnitt
         titel="Planned income"
-        erklaerung="Everything expected that is not a membership fee. For a partnership the amount is a guide value: once this month's payment is in, the month counts as covered, whatever the amount. The amount can be edited here; rhythm, period and certainty are maintained in the database."
+        erklaerung="Everything expected, membership fees included. For a partnership the amount is a guide value: once this month's payment is in, the month counts as covered, whatever the amount. Membership fees are set per member; the other amounts can be edited here, rhythm and period are maintained in the database."
       >
         <Table>
           <TableHeader>
@@ -343,12 +367,28 @@ const AdminFinance = () => {
               <TableHead>Category</TableHead>
               <TableHead>Rhythm</TableHead>
               <TableHead>From</TableHead>
-              <TableHead>Certainty</TableHead>
               <TableHead>This month</TableHead>
               <TableHead className="text-right">Amount</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
+            <TableRow>
+              <TableCell>
+                <div className="font-medium">Membership fees</div>
+                <div className="text-xs text-muted-foreground">
+                  {mitgliedschaft.zeilen.length} members, each listed under membership accounts
+                </div>
+              </TableCell>
+              <TableCell className="text-muted-foreground">beitrag</TableCell>
+              <TableCell className="text-muted-foreground">{RHYTHM_LABELS.monatlich}</TableCell>
+              <TableCell className="text-muted-foreground">{formatDate(mitgliedschaft.seit)}</TableCell>
+              <TableCell>
+                <Badge variant={mitgliedschaft.bezahlt === mitgliedschaft.zeilen.length ? "default" : "secondary"}>
+                  {mitgliedschaft.bezahlt} of {mitgliedschaft.zeilen.length} paid
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right font-medium tabular-nums">{formatEur(mitgliedschaft.summe)}</TableCell>
+            </TableRow>
             {(plan.data ?? []).map((zeile) => (
               <TableRow key={zeile.plan_id}>
                 <TableCell>
@@ -362,11 +402,6 @@ const AdminFinance = () => {
                   {RHYTHM_LABELS[zeile.rhythmus] ?? zeile.rhythmus}
                 </TableCell>
                 <TableCell className="text-muted-foreground">{formatDate(zeile.von_datum)}</TableCell>
-                <TableCell>
-                  <Badge variant={zeile.sicherheit === "fix" ? "default" : "secondary"}>
-                    {CERTAINTY_LABELS[zeile.sicherheit] ?? zeile.sicherheit}
-                  </Badge>
-                </TableCell>
                 <TableCell>
                   {(() => {
                     const monat = planStatus.get(zeile.plan_id)?.diesenMonat;
@@ -408,13 +443,12 @@ const AdminFinance = () => {
                 </TableCell>
               </TableRow>
             ))}
-            {(plan.data ?? []).length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">
-                  No planned income yet.
-                </TableCell>
-              </TableRow>
-            )}
+            <TableRow>
+              <TableCell colSpan={5} className="font-medium">
+                Per month
+              </TableCell>
+              <TableCell className="text-right font-medium tabular-nums">{formatEur(monatseinnahmen)}</TableCell>
+            </TableRow>
           </TableBody>
         </Table>
       </Abschnitt>
