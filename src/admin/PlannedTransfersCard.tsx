@@ -22,7 +22,8 @@ export const PlanStatus = ({ plan }: { plan: PlannedTransfer }) => {
 };
 
 /**
- * Die geplanten Transfers ueber der Liste der gebuchten. Ausgefuehrte stehen auf Wunsch
+ * Die geplanten Transfers ueber der Liste der gebuchten. Gesendete stehen schon unter
+ * "All transfers" und warten dort auf ihre Buchung. Ausgefuehrte stehen auf Wunsch
  * darunter — fuer den Vergleich Plan gegen Ist, nicht fuer die tägliche Arbeit.
  */
 const PlannedTransfersCard = () => {
@@ -30,7 +31,7 @@ const PlannedTransfersCard = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [showDone, setShowDone] = useState(false);
 
-  const offen = (plans.data ?? []).filter((plan) => plan.status === "geplant");
+  const offen = (plans.data ?? []).filter((plan) => plan.status === "geplant" && !plan.gesendet_referenz);
   const erledigt = (plans.data ?? [])
     .filter((plan) => plan.status === "ausgefuehrt")
     .sort((a, b) => b.geplant_fuer.localeCompare(a.geplant_fuer));
