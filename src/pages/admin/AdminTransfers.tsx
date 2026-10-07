@@ -12,12 +12,14 @@ import { useProjectItems, useTransferSummaries } from "@/admin/queries";
 import { absolute, formatDate, formatEur, formatUgx } from "@/admin/format";
 import NewTransferDialog from "@/admin/NewTransferDialog";
 import PlannedTransfersCard from "@/admin/PlannedTransfersCard";
+import { usePlannedTransfers } from "@/admin/planQueries";
 import StatTile from "@/admin/StatTile";
 
 const AdminTransfers = () => {
   useNoIndex("Transfers · Project accounting");
   const items = useProjectItems();
   const transfers = useTransferSummaries();
+  const plans = usePlannedTransfers();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const openNeed = useMemo(() => {
@@ -29,6 +31,12 @@ const AdminTransfers = () => {
       count: rows.filter((item) => item.qty_open > 0).length,
     };
   }, [items.data]);
+
+  // Gesendet, aber noch ohne Buchung: steht schon hier statt unter "Planned transfers",
+  // bis der Sync die Abbuchung bringt und der Plan ausgefuehrt ist.
+  const awaitingBooking = (plans.data ?? [])
+    .filter((plan) => plan.status === "geplant" && plan.gesendet_referenz)
+    .sort((a, b) => (b.gesendet_am ?? "").localeCompare(a.gesendet_am ?? ""));
 
   const unassigned = (transfers.data ?? []).filter((transfer) => transfer.assignmentCount === 0).length;
 
@@ -81,13 +89,13 @@ const AdminTransfers = () => {
             </div>
           )}
 
-          {transfers.isSuccess && transfers.data.length === 0 && (
+          {transfers.isSuccess && transfers.data.length === 0 && awaitingBooking.length === 0 && (
             <p className="px-4 py-8 text-center text-sm text-muted-foreground sm:px-0">
               No transfer recorded yet.
             </p>
           )}
 
-          {transfers.isSuccess && transfers.data.length > 0 && (
+          {transfers.isSuccess && (transfers.data.length > 0 || awaitingBooking.length > 0) && (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -105,6 +113,45 @@ const AdminTransfers = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                  {awaitingBooking.map((plan) => (
+                    <TableRow key={plan.plan_transfer_id} className="cursor-pointer">
+                      <TableCell className="text-right tabular-nums text-muted-foreground">–</TableCell>
+                      <TableCell className="whitespace-nowrap">{formatDate(plan.gesendet_am)}</TableCell>
+                      <TableCell className="max-w-[10rem] font-medium">
+                        <p className="truncate" title={plan.gesendet_referenz ?? undefined}>
+                          {plan.gesendet_referenz}
+                        </p>
+                        <p className="truncate text-xs font-normal text-muted-foreground" title={plan.bezeichnung}>
+                          {plan.bezeichnung}
+                        </p>
+                        {plan.automatik_fehler ? (
+                          <Badge variant="destructive" title={plan.automatik_fehler}>
+                            assignment failed
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">sent · awaiting booking</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">–</TableCell>
+                      <TableCell className="whitespace-nowrap text-right tabular-nums text-muted-foreground">
+                        {formatEur(plan.eur_geplant)}
+                        <p className="text-xs">planned</p>
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">–</TableCell>
+                      <TableCell className="text-right text-muted-foreground">–</TableCell>
+                      <TableCell className="text-right tabular-nums">{plan.positionen}</TableCell>
+                      <TableCell />
+                      <TableCell>
+                        <Link
+                          to={`/admin/planned-transfers/${encodeURIComponent(plan.plan_transfer_id)}`}
+                          className="flex items-center justify-end text-primary hover:underline"
+                          aria-label={`Open planned transfer ${plan.bezeichnung}`}
+                        >
+                          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                   {transfers.data.map((transfer) => {
                     const id = transfer.external_transaction_id;
                     return (
