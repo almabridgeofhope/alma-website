@@ -22,8 +22,8 @@ interface OpenItemsPickerProps {
   /** Verplante Menge je Position in anderen geplanten Transfers. */
   plannedQty?: Map<string, number>;
   /**
-   * Beim Planen: nur anbieten, was noch nicht verplant ist, und keine laufenden Kosten —
-   * die stehen in den geplanten Kosten und zaehlten sonst doppelt.
+   * Beim Planen: nur anbieten, was noch nicht verplant ist. Laufende Kosten (Other) duerfen
+   * rein — fuer diesen Monat ersetzt der Transfer dann die Zeile in den geplanten Kosten.
    */
   forPlanning?: boolean;
   newItemLabel: string;
@@ -51,7 +51,7 @@ const OpenItemsPicker = ({
     () =>
       items.filter((item) =>
         forPlanning
-          ? item.projekt_status !== "laufend" && item.qty_open - (plannedQty?.get(item.project_item_id) ?? 0) > 0
+          ? item.qty_open - (plannedQty?.get(item.project_item_id) ?? 0) > 0
           : item.qty_open > 0,
       ),
     [items, forPlanning, plannedQty],
