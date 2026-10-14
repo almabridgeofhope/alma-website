@@ -251,12 +251,11 @@ const translations = {
     // Young Mobility Project
     "projects.mobility.title": "Mobility & Vocational Skills",
     "projects.mobility.teaser": "Step by step: from shared bicycles to a driving licence",
-    "projects.mobility.description": "In Namaliri, many everyday tasks depend on getting around: fetching water, bringing farm produce to the market, carrying goods. We approach mobility step by step. First, we provide bicycles at our site that people can share, for example to transport water or farm goods. In a second step a vehicle follows, with driving lessons for young adults – a driving licence is a professional qualification and opens up jobs.",
-    "projects.mobility.goal1": "First step: shared bicycles at our site, for example to transport water and farm goods",
-    "projects.mobility.goal2": "Second step: a vehicle with driving lessons for young adults",
-    "projects.mobility.goal3": "Use the vehicle for the community as well, for example for transport to schools",
-    "projects.mobility.impact": "Water and goods are easier to transport, and young adults gain a qualification that brings them income.",
-    "projects.mobility.status": "We are preparing the first step with shared bicycles. The vehicle and driving lessons follow once the house, the well and the orphanage land are secured.",
+    "projects.mobility.description": "Many everyday tasks in Namaliri depend on transport, such as fetching water or bringing the harvest to the market. As a first step we provide bicycles at our site that people can share. Later, a vehicle with driving lessons for young adults will follow.",
+    "projects.mobility.goal1": "Shared bicycles for transporting water and goods",
+    "projects.mobility.goal2": "Later: a vehicle with driving lessons for young adults",
+    "projects.mobility.impact": "Easier transport in everyday life and a qualification that brings income.",
+    "projects.mobility.status": "We are preparing the first step with shared bicycles.",
     "projects.mobility.button": "Support Project 🚲",
     
     // Education Sponsorship Project
@@ -1334,12 +1333,11 @@ const translations = {
     // Young Mobility Project
     "projects.mobility.title": "Mobilität & berufliche Qualifikation",
     "projects.mobility.teaser": "Schritt für Schritt: vom geteilten Fahrrad zum Führerschein",
-    "projects.mobility.description": "In Namaliri hängt vieles im Alltag davon ab, wie man vorankommt: Wasser holen, Ernte zum Markt bringen, Waren transportieren. Wir gehen Mobilität Schritt für Schritt an. Zuerst stellen wir an unserem Standort Fahrräder bereit, die sich die Menschen teilen können, zum Beispiel für den Transport von Wasser oder Farmgütern. Im zweiten Schritt folgt ein Fahrzeug mit Fahrstunden für junge Erwachsene – ein Führerschein ist eine berufliche Qualifikation und öffnet Jobs.",
-    "projects.mobility.goal1": "Erster Schritt: geteilte Fahrräder an unserem Standort, zum Beispiel für den Transport von Wasser und Farmgütern",
-    "projects.mobility.goal2": "Zweiter Schritt: ein Fahrzeug mit Fahrstunden für junge Erwachsene",
-    "projects.mobility.goal3": "Das Fahrzeug auch für die Gemeinde nutzen, zum Beispiel für Fahrten zu Schulen",
-    "projects.mobility.impact": "Wasser und Waren lassen sich leichter transportieren, und junge Erwachsene erwerben eine Qualifikation, die ihnen ein Einkommen bringt.",
-    "projects.mobility.status": "Den ersten Schritt mit geteilten Fahrrädern bereiten wir gerade vor. Fahrzeug und Fahrstunden folgen, sobald Haus, Brunnen und das Grundstück des Waisenhauses gesichert sind.",
+    "projects.mobility.description": "In Namaliri hängt vieles im Alltag am Transport, etwa Wasser holen oder die Ernte zum Markt bringen. Als ersten Schritt stellen wir an unserem Standort Fahrräder bereit, die sich die Menschen teilen. Später folgt ein Fahrzeug mit Fahrstunden für junge Erwachsene.",
+    "projects.mobility.goal1": "Geteilte Fahrräder für den Transport von Wasser und Waren",
+    "projects.mobility.goal2": "Später: ein Fahrzeug mit Fahrstunden für junge Erwachsene",
+    "projects.mobility.impact": "Leichterer Transport im Alltag und eine Qualifikation, die Einkommen bringt.",
+    "projects.mobility.status": "Den ersten Schritt mit geteilten Fahrrädern bereiten wir gerade vor.",
     "projects.mobility.button": "Projekt unterstützen 🚲",
     
     // Education Sponsorship Project

@@ -223,7 +223,6 @@ const Projects = () => {
       goals: [
         t("projects.mobility.goal1"),
         t("projects.mobility.goal2"),
-        t("projects.mobility.goal3"),
       ],
       impact: t("projects.mobility.impact"),
       statusText: t("projects.mobility.status"),

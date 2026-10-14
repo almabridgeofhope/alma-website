@@ -277,7 +277,7 @@ const CommunitySection = () => {
               <Card className="overflow-hidden shadow-card">
                 <div className="aspect-[4/3] bg-muted relative">
                   <iframe
-                    src="https://maps.google.com/maps?q=0.641777,32.819202&z=15&output=embed"
+                    src="https://www.google.com/maps/embed?origin=mfe&pb=!1m3!2m1!1s0.641777,32.819202!6i15"
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
