@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet } from "lucide-react";
+import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet, Heart, Scissors } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useProjectCosts } from "@/hooks/useProjectCosts";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -18,6 +18,8 @@ import agricultureImage from "@/assets/project/goat_farm.webp";
 import educationImage from "@/assets/project/pupils_2.webp";
 import busImage from "@/assets/project/bus.webp";
 import financialImage from "@/assets/project/education_5.webp";
+import orphanageImage from "@/assets/team/phiona.webp";
+import craftsImage from "@/assets/community/community_3.webp";
 import { ProjectCost } from "@/services/projectCostsService";
 
 type TimelinePhase = "planning" | "implementation" | "impact";
@@ -37,6 +39,8 @@ interface Project {
   buttonText: string;
   priority: "active" | "planned";
   anchorId?: string;
+  /** Kein Kostenkasten: das Budget in der Datenbank deckt das Vorhaben noch nicht ab. */
+  hideCosts?: boolean;
 }
 
 const Projects = () => {
@@ -206,6 +210,26 @@ const Projects = () => {
       buttonText: t("projects.well.button"),
       priority: "active",
     },
+    {
+      title: t("projects.orphanage.title"),
+      icon: Heart,
+      teaser: t("projects.orphanage.teaser"),
+      description: t("projects.orphanage.description"),
+      goals: [
+        t("projects.orphanage.goal1"),
+        t("projects.orphanage.goal2"),
+        t("projects.orphanage.goal3"),
+      ],
+      impact: t("projects.orphanage.impact"),
+      statusText: t("projects.orphanage.status"),
+      progress: 20,
+      currentPhase: "implementation",
+      image: orphanageImage,
+      buttonText: t("projects.orphanage.button"),
+      priority: "active",
+      anchorId: "orphanage",
+      hideCosts: true,
+    },
   ];
 
   const plannedProjects: Project[] = [
@@ -226,6 +250,26 @@ const Projects = () => {
       image: agricultureImage,
       buttonText: t("projects.livestock.button"),
       priority: "planned",
+      hideCosts: true,
+    },
+    {
+      title: t("projects.crafts.title"),
+      icon: Scissors,
+      teaser: t("projects.crafts.teaser"),
+      description: t("projects.crafts.description"),
+      goals: [
+        t("projects.crafts.goal1"),
+        t("projects.crafts.goal2"),
+        t("projects.crafts.goal3"),
+      ],
+      impact: t("projects.crafts.impact"),
+      statusText: t("projects.crafts.status"),
+      progress: 5,
+      currentPhase: "planning",
+      image: craftsImage,
+      buttonText: t("projects.crafts.button"),
+      priority: "planned",
+      hideCosts: true,
     },
     {
       title: t("projects.mobility.title"),
@@ -293,6 +337,8 @@ const Projects = () => {
     const mobilityTitle = t("projects.mobility.title");
     const sponsorshipTitle = t("projects.sponsorship.title");
     const financialTitle = t("projects.financial.title");
+    const orphanageTitle = t("projects.orphanage.title");
+    const craftsTitle = t("projects.crafts.title");
 
     if (projectTitle === communityTitle) {
       return t("images.projects.community_house");
@@ -306,6 +352,10 @@ const Projects = () => {
       return t("images.projects.sponsorship");
     } else if (projectTitle === financialTitle) {
       return t("images.projects.financial");
+    } else if (projectTitle === orphanageTitle) {
+      return t("images.projects.orphanage");
+    } else if (projectTitle === craftsTitle) {
+      return t("images.projects.crafts");
     }
     return projectTitle;
   };
@@ -313,7 +363,7 @@ const Projects = () => {
   const renderProjectCard = (project: Project, index: number) => {
     const Icon = project.icon;
     const isEven = index % 2 === 0;
-    const projectCost = getProjectCost(project.title);
+    const projectCost = project.hideCosts ? null : getProjectCost(project.title);
     const currentPhaseIndex = timelinePhases.findIndex(p => p.id === project.currentPhase);
     const spentPercentage = projectCost
       ? projectCost.totalBudget > 0
