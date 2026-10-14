@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
-import { ProjectItem } from '@/services/clientGoogleSheetsService';
+import { ProjectItem } from '@/services/projectCostsService';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export interface CartItem {

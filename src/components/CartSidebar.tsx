@@ -29,7 +29,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useProjectCosts } from '@/hooks/useProjectCosts';
-import { ProjectItem } from '@/services/clientGoogleSheetsService';
+import { ProjectItem } from '@/services/projectCostsService';
 import { Input } from '@/components/ui/input';
 
 interface CartSidebarProps {

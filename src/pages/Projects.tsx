@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet, Calendar as CalendarIcon } from "lucide-react";
+import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useProjectCosts } from "@/hooks/useProjectCosts";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -18,7 +18,7 @@ import agricultureImage from "@/assets/project/goat_farm.webp";
 import educationImage from "@/assets/project/pupils_2.webp";
 import busImage from "@/assets/project/bus.webp";
 import financialImage from "@/assets/project/education_5.webp";
-import { ProjectCost } from "@/services/clientGoogleSheetsService";
+import { ProjectCost } from "@/services/projectCostsService";
 
 type TimelinePhase = "planning" | "implementation" | "impact";
 
@@ -58,20 +58,6 @@ const Projects = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString(
-        language === "de" ? "de-DE" : "en-US",
-        {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        }
-      );
-    } catch {
-      return dateString;
-    }
-  };
   
   const timelinePhases = [
     { id: "planning", icon: "🌱", label: t("projects.timeline.planning") },
@@ -328,16 +314,14 @@ const Projects = () => {
     const Icon = project.icon;
     const isEven = index % 2 === 0;
     const projectCost = getProjectCost(project.title);
-    const isWellProject = project.title === t("projects.well.title");
     const currentPhaseIndex = timelinePhases.findIndex(p => p.id === project.currentPhase);
     const spentPercentage = projectCost
       ? projectCost.totalBudget > 0
         ? Math.min(100, (projectCost.spentAmount / projectCost.totalBudget) * 100)
         : 0
       : null;
-    // For well project, always use hardcoded progress, ignore projectCost
-    const displayProgressValue = isWellProject ? project.progress : (spentPercentage ?? project.progress);
-    const statusProgressLabel = isWellProject ? `${project.progress}%` : (spentPercentage !== null ? `${Math.round(spentPercentage)}%` : `${project.progress}%`);
+    const displayProgressValue = spentPercentage ?? project.progress;
+    const statusProgressLabel = spentPercentage !== null ? `${Math.round(spentPercentage)}%` : `${project.progress}%`;
     const detailedProgressLabel = spentPercentage !== null ? `${spentPercentage.toFixed(1)}%` : statusProgressLabel;
     const costTitle = t("projects.cost.title");
     const fundedLabel = t("projects.cost.funded");
@@ -424,17 +408,6 @@ const Projects = () => {
                       })}
                     </div>
 
-                    {isWellProject ? (
-                      <div className="sm:min-w-[200px]">
-                        <div className="flex items-center justify-between text-xs sm:text-sm font-semibold text-white">
-                          <span className="uppercase tracking-wide text-white/100">
-                            {t("projects.progress_label")}
-                          </span>
-                          <span className="text-white">{statusProgressLabel}</span>
-                        </div>
-                        <Progress value={displayProgressValue} className="mt-2 h-1.5 bg-white/25" />
-                      </div>
-                    ) : (
                       <div className="relative">
                         {costsLoading ? (
                           // Show empty cost container skeleton while loading
@@ -466,13 +439,6 @@ const Projects = () => {
                                   <div className="h-4 bg-gray-200 rounded w-12" />
                                 </div>
                                 <div className="h-2 rounded-full bg-gray-200" />
-                                <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] sm:text-xs text-muted-foreground">
-                                  <div className="flex items-center gap-1">
-                                    <CalendarIcon className="w-3.5 h-3.5" />
-                                    <div className="h-4 bg-gray-200 rounded w-20" />
-                                  </div>
-                                  <div className="h-6 bg-gray-200 rounded-full w-24" />
-                                </div>
                               </div>
                             </div>
                           </div>
@@ -516,12 +482,6 @@ const Projects = () => {
                               value={spentPercentage ?? 0}
                               className="h-2 rounded-full bg-primary/15 [&>div]:rounded-full [&>div]:bg-gradient-to-r [&>div]:from-primary [&>div]:via-primary/90 [&>div]:to-primary/70"
                             />
-                            <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] sm:text-xs text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <CalendarIcon className="w-3.5 h-3.5" />
-                                <span>{formatDate(projectCost.lastUpdated)}</span>
-                              </div>
-                            </div>
                           </div>
                             </div>
                           </div>
@@ -537,7 +497,6 @@ const Projects = () => {
                           </div>
                         )}
                       </div>
-                    )}
                   </div>
                 </div>
               </div>
