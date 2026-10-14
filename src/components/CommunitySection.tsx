@@ -277,7 +277,7 @@ const CommunitySection = () => {
               <Card className="overflow-hidden shadow-card">
                 <div className="aspect-[4/3] bg-muted relative">
                   <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.7!2d32.80263137817383!3d0.6462867856025696!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMMKwMzgnNDYuNiJOIDMywrA0OCcwOS41IkU!5e0!3m2!1sen!2sde!4v1234567890123!5m2!1sen!2sde"
+                    src="https://www.google.com/maps/embed?origin=mfe&pb=!1m3!2m1!1s0.641777,32.819202!6i15"
                     width="100%"
                     height="100%"
                     style={{ border: 0 }}
@@ -296,7 +296,7 @@ const CommunitySection = () => {
                     </h3>
                   </div>
                   <p className="text-muted-foreground text-sm">
-                    0.6462867856025696, 32.80263137817383
+                    0.641777, 32.819202
                   </p>
                   <p className="text-muted-foreground text-sm mt-1">
                     {t("community.location.region")}

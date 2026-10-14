@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet } from "lucide-react";
+import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet, Heart, Scissors } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useProjectCosts } from "@/hooks/useProjectCosts";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -13,11 +13,13 @@ import OptimizedImage from "@/components/OptimizedImage";
 import PreloadImage from "@/components/PreloadImage";
 import heroImage from "@/assets/project/community_house/header_construction.webp";
 import communityHouseImage from "@/assets/project/community_house/construction_house.webp";
-import waterImage from "@/assets/project/well.webp";
+import waterImage from "@/assets/project/well_pillars.webp";
 import agricultureImage from "@/assets/project/goat_farm.webp";
 import educationImage from "@/assets/project/pupils_2.webp";
 import busImage from "@/assets/project/bus.webp";
 import financialImage from "@/assets/project/education_5.webp";
+import orphanageImage from "@/assets/project/orphanage/visit_notebooks.webp";
+import craftsImage from "@/assets/project/crafts/craft_group.webp";
 import { ProjectCost } from "@/services/projectCostsService";
 
 type TimelinePhase = "planning" | "implementation" | "impact";
@@ -37,6 +39,8 @@ interface Project {
   buttonText: string;
   priority: "active" | "planned";
   anchorId?: string;
+  /** Kein Kostenkasten: das Budget in der Datenbank deckt das Vorhaben noch nicht ab. */
+  hideCosts?: boolean;
 }
 
 const Projects = () => {
@@ -78,95 +82,39 @@ const Projects = () => {
     }
   }, [location]);
 
-  const mobilityDescription = t("projects.mobility.description");
   const anchorClasses = "text-primary underline underline-offset-4";
-  const schoolAccessUrl = "/projects?section=school-access";
-  const youngMobilityUrl = "/projects?section=young-mobility";
-  const anchorHref = `/${schoolAccessUrl}`;
-  const mobilityAnchorHref = `/${youngMobilityUrl}`;
-  const germanTarget = t("projects.mobility.target.de");
-  const englishTarget = t("projects.mobility.target.en");
 
-  const handleAnchorClick = (event: MouseEvent<HTMLAnchorElement>) => {
-    event.preventDefault();
-    navigate(schoolAccessUrl);
-  };
-
-  const handleMobilityAnchorClick = (event: MouseEvent<HTMLAnchorElement>) => {
-    event.preventDefault();
-    navigate(youngMobilityUrl);
-  };
-
-  let mobilityDescriptionNode: ReactNode | undefined;
-  let sponsorshipDescriptionNode: ReactNode | undefined;
-
-  if (language === "de" && mobilityDescription.includes(germanTarget)) {
-    const [before, after] = mobilityDescription.split(germanTarget);
-    mobilityDescriptionNode = (
+  // Verlinkt eine Wendung in der Beschreibung mit dem Abschnitt eines anderen Projekts.
+  const linkPhrase = (text: string, phrase: string, url: string): ReactNode | undefined => {
+    if (!phrase || !text.includes(phrase)) return undefined;
+    const [before, after] = text.split(phrase);
+    const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+      event.preventDefault();
+      navigate(url);
+    };
+    return (
       <>
         {before}
-        <a
-          href={anchorHref}
-          className={anchorClasses}
-          onClick={handleAnchorClick}
-        >
-          {germanTarget}
+        <a href={url} className={anchorClasses} onClick={handleClick}>
+          {phrase}
         </a>
         {after}
       </>
     );
-  } else if (language === "en" && mobilityDescription.includes(englishTarget)) {
-    const [before, after] = mobilityDescription.split(englishTarget);
-    mobilityDescriptionNode = (
-      <>
-        {before}
-        <a
-          href={anchorHref}
-          className={anchorClasses}
-          onClick={handleAnchorClick}
-        >
-          {englishTarget}
-        </a>
-        {after}
-      </>
-    );
-  }
+  };
 
+  const orphanageDescription = t("projects.orphanage.description");
+  const orphanageDescriptionNode = linkPhrase(
+    orphanageDescription,
+    t("projects.orphanage.link"),
+    "/projects?section=school-access",
+  );
   const sponsorshipDescription = t("projects.sponsorship.description");
-  const germanMobilityTarget = t("projects.sponsorship.target");
-  const englishMobilityTarget = t("projects.sponsorship.target");
-
-  if (language === "de" && sponsorshipDescription.includes(germanMobilityTarget)) {
-    const [before, after] = sponsorshipDescription.split(germanMobilityTarget);
-    sponsorshipDescriptionNode = (
-      <>
-        {before}
-        <a
-          href={mobilityAnchorHref}
-          className={anchorClasses}
-          onClick={handleMobilityAnchorClick}
-        >
-          {germanMobilityTarget}
-        </a>
-        {after}
-      </>
-    );
-  } else if (language === "en" && sponsorshipDescription.includes(englishMobilityTarget)) {
-    const [before, after] = sponsorshipDescription.split(englishMobilityTarget);
-    sponsorshipDescriptionNode = (
-      <>
-        {before}
-        <a
-          href={mobilityAnchorHref}
-          className={anchorClasses}
-          onClick={handleMobilityAnchorClick}
-        >
-          {englishMobilityTarget}
-        </a>
-        {after}
-      </>
-    );
-  }
+  const sponsorshipDescriptionNode = linkPhrase(
+    sponsorshipDescription,
+    t("projects.sponsorship.link"),
+    "/projects?section=orphanage",
+  );
 
   const activeProjects: Project[] = [
     {
@@ -206,6 +154,26 @@ const Projects = () => {
       buttonText: t("projects.well.button"),
       priority: "active",
     },
+    {
+      title: t("projects.orphanage.title"),
+      icon: Heart,
+      teaser: t("projects.orphanage.teaser"),
+      description: orphanageDescription,
+      descriptionNode: orphanageDescriptionNode,
+      goals: [
+        t("projects.orphanage.goal1"),
+        t("projects.orphanage.goal2"),
+        t("projects.orphanage.goal3"),
+      ],
+      impact: t("projects.orphanage.impact"),
+      statusText: t("projects.orphanage.status"),
+      progress: 64,
+      currentPhase: "implementation",
+      image: orphanageImage,
+      buttonText: t("projects.orphanage.button"),
+      priority: "active",
+      anchorId: "orphanage",
+    },
   ];
 
   const plannedProjects: Project[] = [
@@ -226,17 +194,35 @@ const Projects = () => {
       image: agricultureImage,
       buttonText: t("projects.livestock.button"),
       priority: "planned",
+      hideCosts: true,
+    },
+    {
+      title: t("projects.crafts.title"),
+      icon: Scissors,
+      teaser: t("projects.crafts.teaser"),
+      description: t("projects.crafts.description"),
+      goals: [
+        t("projects.crafts.goal1"),
+        t("projects.crafts.goal2"),
+        t("projects.crafts.goal3"),
+      ],
+      impact: t("projects.crafts.impact"),
+      statusText: t("projects.crafts.status"),
+      progress: 5,
+      currentPhase: "planning",
+      image: craftsImage,
+      buttonText: t("projects.crafts.button"),
+      priority: "planned",
+      hideCosts: true,
     },
     {
       title: t("projects.mobility.title"),
       icon: Car,
       teaser: t("projects.mobility.teaser"),
-      description: mobilityDescription,
-      descriptionNode: mobilityDescriptionNode,
+      description: t("projects.mobility.description"),
       goals: [
         t("projects.mobility.goal1"),
         t("projects.mobility.goal2"),
-        t("projects.mobility.goal3"),
       ],
       impact: t("projects.mobility.impact"),
       statusText: t("projects.mobility.status"),
@@ -293,6 +279,8 @@ const Projects = () => {
     const mobilityTitle = t("projects.mobility.title");
     const sponsorshipTitle = t("projects.sponsorship.title");
     const financialTitle = t("projects.financial.title");
+    const orphanageTitle = t("projects.orphanage.title");
+    const craftsTitle = t("projects.crafts.title");
 
     if (projectTitle === communityTitle) {
       return t("images.projects.community_house");
@@ -306,6 +294,10 @@ const Projects = () => {
       return t("images.projects.sponsorship");
     } else if (projectTitle === financialTitle) {
       return t("images.projects.financial");
+    } else if (projectTitle === orphanageTitle) {
+      return t("images.projects.orphanage");
+    } else if (projectTitle === craftsTitle) {
+      return t("images.projects.crafts");
     }
     return projectTitle;
   };
@@ -313,7 +305,7 @@ const Projects = () => {
   const renderProjectCard = (project: Project, index: number) => {
     const Icon = project.icon;
     const isEven = index % 2 === 0;
-    const projectCost = getProjectCost(project.title);
+    const projectCost = project.hideCosts ? null : getProjectCost(project.title);
     const currentPhaseIndex = timelinePhases.findIndex(p => p.id === project.currentPhase);
     const spentPercentage = projectCost
       ? projectCost.totalBudget > 0
