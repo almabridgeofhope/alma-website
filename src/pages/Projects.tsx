@@ -13,13 +13,13 @@ import OptimizedImage from "@/components/OptimizedImage";
 import PreloadImage from "@/components/PreloadImage";
 import heroImage from "@/assets/project/community_house/header_construction.webp";
 import communityHouseImage from "@/assets/project/community_house/construction_house.webp";
-import waterImage from "@/assets/project/well.webp";
+import waterImage from "@/assets/project/well_pillars.webp";
 import agricultureImage from "@/assets/project/goat_farm.webp";
 import educationImage from "@/assets/project/pupils_2.webp";
 import busImage from "@/assets/project/bus.webp";
 import financialImage from "@/assets/project/education_5.webp";
-import orphanageImage from "@/assets/team/phiona.webp";
-import craftsImage from "@/assets/community/community_3.webp";
+import orphanageImage from "@/assets/project/orphanage/visit_notebooks.webp";
+import craftsImage from "@/assets/project/crafts/craft_group.webp";
 import { ProjectCost } from "@/services/projectCostsService";
 
 type TimelinePhase = "planning" | "implementation" | "impact";
@@ -82,95 +82,39 @@ const Projects = () => {
     }
   }, [location]);
 
-  const mobilityDescription = t("projects.mobility.description");
   const anchorClasses = "text-primary underline underline-offset-4";
-  const schoolAccessUrl = "/projects?section=school-access";
-  const youngMobilityUrl = "/projects?section=young-mobility";
-  const anchorHref = `/${schoolAccessUrl}`;
-  const mobilityAnchorHref = `/${youngMobilityUrl}`;
-  const germanTarget = t("projects.mobility.target.de");
-  const englishTarget = t("projects.mobility.target.en");
 
-  const handleAnchorClick = (event: MouseEvent<HTMLAnchorElement>) => {
-    event.preventDefault();
-    navigate(schoolAccessUrl);
-  };
-
-  const handleMobilityAnchorClick = (event: MouseEvent<HTMLAnchorElement>) => {
-    event.preventDefault();
-    navigate(youngMobilityUrl);
-  };
-
-  let mobilityDescriptionNode: ReactNode | undefined;
-  let sponsorshipDescriptionNode: ReactNode | undefined;
-
-  if (language === "de" && mobilityDescription.includes(germanTarget)) {
-    const [before, after] = mobilityDescription.split(germanTarget);
-    mobilityDescriptionNode = (
+  // Verlinkt eine Wendung in der Beschreibung mit dem Abschnitt eines anderen Projekts.
+  const linkPhrase = (text: string, phrase: string, url: string): ReactNode | undefined => {
+    if (!phrase || !text.includes(phrase)) return undefined;
+    const [before, after] = text.split(phrase);
+    const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+      event.preventDefault();
+      navigate(url);
+    };
+    return (
       <>
         {before}
-        <a
-          href={anchorHref}
-          className={anchorClasses}
-          onClick={handleAnchorClick}
-        >
-          {germanTarget}
+        <a href={url} className={anchorClasses} onClick={handleClick}>
+          {phrase}
         </a>
         {after}
       </>
     );
-  } else if (language === "en" && mobilityDescription.includes(englishTarget)) {
-    const [before, after] = mobilityDescription.split(englishTarget);
-    mobilityDescriptionNode = (
-      <>
-        {before}
-        <a
-          href={anchorHref}
-          className={anchorClasses}
-          onClick={handleAnchorClick}
-        >
-          {englishTarget}
-        </a>
-        {after}
-      </>
-    );
-  }
+  };
 
+  const orphanageDescription = t("projects.orphanage.description");
+  const orphanageDescriptionNode = linkPhrase(
+    orphanageDescription,
+    t("projects.orphanage.link"),
+    "/projects?section=school-access",
+  );
   const sponsorshipDescription = t("projects.sponsorship.description");
-  const germanMobilityTarget = t("projects.sponsorship.target");
-  const englishMobilityTarget = t("projects.sponsorship.target");
-
-  if (language === "de" && sponsorshipDescription.includes(germanMobilityTarget)) {
-    const [before, after] = sponsorshipDescription.split(germanMobilityTarget);
-    sponsorshipDescriptionNode = (
-      <>
-        {before}
-        <a
-          href={mobilityAnchorHref}
-          className={anchorClasses}
-          onClick={handleMobilityAnchorClick}
-        >
-          {germanMobilityTarget}
-        </a>
-        {after}
-      </>
-    );
-  } else if (language === "en" && sponsorshipDescription.includes(englishMobilityTarget)) {
-    const [before, after] = sponsorshipDescription.split(englishMobilityTarget);
-    sponsorshipDescriptionNode = (
-      <>
-        {before}
-        <a
-          href={mobilityAnchorHref}
-          className={anchorClasses}
-          onClick={handleMobilityAnchorClick}
-        >
-          {englishMobilityTarget}
-        </a>
-        {after}
-      </>
-    );
-  }
+  const sponsorshipDescriptionNode = linkPhrase(
+    sponsorshipDescription,
+    t("projects.sponsorship.link"),
+    "/projects?section=orphanage",
+  );
 
   const activeProjects: Project[] = [
     {
@@ -214,7 +158,8 @@ const Projects = () => {
       title: t("projects.orphanage.title"),
       icon: Heart,
       teaser: t("projects.orphanage.teaser"),
-      description: t("projects.orphanage.description"),
+      description: orphanageDescription,
+      descriptionNode: orphanageDescriptionNode,
       goals: [
         t("projects.orphanage.goal1"),
         t("projects.orphanage.goal2"),
@@ -275,8 +220,7 @@ const Projects = () => {
       title: t("projects.mobility.title"),
       icon: Car,
       teaser: t("projects.mobility.teaser"),
-      description: mobilityDescription,
-      descriptionNode: mobilityDescriptionNode,
+      description: t("projects.mobility.description"),
       goals: [
         t("projects.mobility.goal1"),
         t("projects.mobility.goal2"),
