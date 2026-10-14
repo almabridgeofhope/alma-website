@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { CartInline } from "./CartSidebar";
-import { ProjectItem, ProjectCost } from "@/services/clientGoogleSheetsService";
+import { ProjectItem, ProjectCost } from "@/services/projectCostsService";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
   // Construction phase icons

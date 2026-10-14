@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { clientGoogleSheetsService, ProjectCost } from '@/services/clientGoogleSheetsService';
+import { fetchProjectCosts, ProjectCost } from '@/services/projectCostsService';
 
 export const useProjectCosts = () => {
   const [projectCosts, setProjectCosts] = useState<ProjectCost[]>([]);
@@ -7,11 +7,11 @@ export const useProjectCosts = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProjectCosts = async () => {
+    const loadProjectCosts = async () => {
       try {
         setLoading(true);
         setError(null);
-        const costs = await clientGoogleSheetsService.getProjectCosts();
+        const costs = await fetchProjectCosts();
         setProjectCosts(costs);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch project costs');
@@ -21,7 +21,7 @@ export const useProjectCosts = () => {
       }
     };
 
-    fetchProjectCosts();
+    loadProjectCosts();
   }, []);
 
   const getProjectCost = (projectName: string): ProjectCost | null => {
@@ -83,7 +83,7 @@ export const useProjectCosts = () => {
     try {
       setLoading(true);
       setError(null);
-      const costs = await clientGoogleSheetsService.getProjectCosts();
+      const costs = await fetchProjectCosts();
       setProjectCosts(costs);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to refresh project costs');

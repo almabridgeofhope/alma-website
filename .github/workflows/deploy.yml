@@ -9,13 +9,11 @@ name: Deploy React App to GitHub Pages
 # VITE_PAYPAL_BACKEND_URL        - PayPal Apps Script URL
 # VITE_STRIPE_PUBLISHABLE_KEY    - Stripe LIVE Publishable Key (pk_live_...)
 # VITE_STRIPE_BACKEND_URL        - Stripe Apps Script URL
-# VITE_GOOGLE_API_KEY            - Google Sheets API Key
-# VITE_GOOGLE_SHEET_ID           - Google Sheet ID
 # VITE_DONATION_WEBHOOK_URL      - Donation Webhook Apps Script URL
-# VITE_SUPABASE_URL              - Supabase project URL (interner Bereich /admin)
+# VITE_SUPABASE_URL              - Supabase project URL (Projektseite + interner Bereich /admin)
 # VITE_SUPABASE_PUBLISHABLE_KEY  - Supabase publishable key (oeffentlich, RLS schuetzt die Daten)
 # VITE_GOOGLE_CLIENT_ID          - OAuth-Client des Google-Cloud-Projekts (Belege in Drive)
-# VITE_GOOGLE_PICKER_API_KEY     - API-Key fuer den Google Picker (nicht VITE_GOOGLE_API_KEY, das sind die Sheets)
+# VITE_GOOGLE_PICKER_API_KEY     - API-Key fuer den Google Picker 
 # VITE_GOOGLE_APP_ID             - Projektnummer des Google-Cloud-Projekts
 # VITE_GOOGLE_DRIVE_FOLDER_ID    - Rueckfall: ein Ordner fuer alle Belege
 # VITE_GOOGLE_DRIVE_FOLDER_UEBERWEISUNGEN - Drive-Ordner der Ueberweisungsbelege
@@ -32,7 +30,6 @@ name: Deploy React App to GitHub Pages
 # VITE_PAYPAL_SETUP_TOKEN        - Token for PayPal setup endpoint (generate random string)
 #
 # OPTIONAL SECRETS:
-# VITE_GOOGLE_SHEET_RANGE        - Sheet range (defaults if not set)
 # VITE_NEWSLETTER_ENDPOINT       - Newsletter signup endpoint
 # VITE_SEPA_IBAN                 - Bank IBAN for SEPA donations
 # VITE_SEPA_BIC                  - Bank BIC
@@ -107,9 +104,6 @@ jobs:
     - name: Build
       env:
         VITE_STAGE: prod
-        VITE_GOOGLE_API_KEY: ${{ secrets.VITE_GOOGLE_API_KEY }}
-        VITE_GOOGLE_SHEET_ID: ${{ secrets.VITE_GOOGLE_SHEET_ID }}
-        VITE_GOOGLE_SHEET_RANGE: ${{ secrets.VITE_GOOGLE_SHEET_RANGE }}
         VITE_PAYPAL_LIVE_CLIENT_ID: ${{ secrets.VITE_PAYPAL_LIVE_CLIENT_ID }}
         VITE_PAYPAL_SANDBOX_CLIENT_ID: ${{ secrets.VITE_PAYPAL_SANDBOX_CLIENT_ID }}
         VITE_PAYPAL_BACKEND_URL: ${{ secrets.VITE_PAYPAL_BACKEND_URL }}
