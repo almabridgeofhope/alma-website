@@ -19,7 +19,7 @@ import educationImage from "@/assets/project/pupils_2.webp";
 import busImage from "@/assets/project/bus.webp";
 import financialImage from "@/assets/project/education_5.webp";
 import orphanageImage from "@/assets/project/orphanage/visit_notebooks.webp";
-import craftsImage from "@/assets/project/crafts/craft_group.webp";
+import craftsImage from "@/assets/project/crafts/women_orphanage.webp";
 import { ProjectCost } from "@/services/projectCostsService";
 
 type TimelinePhase = "planning" | "implementation" | "impact";

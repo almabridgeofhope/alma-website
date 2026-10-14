@@ -246,7 +246,7 @@ const translations = {
     "projects.crafts.status": "We visited the group in September 2026. Next: test the first sales channels in Germany.",
     "projects.crafts.button": "Learn more 🧵",
     "images.projects.orphanage": "Our visit in September 2026: the children with the notebooks we brought",
-    "images.projects.crafts": "Our visit to the women's workshop in Mukono, September 2026",
+    "images.projects.crafts": "Women of the craft group at the orphanage in Mukono, September 2026",
     
     // Young Mobility Project
     "projects.mobility.title": "Mobility & Vocational Skills",
@@ -1329,7 +1329,7 @@ const translations = {
     "projects.crafts.status": "Im September 2026 haben wir die Gruppe besucht. Als Nächstes: erste Absatzwege in Deutschland testen.",
     "projects.crafts.button": "Mehr erfahren 🧵",
     "images.projects.orphanage": "Unser Besuch im September 2026: die Kinder mit den mitgebrachten Heften",
-    "images.projects.crafts": "Unser Besuch in der Werkstatt der Frauen in Mukono, September 2026",
+    "images.projects.crafts": "Frauen der Handarbeitsgruppe beim Waisenhaus in Mukono, September 2026",
     
     // Young Mobility Project
     "projects.mobility.title": "Mobilität & berufliche Qualifikation",
