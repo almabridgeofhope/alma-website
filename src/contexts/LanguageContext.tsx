@@ -229,7 +229,7 @@ const translations = {
     "projects.sponsorship.link": "our orphanage in Mukono",
     "projects.orphanage.link": "school sponsorship",
     "projects.orphanage.teaser": "A safe home for 13 children",
-    "projects.orphanage.description": "In Mukono, our team in Uganda cares for 13 children who have lost their parents. In 2026 the orphanage became part of Alma Bridge of Hope. The first goal is a secure home: we are buying the land and the house in installments, so that the children can no longer lose their home. At the same time we provide basic care with food. Their schooling is covered by our school sponsorship.",
+    "projects.orphanage.description": "In Mukono, our team in Uganda cares for 13 children who have lost their parents. The first goal is a secure home: we are buying the land and the house in installments, so that the children can no longer lose their home. At the same time we provide basic care with food. Their schooling is covered by our school sponsorship.",
     "projects.orphanage.goal1": "Buy the land and the house through the remaining installments",
     "projects.orphanage.goal2": "Provide a monthly food baseline for all children",
     "projects.orphanage.goal3": "Give the children a stable home that their schooling can build on",
@@ -250,13 +250,13 @@ const translations = {
     
     // Young Mobility Project
     "projects.mobility.title": "Mobility & Vocational Skills",
-    "projects.mobility.teaser": "Step by step: from bicycles to a driving licence",
-    "projects.mobility.description": "In Namaliri, the way to school, to work or to the market often decides what is possible at all. We approach mobility step by step. First come bicycles: they shorten the way to school and make it easier to reach work and markets. In a second step a vehicle follows, with driving lessons for young adults – a driving licence is a professional qualification and opens up jobs.",
-    "projects.mobility.goal1": "First step: bicycles for students and working people",
+    "projects.mobility.teaser": "Step by step: from shared bicycles to a driving licence",
+    "projects.mobility.description": "In Namaliri, many everyday tasks depend on getting around: fetching water, bringing farm produce to the market, carrying goods. We approach mobility step by step. First, we provide bicycles at our site that people can share, for example to transport water or farm goods. In a second step a vehicle follows, with driving lessons for young adults – a driving licence is a professional qualification and opens up jobs.",
+    "projects.mobility.goal1": "First step: shared bicycles at our site, for example to transport water and farm goods",
     "projects.mobility.goal2": "Second step: a vehicle with driving lessons for young adults",
     "projects.mobility.goal3": "Use the vehicle for the community as well, for example for transport to schools",
-    "projects.mobility.impact": "Shorter ways to school, work and market, and young adults with a qualification that brings them income.",
-    "projects.mobility.status": "We are preparing the first step with bicycles. The vehicle and driving lessons follow once the house, the well and the orphanage land are secured.",
+    "projects.mobility.impact": "Water and goods are easier to transport, and young adults gain a qualification that brings them income.",
+    "projects.mobility.status": "We are preparing the first step with shared bicycles. The vehicle and driving lessons follow once the house, the well and the orphanage land are secured.",
     "projects.mobility.button": "Support Project 🚲",
     
     // Education Sponsorship Project
@@ -270,7 +270,7 @@ const translations = {
     "projects.sponsorship.button": "Support Project 📚",
     "projects.livestock.title": "Agriculture & Farmers Group",
     "projects.livestock.teaser": "From farming to survive to farming as a business",
-    "projects.livestock.description": "Most farming families in Namaliri grow just enough to feed themselves, and in some months not even that. When money is needed for school fees or a doctor, the harvest is sold early and below its value. Nothing is left for better seeds, and nobody can plan beyond the next season. Together with a local farmers group we want to change this: from \"stomach agriculture\", which only feeds the family, to \"business agriculture\", which grows crops for the market and earns a reliable income. The group designed the support itself: a shared fund from which members borrow for seeds and pesticides and repay after the harvest, with the members checking each other. A water pump that rotates between the farms helps through heat and dry spells.",
+    "projects.livestock.description": "Most farming families in Namaliri grow just enough to feed themselves, and sometimes not even that. When money is needed, the harvest is sold early and below its value, and nobody can plan beyond the next season. Together with a local farmers group we want to move from \"stomach agriculture\", which only feeds the family, to \"business agriculture\", which grows for the market and earns a reliable income. The group designed the support itself: a shared fund for seeds and pesticides that members repay after the harvest.",
     "projects.livestock.goal1": "Set up a revolving fund for seeds and pesticides, repaid after each harvest",
     "projects.livestock.goal2": "Grow market crops such as beans and soy that bring a real income",
     "projects.livestock.goal3": "Provide a water pump that rotates between the farms of the group",
@@ -1312,7 +1312,7 @@ const translations = {
     "projects.sponsorship.link": "unserem Waisenhaus in Mukono",
     "projects.orphanage.link": "Schulpatenschaft",
     "projects.orphanage.teaser": "Ein sicheres Zuhause für 13 Kinder",
-    "projects.orphanage.description": "In Mukono kümmert sich unser Team in Uganda um 13 Kinder, die ihre Eltern verloren haben. 2026 ist das Waisenhaus Teil von Alma Bridge of Hope geworden. Das erste Ziel ist ein sicheres Zuhause: Wir kaufen Grundstück und Haus in Raten, damit die Kinder ihr Zuhause nicht mehr verlieren können. Gleichzeitig sichern wir die Grundversorgung mit Lebensmitteln. Die Schulbildung der Kinder läuft über unsere Schulpatenschaft.",
+    "projects.orphanage.description": "In Mukono kümmert sich unser Team in Uganda um 13 Kinder, die ihre Eltern verloren haben. Das erste Ziel ist ein sicheres Zuhause: Wir kaufen Grundstück und Haus in Raten, damit die Kinder ihr Zuhause nicht mehr verlieren können. Gleichzeitig sichern wir die Grundversorgung mit Lebensmitteln. Die Schulbildung der Kinder läuft über unsere Schulpatenschaft.",
     "projects.orphanage.goal1": "Grundstück und Haus über die ausstehenden Raten kaufen",
     "projects.orphanage.goal2": "Eine monatliche Grundversorgung mit Lebensmitteln für alle Kinder",
     "projects.orphanage.goal3": "Den Kindern ein stabiles Zuhause geben, auf dem ihre Schulbildung aufbauen kann",
@@ -1333,13 +1333,13 @@ const translations = {
     
     // Young Mobility Project
     "projects.mobility.title": "Mobilität & berufliche Qualifikation",
-    "projects.mobility.teaser": "Schritt für Schritt: vom Fahrrad zum Führerschein",
-    "projects.mobility.description": "In Namaliri entscheidet der Weg zur Schule, zur Arbeit oder zum Markt oft darüber, was überhaupt möglich ist. Wir gehen Mobilität Schritt für Schritt an. Zuerst kommen Fahrräder: Sie verkürzen den Schulweg und machen Arbeit und Märkte leichter erreichbar. Im zweiten Schritt folgt ein Fahrzeug mit Fahrstunden für junge Erwachsene – ein Führerschein ist eine berufliche Qualifikation und öffnet Jobs.",
-    "projects.mobility.goal1": "Erster Schritt: Fahrräder für Schülerinnen, Schüler und Berufstätige",
+    "projects.mobility.teaser": "Schritt für Schritt: vom geteilten Fahrrad zum Führerschein",
+    "projects.mobility.description": "In Namaliri hängt vieles im Alltag davon ab, wie man vorankommt: Wasser holen, Ernte zum Markt bringen, Waren transportieren. Wir gehen Mobilität Schritt für Schritt an. Zuerst stellen wir an unserem Standort Fahrräder bereit, die sich die Menschen teilen können, zum Beispiel für den Transport von Wasser oder Farmgütern. Im zweiten Schritt folgt ein Fahrzeug mit Fahrstunden für junge Erwachsene – ein Führerschein ist eine berufliche Qualifikation und öffnet Jobs.",
+    "projects.mobility.goal1": "Erster Schritt: geteilte Fahrräder an unserem Standort, zum Beispiel für den Transport von Wasser und Farmgütern",
     "projects.mobility.goal2": "Zweiter Schritt: ein Fahrzeug mit Fahrstunden für junge Erwachsene",
     "projects.mobility.goal3": "Das Fahrzeug auch für die Gemeinde nutzen, zum Beispiel für Fahrten zu Schulen",
-    "projects.mobility.impact": "Kürzere Wege zu Schule, Arbeit und Markt und junge Erwachsene mit einer Qualifikation, die ihnen ein Einkommen bringt.",
-    "projects.mobility.status": "Den ersten Schritt mit Fahrrädern bereiten wir gerade vor. Fahrzeug und Fahrstunden folgen, sobald Haus, Brunnen und das Grundstück des Waisenhauses gesichert sind.",
+    "projects.mobility.impact": "Wasser und Waren lassen sich leichter transportieren, und junge Erwachsene erwerben eine Qualifikation, die ihnen ein Einkommen bringt.",
+    "projects.mobility.status": "Den ersten Schritt mit geteilten Fahrrädern bereiten wir gerade vor. Fahrzeug und Fahrstunden folgen, sobald Haus, Brunnen und das Grundstück des Waisenhauses gesichert sind.",
     "projects.mobility.button": "Projekt unterstützen 🚲",
     
     // Education Sponsorship Project
@@ -1353,7 +1353,7 @@ const translations = {
     "projects.sponsorship.button": "Projekt unterstützen 📚",
     "projects.livestock.title": "Landwirtschaft & Bauerngruppe",
     "projects.livestock.teaser": "Vom Anbau zum Überleben zum Anbau als Geschäft",
-    "projects.livestock.description": "Die meisten Bauernfamilien in Namaliri bauen gerade so viel an, dass es zum Essen reicht, und in manchen Monaten nicht einmal das. Wird Geld für Schulgeld oder einen Arzt gebraucht, wird die Ernte zu früh und unter Wert verkauft. Für besseres Saatgut bleibt nichts übrig, und über die nächste Saison hinaus kann niemand planen. Gemeinsam mit einer Bauerngruppe vor Ort wollen wir das ändern: weg von der „stomach agriculture“, die nur die eigene Familie ernährt, hin zur „business agriculture“, die für den Markt anbaut und ein verlässliches Einkommen bringt. Die Unterstützung hat sich die Gruppe selbst ausgedacht: einen gemeinsamen Topf, aus dem Mitglieder Geld für Saatgut und Spritzmittel bekommen und es nach der Ernte zurückzahlen, wobei die Mitglieder sich gegenseitig kontrollieren. Eine Wasserpumpe, die reihum von Hof zu Hof wandert, hilft durch Hitze und Trockenzeiten.",
+    "projects.livestock.description": "Die meisten Bauernfamilien in Namaliri bauen gerade so viel an, dass es zum Essen reicht, und manchmal nicht einmal das. Wird Geld gebraucht, wird die Ernte zu früh und unter Wert verkauft, und über die nächste Saison hinaus kann niemand planen. Gemeinsam mit einer Bauerngruppe vor Ort wollen wir weg von der „stomach agriculture“, die nur die eigene Familie ernährt, hin zur „business agriculture“, die für den Markt anbaut und ein verlässliches Einkommen bringt. Die Unterstützung hat sich die Gruppe selbst ausgedacht: einen gemeinsamen Topf für Saatgut und Spritzmittel, den die Mitglieder nach der Ernte wieder auffüllen.",
     "projects.livestock.goal1": "Einen revolvierenden Fonds für Saatgut und Spritzmittel aufbauen, der nach jeder Ernte zurückgezahlt wird",
     "projects.livestock.goal2": "Marktfrüchte wie Bohnen und Soja anbauen, die ein echtes Einkommen bringen",
     "projects.livestock.goal3": "Eine Wasserpumpe bereitstellen, die zwischen den Höfen der Gruppe wechselt",

@@ -47,6 +47,7 @@ export const useProjectCosts = () => {
       const nameMappings: { [key: string]: string[] } = {
         'community': ['community house', 'community', 'haus', 'house', 'building the community', 'bau des community'],
         'well': ['brunnen', 'well', 'wasser', 'water'],
+        'orphanage': ['waisenhaus', 'orphanage'],
         'livestock': ['vieh', 'livestock', 'ziegen', 'goats', 'agriculture'],
         'mobility': ['bus', 'mobility', 'transport', 'verkehr'],
         'sponsorship': ['sponsorship', 'patenschaft', 'education', 'bildung'],

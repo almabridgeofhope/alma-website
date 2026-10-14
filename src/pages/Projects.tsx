@@ -167,13 +167,12 @@ const Projects = () => {
       ],
       impact: t("projects.orphanage.impact"),
       statusText: t("projects.orphanage.status"),
-      progress: 20,
+      progress: 40,
       currentPhase: "implementation",
       image: orphanageImage,
       buttonText: t("projects.orphanage.button"),
       priority: "active",
       anchorId: "orphanage",
-      hideCosts: true,
     },
   ];
 
