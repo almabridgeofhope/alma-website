@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import NewProjectItemDialog from "./NewProjectItemDialog";
 import { formatQty, formatUgx } from "./format";
-import { phaseLabel, usePhases } from "./queries";
+import { phaseLabel, unverknuepftFuer, usePhases } from "./queries";
 import type { ProjectItem } from "./types";
 
 const ALL = "alle";
@@ -26,6 +26,11 @@ interface OpenItemsPickerProps {
    * rein — fuer diesen Monat ersetzt der Transfer dann die Zeile in den geplanten Kosten.
    */
   forPlanning?: boolean;
+  /**
+   * Beim Zuordnen zu einem gebuchten Transfer: sein Datum. Liegt es nicht nach dem Stichtag
+   * einer Position, ist auch ihr belegter, noch nicht zugeordneter Teil waehlbar.
+   */
+  transferDate?: string | null;
   newItemLabel: string;
 }
 
@@ -36,6 +41,7 @@ const OpenItemsPicker = ({
   markedLabel,
   plannedQty,
   forPlanning = false,
+  transferDate,
   newItemLabel,
 }: OpenItemsPickerProps) => {
   const phases = usePhases();
@@ -52,9 +58,9 @@ const OpenItemsPicker = ({
       items.filter((item) =>
         forPlanning
           ? item.qty_open - (plannedQty?.get(item.project_item_id) ?? 0) > 0
-          : item.qty_open > 0,
+          : item.qty_open > 0 || unverknuepftFuer(item, transferDate) > 0,
       ),
-    [items, forPlanning, plannedQty],
+    [items, forPlanning, plannedQty, transferDate],
   );
 
   const projects = useMemo(() => {
@@ -180,6 +186,11 @@ const OpenItemsPicker = ({
                       open {formatQty(item.qty_open)} · {formatUgx(item.open_ugx)}
                       {planned(item) > 0 && ` · ${formatQty(planned(item))} planned`}
                     </p>
+                    {unverknuepftFuer(item, transferDate) > 0 && (
+                      <p className="truncate text-xs text-muted-foreground">
+                        paid, not yet assigned {formatQty(unverknuepftFuer(item, transferDate))}
+                      </p>
+                    )}
                     {markedItemIds.has(item.project_item_id) && (
                       <Badge variant="secondary" className="mt-1">
                         <Check className="mr-1 h-3 w-3" aria-hidden="true" />

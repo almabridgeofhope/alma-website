@@ -57,12 +57,17 @@ interface PositionRow {
   qty_needed: number;
   qty_funded: number;
   sort_order: number;
+  /** Finanzierter Teil in EUR: zugeordnet zum Kurs des Transfers, belegt zum aktuellen Kurs. */
+  funded_eur?: number | null;
 }
 
 const toItem = (row: PositionRow): ProjectItem => {
   const unitCostEUR = Number(row.unit_cost_eur);
   const qtyNeededTotal = Number(row.qty_needed);
   const qtyFunded = Number(row.qty_funded);
+  // Bezahltes zum Kurs, zu dem es bezahlt wurde; der Stueckpreis (aktueller Kurs) gilt nur
+  // fuer den offenen Teil. Gesamt ist beides zusammen, damit "offen" genau der offene Teil bleibt.
+  const fundedCostEUR = row.funded_eur != null ? Number(row.funded_eur) : unitCostEUR * qtyFunded;
   return {
     itemId: row.item_id,
     project: row.project,
@@ -80,8 +85,8 @@ const toItem = (row: PositionRow): ProjectItem => {
     visibility: "true",
     sortOrder: Number(row.sort_order),
     purchased: qtyFunded >= qtyNeededTotal,
-    totalCostEUR: unitCostEUR * qtyNeededTotal,
-    fundedCostEUR: unitCostEUR * qtyFunded,
+    totalCostEUR: fundedCostEUR + unitCostEUR * Math.max(qtyNeededTotal - qtyFunded, 0),
+    fundedCostEUR,
     phaseDe: row.phase_de,
     displayNameDe: row.title_de,
     blurbDe: row.description_de ?? undefined,

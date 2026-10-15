@@ -9,7 +9,15 @@ const TRANSFER_COLUMNS =
 const ASSIGNMENT_COLUMNS =
   "payment_log_id, item_id, qty_paid, amount_paid_ugx, external_transaction_id, expenditure_id, created_at";
 const ITEM_COLUMNS =
-  "project_item_id, project_id, projekt, projekt_status, phase, item_name, status, qty_needed, qty_paid, qty_open, total_ugx, paid_ugx, open_ugx, open_eur";
+  "project_item_id, project_id, projekt, projekt_status, phase, item_name, status, qty_needed, qty_paid, qty_open, total_ugx, paid_ugx, open_ugx, open_eur, qty_bezahlt_belegt, belegt_bis, qty_unverknuepft";
+
+/**
+ * Was eine Zuordnung zu einem Transfer vom Datum transferDate bei dieser Position nachtragen
+ * kann, ohne neu zu bezahlen: der Belegstand, den noch keine Zuordnung dokumentiert. Gilt
+ * nur fuer Transfers bis zum Stichtag — spaetere zaehlen in der Datenbank obendrauf.
+ */
+export const unverknuepftFuer = (item: ProjectItem, transferDate: string | null | undefined): number =>
+  transferDate && item.belegt_bis && transferDate <= item.belegt_bis ? item.qty_unverknuepft : 0;
 
 export const queryKeys = {
   transfers: ["admin", "transfers"] as const,

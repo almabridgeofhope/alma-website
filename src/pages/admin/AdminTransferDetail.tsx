@@ -253,6 +253,7 @@ const AdminTransferDetail = () => {
               markedItemIds={new Set((assignments.data ?? []).map((a) => a.item_id ?? ""))}
               markedLabel="already assigned"
               plannedQty={plannedQtyByItem(planItems.data ?? [])}
+              transferDate={transfer.date}
               newItemLabel="Create and assign"
             />
           </CardContent>
@@ -260,7 +261,12 @@ const AdminTransferDetail = () => {
       </div>
 
       {selected && (
-        <AddAssignmentDialog transferId={transferId} item={selected} onClose={() => setSelected(null)} />
+        <AddAssignmentDialog
+          transferId={transferId}
+          transferDate={transfer.date}
+          item={selected}
+          onClose={() => setSelected(null)}
+        />
       )}
     </div>
   );
