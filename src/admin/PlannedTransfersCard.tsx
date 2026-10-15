@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import AllowanceLeiste from "./AllowanceLeiste";
 import NewPlannedTransferDialog from "./NewPlannedTransferDialog";
 import { formatEur } from "./format";
 import { formatPlanMonth, usePlannedTransfers } from "./planQueries";
@@ -45,6 +46,7 @@ const PlannedTransfersCard = () => {
           <p className="mt-1 text-sm text-muted-foreground">
             Items set aside for a coming month. The finance forecast subtracts them in that month.
           </p>
+          <AllowanceLeiste />
         </div>
         <Button variant="outline" size="sm" onClick={() => setIsDialogOpen(true)}>
           <Plus className="mr-1 h-4 w-4" aria-hidden="true" />
