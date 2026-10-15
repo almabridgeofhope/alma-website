@@ -14,21 +14,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useReceiptPicker } from "./useReceiptPicker";
 import type { DriveFile } from "@/lib/googleDrive";
-import { formatQty, formatUgx, parseAmount } from "./format";
-import { unitCostUgx, useCreateAssignment } from "./queries";
+import { formatDate, formatQty, formatUgx, parseAmount } from "./format";
+import { unitCostUgx, unverknuepftFuer, useCreateAssignment } from "./queries";
 import type { ProjectItem } from "./types";
 
 interface AddAssignmentDialogProps {
   transferId: string;
+  /** Buchungsdatum des Transfers — entscheidet, ob die Zuordnung Belegtes nachtraegt. */
+  transferDate: string | null | undefined;
   item: ProjectItem;
   onClose: () => void;
 }
 
-const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogProps) => {
+const AddAssignmentDialog = ({ transferId, transferDate, item, onClose }: AddAssignmentDialogProps) => {
   const createAssignment = useCreateAssignment(transferId);
-  const [qty, setQty] = useState(String(item.qty_open));
+  // Ein alter Transfer traegt zuerst nach, was laut Belegen schon bezahlt ist.
+  const nachzutragen = unverknuepftFuer(item, transferDate);
+  const vorschlag = nachzutragen > 0 ? nachzutragen : item.qty_open;
+  const [qty, setQty] = useState(String(vorschlag));
   const [unit, setUnit] = useState(String(Math.round(unitCostUgx(item))));
-  const [amount, setAmount] = useState(String(Math.round(item.qty_open * unitCostUgx(item))));
+  const [amount, setAmount] = useState(String(Math.round(vorschlag * unitCostUgx(item))));
   const [receipt, setReceipt] = useState<DriveFile | null>(null);
   const { pick, isPicking } = useReceiptPicker();
 
@@ -93,6 +98,13 @@ const AddAssignmentDialog = ({ transferId, item, onClose }: AddAssignmentDialogP
           <DialogDescription>
             {item.project_item_id} · open {formatQty(item.qty_open)} of {formatQty(item.qty_needed)} ·
             unit price {formatUgx(Math.round(unitCostUgx(item)))}
+            {nachzutragen > 0 && (
+              <>
+                <br />
+                {formatQty(nachzutragen)} already count as paid (receipts until {formatDate(item.belegt_bis)}).
+                Assigning them here documents which transfer paid them — it does not count them twice.
+              </>
+            )}
           </DialogDescription>
         </DialogHeader>
 

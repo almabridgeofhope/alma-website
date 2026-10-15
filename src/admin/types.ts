@@ -38,6 +38,11 @@ export interface ProjectItem {
   paid_ugx: number | null;
   open_ugx: number;
   open_eur: number | null;
+  /** Laut Belegen bis belegt_bis bezahlt, zugeordnet oder nicht. */
+  qty_bezahlt_belegt: number | null;
+  belegt_bis: string | null;
+  /** Belegt bezahlt, aber noch durch keine Zuordnung aus einem Transfer bis belegt_bis dokumentiert. */
+  qty_unverknuepft: number;
 }
 
 /** Zuordnung einer Position zu einer Überweisung. */
