@@ -26,9 +26,10 @@ import { paypalService } from "@/services/paypalService";
 import heroImage from "@/assets/nature/nature_2.webp";
 import communityImage from "@/assets/community/community_2.webp";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
-import emailjs from "@emailjs/browser";
 
 // PayPal Configuration - Select Client ID based on environment
+// Same limit as form-submit (alma-data-platform) — longer messages are rejected there
+const GIFT_MESSAGE_MAX_LENGTH = 300;
 const VITE_STAGE = import.meta.env.VITE_STAGE || "local";
 const PAYPAL_CLIENT_ID = VITE_STAGE === 'prod' 
   ? import.meta.env.VITE_PAYPAL_LIVE_CLIENT_ID 
@@ -559,6 +560,7 @@ const Donation = () => {
     isGift: false,
     giftRecipientName: "",
     giftRecipientEmail: "",
+    giftMessage: "",
     street: "",
     postalCode: "",
     city: "",
@@ -617,6 +619,7 @@ const Donation = () => {
         isGift: formData.isGift,
         giftRecipientName: formData.giftRecipientName,
         giftRecipientEmail: formData.giftRecipientEmail,
+        giftMessage: formData.giftMessage,
         wantsReceipt: formData.wantsReceipt,
         street: formData.street,
         postalCode: formData.postalCode,
@@ -632,6 +635,7 @@ const Donation = () => {
       formData.isGift,
       formData.giftRecipientName,
       formData.giftRecipientEmail,
+      formData.giftMessage,
       formData.wantsReceipt,
       formData.street,
       formData.postalCode,
@@ -813,6 +817,7 @@ const Donation = () => {
       isGift: !!currentFormData.isGift,
       giftRecipientName: currentFormData.isGift ? currentFormData.giftRecipientName.trim() : "",
       giftRecipientEmail: currentFormData.isGift ? currentFormData.giftRecipientEmail.trim().toLowerCase() : "",
+      giftMessage: currentFormData.isGift ? currentFormData.giftMessage.trim() : "",
       wantsReceipt: !!currentFormData.wantsReceipt,
       street: currentFormData.street.trim(),
       postalCode: currentFormData.postalCode.trim(),
@@ -859,6 +864,7 @@ const Donation = () => {
       isGift: !!currentFormData.isGift,
       giftRecipientName: currentFormData.isGift ? currentFormData.giftRecipientName.trim() : undefined,
       giftRecipientEmail: currentFormData.isGift ? currentFormData.giftRecipientEmail.trim().toLowerCase() : undefined,
+      giftMessage: currentFormData.isGift ? currentFormData.giftMessage.trim() || undefined : undefined,
       wantsReceipt: !!currentFormData.wantsReceipt,
       address: addressPayload,
       receiptAddress:
@@ -1150,60 +1156,9 @@ const Donation = () => {
       ...prev,
       [field]: value,
       ...(field === "isGift" && value === false
-        ? { giftRecipientName: "", giftRecipientEmail: "" }
+        ? { giftRecipientName: "", giftRecipientEmail: "", giftMessage: "" }
         : {})
     }));
-  };
-
-  const sendGiftEmail = async (params: {
-    recipientName: string;
-    recipientEmail: string;
-    donorName: string;
-    donorEmail: string;
-    amount: string;
-    donationType: "one-time" | "monthly";
-  }) => {
-    try {
-      const serviceId = "service_wou9sst";
-      const templateId = "template_eqc74jo";
-      const publicKey = "zxPupF44hCueD6u4K";
-
-      const subject = t("donation.giftEmail.subject");
-      const greeting = `${t("donation.giftEmail.greeting")} ${params.recipientName},`;
-      const bodyLines = [
-        greeting,
-        "",
-        t("donation.giftEmail.body"),
-        "",
-        `${t("donation.giftEmail.details.donor")} ${params.donorName} (${params.donorEmail})`,
-        `${t("donation.giftEmail.details.amount")} ${params.amount}`,
-        `${t("donation.giftEmail.details.type")} ${
-          params.donationType === "monthly"
-            ? t("donation.giftEmail.details.type.monthly")
-            : t("donation.giftEmail.details.type.onetime")
-        }`,
-        "",
-        t("donation.giftEmail.closing"),
-        t("donation.giftEmail.signature"),
-      ];
-
-      await emailjs.send(
-        serviceId,
-        templateId,
-        {
-          from_name: params.donorName,
-          from_email: params.donorEmail,
-          subject,
-          message: bodyLines.join("\n"),
-          to_email: params.recipientEmail,
-          reply_to: params.donorEmail,
-        },
-        publicKey
-      );
-      console.log("✅ Gift email sent to recipient");
-    } catch (error) {
-      console.error("❌ Failed to send gift email:", error);
-    }
   };
 
   const validateDonorIdentityFields = (): boolean => {
@@ -1767,23 +1722,6 @@ const Donation = () => {
           : (cartState.items.length > 0 
               ? cartState.totalAmount.toString() 
               : (amount || customAmount || "0"));
-
-        if (formData.isGift && formData.giftRecipientEmail && formData.giftRecipientName) {
-          const amountLabel = formatCurrency(parseFloat(finalAmount || "0"));
-          await sendGiftEmail({
-            recipientName: formData.giftRecipientName,
-            recipientEmail: formData.giftRecipientEmail,
-            donorName: getDonationDonorDisplayName({
-              donorType: formData.donorType === "company" ? "company" : "private",
-              firstName: formData.firstName,
-              lastName: formData.lastName,
-              companyName: formData.companyName,
-            }),
-            donorEmail: formData.email,
-            amount: amountLabel,
-            donationType,
-          });
-        }
 
         console.log("💰 PayPal: Navigating to success page with amount:", finalAmount);
         
@@ -3072,6 +3010,22 @@ const Donation = () => {
                               required={formData.isGift}
                             />
                           </div>
+                        </div>
+                        <div>
+                          <Label htmlFor="giftMessage">{t("donation.form.gift.message")}</Label>
+                          <Textarea
+                            id="giftMessage"
+                            value={formData.giftMessage}
+                            onChange={(e) => handleInputChange("giftMessage", e.target.value)}
+                            placeholder={t("donation.form.gift.message_placeholder")}
+                            maxLength={GIFT_MESSAGE_MAX_LENGTH}
+                            aria-describedby="giftMessageCount"
+                            className="mt-2"
+                            rows={3}
+                          />
+                          <p id="giftMessageCount" className="mt-1 text-right text-xs text-muted-foreground">
+                            {formData.giftMessage.length}/{GIFT_MESSAGE_MAX_LENGTH}
+                          </p>
                         </div>
                       </div>
                     )}
