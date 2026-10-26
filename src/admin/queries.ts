@@ -289,15 +289,14 @@ export const useProjects = () =>
   });
 
 /** Angezeigt wird die englische Bezeichnung — die Abrechnung laeuft mit Uganda. */
-export const phaseLabel = (phase: Phase): string =>
-  phase.phase_en ?? phase.phase_de ?? phase.phase_id;
+export const phaseLabel = (phase: Phase): string => phase.phase_en;
 
 export const usePhases = () =>
   useQuery({
     queryKey: ["admin", "phases"] as const,
     queryFn: async (): Promise<Phase[]> => {
       const { data, error } = await supabase
-        .from("project_phase_translations")
+        .from("project_phases")
         .select("phase_id, phase_de, phase_en")
         .order("phase_en");
       if (error) throw new Error(error.message);
@@ -306,32 +305,20 @@ export const usePhases = () =>
   });
 
 /**
- * Phasen je Projekt aus den Stammdaten (project_phases), in ihrer Reihenfolge.
- * Die Bezeichnung kommt aus project_phase_translations; einen Fremdschluessel
- * zwischen beiden gibt es nicht, deshalb wird hier zusammengefuehrt. Inaktive
- * Phasen bleiben drin — unter Other laufen die Positionen genau dort.
+ * Phasen je Projekt aus project_phases, nach Projektprioritaet (rang), darin nach Name.
+ * Inaktive Phasen bleiben drin — unter Other laufen die Positionen genau dort.
  */
 export const useProjectPhases = () =>
   useQuery({
     queryKey: ["admin", "project-phases"] as const,
     queryFn: async (): Promise<ProjectPhase[]> => {
-      const [assignments, translations] = await Promise.all([
-        supabase.from("project_phases").select("project_id, phase_id, rang"),
-        supabase.from("project_phase_translations").select("phase_id, phase_de, phase_en"),
-      ]);
-      if (assignments.error) throw new Error(assignments.error.message);
-      if (translations.error) throw new Error(translations.error.message);
-
-      const byId = new Map((translations.data ?? []).map((entry) => [entry.phase_id, entry as Phase]));
-      return (assignments.data ?? [])
-        .map((entry) => ({
-          phase_id: entry.phase_id,
-          phase_de: byId.get(entry.phase_id)?.phase_de ?? null,
-          phase_en: byId.get(entry.phase_id)?.phase_en ?? null,
-          project_id: entry.project_id,
-          rang: entry.rang,
-        }))
-        .sort((a, b) => a.rang - b.rang || phaseLabel(a).localeCompare(phaseLabel(b)));
+      const { data, error } = await supabase
+        .from("project_phases")
+        .select("project_id, phase_id, phase_de, phase_en, rang")
+        .order("rang")
+        .order("phase_en");
+      if (error) throw new Error(error.message);
+      return (data ?? []) as ProjectPhase[];
     },
   });
 
