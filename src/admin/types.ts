@@ -65,8 +65,8 @@ export interface TransferSummary extends Transfer {
 
 export interface Phase {
   phase_id: string;
-  phase_de: string | null;
-  phase_en: string | null;
+  phase_de: string;
+  phase_en: string;
 }
 
 /** Phase mit ihrem Projekt, aus project_phases. */
