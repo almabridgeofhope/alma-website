@@ -34,3 +34,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://almabridgeofhope.org/sitemap.xml
