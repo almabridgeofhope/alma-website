@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,7 +11,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { stripeService, StripeSessionDetails } from "@/services/stripeService";
 import { paypalService, PayPalSubscriptionDetails } from "@/services/paypalService";
-import { donationWebhookService } from "@/services/donationWebhookService";
 import { 
   CheckCircle, 
   Heart, 
@@ -29,8 +28,7 @@ const DonationSuccess = () => {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { formatCurrency, state, clearCart } = useShoppingCart();
-  const cartItems = state?.items || [];
+  const { formatCurrency, clearCart } = useShoppingCart();
   const [showNewsletterForm, setShowNewsletterForm] = useState(false);
   
   // Get parameters from URL
@@ -59,9 +57,6 @@ const DonationSuccess = () => {
       ? "monthly"
       : "one-time"
     : (paypalSubscriptionDetails ? "monthly" : (urlDonationType || "one-time"));
-  
-  // Track processed session IDs to prevent duplicate webhook calls
-  const processedSessionsRef = useRef<Set<string>>(new Set());
   
   // Final display values
   const displayAmount = sessionDetails 
@@ -114,21 +109,9 @@ const DonationSuccess = () => {
         }
       }
       
-      // Always process webhook in background (non-blocking)
-      // This ensures all payments are logged with their status (paid/unpaid)
-      // Only process once per session ID to prevent duplicates
-      if (!processedSessionsRef.current.has(details.id)) {
-        processedSessionsRef.current.add(details.id);
-        console.log('🔄 Processing webhook for session:', details.id);
-        processWebhook(details).catch(error => {
-          console.error("❌ Webhook processing failed (non-critical):", error);
-          // Remove from processed set on error so it can be retried
-          processedSessionsRef.current.delete(details.id);
-          // Don't show error to user - payment was successful
-        });
-      } else {
-        console.log('⏭️ Webhook already processed for session:', details.id, '- skipping');
-      }
+      // The donation itself is booked by the Stripe webhook in Supabase;
+      // the page only has to empty the cart once the session is confirmed.
+      clearCart();
       
     } catch (error) {
       console.error("❌ Failed to load session details:", error);
@@ -140,203 +123,6 @@ const DonationSuccess = () => {
       setIsLoadingSession(false);
     }
   }, [sessionId, language]);
-  
-  // Process webhook in background
-  const processWebhook = async (details: StripeSessionDetails) => {
-    const isLivePayment = details.id.startsWith('cs_live_');
-    
-    // Check if this is a SEPA payment
-    const isSEPAPayment = details.metadata?.paymentMethodType === 'sepa_debit' ||
-                         details.payment_method_types?.includes('sepa_debit') ||
-                         details.payment_method_types?.some(pmt => pmt.includes('sepa'));
-    
-    // Determine donation type from session metadata
-    const webhookDonationType = details.metadata 
-      ? (details.metadata.donationType === "monthly" || 
-         details.metadata.donation_type === "monthly" || 
-         details.metadata.subscription_type === "monthly_donation")
-        ? "monthly"
-        : "one-time"
-      : "one-time";
-    
-    console.log("📤 Processing donation webhook...");
-    console.log("Payment Mode:", isLivePayment ? "LIVE" : "TEST");
-    console.log("Payment Type:", isSEPAPayment ? "SEPA" : "Card");
-    console.log("Payment Status:", details.payment_status);
-    console.log("Session ID:", details.id);
-    
-    try {
-      const finalAmount = details.amount_total / 100;
-      const customerEmail = details.customer_details?.email || details.customer_email || '';
-      const customerName = details.customer_details?.name || '';
-      const customerAddress = details.customer_details?.address;
-
-      // Get address from Stripe customer_details or from metadata (form data)
-      const addressFromStripe = customerAddress
-        ? {
-            street: customerAddress.line1 || undefined,
-            postalCode: customerAddress.postal_code || undefined,
-            city: customerAddress.city || undefined,
-            country: customerAddress.country || undefined,
-          }
-        : undefined;
-
-      // Extract address from metadata if any field has meaningful content
-      // For subscriptions, metadata might be in subscription object, but we check session metadata first
-      const metadataStreet = details.metadata?.donor_street?.trim();
-      const metadataPostalCode = details.metadata?.donor_postalCode?.trim();
-      const metadataCity = details.metadata?.donor_city?.trim();
-      const metadataCountry = details.metadata?.donor_country?.trim();
-
-      // Only use metadata address if at least one field has meaningful content
-      const hasMeaningfulMetadataAddress =
-        (metadataStreet && metadataStreet.length > 0) ||
-        (metadataPostalCode && metadataPostalCode.length > 0) ||
-        (metadataCity && metadataCity.length > 0) ||
-        (metadataCountry && metadataCountry.length > 0);
-
-      const addressFromMetadata = hasMeaningfulMetadataAddress
-        ? {
-            street: metadataStreet || undefined,
-            postalCode: metadataPostalCode || undefined,
-            city: metadataCity || undefined,
-            country: metadataCountry || undefined,
-          }
-        : undefined;
-
-      // Log metadata for debugging
-      console.log("=== Address Debug ===");
-      console.log("Session Metadata:", details.metadata);
-      console.log("Address from Stripe:", addressFromStripe);
-      console.log("Address from Metadata:", addressFromMetadata);
-      console.log("Has Meaningful Metadata Address:", hasMeaningfulMetadataAddress);
-      console.log("===================");
-
-      // Prefer metadata address (form data) over Stripe address, as form data is more complete
-      // But fall back to Stripe address if metadata is empty (like for SEPA payments)
-      const address = addressFromMetadata || addressFromStripe;
-      
-      const stripePaymentMethod: 'stripe-card' | 'stripe-sepa' = isSEPAPayment ? 'stripe-sepa' : 'stripe-card';
-      
-      // Create donation items from cart or use general donation
-      // IMPORTANT: Load cart items from localStorage FIRST, before checking context
-      // The context might be empty after redirect, but localStorage should persist
-      let itemsToUse: any[] = [];
-      
-      // First, try to load from localStorage (most reliable after redirect)
-      try {
-        const savedCart = localStorage.getItem('alma-shopping-cart');
-        console.log('📦 Raw localStorage cart data:', savedCart);
-        if (savedCart) {
-          const parsedCart = JSON.parse(savedCart);
-          console.log('📦 Parsed localStorage cart:', parsedCart);
-          if (Array.isArray(parsedCart) && parsedCart.length > 0) {
-            itemsToUse = parsedCart;
-            console.log('✅ Loaded', itemsToUse.length, 'cart items from localStorage:', itemsToUse);
-          } else {
-            console.warn('⚠️ Cart in localStorage is empty or not an array:', parsedCart);
-          }
-        } else {
-          console.warn('⚠️ No cart data found in localStorage');
-        }
-      } catch (error) {
-        console.error('❌ Failed to load cart from localStorage:', error);
-      }
-      
-      // Fallback: use context items if localStorage was empty
-      if (itemsToUse.length === 0 && Array.isArray(cartItems) && cartItems.length > 0) {
-        console.log('📦 Using cart items from context (fallback):', cartItems);
-        itemsToUse = cartItems;
-      }
-      
-      console.log('📦 Final items to use for donation:', itemsToUse);
-      console.log('📦 Items count:', itemsToUse.length);
-      
-      let donationItems;
-      if (itemsToUse.length > 0) {
-        // Use cart items
-        console.log('✅ Using cart items for donation:', itemsToUse);
-        donationItems = donationWebhookService.formatCartItemsForWebhook(itemsToUse);
-        console.log('Formatted donation items:', donationItems);
-      } else {
-        // No cart items - create a general donation
-        console.log('📝 No cart items, creating general donation with amount:', finalAmount);
-        donationItems = [{
-          type: 'general-donation' as const,
-          name: language === "de" ? "Allgemeine Spende" : "General Donation",
-          unitPrice: finalAmount,
-          quantity: 1,
-          totalPrice: finalAmount,
-        }];
-      }
-      
-      const isMembership =
-        details.metadata?.subscription_type === "membership" ||
-        searchParams.get("source") === "membership" ||
-        searchParams.get("flow") === "membership" ||
-        searchParams.get("donationType") === "new-membership";
-      
-      // Get comment from metadata (for both membership and regular donations)
-      const donationComment =
-        details.metadata?.membership_comment ||
-        details.metadata?.comment ||
-        searchParams.get("comment") ||
-        undefined;
-
-      const donationData = {
-        items: donationItems,
-        totalAmount: finalAmount,
-        donationType: (isMembership ? "new-membership" : webhookDonationType) as "one-time" | "monthly" | "new-membership",
-        paymentMethod: stripePaymentMethod,
-        donorEmail: customerEmail || undefined,
-        donorName: customerName || undefined,
-        donorSalutation: details.metadata?.donor_salutation || undefined,
-        timestamp: new Date().toISOString(),
-        paymentId: details.id,
-        paymentStatus: details.payment_status as 'paid' | 'unpaid' | 'pending' | 'failed', // Include payment status
-        wantsReceipt: details.metadata?.wantsReceipt === 'true',
-        isGift: details.metadata?.giftDonation === 'true',
-        giftRecipientName: details.metadata?.giftRecipientName || undefined,
-        giftRecipientEmail: details.metadata?.giftRecipientEmail || undefined,
-        address: address,
-        wantsNewsletter: details.metadata?.wantsNewsletter === 'true',
-        comment: donationComment,
-      };
-      
-      console.log("=== Sending to Webhook ===");
-      console.log("Payment Mode:", isLivePayment ? "LIVE" : "TEST");
-      console.log("Payment Type:", isSEPAPayment ? "SEPA (pending bank processing)" : "Card (paid)");
-      console.log("Amount:", finalAmount, "EUR");
-      console.log("Payment Method:", stripePaymentMethod);
-      console.log("Payment ID:", details.id);
-      console.log("Donor Email:", customerEmail || 'N/A');
-      console.log("Donation Type:", webhookDonationType);
-      console.log("========================");
-      
-      const webhookResponse = await donationWebhookService.sendDonation(donationData);
-      
-      if (!webhookResponse.ok) {
-        console.warn('⚠️ Webhook failed (non-critical):', webhookResponse);
-        console.warn('Payment Mode:', isLivePayment ? "LIVE" : "TEST");
-      } else {
-        console.log('✅ Donation logged successfully');
-        console.log('Payment Mode:', isLivePayment ? "LIVE" : "TEST");
-        console.log('Payment ID:', details.id);
-        console.log('Items updated:', webhookResponse.totalUpdated || 0);
-        
-        // Clear cart after successful donation (only if we had cart items)
-        if (itemsToUse.length > 0) {
-          console.log('🛒 Clearing cart after successful donation');
-          clearCart();
-        }
-      }
-    } catch (error) {
-      console.error('❌ Webhook processing error:', error);
-      console.error('Payment Mode:', isLivePayment ? "LIVE" : "TEST");
-      console.error('Session ID:', details.id);
-      throw error; // Re-throw for caller to handle
-    }
-  };
   
   // Load PayPal subscription details if we have a PayPal payment ID and it's a monthly donation
   const loadPayPalSubscriptionDetails = useCallback(async () => {

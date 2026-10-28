@@ -56,9 +56,7 @@ const Membership = () => {
     privacyAccepted: false,
   });
   const navigate = useNavigate();
-  const formSubmitUrl =
-    (import.meta.env.VITE_FORM_SUBMIT_URL as string | undefined) ||
-    (import.meta.env.VITE_SUPABASE_WEBHOOK_URL as string | undefined);
+  const formSubmitUrl = import.meta.env.VITE_FORM_SUBMIT_URL as string | undefined;
 
   // Normalize language-specific defaults on change
   useEffect(() => {

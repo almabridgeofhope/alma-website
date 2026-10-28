@@ -20,7 +20,6 @@ import PreloadImage from "@/components/PreloadImage";
 import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush, Copy, CheckCircle2, AlertCircle, Home, Landmark } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
-import { donationWebhookService } from "@/services/donationWebhookService";
 import { stripeService } from "@/services/stripeService";
 import { paypalService } from "@/services/paypalService";
 import heroImage from "@/assets/nature/nature_2.webp";
@@ -1335,105 +1334,6 @@ const Donation = () => {
     setShowWarningDialog(true);
   };
 
-  // Helper function to process donation and send to webhook
-  const processDonation = async (
-    paymentId?: string,
-    options?: {
-      paymentMethod?: "paypal" | "sepa" | "card" | "stripe-card" | "stripe-sepa" | "bank-transfer" | "no-payment";
-      paymentStatus?: "paid" | "unpaid" | "pending" | "failed";
-    },
-  ) => {
-    try {
-      console.log("=== Processing Donation ===");
-      console.log("Payment ID:", paymentId);
-      console.log("Cart items count:", cartState.items.length);
-      console.log("Cart items:", cartState.items);
-      console.log("Amount:", amount);
-      console.log("Custom amount:", customAmount);
-      
-      // Prepare donation items
-      let donationItems = [];
-      
-      if (cartState.items.length > 0) {
-        // Use cart items
-        console.log("✅ Using cart items for donation");
-        donationItems = donationWebhookService.formatCartItemsForWebhook(cartState.items);
-        console.log("Formatted donation items:", donationItems);
-      } else {
-        // No cart items - create a general donation
-        const finalAmount = parseFloat(amount || customAmount || "0");
-        console.log("📝 No cart items, creating general donation with amount:", finalAmount);
-        if (finalAmount > 0) {
-          donationItems = [{
-            type: 'general-donation' as const,
-            name: t("donation.form.unrestrictedDonation"),
-            unitPrice: finalAmount,
-            totalPrice: finalAmount,
-          }];
-        }
-      }
-
-      if (donationItems.length === 0) {
-        console.error("❌ No donation items to process");
-        return { ok: false, message: "No donation items" };
-      }
-
-      // Calculate total amount
-      const totalAmount = donationItems.reduce((sum, item) => sum + item.totalPrice, 0);
-      console.log("💰 Total donation amount:", totalAmount);
-
-      const resolvedPaymentMethod = options?.paymentMethod ?? paymentMethod;
-      const resolvedPaymentStatus = options?.paymentStatus ?? "paid";
-
-      console.log("📤 Sending donation to webhook...");
-      // Send to webhook
-      const result = await donationWebhookService.sendDonation({
-        items: donationItems,
-        totalAmount: totalAmount,
-        donationType: donationType,
-        paymentMethod: resolvedPaymentMethod,
-        donorEmail: formData.email || undefined,
-        donorName: getDonationDonorDisplayName({
-          donorType: formData.donorType === "company" ? "company" : "private",
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          companyName: formData.companyName,
-        }) || undefined,
-        donorSalutation: formData.donorType === "private" ? (formData.salutation || undefined) : undefined,
-        paymentId: paymentId,
-        paymentStatus: resolvedPaymentStatus,
-        wantsReceipt: formData.wantsReceipt,
-        isGift: formData.isGift,
-        giftRecipientName: formData.isGift ? formData.giftRecipientName || undefined : undefined,
-        giftRecipientEmail: formData.isGift ? formData.giftRecipientEmail || undefined : undefined,
-        address: (formData.wantsReceipt || formData.donorType === "company") ? {
-          street: formData.street || undefined,
-          postalCode: formData.postalCode || undefined,
-          city: formData.city || undefined,
-          country: formData.country || undefined,
-        } : undefined,
-        wantsNewsletter: formData.wantsNewsletter,
-        comment: formData.comment || undefined,
-      });
-
-      if (result.ok) {
-        console.log("✅ Donation successfully processed by webhook:", result);
-        console.log("📊 Items updated:", result.totalUpdated);
-        console.log("📋 Updates:", result.updates);
-        return result;
-      } else {
-        console.error("❌ Failed to process donation:", result.message);
-        // Don't throw - we still want to show success to user
-        // The donation was received, just the sheet update failed
-        return result;
-      }
-    } catch (error) {
-      console.error("❌ Error processing donation:", error);
-      // Don't throw - payment was successful, just webhook update failed
-      return { ok: false, message: error instanceof Error ? error.message : "Unknown error" };
-    }
-  };
-
   const handlePaymentMethodClick = async () => {
     if (!validateForm()) {
       return;
@@ -1472,10 +1372,6 @@ const Donation = () => {
       const intentId = await createDonationIntent();
       const ref = formatBankTransferReference(intentId);
       setRegisteredBankTransferRef(ref);
-      await processDonation(intentId, {
-        paymentMethod: "bank-transfer",
-        paymentStatus: "pending",
-      });
       setBankTransferDetailsCopied(false);
       setShowBankTransferDetailsDialog(true);
     } catch {
@@ -1704,10 +1600,6 @@ const Donation = () => {
         console.log("=== PayPal Payment Completed ===");
         console.log("PayPal details:", details);
         console.log("PayPal transaction ID:", paymentId);
-        
-        // Process the donation via webhook
-        console.log("⏳ Processing donation via webhook...");
-        const result = await processDonation(paymentId);
         
         setIsProcessingPayment(false);
         
