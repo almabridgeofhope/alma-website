@@ -1482,9 +1482,7 @@ const Donation = () => {
 
   // Function to subscribe to newsletter
   const subscribeToNewsletter = async (email: string) => {
-    const endpoint =
-      (import.meta.env.VITE_FORM_SUBMIT_URL as string | undefined) ||
-      (import.meta.env.VITE_NEWSLETTER_ENDPOINT as string | undefined);
+    const endpoint = import.meta.env.VITE_FORM_SUBMIT_URL as string | undefined;
     
     if (!endpoint) {
       console.warn("Newsletter endpoint not configured");
