@@ -6,7 +6,7 @@ Diese Notiz beschreibt, was die Spendenseite (`/donation`) bei der Zahlungsart *
 
 1. Der Nutzer wählt **Einmalspende** und **Überweisung**, füllt das Formular aus und klickt auf **Spende registrieren & Bankdaten anzeigen**.
 2. Das Frontend erzeugt eine **`intentId`** (UUID), sendet sie an **`VITE_FORM_SUBMIT_URL`** und zeigt als **Verwendungszweck** den String **`ALMA-{intentId}`** (Beispiel: `ALMA-550e8400-e29b-41d4-a716-446655440000`).
-3. Parallel wird (falls konfiguriert) der **Legacy-Webhook** (`VITE_DONATION_WEBHOOK_URL`) mit `paymentMethod: "bank-transfer"` und `paymentStatus: "pending"` aufgerufen. **Hinweis:** Wenn nur `VITE_SUPABASE_WEBHOOK_URL` gesetzt ist, macht der Client-Webhookservice derzeit **keinen** echten POST ins Backend; die Quelle der Wahrheit für die Überweisungs-Spenden ist dann der **Form-Submit** (Punkt 2).
+3. Weitere Ziele gibt es nicht: Der **Form-Submit** (Punkt 2) ist die einzige Quelle der Wahrheit für Überweisungs-Spenden.
 
 ## Payload an `VITE_FORM_SUBMIT_URL` (JSON)
 

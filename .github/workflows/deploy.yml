@@ -9,7 +9,6 @@ name: Deploy React App to GitHub Pages
 # VITE_PAYPAL_BACKEND_URL        - PayPal Apps Script URL
 # VITE_STRIPE_PUBLISHABLE_KEY    - Stripe LIVE Publishable Key (pk_live_...)
 # VITE_STRIPE_BACKEND_URL        - Stripe Apps Script URL
-# VITE_DONATION_WEBHOOK_URL      - Donation Webhook Apps Script URL
 # VITE_SUPABASE_URL              - Supabase project URL (Projektseite + interner Bereich /admin)
 # VITE_SUPABASE_PUBLISHABLE_KEY  - Supabase publishable key (oeffentlich, RLS schuetzt die Daten)
 # VITE_GOOGLE_CLIENT_ID          - OAuth-Client des Google-Cloud-Projekts (Belege in Drive)
@@ -111,7 +110,6 @@ jobs:
         VITE_STRIPE_BACKEND_URL: ${{ secrets.VITE_STRIPE_BACKEND_URL }}
         VITE_FORM_SUBMIT_URL: ${{ secrets.VITE_FORM_SUBMIT_URL || vars.VITE_FORM_SUBMIT_URL }}
         VITE_NEWSLETTER_ENDPOINT: ${{ secrets.VITE_NEWSLETTER_ENDPOINT }}
-        VITE_DONATION_WEBHOOK_URL: ${{ secrets.VITE_DONATION_WEBHOOK_URL }}
         VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
         VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}

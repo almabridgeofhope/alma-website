@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -6,7 +6,6 @@ import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { stripeService, StripeSessionDetails } from "@/services/stripeService";
-import { donationWebhookService } from "@/services/donationWebhookService";
 import {
   ArrowRight,
   CheckCircle2,
@@ -31,8 +30,6 @@ const MembershipSuccess = () => {
   const [sessionDetails, setSessionDetails] = useState<StripeSessionDetails | null>(null);
   const [isLoadingSession, setIsLoadingSession] = useState(!!sessionId);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const webhookProcessedRef = useRef<Set<string>>(new Set());
-  const [webhookStatus, setWebhookStatus] = useState<"idle" | "pending" | "done" | "failed">("idle");
 
   const numericUrlAmount = urlAmount ? parseFloat(urlAmount) : null;
 
@@ -79,103 +76,6 @@ const MembershipSuccess = () => {
     return null;
   }, [sessionDetails]);
 
-  const sendWebhook = useCallback(
-    async (details: StripeSessionDetails) => {
-      if (webhookProcessedRef.current.has(details.id)) return;
-
-      webhookProcessedRef.current.add(details.id);
-      setWebhookStatus("pending");
-
-      try {
-        const isSepaPayment =
-          details.metadata?.paymentMethodType === "sepa_debit" ||
-          details.payment_method_types?.includes("sepa_debit") ||
-          details.payment_method_types?.some((type) => type.includes("sepa"));
-
-        const finalAmount = details.amount_total / 100;
-        const customerEmail = details.customer_details?.email || details.customer_email || "";
-        const customerName = details.customer_details?.name || "";
-        const customerAddress = details.customer_details?.address;
-
-        // Get address from Stripe customer_details or from metadata (form data)
-        const addressFromStripe = customerAddress
-          ? {
-              street: customerAddress.line1 || undefined,
-              postalCode: customerAddress.postal_code || undefined,
-              city: customerAddress.city || undefined,
-              country: customerAddress.country || undefined,
-            }
-          : undefined;
-
-        // Extract address from metadata - always create object if metadata fields exist
-        // Check if metadata has address fields (even if empty strings, they were sent)
-        const hasMetadataAddressFields = 
-          details.metadata?.donor_street !== undefined ||
-          details.metadata?.donor_postalCode !== undefined ||
-          details.metadata?.donor_city !== undefined ||
-          details.metadata?.donor_country !== undefined;
-
-        const addressFromMetadata = hasMetadataAddressFields
-          ? {
-              street: (details.metadata?.donor_street?.trim() || undefined),
-              postalCode: (details.metadata?.donor_postalCode?.trim() || undefined),
-              city: (details.metadata?.donor_city?.trim() || undefined),
-              country: (details.metadata?.donor_country?.trim() || undefined),
-            }
-          : undefined;
-
-        // Prefer metadata address (form data) over Stripe address, as form data is more complete
-        // Always include address object, even if partially empty
-        const address = addressFromMetadata || addressFromStripe || {
-          street: undefined,
-          postalCode: undefined,
-          city: undefined,
-          country: undefined,
-        };
-
-        const donationData = {
-          items: [
-            {
-              type: "general-donation" as const,
-              name: language === "de" ? "Mitgliedschaft" : "Membership",
-              unitPrice: finalAmount,
-              quantity: 1,
-              totalPrice: finalAmount,
-            },
-          ],
-          totalAmount: finalAmount,
-          donationType: "new-membership" as const,
-          paymentMethod: isSepaPayment ? ("stripe-sepa" as const) : ("stripe-card" as const),
-          donorEmail: customerEmail || undefined,
-          donorName: customerName || undefined,
-          donorSalutation: details.metadata?.donor_salutation || undefined,
-          timestamp: new Date().toISOString(),
-          paymentId: details.id,
-          paymentStatus: details.payment_status as "paid" | "unpaid" | "pending" | "failed",
-          wantsReceipt: details.metadata?.wantsReceipt === "true",
-          address: address,
-          wantsNewsletter: details.metadata?.wantsNewsletter === "true",
-          comment: details.metadata?.membership_comment || details.metadata?.comment,
-        };
-
-        console.log("=== Membership Webhook Data ===");
-        console.log("Address from Stripe:", addressFromStripe);
-        console.log("Address from Metadata:", addressFromMetadata);
-        console.log("Final address:", address);
-        console.log("Full donationData:", JSON.stringify(donationData, null, 2));
-        console.log("==============================");
-
-        const response = await donationWebhookService.sendDonation(donationData);
-        setWebhookStatus(response.ok ? "done" : "failed");
-      } catch (error) {
-        console.error("Membership webhook failed:", error);
-        setWebhookStatus("failed");
-        webhookProcessedRef.current.delete(details.id);
-      }
-    },
-    [language]
-  );
-
   const loadSessionDetails = useCallback(async () => {
     if (!sessionId) return;
     setIsLoadingSession(true);
@@ -184,7 +84,6 @@ const MembershipSuccess = () => {
     try {
       const details = await stripeService.getSessionDetails(sessionId);
       setSessionDetails(details);
-      await sendWebhook(details);
     } catch (error) {
       console.error("Failed to load membership session details:", error);
       setLoadError(
@@ -195,7 +94,7 @@ const MembershipSuccess = () => {
     } finally {
       setIsLoadingSession(false);
     }
-  }, [sessionId, language, sendWebhook]);
+  }, [sessionId, language]);
 
   useEffect(() => {
     if (sessionId) {
@@ -249,7 +148,7 @@ const MembershipSuccess = () => {
                   </Card>
                 </div>
 
-                {(isLoadingSession || webhookStatus === "pending") && (
+                {isLoadingSession && (
                   <div className="mt-4 inline-flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     {t("membership.success.loading")}
