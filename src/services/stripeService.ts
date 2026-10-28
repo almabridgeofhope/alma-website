@@ -1,6 +1,12 @@
 // Stripe Service for creating checkout sessions
 // Uses Stripe Checkout (redirect-based payment)
 
+import { supabaseFunctionUrl } from "@/lib/supabase";
+
+// Parallelbetrieb: Die Supabase-Funktion prüft bei jeder echten Sitzung, ob sie sie genauso
+// angelegt hätte wie das Apps Script. Ergebnis in zahlungsbackend_vergleich (alma-data-platform).
+const VERGLEICH_URL = supabaseFunctionUrl("stripe-checkout");
+
 export interface CreateCheckoutSessionRequest {
   amount: number; // in EUR
   currency?: string;
@@ -145,13 +151,35 @@ class StripeService {
         throw new Error(errorMsg);
       }
 
+      const sessionId = data.sessionId || data.id;
+      this.vergleichMelden(requestPayload, sessionId);
+
       return {
-        sessionId: data.sessionId || data.id,
+        sessionId,
         url: data.url,
       };
     } catch (error) {
       console.error('Stripe service error:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Meldet die Sitzung zum Vergleich an Supabase. Darf den Checkout weder aufhalten noch
+   * scheitern lassen: kein await, Fehler werden verschluckt. text/plain vermeidet den
+   * CORS-Preflight, keepalive überlebt die Weiterleitung zu Stripe.
+   */
+  private vergleichMelden(request: unknown, sessionId: string) {
+    if (!VERGLEICH_URL || !sessionId) return;
+    try {
+      fetch(VERGLEICH_URL, {
+        method: 'POST',
+        keepalive: true,
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'vergleich', request, session_id: sessionId }),
+      }).catch(() => {});
+    } catch {
+      // Vergleich ist optional
     }
   }
 
