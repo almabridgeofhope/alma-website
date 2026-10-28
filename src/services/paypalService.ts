@@ -1,6 +1,12 @@
 // Service for creating PayPal subscription plans via backend
 // Similar to stripeService.ts but for PayPal subscriptions
 
+import { supabaseFunctionUrl } from "@/lib/supabase";
+
+// Parallelbetrieb: Die Supabase-Funktion prüft bei jedem echten Plan, ob sie ihn genauso
+// angelegt hätte wie das Apps Script. Ergebnis in zahlungsbackend_vergleich (alma-data-platform).
+const VERGLEICH_URL = supabaseFunctionUrl("paypal-subscription");
+
 export interface CreateSubscriptionPlanRequest {
   amount: number; // in EUR
   currency?: string;
@@ -115,6 +121,7 @@ class PayPalService {
 
       if (result.ok && result.plan_id) {
         console.log('PayPal subscription plan created successfully:', result.plan_id);
+        this.vergleichMelden(requestPayload, result.plan_id);
         return result;
       } else {
         throw new Error(result.message || result.error || 'Failed to create subscription plan');
@@ -126,6 +133,25 @@ class PayPalService {
         error: error instanceof Error ? error.message : String(error),
         message: `Failed to create subscription plan: ${error instanceof Error ? error.message : String(error)}`
       };
+    }
+  }
+
+  /**
+   * Meldet den Plan zum Vergleich an Supabase. Darf die Spende weder aufhalten noch
+   * scheitern lassen: kein await, Fehler werden verschluckt; text/plain vermeidet den
+   * CORS-Preflight.
+   */
+  private vergleichMelden(request: unknown, planId: string) {
+    if (!VERGLEICH_URL) return;
+    try {
+      fetch(VERGLEICH_URL, {
+        method: 'POST',
+        keepalive: true,
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'vergleich', request, plan_id: planId }),
+      }).catch(() => {});
+    } catch {
+      // Vergleich ist optional
     }
   }
 
