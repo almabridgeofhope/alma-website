@@ -29,7 +29,6 @@ name: Deploy React App to GitHub Pages
 # VITE_PAYPAL_SETUP_TOKEN        - Token for PayPal setup endpoint (generate random string)
 #
 # OPTIONAL SECRETS:
-# VITE_NEWSLETTER_ENDPOINT       - Newsletter signup endpoint
 # VITE_SEPA_IBAN                 - Bank IBAN for SEPA donations
 # VITE_SEPA_BIC                  - Bank BIC
 # VITE_SEPA_ACCOUNT_HOLDER       - Account holder name
@@ -109,7 +108,6 @@ jobs:
         VITE_STRIPE_PUBLISHABLE_KEY: ${{ secrets.VITE_STRIPE_PUBLISHABLE_KEY }}
         VITE_STRIPE_BACKEND_URL: ${{ secrets.VITE_STRIPE_BACKEND_URL }}
         VITE_FORM_SUBMIT_URL: ${{ secrets.VITE_FORM_SUBMIT_URL || vars.VITE_FORM_SUBMIT_URL }}
-        VITE_NEWSLETTER_ENDPOINT: ${{ secrets.VITE_NEWSLETTER_ENDPOINT }}
         VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
         VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
         VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}

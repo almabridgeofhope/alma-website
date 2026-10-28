@@ -23,9 +23,7 @@ export default function NewsletterForm({
   const lastSubmittedAtRef = useRef<number>(0);
   const { toast } = useToast();
 
-  const endpoint =
-    (import.meta.env.VITE_FORM_SUBMIT_URL as string | undefined) ||
-    (import.meta.env.VITE_NEWSLETTER_ENDPOINT as string | undefined);
+  const endpoint = import.meta.env.VITE_FORM_SUBMIT_URL as string | undefined;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +44,7 @@ export default function NewsletterForm({
     try {
       if (!endpoint || endpoint.trim() === "") {
         // Endpoint is missing - show error message
-        console.error("Newsletter endpoint not configured (VITE_FORM_SUBMIT_URL / VITE_NEWSLETTER_ENDPOINT)");
+        console.error("Newsletter endpoint not configured (VITE_FORM_SUBMIT_URL)");
         setIsLoading(false);
         toast({
           title: "Newsletter-Anmeldung nicht verfügbar",
