@@ -17,3 +17,7 @@ export const supabase = createClient(
   { auth: { persistSession: true, autoRefreshToken: true } },
 );
 
+
+/** Adresse einer Edge Function; leer, solange Supabase nicht konfiguriert ist. */
+export const supabaseFunctionUrl = (name: string): string =>
+  SUPABASE_URL === "" ? "" : `${SUPABASE_URL}/functions/v1/${name}`;
