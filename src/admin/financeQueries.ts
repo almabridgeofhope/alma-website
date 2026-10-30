@@ -15,9 +15,11 @@ export const financeKeys = {
 };
 
 
-export const useAccountChecks = () =>
+/** `nachladenAlle`: solange eine Ablesung laeuft, holt die Kachel den Stand regelmaessig nach. */
+export const useAccountChecks = (nachladenAlle: number | false = false) =>
   useQuery({
     queryKey: financeKeys.kontoabgleich,
+    refetchInterval: nachladenAlle,
     queryFn: async (): Promise<AccountCheck[]> => {
       const { data, error } = await supabase
         .from("v_kontoabgleich")
@@ -27,6 +29,20 @@ export const useAccountChecks = () =>
         .order("konto");
       if (error) throw new Error(error.message);
       return (data ?? []) as AccountCheck[];
+    },
+  });
+
+/**
+ * Startet die Ablesung aller Konten (GitHub-Workflow, dauert etwa eine Minute). Die
+ * Datenbank laesst hoechstens einen Start je fuenf Minuten zu und liefert sonst den
+ * laufenden zurueck. Rueckgabe: Startzeitpunkt.
+ */
+export const useReadBalancesNow = () =>
+  useMutation({
+    mutationFn: async (): Promise<string> => {
+      const { data, error } = await supabase.rpc("fn_kontostaende_jetzt_ablesen");
+      if (error) throw new Error(error.message);
+      return data as string;
     },
   });
 
