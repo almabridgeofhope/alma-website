@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { AlertTriangle, ChevronRight } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, ChevronRight, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -23,6 +24,7 @@ import {
   usePlannedIncome,
   usePlannedIncomeMonths,
   usePartnershipArrears,
+  useReadBalancesNow,
   useUpdateCostAmount,
   useUpdatePlannedAmount,
 } from "@/admin/financeQueries";
@@ -38,6 +40,9 @@ const ableseformat = new Intl.DateTimeFormat("en-GB", {
 });
 
 const formatReading = (value: string | null): string => (value ? ableseformat.format(new Date(value)) : "–");
+
+/** So lange nach dem Start holt die Kachel den Stand nach; die Ablesung selbst dauert etwa eine Minute. */
+const ABLESUNG_NACHLADEN_MS = 3 * 60 * 1000;
 
 const KONTO_NAMEN: Record<string, string> = {
   stripe: "Stripe",
@@ -98,7 +103,22 @@ const Abschnitt = ({
 const AdminFinance = () => {
   useNoIndex("Finance · Project accounting");
 
-  const konten = useAccountChecks();
+  const [ablesungSeit, setAblesungSeit] = useState<number | null>(null);
+  const ablesungLaeuft = ablesungSeit !== null;
+  const konten = useAccountChecks(ablesungLaeuft ? 15_000 : false);
+  const ablesen = useReadBalancesNow();
+
+  useEffect(() => {
+    if (ablesungSeit === null) return;
+    const timer = setTimeout(() => setAblesungSeit(null), ablesungSeit + ABLESUNG_NACHLADEN_MS - Date.now());
+    return () => clearTimeout(timer);
+  }, [ablesungSeit]);
+
+  const jetztAblesen = () =>
+    ablesen.mutate(undefined, {
+      onSuccess: (gestartet) => setAblesungSeit(new Date(gestartet).getTime()),
+      onError: (fehler) => toast.error(`Could not start reading the accounts: ${fehler.message}`),
+    });
   const beitraege = useDuesAccounts();
   const vorschau = useForecast();
   const plan = usePlannedIncome();
@@ -254,7 +274,23 @@ const AdminFinance = () => {
         <StatTile
           label="Balance today"
           value={formatEur(bestand)}
-          hint={`Available on all accounts, as of ${formatReading(aeltesterStand)}`}
+          hint={
+            ablesungLaeuft
+              ? "Reading the accounts, takes about a minute …"
+              : `Available on all accounts, as of ${formatReading(aeltesterStand)}`
+          }
+          action={
+            <button
+              type="button"
+              onClick={jetztAblesen}
+              disabled={ablesen.isPending || ablesungLaeuft}
+              title="Read balances now"
+              aria-label="Read balances now"
+              className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:pointer-events-none"
+            >
+              <RefreshCw className={cn("h-4 w-4", (ablesen.isPending || ablesungLaeuft) && "animate-spin")} aria-hidden="true" />
+            </button>
+          }
           details={
             <div className="space-y-2 text-sm">
               {kontenMitStand.map((konto) => (

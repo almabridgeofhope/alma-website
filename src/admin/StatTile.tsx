@@ -9,6 +9,8 @@ interface StatTileProps {
   tone?: "default" | "warning" | "positive";
   /** Erscheint beim Hover ueber den Wert. */
   details?: ReactNode;
+  /** Kleiner Knopf rechts neben der Beschriftung. */
+  action?: ReactNode;
 }
 
 const TONE_CLASSES: Record<NonNullable<StatTileProps["tone"]>, string> = {
@@ -17,11 +19,14 @@ const TONE_CLASSES: Record<NonNullable<StatTileProps["tone"]>, string> = {
   positive: "text-primary",
 };
 
-const StatTile = ({ label, value, hint, tone = "default", details }: StatTileProps) => {
+const StatTile = ({ label, value, hint, tone = "default", details, action }: StatTileProps) => {
   const wert = <p className={cn("mt-1 text-2xl font-semibold tabular-nums", TONE_CLASSES[tone])}>{value}</p>;
   return (
     <div className="rounded-lg border border-border bg-card p-4 shadow-card">
-      <p className="text-sm text-muted-foreground">{label}</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">{label}</p>
+        {action}
+      </div>
       {details ? (
         <HoverCard openDelay={100} closeDelay={100}>
           <HoverCardTrigger asChild>
