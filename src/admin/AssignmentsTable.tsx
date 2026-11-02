@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, FileText, Loader2, Paperclip, Trash2 } from "lucide-react";
 import { useReceiptPicker } from "./useReceiptPicker";
+import { monatlichePositionen, useAllowancePaket } from "./allowanceQueries";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +40,8 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
   const deleteAssignment = useDeleteAssignment(transferId);
   const setReceipt = useSetAssignmentReceipt(transferId);
   const { pick, isPicking } = useReceiptPicker();
+  const paket = useAllowancePaket();
+  const ohneBeleg = monatlichePositionen(paket.data ?? []);
   const [pendingDelete, setPendingDelete] = useState<Assignment | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -208,7 +211,13 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
                         </span>
                       )}
 
-                      {!receipt && (
+                      {!receipt && ohneBeleg.has(assignment.item_id ?? "") && (
+                        <span className="text-xs text-muted-foreground" title="Monthly item, no receipt needed">
+                          monthly
+                        </span>
+                      )}
+
+                      {!receipt && !ohneBeleg.has(assignment.item_id ?? "") && (
                         <span className="flex items-center" title="Receipt missing">
                           <AlertTriangle className="h-3.5 w-3.5 text-destructive" aria-hidden="true" />
                           <span className="sr-only">Receipt missing</span>
