@@ -115,6 +115,13 @@ export const paketImMonat = (paket: PaketEintrag[], monat: Monat): Map<string, n
   return mengen;
 };
 
+/**
+ * Positionen, die je im Monatspaket standen. Sie brauchen keinen Einzelbeleg: die Allowance
+ * geht als Pauschale ans Team, belegt ist sie durch die Ueberweisung selbst.
+ */
+export const monatlichePositionen = (paket: PaketEintrag[]): Set<string> =>
+  new Set(paket.filter((eintrag) => eintrag.menge > 0).map((eintrag) => eintrag.item_id));
+
 const useRefresh = () => {
   const client = useQueryClient();
   return () => {
