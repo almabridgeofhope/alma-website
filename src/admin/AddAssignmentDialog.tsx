@@ -118,7 +118,9 @@ const AddAssignmentDialog = ({ transferId, transferDate, item, onClose }: AddAss
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      {/* Der Google Picker liegt ausserhalb des Dialogs: ein Klick darin zaehlte sonst als
+          "daneben" und schloss den Dialog, bevor der gewaehlte Beleg ankam. */}
+      <DialogContent className="sm:max-w-lg" onInteractOutside={(event) => event.preventDefault()}>
         <DialogHeader>
           <DialogTitle>{item.item_name ?? item.project_item_id}</DialogTitle>
           <DialogDescription>
