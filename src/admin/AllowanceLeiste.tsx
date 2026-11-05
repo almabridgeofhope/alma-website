@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { formatUgx } from "./format";
 import { usePlannedTransfers } from "./planQueries";
-import { useProjectItems } from "./queries";
+import { istLaufendeKosten, useProjectItems } from "./queries";
 import {
   dieserMonat,
   naechsterMonat,
@@ -23,9 +23,6 @@ import {
 } from "./allowanceQueries";
 
 const ANZAHL_MONATE = 4;
-// Laufende Kosten haben in jedem Projekt dieselbe Phase (Allowances unter Other,
-// die Grundsicherung im Orphanage-Projekt); seit 05.11.2026 zählt die Phase, nicht das Projekt.
-const PHASE_LAUFENDE_KOSTEN = "Running costs";
 
 const STATUS: Record<MonatsStatus, { label: string; icon: typeof Circle; klasse: string }> = {
   bezahlt: { label: "paid", icon: Check, klasse: "text-primary" },
@@ -118,7 +115,7 @@ const PaketDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
   const aktuell = paketImMonat(paket.data ?? [], ab);
   // Alle laufenden Positionen: so laesst sich auch eine neue Zeile aufnehmen.
   const zeilen = (items.data ?? []).filter(
-    (item) => item.phase_id === PHASE_LAUFENDE_KOSTEN || aktuell.has(item.project_item_id),
+    (item) => istLaufendeKosten(item) || aktuell.has(item.project_item_id),
   );
   const wert = (itemId: string) => mengen[itemId] ?? String(aktuell.get(itemId) ?? 0);
 

@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useNoIndex } from "@/admin/useNoIndex";
-import { useProjectItems, useTransferSummaries } from "@/admin/queries";
+import { istLaufendeKosten, useProjectItems, useTransferSummaries } from "@/admin/queries";
 import { absolute, formatDate, formatEur, formatUgx } from "@/admin/format";
 import NewTransferDialog from "@/admin/NewTransferDialog";
 import PlannedTransfersCard from "@/admin/PlannedTransfersCard";
@@ -23,9 +23,8 @@ const AdminTransfers = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const openNeed = useMemo(() => {
-    // Laufende Kosten (Projekt Other) sind kein offener Bedarf: ihre Positionen stehen auf
-    // Menge 500, damit sie nie aufgebraucht sind.
-    const rows = (items.data ?? []).filter((item) => item.projekt_status !== "laufend");
+    // Laufende Kosten sind kein offener Bedarf (siehe istLaufendeKosten).
+    const rows = (items.data ?? []).filter((item) => !istLaufendeKosten(item));
     return {
       eur: rows.reduce((sum, item) => sum + (item.open_eur ?? 0), 0),
       count: rows.filter((item) => item.qty_open > 0).length,

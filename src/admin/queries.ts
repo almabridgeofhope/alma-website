@@ -210,6 +210,14 @@ export const useDeleteAssignment = (transferId: string) => {
   });
 };
 
+/**
+ * Laufende Kosten (Allowances, Grundsicherung) stehen auf Menge 500, damit sie nie aufgebraucht
+ * sind — offener Bedarf sind sie nie. Erkannt an der Phase „Running costs“, die es seit dem
+ * Umbau vom 05.11.2026 in jedem Projekt geben kann, und weiter am Projektstatus „laufend“ (Other).
+ */
+export const istLaufendeKosten = (item: Pick<ProjectItem, "phase" | "projekt_status">): boolean =>
+  item.phase === "Running costs" || item.projekt_status === "laufend";
+
 /** Ein echter Beleg ist ein Link auf die Datei in Drive; kurze Altwerte sind blosse Nummern. */
 export const isReceiptFile = (expenditureId: string | null): boolean =>
   expenditureId !== null && expenditureId.startsWith("http");
