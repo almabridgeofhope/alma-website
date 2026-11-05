@@ -16,6 +16,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import EditableAmount from "./EditableAmount";
+import ReceiptConfirmDialog from "./ReceiptConfirmDialog";
+import type { DriveFile } from "@/lib/googleDrive";
 import { formatUgx } from "./format";
 import {
   assignmentUgx,
@@ -33,9 +35,11 @@ interface AssignmentsTableProps {
   transferId: string;
   assignments: Assignment[];
   itemById: Map<string, ProjectItem>;
+  /** Buchungsdatum — steht im Dateinamen, wenn der Beleg kein lesbares Datum hat. */
+  transferDate?: string | null;
 }
 
-const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTableProps) => {
+const AssignmentsTable = ({ transferId, assignments, itemById, transferDate }: AssignmentsTableProps) => {
   const updateAssignment = useUpdateAssignment(transferId);
   const deleteAssignment = useDeleteAssignment(transferId);
   const setReceipt = useSetAssignmentReceipt(transferId);
@@ -44,6 +48,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
   const ohneBeleg = monatlichePositionen(paket.data ?? []);
   const [pendingDelete, setPendingDelete] = useState<Assignment | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [nachreichen, setNachreichen] = useState<{ assignment: Assignment; datei: DriveFile } | null>(null);
 
   const patch = async (id: string, next: Partial<Assignment>, label: string) => {
     try {
@@ -87,15 +92,12 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
     patch(assignment.payment_log_id, { amount_paid_ugx: Math.round(next * qty) }, "Actual amount");
   };
 
-  const belegWaehlen = async (paymentLogId: string) => {
-    const datei = await pick("position");
-    if (!datei) return;
-    setBusyId(paymentLogId);
+  // Gewählt ist noch nicht verknüpft: erst liest der Dialog den Beleg aus und lässt bestätigen.
+  const belegWaehlen = async (assignment: Assignment) => {
+    setBusyId(assignment.payment_log_id);
     try {
-      await setReceipt.mutateAsync({ paymentLogId, receiptUrl: datei.url });
-      toast.success(`Receipt “${datei.name}” linked.`);
-    } catch (error) {
-      toast.error((error as Error).message);
+      const datei = await pick("position");
+      if (datei) setNachreichen({ assignment, datei });
     } finally {
       setBusyId(null);
     }
@@ -228,7 +230,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
                         variant="ghost"
                         size="sm"
                         disabled={isPicking || busyId === assignment.payment_log_id}
-                        onClick={() => belegWaehlen(assignment.payment_log_id)}
+                        onClick={() => belegWaehlen(assignment)}
                       >
                         {busyId === assignment.payment_log_id ? (
                           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -272,6 +274,24 @@ const AssignmentsTable = ({ transferId, assignments, itemById }: AssignmentsTabl
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {nachreichen && (
+        <ReceiptConfirmDialog
+          datei={nachreichen.datei}
+          positionen={[nachreichen.assignment.item_id ?? "item"]}
+          titel={
+            itemById.get(nachreichen.assignment.item_id ?? "")?.item_name ??
+            nachreichen.assignment.item_id ??
+            nachreichen.assignment.payment_log_id
+          }
+          betragUgx={assignmentUgx(nachreichen.assignment, itemById.get(nachreichen.assignment.item_id ?? ""))}
+          ersatzDatum={transferDate}
+          speichern={(datei) =>
+            setReceipt.mutateAsync({ paymentLogId: nachreichen.assignment.payment_log_id, receiptUrl: datei.url })
+          }
+          onClose={() => setNachreichen(null)}
+        />
+      )}
     </>
   );
 };

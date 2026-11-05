@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import type { DriveFile } from "@/lib/googleDrive";
 
@@ -77,4 +78,18 @@ export const useBelegVorschlag = () => {
       setDatumGelesen(false);
     },
   };
+};
+
+/**
+ * Benennt den Beleg nach dem Speichern um. Die Zuordnung steht dann schon; ein Fehler
+ * kostet nur den Namen und wird als Warnung gemeldet.
+ */
+export const belegNachSchemaBenennen = async (datei: DriveFile, neuerName: string | null) => {
+  if (!neuerName || neuerName === datei.name) return;
+  try {
+    const drive = await import("@/lib/googleDrive");
+    await drive.belegUmbenennen(datei.id, neuerName);
+  } catch (error) {
+    toast.warning(`Saved, but the receipt keeps its old name: ${(error as Error).message}`);
+  }
 };
