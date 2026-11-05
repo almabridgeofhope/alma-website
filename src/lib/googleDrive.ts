@@ -49,6 +49,7 @@ export interface DriveFile {
   id: string;
   name: string;
   url: string;
+  mimeType?: string;
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -168,6 +169,7 @@ export async function belegWaehlen(art: BelegArt): Promise<DriveFile | null> {
                     id: datei.id,
                     name: datei.name ?? datei.id,
                     url: datei.url ?? `https://drive.google.com/file/d/${datei.id}/view`,
+                    mimeType: datei.mimeType,
                   }
                 : null,
             );
@@ -184,6 +186,68 @@ export async function belegWaehlen(art: BelegArt): Promise<DriveFile | null> {
       reject(fehler as Error);
     }
   });
+}
+
+/** Ein Beleg so, wie ihn die Lese-Funktion erwartet: base64 ohne Präfix plus Typ. */
+export interface BelegInhalt {
+  data: string;
+  media_type: string;
+}
+
+// Groß genug für handschriftliche Ziffern, klein genug für die 5-MB-Grenze der API.
+const MAX_KANTE = 1800;
+
+const alsBase64 = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const leser = new FileReader();
+    leser.onload = () => resolve(String(leser.result).split(",")[1] ?? "");
+    leser.onerror = () => reject(new Error("The receipt could not be read from Drive."));
+    leser.readAsDataURL(blob);
+  });
+
+/** Fotos kommen oft mit 4000 px und als HEIC — beides wird hier zu einem handlichen JPEG. */
+const verkleinern = async (blob: Blob): Promise<Blob> => {
+  const bild = await createImageBitmap(blob);
+  const faktor = Math.min(1, MAX_KANTE / Math.max(bild.width, bild.height));
+  const leinwand = document.createElement("canvas");
+  leinwand.width = Math.round(bild.width * faktor);
+  leinwand.height = Math.round(bild.height * faktor);
+  leinwand.getContext("2d")?.drawImage(bild, 0, 0, leinwand.width, leinwand.height);
+  bild.close();
+  return new Promise((resolve, reject) =>
+    leinwand.toBlob(
+      (jpeg) => (jpeg ? resolve(jpeg) : reject(new Error("The photo could not be converted."))),
+      "image/jpeg",
+      0.85,
+    ),
+  );
+};
+
+/**
+ * Lädt eine gerade gewählte Datei aus Drive. drive.file erlaubt das, weil die Datei
+ * über den Picker kam. PDFs gehen unverändert weiter, Bilder verkleinert als JPEG.
+ */
+export async function belegLaden(datei: DriveFile): Promise<BelegInhalt> {
+  const token = await tokenHolen();
+  const antwort = await fetch(`https://www.googleapis.com/drive/v3/files/${datei.id}?alt=media`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!antwort.ok) throw new Error(`Drive did not return the receipt (${antwort.status}).`);
+  const blob = await antwort.blob();
+  const typ = datei.mimeType || blob.type;
+  if (typ === "application/pdf") return { data: await alsBase64(blob), media_type: typ };
+  return { data: await alsBase64(await verkleinern(blob)), media_type: "image/jpeg" };
+}
+
+/** Benennt eine über den Picker gewählte Datei um; Link und ID bleiben gleich. */
+export async function belegUmbenennen(id: string, name: string): Promise<void> {
+  const token = await tokenHolen();
+  const antwort = await fetch(`https://www.googleapis.com/drive/v3/files/${id}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  if (!antwort.ok) throw new Error(`Drive did not rename the receipt (${antwort.status}).`);
 }
 
 /** Nach einem abgelaufenen Token einmal neu anmelden lassen. */
