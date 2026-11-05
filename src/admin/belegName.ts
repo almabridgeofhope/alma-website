@@ -54,3 +54,39 @@ export const geplanterName = ({ datei, nummer, positionen, datum }: GeplanterNam
   istSchemaName(datei.name)
     ? null
     : positionsBelegName({ nummer, positionen, datum, endung: endungVon(datei.name, datei.mimeType) });
+
+/** "2026-03-14" → "20260314" — Überweisungsbelege tragen das volle Datum. */
+export const langdatum = (iso: string | null | undefined): string =>
+  iso && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.replace(/-/g, "") : "";
+
+interface UeberweisungsBeleg {
+  buchungNr: number | null;
+  nummer: string;
+  datum: string | null | undefined;
+  endung: string;
+}
+
+/**
+ * Empfangsquittung aus Uganda zu einer Überweisung: ID<Buchung>_R<Nr>_<YYYYMMDD>,
+ * z. B. ID21_R233_20260314.jpeg. Fehlt ein Teil, fällt nur dieser Teil weg.
+ */
+export const ueberweisungsBelegName = ({ buchungNr, nummer, datum, endung }: UeberweisungsBeleg): string => {
+  const sauber = nummerFuerName(nummer);
+  const teile = [
+    buchungNr !== null ? `ID${buchungNr}` : "",
+    sauber !== "" ? `R${sauber}` : "",
+    langdatum(datum),
+  ].filter((teil) => teil !== "");
+  return `${teile.join("_")}${endung}`;
+};
+
+/** Wie geplanterName, für den Beleg einer Überweisung. */
+export const geplanterUeberweisungsName = ({
+  datei,
+  buchungNr,
+  nummer,
+  datum,
+}: Omit<GeplanterName, "positionen"> & { buchungNr: number | null }): string | null =>
+  istSchemaName(datei.name)
+    ? null
+    : ueberweisungsBelegName({ buchungNr, nummer, datum, endung: endungVon(datei.name, datei.mimeType) });
