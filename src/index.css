@@ -165,3 +165,10 @@ Hopeful, professional, trustworthy design with soft blues and warm yellows
     display: none;  /* Chrome, Safari and Opera */
   }
 }
+/* Google Picker über einem offenen Dialog: Radix schaltet am body die Klicks ab
+   (pointer-events: none), und der Picker hängt direkt am body. Ohne diese Regel
+   lässt sich im Zuordnungs-Dialog keine Datei wählen. */
+.picker-dialog,
+.picker-dialog-bg {
+  pointer-events: auto;
+}
