@@ -16,6 +16,9 @@ import StatTile from "@/admin/StatTile";
 import TransferBuchung from "@/admin/TransferBuchung";
 import { useNoIndex } from "@/admin/useNoIndex";
 import { useReceiptPicker } from "@/admin/useReceiptPicker";
+import ReceiptConfirmDialog from "@/admin/ReceiptConfirmDialog";
+import { geplanterUeberweisungsName } from "@/admin/belegName";
+import type { DriveFile } from "@/lib/googleDrive";
 import { absolute, formatDate, formatEur, formatUgx } from "@/admin/format";
 import {
   assignmentUgx,
@@ -47,7 +50,7 @@ const AdminTransferDetail = () => {
   const rate = useEurRate();
   const setTransferReceipt = useSetTransferReceipt(transferId);
   const { pick, isPicking } = useReceiptPicker();
-  const [isSaving, setIsSaving] = useState(false);
+  const [neuerBeleg, setNeuerBeleg] = useState<DriveFile | null>(null);
   const [selected, setSelected] = useState<ProjectItem | null>(null);
   const planItems = usePlannedTransferItems();
 
@@ -83,18 +86,10 @@ const AdminTransferDetail = () => {
         ? `${formatEur(transferredEur - assignedEur)} not assigned yet`
         : null;
 
+  // Gewählt ist noch nicht verknüpft: der Dialog liest die Quittung erst aus und lässt bestätigen.
   const belegWaehlen = async () => {
     const datei = await pick("ueberweisung");
-    if (!datei) return;
-    setIsSaving(true);
-    try {
-      await setTransferReceipt.mutateAsync(datei.url);
-      toast.success(`Transfer receipt “${datei.name}” linked.`);
-    } catch (error) {
-      toast.error((error as Error).message);
-    } finally {
-      setIsSaving(false);
-    }
+    if (datei) setNeuerBeleg(datei);
   };
 
   if (transfers.isPending || items.isPending) {
@@ -207,10 +202,10 @@ const AdminTransferDetail = () => {
                 variant="secondary"
                 size="sm"
                 className="h-9"
-                disabled={isPicking || isSaving}
+                disabled={isPicking}
                 onClick={belegWaehlen}
               >
-                {isSaving || isPicking ? (
+                {isPicking ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                 ) : (
                   <Paperclip className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -267,6 +262,20 @@ const AdminTransferDetail = () => {
           transferDate={transfer.date}
           item={selected}
           onClose={() => setSelected(null)}
+        />
+      )}
+
+      {neuerBeleg && (
+        <ReceiptConfirmDialog
+          datei={neuerBeleg}
+          titel={`Transfer No. ${transfer.buchung_nr ?? transferId}`}
+          benennen={(nummer, datum) =>
+            geplanterUeberweisungsName({ datei: neuerBeleg, buchungNr: transfer.buchung_nr, nummer, datum })
+          }
+          betragUgx={receivedUgx}
+          ersatzDatum={transfer.date}
+          speichern={(datei) => setTransferReceipt.mutateAsync(datei.url)}
+          onClose={() => setNeuerBeleg(null)}
         />
       )}
     </div>

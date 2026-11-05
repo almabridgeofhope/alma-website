@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import EditableAmount from "./EditableAmount";
 import ReceiptConfirmDialog from "./ReceiptConfirmDialog";
+import { geplanterName } from "./belegName";
 import type { DriveFile } from "@/lib/googleDrive";
 import { formatUgx } from "./format";
 import {
@@ -278,7 +279,14 @@ const AssignmentsTable = ({ transferId, assignments, itemById, transferDate }: A
       {nachreichen && (
         <ReceiptConfirmDialog
           datei={nachreichen.datei}
-          positionen={[nachreichen.assignment.item_id ?? "item"]}
+          benennen={(nummer, datum) =>
+            geplanterName({
+              datei: nachreichen.datei,
+              nummer,
+              positionen: [nachreichen.assignment.item_id ?? "item"],
+              datum,
+            })
+          }
           titel={
             itemById.get(nachreichen.assignment.item_id ?? "")?.item_name ??
             nachreichen.assignment.item_id ??

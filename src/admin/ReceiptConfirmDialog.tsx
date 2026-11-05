@@ -12,13 +12,12 @@ import {
 } from "@/components/ui/dialog";
 import type { DriveFile } from "@/lib/googleDrive";
 import BelegVorschlagFelder from "./BelegVorschlagFelder";
-import { geplanterName } from "./belegName";
 import { belegNachSchemaBenennen, useBelegVorschlag } from "./useBelegVorschlag";
 
 interface ReceiptConfirmDialogProps {
   datei: DriveFile;
-  /** Positionen, zu denen der Beleg gehört — sie stehen im Dateinamen. */
-  positionen: string[];
+  /** Neuer Dateiname aus gelesener Nummer und Datum; null, wenn der Name bleibt. */
+  benennen: (nummer: string, datum: string | null | undefined) => string | null;
   titel: string;
   betragUgx: number | null;
   /** Datum für den Namen, falls auf dem Beleg keines lesbar ist. */
@@ -31,7 +30,7 @@ interface ReceiptConfirmDialogProps {
 /** Nachgereichter Beleg: auslesen, bestätigen lassen, dann verknüpfen und umbenennen. */
 const ReceiptConfirmDialog = ({
   datei,
-  positionen,
+  benennen,
   titel,
   betragUgx,
   ersatzDatum,
@@ -51,7 +50,7 @@ const ReceiptConfirmDialog = ({
   const neuerName =
     beleg.status === "reading"
       ? null
-      : geplanterName({ datei, nummer: beleg.nummer, positionen, datum: beleg.datum || ersatzDatum?.slice(0, 10) });
+      : benennen(beleg.nummer, beleg.datum || ersatzDatum?.slice(0, 10));
 
   const bestaetigen = async () => {
     setSpeichert(true);
