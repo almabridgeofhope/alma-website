@@ -13,9 +13,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useReceiptPicker } from "./useReceiptPicker";
-import { useBelegVorschlag } from "./useBelegVorschlag";
+import { belegNachSchemaBenennen, useBelegVorschlag } from "./useBelegVorschlag";
 import BelegVorschlagFelder from "./BelegVorschlagFelder";
-import { endungVon, istSchemaName, positionsBelegName } from "./belegName";
+import { geplanterName } from "./belegName";
 import type { DriveFile } from "@/lib/googleDrive";
 import { formatDate, formatQty, formatUgx, parseAmount } from "./format";
 import { unitCostUgx, unverknuepftFuer, useCreateAssignment } from "./queries";
@@ -43,12 +43,12 @@ const AddAssignmentDialog = ({ transferId, transferDate, item, onClose }: AddAss
 
   // Schon nach Schema benannte Dateien behalten ihren Namen; sonst R<Nr>_<Position>.
   const neuerName =
-    receipt && beleg.status !== "reading" && !istSchemaName(receipt.name)
-      ? positionsBelegName({
+    receipt && beleg.status !== "reading"
+      ? geplanterName({
+          datei: receipt,
           nummer: beleg.nummer,
           positionen: [item.project_item_id],
           datum: beleg.datum || transferDate?.slice(0, 10),
-          endung: endungVon(receipt.name, receipt.mimeType),
         })
       : null;
 
@@ -82,16 +82,6 @@ const AddAssignmentDialog = ({ transferId, transferDate, item, onClose }: AddAss
     setUnit(String(Math.round((parsedTotal / parsedQty) * 100) / 100));
   };
 
-  // Die Zuordnung ist dann schon gespeichert; ein fehlgeschlagenes Umbenennen kostet nur den Namen.
-  const umbenennen = async (id: string, name: string) => {
-    try {
-      const drive = await import("@/lib/googleDrive");
-      await drive.belegUmbenennen(id, name);
-    } catch (error) {
-      toast.warning(`Assigned, but the receipt keeps its old name: ${(error as Error).message}`);
-    }
-  };
-
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     const parsedQty = parseAmount(qty);
@@ -109,7 +99,7 @@ const AddAssignmentDialog = ({ transferId, transferDate, item, onClose }: AddAss
         receiptUrl: receipt?.url ?? null,
       });
       toast.success(`${item.item_name ?? item.project_item_id} assigned.`);
-      if (receipt && neuerName && neuerName !== receipt.name) await umbenennen(receipt.id, neuerName);
+      if (receipt) await belegNachSchemaBenennen(receipt, neuerName);
       onClose();
     } catch (error) {
       toast.error((error as Error).message);

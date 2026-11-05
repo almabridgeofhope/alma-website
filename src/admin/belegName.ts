@@ -41,3 +41,16 @@ export const positionsBelegName = ({ nummer, positionen, datum, endung }: Positi
   const tag = kurzdatum(datum);
   return `${teile}${tag ? `_${tag}` : ""}${endung}`;
 };
+
+interface GeplanterName {
+  datei: { name: string; mimeType?: string };
+  nummer: string;
+  positionen: string[];
+  datum: string | null | undefined;
+}
+
+/** Neuer Name für einen gewählten Beleg — oder null, wenn er schon nach Schema heißt. */
+export const geplanterName = ({ datei, nummer, positionen, datum }: GeplanterName): string | null =>
+  istSchemaName(datei.name)
+    ? null
+    : positionsBelegName({ nummer, positionen, datum, endung: endungVon(datei.name, datei.mimeType) });

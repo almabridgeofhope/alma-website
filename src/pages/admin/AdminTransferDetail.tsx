@@ -237,6 +237,7 @@ const AdminTransferDetail = () => {
                 transferId={transferId}
                 assignments={assignments.data ?? []}
                 itemById={itemById}
+                transferDate={transfer.date}
               />
             )}
           </CardContent>
