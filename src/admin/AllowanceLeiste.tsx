@@ -23,7 +23,9 @@ import {
 } from "./allowanceQueries";
 
 const ANZAHL_MONATE = 4;
-const PROJEKT_OTHER = "PROJ-004";
+// Laufende Kosten haben in jedem Projekt dieselbe Phase (Allowances unter Other,
+// die Grundsicherung im Orphanage-Projekt); seit 05.11.2026 zählt die Phase, nicht das Projekt.
+const PHASE_LAUFENDE_KOSTEN = "Running costs";
 
 const STATUS: Record<MonatsStatus, { label: string; icon: typeof Circle; klasse: string }> = {
   bezahlt: { label: "paid", icon: Check, klasse: "text-primary" },
@@ -114,9 +116,9 @@ const PaketDialog = ({ open, onOpenChange }: { open: boolean; onOpenChange: (ope
   const [mengen, setMengen] = useState<Record<string, string>>({});
 
   const aktuell = paketImMonat(paket.data ?? [], ab);
-  // Alle laufenden Positionen (Other): so laesst sich auch eine neue Zeile aufnehmen.
+  // Alle laufenden Positionen: so laesst sich auch eine neue Zeile aufnehmen.
   const zeilen = (items.data ?? []).filter(
-    (item) => item.project_id === PROJEKT_OTHER || aktuell.has(item.project_item_id),
+    (item) => item.phase_id === PHASE_LAUFENDE_KOSTEN || aktuell.has(item.project_item_id),
   );
   const wert = (itemId: string) => mengen[itemId] ?? String(aktuell.get(itemId) ?? 0);
 
