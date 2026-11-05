@@ -13,6 +13,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useReceiptPicker } from "./useReceiptPicker";
+import { useBelegVorschlag } from "./useBelegVorschlag";
+import BelegVorschlagFelder from "./BelegVorschlagFelder";
+import { endungVon, istSchemaName, positionsBelegName } from "./belegName";
 import type { DriveFile } from "@/lib/googleDrive";
 import { formatDate, formatQty, formatUgx, parseAmount } from "./format";
 import { unitCostUgx, unverknuepftFuer, useCreateAssignment } from "./queries";
@@ -36,6 +39,18 @@ const AddAssignmentDialog = ({ transferId, transferDate, item, onClose }: AddAss
   const [amount, setAmount] = useState(String(Math.round(vorschlag * unitCostUgx(item))));
   const [receipt, setReceipt] = useState<DriveFile | null>(null);
   const { pick, isPicking } = useReceiptPicker();
+  const beleg = useBelegVorschlag();
+
+  // Schon nach Schema benannte Dateien behalten ihren Namen; sonst R<Nr>_<Position>.
+  const neuerName =
+    receipt && beleg.status !== "reading" && !istSchemaName(receipt.name)
+      ? positionsBelegName({
+          nummer: beleg.nummer,
+          positionen: [item.project_item_id],
+          datum: beleg.datum || transferDate?.slice(0, 10),
+          endung: endungVon(receipt.name, receipt.mimeType),
+        })
+      : null;
 
   // Die drei Felder halten sich gegenseitig aktuell. Gespeichert wird nur der
   // Gesamtbetrag — Menge mal Einzelbetrag ergibt ihn, und wer den Gesamtbetrag
@@ -67,6 +82,16 @@ const AddAssignmentDialog = ({ transferId, transferDate, item, onClose }: AddAss
     setUnit(String(Math.round((parsedTotal / parsedQty) * 100) / 100));
   };
 
+  // Die Zuordnung ist dann schon gespeichert; ein fehlgeschlagenes Umbenennen kostet nur den Namen.
+  const umbenennen = async (id: string, name: string) => {
+    try {
+      const drive = await import("@/lib/googleDrive");
+      await drive.belegUmbenennen(id, name);
+    } catch (error) {
+      toast.warning(`Assigned, but the receipt keeps its old name: ${(error as Error).message}`);
+    }
+  };
+
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     const parsedQty = parseAmount(qty);
@@ -84,6 +109,7 @@ const AddAssignmentDialog = ({ transferId, transferDate, item, onClose }: AddAss
         receiptUrl: receipt?.url ?? null,
       });
       toast.success(`${item.item_name ?? item.project_item_id} assigned.`);
+      if (receipt && neuerName && neuerName !== receipt.name) await umbenennen(receipt.id, neuerName);
       onClose();
     } catch (error) {
       toast.error((error as Error).message);
@@ -152,7 +178,10 @@ const AddAssignmentDialog = ({ transferId, transferDate, item, onClose }: AddAss
                 disabled={isPicking}
                 onClick={async () => {
                   const datei = await pick("position");
-                  if (datei) setReceipt(datei);
+                  if (datei) {
+                    setReceipt(datei);
+                    void beleg.lesen(datei);
+                  }
                 }}
               >
                 {isPicking ? (
@@ -170,11 +199,13 @@ const AddAssignmentDialog = ({ transferId, transferDate, item, onClose }: AddAss
             </p>
           </div>
 
+          <BelegVorschlagFelder beleg={beleg} betragUgx={parseAmount(amount)} neuerName={neuerName} />
+
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={createAssignment.isPending}>
+            <Button type="submit" disabled={createAssignment.isPending || beleg.status === "reading"}>
               {createAssignment.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
               )}
