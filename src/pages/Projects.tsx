@@ -149,7 +149,7 @@ const Projects = () => {
       impact: t("projects.well.impact"),
       statusText: t("projects.well.status"),
       progress: 15,
-      currentPhase: "planning",
+      currentPhase: "implementation",
       image: waterImage,
       buttonText: t("projects.well.button"),
       priority: "active",
