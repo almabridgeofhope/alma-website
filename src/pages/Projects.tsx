@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Home, Droplets, Sprout, BookOpen, Car, Users, Sun, Droplet, Heart, Scissors } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useProjectCosts } from "@/hooks/useProjectCosts";
@@ -353,9 +352,8 @@ const Projects = () => {
                       {timelinePhases.map((phase, phaseIndex) => {
                         const isActive = phaseIndex === currentPhaseIndex;
                         const isPast = phaseIndex < currentPhaseIndex;
-                        const tooltipTitle = t(`projects.timeline.${phase.id}`);
-                        const activeDescription = isActive ? project.statusText?.trim() ?? "" : "";
-                        const badge = (
+                        return (
+                          <div key={phase.id} className="flex items-center">
                           <span
                             className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] sm:text-xs font-semibold uppercase tracking-wide transition-colors ${
                               isActive
@@ -365,37 +363,12 @@ const Projects = () => {
                                 : "bg-white/20 text-white/70"
                             }`}
                             role="status"
-                            aria-label={
-                              activeDescription
-                                ? `${tooltipTitle} – ${activeDescription}`
-                                : tooltipTitle
-                            }
+                            aria-label={t(`projects.timeline.${phase.id}`)}
                           >
                             <span className="text-base leading-none">{phase.icon}</span>
                             <span className="leading-tight">{phase.label}</span>
                           </span>
-                        );
-
-                        if (!activeDescription) {
-                          return (
-                            <div key={phase.id} className="flex items-center">
-                              {badge}
-                            </div>
-                          );
-                        }
-
-                        return (
-                          <Tooltip key={phase.id} delayDuration={100}>
-                            <TooltipTrigger asChild>{badge}</TooltipTrigger>
-                            <TooltipContent side="top" sideOffset={12} align="center" className="max-w-xs text-left">
-                              <div className="text-xs font-semibold uppercase tracking-wide text-primary mb-1">
-                                {tooltipTitle}
-                              </div>
-                              <p className="text-xs text-muted-foreground leading-relaxed">
-                                {activeDescription}
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
+                          </div>
                         );
                       })}
                     </div>
