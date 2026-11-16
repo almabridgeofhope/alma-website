@@ -781,7 +781,7 @@ const Donation = () => {
       | undefined;
     if (includeAddressInPayload) {
       const rawStreet = currentFormData.street.trim();
-      const streetMatch = rawStreet.match(/^(.*?)(?:\s+|,)(\d+[a-zA-Z0-9\-\/]*)$/);
+      const streetMatch = rawStreet.match(/^(.*?)(?:\s+|,)(\d+[a-zA-Z0-9\-/]*)$/);
       const parsedStreet = streetMatch?.[1]?.trim() || rawStreet;
       const parsedHouseNumber = streetMatch?.[2]?.trim() || "";
       addressPayload = {

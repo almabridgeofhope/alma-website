@@ -24,6 +24,7 @@ const HeroSection = () => {
           height={1440} 
           className="hidden" 
           aria-hidden="true"
+          // @ts-expect-error React 18 kennt fetchPriority nicht, das Attribut geht kleingeschrieben unverändert ins DOM
           fetchpriority="high"
         />
       </div>
