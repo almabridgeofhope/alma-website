@@ -47,8 +47,8 @@ jobs:
         run: npm run build
 
       - name: Dependency-Audit
-        # Blockiert ab "critical". Die bekannten "high"-Funde behebt ein
-        # eigener Update-PR, danach wird die Schwelle auf "high" gesenkt.
+        # Blockiert ab "critical". Die übrigen "high"-Funde (vite, vite-imagetools
+        # mit sharp, zod) gehen nur per Major-Sprung weg; danach Schwelle "high".
         run: npm audit --audit-level=critical
 
   secrets:
