@@ -43,6 +43,10 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Unit-Tests
+        # vitest, nur src/**/*.test.ts(x) – siehe vitest.config.ts
+        run: npm test
+
       - name: Build ohne Secrets
         run: npm run build
 
