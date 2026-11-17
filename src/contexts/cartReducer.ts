@@ -1,5 +1,10 @@
 // Zustand des Warenkorbs auf der Spendenseite: Positionen, Mengen und Summen in EUR.
 // Als eigenes Modul, damit die Rechenregeln ohne React testbar sind (cartReducer.test.ts).
+//
+// Geldbeträge stehen auf ganze Cent gerundet im Zustand. Gerundet wird nur über die beiden Helfer
+// hier: Beträge und Positionssummen über aufCent, die Gesamtsumme über summeInCent. Wer totalPrice
+// oder totalAmount liest (form-submit, Erfolgs-URL, Überweisungsdaten, Stripe, PayPal, Anzeige),
+// bekommt fertige Cent-Werte.
 
 export interface CartItem {
   id: string;
@@ -41,6 +46,19 @@ export type CartAction =
   | { type: 'CLOSE_CART' }
   | { type: 'LOAD_CART'; payload: CartItem[] };
 
+/** Rundet einen EUR-Betrag auf ganze Cent, wie stripeService (`Math.round(amount * 100)`). */
+export const aufCent = (eur: number): number => Math.round(eur * 100) / 100;
+
+/** Summiert EUR-Beträge in ganzen Cent: 10,10 + 20,20 ergibt 30,30 statt 30.299999999999997. */
+export const summeInCent = (betraege: number[]): number =>
+  betraege.reduce((cent, eur) => cent + Math.round(eur * 100), 0) / 100;
+
+const gesamtsumme = (items: CartItem[]): number => summeInCent(items.map(item => item.totalPrice));
+
+/** Die freie Spende hieß früher „Allgemeine Spende“; beim nächsten Betrag bekommt sie den neuen Namen. */
+const wirdUmbenannt = (item: CartItem): boolean =>
+  item.type === 'general-donation' && item.name === 'Allgemeine Spende';
+
 export const initialState: CartState = {
   items: [],
   isOpen: false,
@@ -59,7 +77,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
             ? {
                 ...item,
                 quantity: item.quantity + 1,
-                totalPrice: (item.quantity + 1) * item.unitPrice,
+                totalPrice: aufCent((item.quantity + 1) * item.unitPrice),
               }
             : item
         );
@@ -68,13 +86,15 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
           ...state,
           items: updatedItems,
           totalItems: updatedItems.length,
-          totalAmount: updatedItems.reduce((sum, item) => sum + item.totalPrice, 0),
+          totalAmount: gesamtsumme(updatedItems),
         };
       } else {
+        const unitPrice = aufCent(action.payload.unitPrice);
         const newItem: CartItem = {
           ...action.payload,
+          unitPrice,
           quantity: 1,
-          totalPrice: action.payload.unitPrice,
+          totalPrice: unitPrice,
         };
         
         const updatedItems = [...state.items, newItem];
@@ -83,7 +103,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
           ...state,
           items: updatedItems,
           totalItems: updatedItems.length,
-          totalAmount: updatedItems.reduce((sum, item) => sum + item.totalPrice, 0),
+          totalAmount: gesamtsumme(updatedItems),
         };
       }
     }
@@ -95,7 +115,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
         ...state,
         items: updatedItems,
         totalItems: updatedItems.length,
-        totalAmount: updatedItems.reduce((sum, item) => sum + item.totalPrice, 0),
+        totalAmount: gesamtsumme(updatedItems),
       };
     }
     
@@ -109,7 +129,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
           ? {
               ...item,
               quantity: action.payload.quantity,
-              totalPrice: action.payload.quantity * item.unitPrice,
+              totalPrice: aufCent(action.payload.quantity * item.unitPrice),
             }
           : item
       );
@@ -118,28 +138,32 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
         ...state,
         items: updatedItems,
         totalItems: updatedItems.length,
-        totalAmount: updatedItems.reduce((sum, item) => sum + item.totalPrice, 0),
+        totalAmount: gesamtsumme(updatedItems),
       };
     }
     
     case 'UPDATE_AMOUNT': {
-      if (action.payload.amount <= 0) {
+      const amount = aufCent(action.payload.amount);
+      if (amount <= 0) {
         return cartReducer(state, { type: 'REMOVE_ITEM', payload: action.payload.id });
+      }
+
+      // Derselbe Betrag auf Cent ändert nichts: kein neues items-Array, sonst laufen Effekte, die
+      // auf cartState.items hören (Spende aus ?amount= in Donation.tsx), ohne Ende neu.
+      const bisher = state.items.find(item => item.id === action.payload.id);
+      if (!bisher || (bisher.totalPrice === amount && bisher.unitPrice === amount && !wirdUmbenannt(bisher))) {
+        return state;
       }
       
       const updatedItems = state.items.map(item =>
         item.id === action.payload.id
           ? {
               ...item,
-              totalPrice: action.payload.amount,
-              unitPrice: action.payload.amount, // For general donations, unitPrice = totalPrice
+              totalPrice: amount,
+              unitPrice: amount, // For general donations, unitPrice = totalPrice
               // Update name if it's still the old name
-              name: item.type === 'general-donation' && item.name === 'Allgemeine Spende' 
-                ? 'Wirkungsorientierte Spende' 
-                : item.name,
-              description: item.type === 'general-donation' && item.name === 'Allgemeine Spende'
-                ? 'Wirkungsorientierte Spende für unsere Projekte'
-                : item.description,
+              name: wirdUmbenannt(item) ? 'Wirkungsorientierte Spende' : item.name,
+              description: wirdUmbenannt(item) ? 'Wirkungsorientierte Spende für unsere Projekte' : item.description,
             }
           : item
       );
@@ -147,7 +171,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
       return {
         ...state,
         items: updatedItems,
-        totalAmount: updatedItems.reduce((sum, item) => sum + item.totalPrice, 0),
+        totalAmount: gesamtsumme(updatedItems),
       };
     }
     
@@ -171,13 +195,20 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
         isOpen: false,
       };
     
-    case 'LOAD_CART':
+    case 'LOAD_CART': {
+      // Gespeicherte Warenkörbe von vor der Cent-Rundung können krumme Beträge enthalten.
+      const items = action.payload.map(item => ({
+        ...item,
+        unitPrice: aufCent(item.unitPrice),
+        totalPrice: aufCent(item.totalPrice),
+      }));
       return {
         ...state,
-        items: action.payload,
-        totalItems: action.payload.length,
-        totalAmount: action.payload.reduce((sum, item) => sum + item.totalPrice, 0),
+        items,
+        totalItems: items.length,
+        totalAmount: gesamtsumme(items),
       };
+    }
     
     default:
       return state;
