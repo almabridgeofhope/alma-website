@@ -20,6 +20,7 @@ import PreloadImage from "@/components/PreloadImage";
 import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush, Copy, CheckCircle2, AlertCircle, Home, Landmark } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
+import { aufCent, summeInCent } from "@/contexts/cartReducer";
 import { stripeService } from "@/services/stripeService";
 import { paypalService } from "@/services/paypalService";
 import heroImage from "@/assets/nature/nature_2.webp";
@@ -677,10 +678,12 @@ const Donation = () => {
         return cartTotal;
       }
 
-      const calculatedTotal = cartState.items.reduce((sum, item) => {
-        const itemTotal = item.totalPrice || (item.unitPrice * (item.quantity || 1));
-        return sum + (isNaN(itemTotal) ? 0 : itemTotal);
-      }, 0);
+      const calculatedTotal = summeInCent(
+        cartState.items.map((item) => {
+          const itemTotal = item.totalPrice || (item.unitPrice * (item.quantity || 1));
+          return isNaN(itemTotal) ? 0 : itemTotal;
+        }),
+      );
       if (!isNaN(calculatedTotal) && calculatedTotal > 0) {
         return calculatedTotal;
       }
@@ -966,7 +969,9 @@ const Donation = () => {
     
     // If URL param exists and cart has non-donation items, add/update general donation
     if (hasUrlAmount && hasCartItems && amountParam) {
-      const amount = parseFloat(amountParam);
+      // Auf Cent wie im Warenkorb, sonst gleicht der gespeicherte Betrag (12.35) dem aus der URL
+      // (12.345) nie, und der Effekt setzt die Spende ohne Ende neu.
+      const amount = aufCent(parseFloat(amountParam));
       if (!isNaN(amount) && amount > 0) {
         // Only update if the amount is different from current general donation
         if (!generalDonation || generalDonation.totalPrice !== amount) {
