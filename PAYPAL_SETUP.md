@@ -99,10 +99,9 @@ If you encounter a `RESOURCE_NOT_FOUND` (404) error when trying to create a mont
 - Switch to live mode when ready for production
 
 #### Test Credentials
-**Sandbox Business Account:**
-- **URL**: https://sandbox.paypal.com
-- **Email**: sb-t47klu46990970@business.example.com
-- **Password**: 0i(Axp.D
+The login for the sandbox business account (https://sandbox.paypal.com) is not kept in the repo.
+It is in the Notion database "Passwords" (Alma Bridge of Hope, entry "Paypal developer Konto");
+the PayPal client IDs and secrets are GitHub secrets (see `.github/workflows/deploy.yml`).
 
 #### Testing Steps
 
@@ -112,7 +111,7 @@ If you encounter a `RESOURCE_NOT_FOUND` (404) error when trying to create a mont
 3. Fill out the donation form
 4. Select PayPal as payment method
 5. Click the PayPal button
-6. Use the sandbox credentials above to log in
+6. Log in with the sandbox account from Notion "Passwords"
 7. Complete the test payment
 8. Verify the success message appears
 
@@ -122,7 +121,7 @@ If you encounter a `RESOURCE_NOT_FOUND` (404) error when trying to create a mont
 3. Fill out the donation form
 4. Select PayPal as payment method
 5. Click the PayPal button (it will create a subscription plan automatically)
-6. Use the sandbox credentials above to log in
+6. Log in with the sandbox account from Notion "Passwords"
 7. Complete the subscription setup
 8. Verify the success message appears
 9. Check your PayPal Sandbox account to confirm the subscription was created
