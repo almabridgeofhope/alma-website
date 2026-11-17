@@ -40,15 +40,21 @@ describe("findeProjektKosten – Titel der Projektseite", () => {
     expect(treffer("Brunnenprojekt")).toBe("Well");
   });
 
-  it("ordnet „Waisenhaus in Mukono“ dem Community House zu – Befund, offen (TESTING.md, Schicht 2)", () => {
-    // Festgehalten ist das heutige Verhalten, kein Sollwert: Die Schlagwörter für „community“
-    // enthalten „haus“ und werden vor „waisenhaus“ geprüft. Auf der deutschen Projektseite zeigt
-    // das Waisenhaus deshalb die Kosten des Community House; richtig wäre „Orphanage & Women's Home“.
-    expect(treffer("Waisenhaus in Mukono")).toBe("Community House");
+  it("ordnet „Waisenhaus in Mukono“ dem Waisenhaus zu, nicht über „haus“ dem Community House", () => {
+    // „haus“ steht nur als Teil von „waisenhaus“ im Titel und zählt deshalb nicht.
+    expect(treffer("Waisenhaus in Mukono")).toBe("Orphanage & Women's Home");
   });
 
-  it("findet für „Landwirtschaft & Bauerngruppe“ nichts (die Seite blendet die Kosten dort aus)", () => {
-    expect(treffer("Landwirtschaft & Bauerngruppe")).toBeNull();
+  it("ordnet „Landwirtschaft & Bauerngruppe“ wie den englischen Titel der Farm zu", () => {
+    expect(treffer("Landwirtschaft & Bauerngruppe")).toBe("Farm");
+  });
+
+  it.each([
+    ["Building the Community House", "Community House"],
+    ["Well Construction", "Well"],
+    ["Agriculture Project", "Farm"],
+  ])("ordnet den Namen „%s“ aus CartSidebar „%s“ zu", (titel, erwartet) => {
+    expect(treffer(titel)).toBe(erwartet);
   });
 
   it.each([
@@ -60,6 +66,8 @@ describe("findeProjektKosten – Titel der Projektseite", () => {
     "Finanzielle Allgemeinbildung",
     "Women's Craft Group",
     "Handarbeitsgruppe der Frauen",
+    "Education Support",
+    "Mobility Project",
   ])("findet für „%s“ keine Projektpositionen", (titel) => {
     expect(treffer(titel)).toBeNull();
   });
@@ -90,6 +98,26 @@ describe("findeProjektKosten – Reihenfolge der Regeln", () => {
     // „Water supply“ enthält „water“ aus derselben Gruppe wie „brunnen“.
     expect(treffer("Brunnenprojekt", ["Farm", "Water supply"].map(projekt))).toBe("Water supply");
     expect(treffer("Brunnenprojekt", ["Farm", "Community House"].map(projekt))).toBeNull();
+  });
+});
+
+describe("findeProjektKosten – spezifische vor allgemeinen Schlagwörtern", () => {
+  it("lässt „haus“ nicht greifen, wenn es nur in „waisenhaus“ steckt, auch wenn das Community House zuerst kommt", () => {
+    const kosten = ["Community House", "Orphanage"].map(projekt);
+    expect(treffer("Neues Waisenhaus", kosten)).toBe("Orphanage");
+  });
+
+  it("lässt „haus“ greifen, wenn es für sich steht", () => {
+    expect(treffer("Gemeinschaftshaus", ["Orphanage & Women's Home", "Community House"].map(projekt))).toBe("Community House");
+  });
+
+  it("nimmt bei Schlagwörtern aus zwei Gruppen die erste Gruppe mit Treffer", () => {
+    expect(treffer("Brunnen beim Waisenhaus", ["Well"].map(projekt))).toBe("Well");
+    expect(treffer("Brunnen beim Waisenhaus", ["Orphanage"].map(projekt))).toBe("Orphanage");
+  });
+
+  it("findet ohne Waisenhaus-Projekt nichts statt auf das Community House auszuweichen", () => {
+    expect(treffer("Waisenhaus in Mukono", ["Community House", "Well"].map(projekt))).toBeNull();
   });
 });
 
