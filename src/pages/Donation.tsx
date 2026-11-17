@@ -22,6 +22,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
 import { aufCent } from "@/contexts/cartReducer";
 import {
+  eigenerBetrag,
   endbetragDerSpende,
   formatBankTransferReference,
   formatFormSubmitErrorDetail,
@@ -407,13 +408,13 @@ const Donation = () => {
   // Helper function to get the current donation amount
   const getCurrentAmount = useCallback((): string => {
     if (donationType === "monthly") {
-      return amount || customAmount || "";
+      return eigenerBetrag(amount, customAmount);
     } else {
       // For one-time donations, prefer cart total if items exist
       if (cartState.items.length > 0) {
         return cartState.totalAmount.toString();
       }
-      return amount || customAmount || "";
+      return eigenerBetrag(amount, customAmount);
     }
   }, [donationType, amount, customAmount, cartState.items.length, cartState.totalAmount]);
 
@@ -448,7 +449,7 @@ const Donation = () => {
       // Note: We'll get the amount from the cart or form state
       const finalAmount = cartState.items.length > 0 
         ? cartState.totalAmount.toString() 
-        : (amount || customAmount || "");
+        : (eigenerBetrag(amount, customAmount));
       
       if (finalAmount) {
         const params = new URLSearchParams({
@@ -1212,10 +1213,10 @@ const Donation = () => {
     // For monthly donations, always use selected amount (no cart items)
     // For one-time donations, use cart total if items exist, otherwise use selected amount
     const finalAmount = donationType === "monthly"
-      ? (amount || customAmount)
+      ? eigenerBetrag(amount, customAmount)
       : (cartState.items.length > 0 
           ? cartState.totalAmount.toString() 
-          : (amount || customAmount));
+          : eigenerBetrag(amount, customAmount));
     console.log("Validating form...");
     console.log("Final amount:", finalAmount);
     console.log("Form data:", formData);
@@ -1302,10 +1303,10 @@ const Donation = () => {
   const copyBankTransferDetails = () => {
     if (!registeredBankTransferRef) return;
     const finalAmount = donationType === "monthly"
-      ? (amount || customAmount)
+      ? eigenerBetrag(amount, customAmount)
       : (cartState.items.length > 0
           ? cartState.totalAmount.toString()
-          : (amount || customAmount));
+          : eigenerBetrag(amount, customAmount));
     const details = [
       `IBAN: ${BANK_TRANSFER_ACCOUNT.iban}`,
       `BIC: ${BANK_TRANSFER_ACCOUNT.bic}`,
@@ -1565,10 +1566,10 @@ const Donation = () => {
         
         // Calculate final amount for redirect BEFORE clearing state
         const finalAmount = donationType === "monthly"
-          ? (amount || customAmount || "0")
+          ? (eigenerBetrag(amount, customAmount) || "0")
           : (cartState.items.length > 0 
               ? cartState.totalAmount.toString() 
-              : (amount || customAmount || "0"));
+              : (eigenerBetrag(amount, customAmount) || "0"));
 
         console.log("💰 PayPal: Navigating to success page with amount:", finalAmount);
         
@@ -1767,10 +1768,10 @@ const Donation = () => {
     // Get amount from ref (for monthly donations)
     let finalAmountStr = "";
     if (currentAmountData.donationType === "monthly") {
-      finalAmountStr = currentAmountData.amount || currentAmountData.customAmount || "";
+      finalAmountStr = eigenerBetrag(currentAmountData.amount, currentAmountData.customAmount);
     } else {
       // This shouldn't happen for subscriptions, but handle it anyway
-      finalAmountStr = currentAmountData.amount || currentAmountData.customAmount || "";
+      finalAmountStr = eigenerBetrag(currentAmountData.amount, currentAmountData.customAmount);
     }
 
     console.log("Final amount string:", finalAmountStr);
@@ -3074,10 +3075,10 @@ const Donation = () => {
                             }
                           }
                           const finalAmount = donationType === "monthly"
-                            ? parseFloat(amount || customAmount || "0")
+                            ? parseFloat(eigenerBetrag(amount, customAmount) || "0")
                             : (cartState.items.length > 0 
                                 ? cartState.totalAmount 
-                                : parseFloat(amount || customAmount || "0"));
+                                : parseFloat(eigenerBetrag(amount, customAmount) || "0"));
                           if (finalAmount <= 0) {
                             showError(t("donation.form.error.missingAmount"));
                             return false;
@@ -3157,10 +3158,10 @@ const Donation = () => {
                             }
                           }
                           const finalAmount = donationType === "monthly"
-                            ? parseFloat(amount || customAmount || "0")
+                            ? parseFloat(eigenerBetrag(amount, customAmount) || "0")
                             : (cartState.items.length > 0 
                                 ? cartState.totalAmount 
-                                : parseFloat(amount || customAmount || "0"));
+                                : parseFloat(eigenerBetrag(amount, customAmount) || "0"));
                           if (finalAmount <= 0) {
                             showError(t("donation.form.error.missingAmount"));
                             return false;
@@ -3539,7 +3540,7 @@ const Donation = () => {
                   €
                   {cartState.items.length > 0
                     ? cartState.totalAmount.toFixed(2)
-                    : parseFloat(amount || customAmount || "0").toFixed(2)}
+                    : parseFloat(eigenerBetrag(amount, customAmount) || "0").toFixed(2)}
                 </dd>
                 <dt className="text-muted-foreground">{t("donation.form.sepaReference")}</dt>
                 <dd className="font-mono text-xs break-all sm:col-start-2">{registeredBankTransferRef}</dd>

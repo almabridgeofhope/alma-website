@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { CartItem } from "@/contexts/cartReducer";
 import {
+  eigenerBetrag,
   endbetragDerSpende,
   formatBankTransferReference,
   formatFormSubmitErrorDetail,
@@ -42,10 +43,9 @@ describe("endbetragDerSpende – monatlich", () => {
     expect(endbetragDerSpende({ donationType: "monthly", amount: "", customAmount: "", items: [], totalAmount: 0 })).toBe(0);
   });
 
-  it("rundet einen eigenen Betrag nicht auf Cent – Befund, offen", () => {
-    // Das Eingabefeld (type="number", step="0.01") lässt 12.345 zu; Stripe rundet selbst auf Cent,
-    // an form-submit geht 12.345. Nur der Warenkorb rechnet in Cent (cartReducer.ts).
-    expect(endbetragDerSpende({ donationType: "monthly", amount: "", customAmount: "12.345", items: [], totalAmount: 0 })).toBe(12.345);
+  it("rundet einen eigenen Betrag auf Cent wie der Warenkorb: 12,346 → 12,35", () => {
+    expect(endbetragDerSpende({ donationType: "monthly", amount: "", customAmount: "12.346", items: [], totalAmount: 0 })).toBe(12.35);
+    expect(endbetragDerSpende({ donationType: "monthly", amount: "12.344", customAmount: "", items: [], totalAmount: 0 })).toBe(12.34);
   });
 
   it("liefert NaN bei nicht lesbarer Eingabe – der Aufrufer prüft isNaN", () => {
@@ -79,6 +79,10 @@ describe("endbetragDerSpende – einmalig", () => {
     expect(endbetragDerSpende({ donationType: "one-time", amount: "50", customAmount: "", items, totalAmount: 0 })).toBe(50);
   });
 
+  it("rundet ohne Warenkorb den eigenen Betrag auf Cent", () => {
+    expect(endbetragDerSpende({ donationType: "one-time", amount: "", customAmount: "10.555", items: [], totalAmount: 0 })).toBe(10.56);
+  });
+
   it("nimmt ohne Warenkorb den gewählten oder eigenen Betrag", () => {
     expect(endbetragDerSpende({ donationType: "one-time", amount: "100", customAmount: "", items: [], totalAmount: 0 })).toBe(100);
     expect(endbetragDerSpende({ donationType: "one-time", amount: "", customAmount: "7.5", items: [], totalAmount: 0 })).toBe(7.5);
@@ -91,6 +95,39 @@ describe("endbetragDerSpende – einmalig", () => {
   it("behandelt einen unbekannten Typ wie einmalig", () => {
     const items = [position({ totalPrice: 12.5 })];
     expect(endbetragDerSpende({ donationType: "", amount: "", customAmount: "", items, totalAmount: 12.5 })).toBe(12.5);
+  });
+});
+
+describe("eigenerBetrag", () => {
+  it.each([
+    ["12.346", "", "12.35"],
+    ["", "12.344", "12.34"],
+    ["", "0.125", "0.13"],
+    ["25", "", "25"],
+    ["", "17.50", "17.5"],
+    ["25", "40", "25"],
+  ])("macht aus Auswahl „%s“ und Eingabe „%s“ den Betrag „%s“", (amount, customAmount, erwartet) => {
+    expect(eigenerBetrag(amount, customAmount)).toBe(erwartet);
+  });
+
+  it("lässt leere und unlesbare Eingaben unverändert, damit die Prüfung der Aufrufer greift", () => {
+    expect(eigenerBetrag("", "")).toBe("");
+    expect(eigenerBetrag("", "abc")).toBe("abc");
+  });
+
+  it("rundet auf 0 bzw. negativ, die Aufrufer weisen ≤ 0 ab", () => {
+    expect(eigenerBetrag("", "0.004")).toBe("0");
+    expect(eigenerBetrag("", "-5.678")).toBe("-5.68");
+  });
+
+  it("gibt Stripe (Math.round auf Cent) und PayPal (toFixed(2)) denselben Betrag", () => {
+    // Vorher wich PayPal bei halben Cent ab: 1,115 ergab bei Stripe 112 Cent, bei PayPal "1.11".
+    for (const eingabe of ["1.115", "10.555", "12.345", "0.125", "99.99", "50"]) {
+      const betrag = parseFloat(eigenerBetrag("", eingabe));
+      expect(betrag.toFixed(2)).toBe((Math.round(betrag * 100) / 100).toFixed(2));
+      expect(Math.round(betrag * 100)).toBe(Math.round(parseFloat(eingabe) * 100));
+    }
+    expect(parseFloat(eigenerBetrag("", "1.115")).toFixed(2)).toBe("1.12");
   });
 });
 

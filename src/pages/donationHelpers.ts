@@ -2,7 +2,7 @@
 // React testbar sind (donationHelpers.test.ts).
 
 import type { CartItem } from "@/contexts/cartReducer";
-import { summeInCent } from "@/contexts/cartReducer";
+import { aufCent, summeInCent } from "@/contexts/cartReducer";
 
 export const formatBankTransferReference = (intentId: string) => `ALMA-${intentId}`;
 
@@ -41,6 +41,17 @@ export const formatFormSubmitErrorDetail = (body: unknown): string => {
   return JSON.stringify(body);
 };
 
+/**
+ * Eigener oder gewählter Betrag (Eingabe bzw. ?amount=) auf ganze Cent gerundet, wie der
+ * Warenkorb (aufCent): "12.346" → "12.35". Leer bleibt leer, Unlesbares bleibt unverändert, damit
+ * die Prüfungen der Aufrufer (isNaN, ≤ 0) weiter greifen.
+ */
+export const eigenerBetrag = (amount: string, customAmount: string): string => {
+  const eingabe = amount || customAmount;
+  const betrag = parseFloat(eingabe);
+  return eingabe === "" || isNaN(betrag) ? eingabe : String(aufCent(betrag));
+};
+
 interface SpendenBetragEingaben {
   donationType: string;
   amount: string;
@@ -52,7 +63,7 @@ interface SpendenBetragEingaben {
 /** Betrag der Spende in EUR: monatlich aus der Auswahl, einmalig bevorzugt aus dem Warenkorb. */
 export const endbetragDerSpende = ({ donationType, amount, customAmount, items, totalAmount }: SpendenBetragEingaben): number => {
   if (donationType === "monthly") {
-    return parseFloat(amount || customAmount || "0");
+    return parseFloat(eigenerBetrag(amount, customAmount) || "0");
   }
 
   if (items.length > 0) {
@@ -72,7 +83,7 @@ export const endbetragDerSpende = ({ donationType, amount, customAmount, items, 
     }
   }
 
-  return parseFloat(amount || customAmount || "0");
+  return parseFloat(eigenerBetrag(amount, customAmount) || "0");
 };
 
 /** Trennt die Hausnummer vom Ende der Straßenangabe: "Hauptstraße 12a" → "Hauptstraße" + "12a". */
