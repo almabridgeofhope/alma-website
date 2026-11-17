@@ -20,7 +20,14 @@ import PreloadImage from "@/components/PreloadImage";
 import { Heart, Shield, CheckCircle, Mail, CreditCard, Banknote, ShoppingCart, Package, Sprout, Droplets, Wheat, Trash2, Plus, Minus, Edit2, Check, X, Info, HelpCircle, BrickWall, Layers, Zap, Toilet, Sofa, Paintbrush, Copy, CheckCircle2, AlertCircle, Home, Landmark } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useShoppingCart } from "@/contexts/ShoppingCartContext";
-import { aufCent, summeInCent } from "@/contexts/cartReducer";
+import { aufCent } from "@/contexts/cartReducer";
+import {
+  endbetragDerSpende,
+  formatBankTransferReference,
+  formatFormSubmitErrorDetail,
+  getDonationDonorDisplayName,
+  strasseUndHausnummer,
+} from "@/pages/donationHelpers";
 import { stripeService } from "@/services/stripeService";
 import { paypalService } from "@/services/paypalService";
 import heroImage from "@/assets/nature/nature_2.webp";
@@ -77,43 +84,6 @@ const BANK_TRANSFER_ACCOUNT = {
   accountHolder:
     import.meta.env.VITE_BANK_TRANSFER_ACCOUNT_HOLDER || "Alma Bridge of Hope e.V.",
   bankName: import.meta.env.VITE_BANK_TRANSFER_BANK_NAME || "Wise",
-};
-
-const formatBankTransferReference = (intentId: string) => `ALMA-${intentId}`;
-
-type DonationDonorFormFields = {
-  donorType: "private" | "company";
-  firstName: string;
-  lastName: string;
-  companyName: string;
-};
-
-const getDonationDonorDisplayName = (fd: DonationDonorFormFields): string => {
-  if (fd.donorType === "company") {
-    return fd.companyName.trim();
-  }
-  return `${fd.firstName.trim()} ${fd.lastName.trim()}`.trim();
-};
-
-/** Parse form-submit / Edge Function error JSON without stringifying nested objects as [object Object]. */
-const formatFormSubmitErrorDetail = (body: unknown): string => {
-  if (body == null || typeof body !== "object") {
-    return typeof body === "string" ? body : "";
-  }
-  const b = body as Record<string, unknown>;
-  if (typeof b.error === "string") {
-    return b.error;
-  }
-  if (b.error != null && typeof b.error === "object") {
-    return JSON.stringify(b.error);
-  }
-  if (typeof b.message === "string") {
-    return b.message;
-  }
-  if (typeof b.code === "string" || typeof b.code === "number") {
-    return String(b.code);
-  }
-  return JSON.stringify(body);
 };
 
 // PayPal Button Component - uses PayPalScriptReducer hook (must be inside PayPalScriptProvider)
@@ -668,28 +638,13 @@ const Donation = () => {
   }, [donationType, paymentMethod]);
 
   const getFinalDonationAmount = useCallback((): number => {
-    if (donationType === "monthly") {
-      return parseFloat(amount || customAmount || "0");
-    }
-
-    if (cartState.items.length > 0) {
-      const cartTotal = cartState.totalAmount;
-      if (!isNaN(cartTotal) && cartTotal > 0) {
-        return cartTotal;
-      }
-
-      const calculatedTotal = summeInCent(
-        cartState.items.map((item) => {
-          const itemTotal = item.totalPrice || (item.unitPrice * (item.quantity || 1));
-          return isNaN(itemTotal) ? 0 : itemTotal;
-        }),
-      );
-      if (!isNaN(calculatedTotal) && calculatedTotal > 0) {
-        return calculatedTotal;
-      }
-    }
-
-    return parseFloat(amount || customAmount || "0");
+    return endbetragDerSpende({
+      donationType,
+      amount,
+      customAmount,
+      items: cartState.items,
+      totalAmount: cartState.totalAmount,
+    });
   }, [amount, customAmount, donationType, cartState.items, cartState.totalAmount]);
 
   const createDonationIntent = useCallback(async (): Promise<string> => {
@@ -783,10 +738,7 @@ const Donation = () => {
         }
       | undefined;
     if (includeAddressInPayload) {
-      const rawStreet = currentFormData.street.trim();
-      const streetMatch = rawStreet.match(/^(.*?)(?:\s+|,)(\d+[a-zA-Z0-9\-/]*)$/);
-      const parsedStreet = streetMatch?.[1]?.trim() || rawStreet;
-      const parsedHouseNumber = streetMatch?.[2]?.trim() || "";
+      const { street: parsedStreet, houseNumber: parsedHouseNumber } = strasseUndHausnummer(currentFormData.street);
       addressPayload = {
         street: parsedStreet,
         houseNumber: parsedHouseNumber,
