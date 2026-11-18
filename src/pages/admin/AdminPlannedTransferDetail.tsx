@@ -32,7 +32,7 @@ import OpenItemsPicker from "@/admin/OpenItemsPicker";
 import { PlanStatus } from "@/admin/PlannedTransfersCard";
 import StatTile from "@/admin/StatTile";
 import { useNoIndex } from "@/admin/useNoIndex";
-import { formatDate, formatEur, formatQty, formatUgx, parseAmount } from "@/admin/format";
+import { alsEingabe, formatDate, formatEur, formatQty, formatUgx, parseAmount, pruefeBetrag } from "@/admin/format";
 import { unitCostUgx, useEurRate, useProjectItems } from "@/admin/queries";
 import {
   formatPlanMonth,
@@ -376,15 +376,20 @@ interface AddPlanItemDialogProps {
 const AddPlanItemDialog = ({ planId, item, frei, onClose }: AddPlanItemDialogProps) => {
   const addItem = useAddPlannedItem();
   const rate = useEurRate();
-  const [qty, setQty] = useState(String(frei));
+  const [qty, setQty] = useState(alsEingabe(frei));
 
-  useEffect(() => setQty(String(frei)), [frei]);
+  useEffect(() => setQty(alsEingabe(frei)), [frei]);
 
   const menge = parseAmount(qty);
   const ugx = menge === null ? null : menge * unitCostUgx(item);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    const mengeErgebnis = pruefeBetrag(qty);
+    if (!mengeErgebnis.ok) {
+      toast.error(mengeErgebnis.message);
+      return;
+    }
     if (menge === null || menge <= 0) {
       toast.error("The quantity must be greater than 0.");
       return;
