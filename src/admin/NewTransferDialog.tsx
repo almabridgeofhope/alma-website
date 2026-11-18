@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCreateTransfer } from "./queries";
-import { formatQty, parseAmount } from "./format";
+import { formatQty, parseAmount, pruefeBetrag } from "./format";
 
 const KONTEN = ["MLP", "wise"];
 
@@ -34,8 +34,8 @@ const NewTransferDialog = ({ open, onOpenChange }: NewTransferDialogProps) => {
   const [purpose, setPurpose] = useState("");
   const [amountUgx, setAmountUgx] = useState("");
 
-  const eur = parseAmount(amountEur);
-  const ugx = parseAmount(amountUgx);
+  const eur = parseAmount(amountEur, "eur");
+  const ugx = parseAmount(amountUgx, "ugx");
   const rate = eur && ugx && eur > 0 ? ugx / eur : null;
 
   const reset = () => {
@@ -49,6 +49,12 @@ const NewTransferDialog = ({ open, onOpenChange }: NewTransferDialogProps) => {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    for (const ergebnis of [pruefeBetrag(amountEur, "eur"), pruefeBetrag(amountUgx, "ugx")]) {
+      if (!ergebnis.ok) {
+        toast.error(ergebnis.message);
+        return;
+      }
+    }
     if (eur === null || eur <= 0) {
       toast.error("Please enter an amount in euros.");
       return;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
-import { parseAmount } from "./format";
+import { toast } from "sonner";
+import { pruefeBetrag, type Betragsart } from "./format";
 import { cn } from "@/lib/utils";
 
 interface EditableAmountProps {
@@ -9,12 +10,14 @@ interface EditableAmountProps {
   label: string;
   placeholder?: string;
   allowEmpty?: boolean;
+  /** Bestimmt, ob Dezimalstellen gelten (UGX: keine). Standard "zahl". */
+  art?: Betragsart;
   /** Breite des Felds, standardmaessig w-28. */
   className?: string;
 }
 
 /** Zahl im Feld, gespeichert wird beim Verlassen oder mit Enter — kein Speichern-Knopf je Zeile. */
-const EditableAmount = ({ value, onCommit, label, placeholder, allowEmpty = true, className = "w-28" }: EditableAmountProps) => {
+const EditableAmount = ({ value, onCommit, label, placeholder, allowEmpty = true, art = "zahl", className = "w-28" }: EditableAmountProps) => {
   const asText = (input: number | null): string =>
     input === null ? "" : String(input);
   const [draft, setDraft] = useState(() => asText(value));
@@ -22,7 +25,15 @@ const EditableAmount = ({ value, onCommit, label, placeholder, allowEmpty = true
   useEffect(() => setDraft(asText(value)), [value]);
 
   const commit = () => {
-    const parsed = parseAmount(draft);
+    // Unverändert (auch ein Wert mit mehr Dezimalstellen, als die Eingabe zulässt): nichts zu tun.
+    if (draft === asText(value)) return;
+    const ergebnis = pruefeBetrag(draft, art);
+    if (!ergebnis.ok) {
+      toast.error(ergebnis.message);
+      setDraft(asText(value));
+      return;
+    }
+    const parsed = ergebnis.value;
     if (parsed === null && !allowEmpty) {
       setDraft(asText(value));
       return;
