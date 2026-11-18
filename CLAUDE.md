@@ -82,7 +82,7 @@ Gilt für jedes Repo. Ein nächtlicher Abgleich schreibt diesen Abschnitt wörtl
 
 ### Daten und Dienste
 
-- **Versand nur über die Versandwege der `CLAUDE.md`.** Code versendet E-Mails nur über die Wege, die im Abschnitt „Versandwege“ der `CLAUDE.md` des Repos stehen (Datei, Absender, Empfängerkreis). Ein neuer Versandweg oder ein neuer Empfängerkreis braucht eine Freigabe. Was im eigenen Namen an Dritte schreibt, legt immer einen Entwurf an und versendet nicht.
+- **Versand nur über die Versandwege der `CLAUDE.md`.** Code versendet E-Mails nur über die Wege, die im Abschnitt „Versandwege“ der `CLAUDE.md` des Repos stehen (Datei, Absender, Empfängerkreis). Ein neuer Versandweg oder ein neuer Empfängerkreis braucht eine Freigabe. Was im eigenen Namen an Dritte schreibt, legt einen Entwurf an, außer der Eintrag unter „Versandwege“ erlaubt ausdrücklich den direkten Versand (mit seinem Schalter).
 - **Testmails nur an freigegebene eigene Adressen:** `clara@thuemecke.net`, `clara@almabridgeofhope.org`, `clara.thue@gmail.com`, `c.thuemecke.extern@intega-solutions.com`. Den Empfänger aus der Konfiguration lesen, nicht fest eintragen. Nie an Dritte, auch nicht „nur kurz“.
 - **Produktionsdaten nur mit Freigabe schreiben.** Lesen ist erlaubt.
 - **Prod nur über die Prod-Zugriffe der `CLAUDE.md`.** Personio standardmäßig mit `PERSONIO_CLIENT_ID_DEV` / `PERSONIO_CLIENT_SECRET_DEV`, die Variablen ohne `_DEV` zeigen auf Produktion. Zugriff auf eine Produktivumgebung nur in Werkzeugen aus dem Abschnitt „Prod-Zugriffe“ der `CLAUDE.md`, dort mit Trockenlauf als Standard. Geschrieben wird erst mit ausdrücklichem Schalter nach Freigabe.
@@ -97,6 +97,14 @@ Gilt für jedes Repo. Ein nächtlicher Abgleich schreibt diesen Abschnitt wörtl
 - **Doku im selben PR:** Ändert ein PR ein Verhalten, das in `CLAUDE.md`, `README.md` oder `TESTING.md` beschrieben ist, ändert er die Datei mit.
 - **Jede Regel steht nur in der `CLAUDE.md`.** `README.md` erklärt Zweck, Einrichtung und Bedienung, `TESTING.md` den Teststand, `docs/` das Nachschlagewissen (Architektur, Abläufe, Entscheidungsgeschichte). Dort stehen keine Regeln, höchstens ein Verweis. Keine `AGENTS.md`, keine Cursor- oder Copilot-Regeln.
 - Keine ADR-Dateien. Entscheidungen stehen in `CLAUDE.md` oder `docs/architecture.md`.
+
+### Pull Requests
+
+- **Titel** im Conventional-Commit-Format, Imperativ, höchstens 70 Zeichen, ohne Personennamen.
+- **Beschreibung höchstens 200 Wörter:** 1–3 Sätze, warum die Änderung nötig ist und was sie bewirkt, dann die Zeilen `Getestet:` (Befehl oder Vorgehen und Ergebnis) und `Achtung:` (Risiko, offene Entscheidung oder „keins“). Kein Nacherzählen des Diffs, keine Dateiliste, kein Arbeitsprotokoll.
+- **Keine personenbezogenen Daten** in Titel, Beschreibung, Kommentaren und Commit-Messages: keine Namen oder Kürzel von Betroffenen mit Zahlen, keine Gehälter, Provisionen, Adressen oder Datensätze. Keine Secrets.
+- **Ergebnisse und Analysen gehören ins Ticket oder nach Notion**, die PR verlinkt nur darauf.
+- Ist doch etwas hineingeraten: Beschreibung ersetzen, die alte Fassung aus der Bearbeitungshistorie löschen, Secrets zusätzlich rotieren.
 
 ### Git
 
