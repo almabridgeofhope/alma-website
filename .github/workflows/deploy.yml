@@ -17,6 +17,10 @@ name: Deploy React App to GitHub Pages
 # VITE_GOOGLE_DRIVE_FOLDER_ID    - Rueckfall: ein Ordner fuer alle Belege
 # VITE_GOOGLE_DRIVE_FOLDER_UEBERWEISUNGEN - Drive-Ordner der Ueberweisungsbelege
 # VITE_GOOGLE_DRIVE_FOLDER_POSITIONEN     - Drive-Ordner der Positionsbelege
+# VITE_EMAILJS_SERVICE_ID        - EmailJS Service-ID (Kontaktformular, oeffentlich; Secret ODER Variable)
+# VITE_EMAILJS_TEMPLATE_ID       - EmailJS Template-ID (Kontaktformular, oeffentlich; Secret ODER Variable)
+# VITE_EMAILJS_PUBLIC_KEY        - EmailJS Public Key (Kontaktformular, oeffentlich; Secret ODER Variable)
+#                                  Ohne diese drei bricht der Build ab (vite.config.ts).
 #
 # Backend Secrets (synced to Apps Script automatically):
 # VITE_STRIPE_TEST_SECRET_KEY    - Stripe Test Secret Key (sk_test_...)
@@ -116,6 +120,9 @@ jobs:
         VITE_GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.VITE_GOOGLE_DRIVE_FOLDER_ID }}
         VITE_GOOGLE_DRIVE_FOLDER_UEBERWEISUNGEN: ${{ secrets.VITE_GOOGLE_DRIVE_FOLDER_UEBERWEISUNGEN }}
         VITE_GOOGLE_DRIVE_FOLDER_POSITIONEN: ${{ secrets.VITE_GOOGLE_DRIVE_FOLDER_POSITIONEN }}
+        VITE_EMAILJS_SERVICE_ID: ${{ secrets.VITE_EMAILJS_SERVICE_ID || vars.VITE_EMAILJS_SERVICE_ID }}
+        VITE_EMAILJS_TEMPLATE_ID: ${{ secrets.VITE_EMAILJS_TEMPLATE_ID || vars.VITE_EMAILJS_TEMPLATE_ID }}
+        VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY || vars.VITE_EMAILJS_PUBLIC_KEY }}
         VITE_SEPA_IBAN: ${{ secrets.VITE_SEPA_IBAN }}
         VITE_SEPA_BIC: ${{ secrets.VITE_SEPA_BIC }}
         VITE_SEPA_ACCOUNT_HOLDER: ${{ secrets.VITE_SEPA_ACCOUNT_HOLDER }}

@@ -12,6 +12,19 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import heroImage from "@/assets/nature/land_11.webp";
 import emailjs from '@emailjs/browser';
+import {
+  baueTemplateParams,
+  fehlendeEmailjsVariablen,
+  istHoneypotBefuellt,
+} from "@/lib/kontaktformular";
+
+// Statisch gelesen (Vite ersetzt sie beim Build). Fehlt ein Wert, bricht schon der Build ab,
+// siehe vite.config.ts; die Prüfung beim Absenden ist nur ein zweites Netz.
+const EMAILJS_ENV = {
+  VITE_EMAILJS_SERVICE_ID: import.meta.env.VITE_EMAILJS_SERVICE_ID,
+  VITE_EMAILJS_TEMPLATE_ID: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+  VITE_EMAILJS_PUBLIC_KEY: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+};
 
 const Contact = () => {
   const { toast } = useToast();
@@ -23,6 +36,8 @@ const Contact = () => {
     subject: "",
     message: "",
   });
+  // Honigtopf: für Menschen unsichtbar und nicht erreichbar, Bots füllen ihn aus.
+  const [honeypot, setHoneypot] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,24 +63,36 @@ const Contact = () => {
       return;
     }
 
+    // Honigtopf befüllt: Bot. Stiller "Erfolg", es wird nichts gesendet.
+    if (istHoneypotBefuellt(honeypot)) {
+      toast({
+        title: t("contact.success.title"),
+        description: t("contact.success.description"),
+      });
+      setFormData({ name: "", email: "", subject: "", message: "" });
+      setHoneypot("");
+      return;
+    }
+
+    if (fehlendeEmailjsVariablen(EMAILJS_ENV).length > 0) {
+      console.error("EmailJS-Konfiguration fehlt (VITE_EMAILJS_*)");
+      toast({
+        title: t("contact.error.title"),
+        description: t("contact.error.send"),
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      // EmailJS configuration
-      const serviceId = 'service_wou9sst'; // Your EmailJS service ID
-      const templateId = 'template_eqc74jo'; // Your EmailJS template ID
-      const publicKey = 'zxPupF44hCueD6u4K'; // Replace with your actual EmailJS public key
-
-      const templateParams = {
-        from_name: formData.name,
-        from_email: formData.email,
-        subject: formData.subject || 'Contact Form Message',
-        message: formData.message,
-        to_email: 'info@almabridgeofhope.org',
-        reply_to: formData.email, // Add reply-to for better email handling
-      };
-
-      await emailjs.send(serviceId, templateId, templateParams, publicKey);
+      await emailjs.send(
+        EMAILJS_ENV.VITE_EMAILJS_SERVICE_ID,
+        EMAILJS_ENV.VITE_EMAILJS_TEMPLATE_ID,
+        baueTemplateParams(formData),
+        EMAILJS_ENV.VITE_EMAILJS_PUBLIC_KEY,
+      );
 
       toast({
         title: t("contact.success.title"),
@@ -146,6 +173,22 @@ const Contact = () => {
                   {t("contact.form.title")}
                 </h2>
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Honigtopf: außerhalb des Bildschirms, nicht fokussierbar, für Screenreader ausgeblendet */}
+                  <div
+                    aria-hidden="true"
+                    className="absolute -left-[9999px] h-px w-px overflow-hidden"
+                  >
+                    <input
+                      id="kontakt-zusatzfeld"
+                      name="kontakt-zusatzfeld"
+                      type="text"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={honeypot}
+                      onChange={(e) => setHoneypot(e.target.value)}
+                    />
+                  </div>
+
                   <div>
                     <Label htmlFor="name">{t("contact.form.name")}</Label>
                     <Input
