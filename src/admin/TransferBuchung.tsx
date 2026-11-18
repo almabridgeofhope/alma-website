@@ -55,6 +55,7 @@ const TransferBuchung = ({ transfer, transferId, className }: TransferBuchungPro
           <Label>Received in UGX</Label>
           <EditableAmount
             label="Amount received in UGX"
+            art="ugx"
             className="w-36"
             value={bestaetigt ? absolute(transfer.original_amount) : null}
             onCommit={(next) =>

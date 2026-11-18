@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatEur, formatUgx, parseAmount } from "./format";
+import { formatEur, formatUgx, parseAmount, pruefeBetrag } from "./format";
 import { phaseLabel, useCreateProjectItem, useEurRate, useProjectPhases, useProjects } from "./queries";
 
 interface NewProjectItemDialogProps {
@@ -61,6 +61,12 @@ const NewProjectItemDialog = ({
     if (projectId === "" || selectedPhaseId === "") {
       toast.error("Please choose a project and a phase.");
       return;
+    }
+    for (const ergebnis of [pruefeBetrag(qty), pruefeBetrag(unitCost)]) {
+      if (!ergebnis.ok) {
+        toast.error(ergebnis.message);
+        return;
+      }
     }
     if (parsedQty === null || parsedQty <= 0 || parsedCost === null || parsedCost < 0) {
       toast.error("Quantity and unit price must be numbers, and the quantity greater than 0.");

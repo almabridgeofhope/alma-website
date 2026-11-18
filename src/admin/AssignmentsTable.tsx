@@ -180,6 +180,7 @@ const AssignmentsTable = ({ transferId, assignments, itemById, transferDate }: A
                   <TableCell className="text-right">
                     <EditableAmount
                       label="Actual amount in UGX"
+                      art="ugx"
                       value={assignment.amount_paid_ugx}
                       placeholder={item ? String(Math.round(assignmentUgx(assignment, item))) : "UGX"}
                       onCommit={(next) =>

@@ -488,6 +488,7 @@ const AdminFinance = () => {
                       label={`Amount for ${zeile.bezeichnung}`}
                       value={zeile.betrag_eur}
                       allowEmpty={false}
+                      art="eur"
                       onCommit={(next) => {
                         if (next !== null) betragAendern.mutate({ planId: zeile.plan_id, betrag: next });
                       }}
@@ -548,6 +549,7 @@ const AdminFinance = () => {
                       label={`Amount for ${zeile.bezeichnung}`}
                       value={zeile.betrag_eur}
                       allowEmpty={false}
+                      art="eur"
                       onCommit={(next) => {
                         if (next !== null) kostenAendern.mutate({ planId: zeile.plan_id, betrag: next });
                       }}
