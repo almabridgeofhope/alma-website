@@ -24,6 +24,8 @@ import { aufCent } from "@/contexts/cartReducer";
 import {
   eigenerBetrag,
   endbetragDerSpende,
+  hatNullEuroPosition,
+  ueberweisungsbetrag,
   formatBankTransferReference,
   formatFormSubmitErrorDetail,
   getDonationDonorDisplayName,
@@ -722,6 +724,11 @@ const Donation = () => {
       throw new Error("invalid_amount");
     }
 
+    if (hatNullEuroPosition(cartState.items)) {
+      showError(t("donation.form.error.zeroItem"));
+      throw new Error("zero_euro_item");
+    }
+
     const hasVoluntaryAddress =
       !!currentFormData.street.trim() ||
       !!currentFormData.postalCode.trim() ||
@@ -1227,6 +1234,11 @@ const Donation = () => {
       showError(t("donation.form.error.amount"));
       return false;
     }
+
+    if (hatNullEuroPosition(cartState.items)) {
+      showError(t("donation.form.error.zeroItem"));
+      return false;
+    }
     
     if (!validateDonorIdentityFields()) {
       return false;
@@ -1302,11 +1314,13 @@ const Donation = () => {
 
   const copyBankTransferDetails = () => {
     if (!registeredBankTransferRef) return;
-    const finalAmount = donationType === "monthly"
-      ? eigenerBetrag(amount, customAmount)
-      : (cartState.items.length > 0
-          ? cartState.totalAmount.toString()
-          : eigenerBetrag(amount, customAmount));
+    const finalAmount = ueberweisungsbetrag({
+      donationType,
+      amount,
+      customAmount,
+      items: cartState.items,
+      totalAmount: cartState.totalAmount,
+    });
     const details = [
       `IBAN: ${BANK_TRANSFER_ACCOUNT.iban}`,
       `BIC: ${BANK_TRANSFER_ACCOUNT.bic}`,
@@ -1346,6 +1360,9 @@ const Donation = () => {
     const finalAmount = getFinalDonationAmount();
     if (isNaN(finalAmount) || finalAmount <= 0) {
       throw new Error(t("donation.form.error.amount"));
+    }
+    if (hatNullEuroPosition(cartState.items)) {
+      throw new Error(t("donation.form.error.zeroItem"));
     }
 
     // Get current formData from ref to ensure we have the latest values
@@ -1849,6 +1866,9 @@ const Donation = () => {
       console.error("Invalid amount for PayPal subscription:", { finalAmount, finalAmountStr });
       throw new Error(t("donation.form.error.amount"));
     }
+    if (hatNullEuroPosition(cartState.items)) {
+      throw new Error(t("donation.form.error.zeroItem"));
+    }
     
     const intentId = await createDonationIntent();
     console.log("Creating PayPal subscription plan via backend with amount:", finalAmount, "EUR");
@@ -2127,7 +2147,7 @@ const Donation = () => {
       console.error("Error creating PayPal subscription:", error);
       throw error;
     }
-  }, [createDonationIntent, language, t]);
+  }, [cartState.items, createDonationIntent, language, t]);
 
   const onPayPalCancel = useCallback(() => {
     console.log("PayPal payment cancelled");
@@ -3538,9 +3558,13 @@ const Donation = () => {
                 <dt className="text-muted-foreground">{t("donation.form.bankTransferAmount")}</dt>
                 <dd className="font-medium sm:col-start-2">
                   €
-                  {cartState.items.length > 0
-                    ? cartState.totalAmount.toFixed(2)
-                    : parseFloat(eigenerBetrag(amount, customAmount) || "0").toFixed(2)}
+                  {ueberweisungsbetrag({
+                    donationType,
+                    amount,
+                    customAmount,
+                    items: cartState.items,
+                    totalAmount: cartState.totalAmount,
+                  })}
                 </dd>
                 <dt className="text-muted-foreground">{t("donation.form.sepaReference")}</dt>
                 <dd className="font-mono text-xs break-all sm:col-start-2">{registeredBankTransferRef}</dd>
