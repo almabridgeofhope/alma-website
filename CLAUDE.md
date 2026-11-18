@@ -32,6 +32,9 @@
   Bundle; Secret Keys und Setup-Tokens gehören nur in die Sync-Schritte zu den Apps Scripts.
 - `VITE_STAGE` ist im Deploy fest `prod` und wird nicht als Secret angelegt; ohne den Wert läuft
   PayPal gegen die Sandbox.
+- **Kontaktformular:** `to_email` nie in den Payload, der Empfänger gehört ins EmailJS-Template. `VITE_EMAILJS_*`
+  (Vorlage `.env.example`) müssen gesetzt sein, sonst bricht `vite build` ab (der Dev-Server startet auch ohne); der CI-Build setzt
+  Platzhalter. Das Honigtopf-Feld `kontakt-zusatzfeld` (kein Name wie `website`, den Autofill füllt) bleibt unsichtbar, nicht fokussierbar und `aria-hidden`.
 - **Jeder neue Text in `translations.en` und `translations.de`** (`src/contexts/LanguageContext.tsx`).
 - **Verträge mit alma-data-platform nicht einseitig ändern:** Payload an `form-submit` (Typen dort in
   `supabase/functions/form-submit/index.ts`, z. B. Geschenknachricht höchstens 300 Zeichen),
@@ -47,7 +50,7 @@
 
 | Datei | Absender | Empfängerkreis | Auslöser |
 |---|---|---|---|
-| `src/pages/Contact.tsx` (Kontaktformular über EmailJS, Service `service_wou9sst`, Template `template_eqc74jo`) | das bei EmailJS hinterlegte Konto; Reply-To = Besucher | `info@almabridgeofhope.org` | Besucher schickt das Kontaktformular ab |
+| `src/pages/Contact.tsx` (Kontaktformular über EmailJS; Service, Template und Public Key aus `VITE_EMAILJS_*`) | das bei EmailJS hinterlegte Konto; Reply-To = Besucher | `info@almabridgeofhope.org`, fest im EmailJS-Template (To Email), der Browser schickt keinen Empfänger mit | Besucher schickt das Kontaktformular ab; ein befülltes Honigtopf-Feld sendet nichts |
 
 Keine E-Mail sonst. Newsletter-Anmeldung (`src/components/NewsletterForm.tsx`, Spendenformular),
 Mitgliedsantrag und Spendenabsicht gehen als Daten an `form-submit` in alma-data-platform; Mails

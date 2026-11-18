@@ -50,6 +50,12 @@ jobs:
         run: npm test
 
       - name: Build ohne Secrets
+        # Der Build verlangt die drei EmailJS-Werte (vite.config.ts). Platzhalter genügen,
+        # es wird nichts gesendet.
+        env:
+          VITE_EMAILJS_SERVICE_ID: ci-platzhalter
+          VITE_EMAILJS_TEMPLATE_ID: ci-platzhalter
+          VITE_EMAILJS_PUBLIC_KEY: ci-platzhalter
         run: npm run build
 
       - name: Dependency-Audit
