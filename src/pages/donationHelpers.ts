@@ -86,6 +86,19 @@ export const endbetragDerSpende = ({ donationType, amount, customAmount, items, 
   return parseFloat(eigenerBetrag(amount, customAmount) || "0");
 };
 
+/** Betrag für die Überweisungsdaten, immer mit zwei Nachkommastellen: 12,5 → "12.50". */
+export const betragMitCent = (betrag: number): string => (Number.isFinite(betrag) ? betrag : 0).toFixed(2);
+
+/** Betrag der Spende als Text für die Überweisungsdaten (Anzeige und Kopiertext aus derselben Quelle). */
+export const ueberweisungsbetrag = (eingaben: SpendenBetragEingaben): string => betragMitCent(endbetragDerSpende(eingaben));
+
+/**
+ * Ob eine Position im Warenkorb keinen Betrag hat. Die freie Spende landet mit 0 € im Warenkorb, damit der
+ * Betrag dort eingetragen werden kann; bleibt er leer, ginge die Position als 0-€-Zeile mit an
+ * form-submit, sobald andere Positionen die Summe über 0 heben.
+ */
+export const hatNullEuroPosition = (items: CartItem[]): boolean => items.some((item) => !(item.totalPrice > 0));
+
 /** Trennt die Hausnummer vom Ende der Straßenangabe: "Hauptstraße 12a" → "Hauptstraße" + "12a". */
 export const strasseUndHausnummer = (eingabe: string): { street: string; houseNumber: string } => {
   const rawStreet = eingabe.trim();

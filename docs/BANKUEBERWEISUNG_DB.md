@@ -6,7 +6,8 @@ Diese Notiz beschreibt, was die Spendenseite (`/donation`) bei der Zahlungsart *
 
 1. Der Nutzer wählt **Einmalspende** und **Überweisung**, füllt das Formular aus und klickt auf **Spende registrieren & Bankdaten anzeigen**.
 2. Das Frontend erzeugt eine **`intentId`** (UUID), sendet sie an **`VITE_FORM_SUBMIT_URL`** und zeigt als **Verwendungszweck** den String **`ALMA-{intentId}`** (Beispiel: `ALMA-550e8400-e29b-41d4-a716-446655440000`).
-3. Weitere Ziele gibt es nicht: Der **Form-Submit** (Punkt 2) ist die einzige Quelle der Wahrheit für Überweisungs-Spenden.
+3. Der angezeigte und kopierte Betrag steht immer mit zwei Nachkommastellen (`12.50`). Ein Warenkorb mit einer Position ohne Betrag (freie Spende mit 0 €) wird nicht registriert; der Spender bekommt einen Hinweis. Die Prüfung sitzt in `createDonationIntent` und gilt damit für jede Zahlungsart (Stripe, PayPal, Überweisung, einmalig wie monatlich), weil die Positionen immer mit an `form-submit` gehen.
+4. Weitere Ziele gibt es nicht: Der **Form-Submit** (Punkt 2) ist die einzige Quelle der Wahrheit für Überweisungs-Spenden.
 
 ## Payload an `VITE_FORM_SUBMIT_URL` (JSON)
 
