@@ -1,20 +1,22 @@
 name: CI
 
-# Schicht 1 (statisch) aus TESTING.md: läuft bei jedem Pull Request und jedem
-# Push auf main. Der Build läuft ohne Secrets, er kann also nichts Echtes
-# ansprechen.
+# Schicht 1 (statisch) aus TESTING.md: läuft bei jedem Pull Request und auf
+# main als Job `checks` in deploy.yml (workflow_call), vor dem Build. Ein
+# eigener Lauf bei Push auf main entfällt, sonst liefe die CI doppelt. Der
+# Build läuft ohne Secrets, er kann also nichts Echtes ansprechen.
 
 on:
   pull_request:
-  push:
-    branches: [main]
+  workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  # Nur Pull Requests abbrechen: ein neuer Push auf main darf die Checks
+  # eines laufenden Deploys nicht abbrechen.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   statisch:
