@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { CartItem } from "@/contexts/cartReducer";
 import {
+  betragMitCent,
   eigenerBetrag,
   endbetragDerSpende,
   formatBankTransferReference,
   formatFormSubmitErrorDetail,
   getDonationDonorDisplayName,
+  hatNullEuroPosition,
   strasseUndHausnummer,
+  ueberweisungsbetrag,
 } from "./donationHelpers";
 
 // Reine Helfer des Spendenformulars: Betrag, Verwendungszweck, Spendername, Anschrift und die
@@ -224,5 +227,56 @@ describe("formatFormSubmitErrorDetail", () => {
     expect(formatFormSubmitErrorDetail(null)).toBe("");
     expect(formatFormSubmitErrorDetail(undefined)).toBe("");
     expect(formatFormSubmitErrorDetail(502)).toBe("");
+  });
+});
+
+describe("Überweisungsdaten: Betrag immer mit zwei Nachkommastellen", () => {
+  it("betragMitCent: 12,5 → 12.50, ganze Zahl → 25.00", () => {
+    expect(betragMitCent(12.5)).toBe("12.50");
+    expect(betragMitCent(25)).toBe("25.00");
+  });
+
+  it("nimmt die Summe des Warenkorbs: 12,5 → 12.50 (Kopiertext ging bisher als 12.5 raus)", () => {
+    const items = [position({ totalPrice: 12.5 })];
+    expect(ueberweisungsbetrag({ donationType: "one-time", amount: "", customAmount: "", items, totalAmount: 12.5 })).toBe("12.50");
+  });
+
+  it("nimmt ohne Warenkorb den gewählten oder eigenen Betrag, gerundet auf Cent", () => {
+    expect(ueberweisungsbetrag({ donationType: "one-time", amount: "30", customAmount: "", items: [], totalAmount: 0 })).toBe("30.00");
+    expect(ueberweisungsbetrag({ donationType: "one-time", amount: "", customAmount: "7.5", items: [], totalAmount: 0 })).toBe("7.50");
+    expect(ueberweisungsbetrag({ donationType: "one-time", amount: "", customAmount: "12.346", items: [], totalAmount: 0 })).toBe("12.35");
+  });
+});
+
+describe("hatNullEuroPosition", () => {
+  it("findet die freie Spende ohne Betrag, auch wenn andere Positionen die Summe über 0 heben", () => {
+    const leer = position({ id: "general-donation", type: "general-donation", unitPrice: 0, totalPrice: 0 });
+    expect(hatNullEuroPosition([position({}), leer])).toBe(true);
+  });
+
+  it("meldet nichts, wenn jede Position einen Betrag hat oder der Warenkorb leer ist", () => {
+    expect(hatNullEuroPosition([position({}), position({ id: "b", totalPrice: 0.01 })])).toBe(false);
+    expect(hatNullEuroPosition([])).toBe(false);
+  });
+
+  it("zählt NaN als Position ohne Betrag", () => {
+    expect(hatNullEuroPosition([position({ totalPrice: NaN })])).toBe(true);
+  });
+});
+
+describe("ueberweisungsbetrag: Randfälle", () => {
+  it("monatlich zählt der gewählte Betrag, nie der Warenkorb", () => {
+    const items = [position({ totalPrice: 12.5 })];
+    expect(ueberweisungsbetrag({ donationType: "monthly", amount: "10", customAmount: "", items, totalAmount: 12.5 })).toBe("10.00");
+  });
+
+  it("Warenkorb mit Summe 0 fällt auf den eigenen Betrag zurück", () => {
+    const items = [position({ unitPrice: 0, totalPrice: 0 })];
+    expect(ueberweisungsbetrag({ donationType: "one-time", amount: "", customAmount: "7.5", items, totalAmount: 0 })).toBe("7.50");
+  });
+
+  it("zeigt bei nicht lesbarem Betrag 0.00 statt NaN", () => {
+    expect(betragMitCent(NaN)).toBe("0.00");
+    expect(ueberweisungsbetrag({ donationType: "one-time", amount: "", customAmount: "abc", items: [], totalAmount: 0 })).toBe("0.00");
   });
 });
