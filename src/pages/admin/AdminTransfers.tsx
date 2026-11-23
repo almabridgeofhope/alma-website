@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AlertCircle, CheckCircle2, ChevronRight, FileText, Plus } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,7 @@ const AdminTransfers = () => {
   const transfers = useTransferSummaries();
   const plans = usePlannedTransfers();
   const rate = useEurRate();
+  const navigate = useNavigate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const openNeed = useMemo(() => {
@@ -105,7 +106,6 @@ const AdminTransfers = () => {
                     <TableHead className="w-14 text-right">No.</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="w-40">Reference</TableHead>
-                    <TableHead>Account</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead className="text-right">Fee</TableHead>
                     <TableHead className="text-right">Assigned</TableHead>
@@ -118,7 +118,11 @@ const AdminTransfers = () => {
                 </TableHeader>
                 <TableBody>
                   {awaitingBooking.map((plan) => (
-                    <TableRow key={plan.plan_transfer_id} className="cursor-pointer">
+                    <TableRow
+                      key={plan.plan_transfer_id}
+                      className="cursor-pointer"
+                      onClick={() => navigate(`/admin/planned-transfers/${encodeURIComponent(plan.plan_transfer_id)}`)}
+                    >
                       <TableCell className="text-right tabular-nums text-muted-foreground">–</TableCell>
                       <TableCell className="whitespace-nowrap">{formatDate(plan.gesendet_am)}</TableCell>
                       <TableCell className="max-w-[10rem] font-medium">
@@ -136,7 +140,6 @@ const AdminTransfers = () => {
                           <Badge variant="secondary">sent · awaiting booking</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">–</TableCell>
                       <TableCell className="whitespace-nowrap text-right tabular-nums text-muted-foreground">
                         {formatEur(plan.eur_geplant)}
                         <p className="text-xs">planned</p>
@@ -151,6 +154,7 @@ const AdminTransfers = () => {
                         <Link
                           to={`/admin/planned-transfers/${encodeURIComponent(plan.plan_transfer_id)}`}
                           className="flex items-center justify-end text-primary hover:underline"
+                          onClick={(event) => event.stopPropagation()}
                           aria-label={`Open planned transfer ${plan.bezeichnung}`}
                         >
                           <ChevronRight className="h-4 w-4" aria-hidden="true" />
@@ -162,7 +166,11 @@ const AdminTransfers = () => {
                     const id = transfer.external_transaction_id;
                     const offen = offenVonTransfer(transfer, transfer.assignedUgx, rate.data);
                     return (
-                      <TableRow key={transfer.transaction_id} className={id ? "cursor-pointer" : undefined}>
+                      <TableRow
+                        key={transfer.transaction_id}
+                        className={id ? "cursor-pointer" : undefined}
+                        onClick={id ? () => navigate(`/admin/transfers/${encodeURIComponent(id)}`) : undefined}
+                      >
                         <TableCell className="text-right tabular-nums text-muted-foreground">
                           {transfer.buchung_nr ?? "–"}
                         </TableCell>
@@ -187,7 +195,6 @@ const AdminTransfers = () => {
                             </p>
                           )}
                         </TableCell>
-                        <TableCell className="text-muted-foreground">{transfer.konto}</TableCell>
                         <TableCell className="whitespace-nowrap text-right tabular-nums">
                           {formatEur(absolute(transfer.amount))}
                         </TableCell>
@@ -225,6 +232,7 @@ const AdminTransfers = () => {
                             <Link
                               to={`/admin/transfers/${encodeURIComponent(id)}`}
                               className="flex items-center justify-end text-primary hover:underline"
+                              onClick={(event) => event.stopPropagation()}
                               aria-label={`Open transfer ${id}`}
                             >
                               <ChevronRight className="h-4 w-4" aria-hidden="true" />
