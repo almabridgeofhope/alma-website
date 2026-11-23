@@ -20,6 +20,7 @@ import ReceiptConfirmDialog from "@/admin/ReceiptConfirmDialog";
 import { geplanterUeberweisungsName } from "@/admin/belegName";
 import type { DriveFile } from "@/lib/googleDrive";
 import { absolute, formatDate, formatEur, formatUgx } from "@/admin/format";
+import { offenVonTransfer } from "@/admin/transferOffen";
 import {
   assignmentUgx,
   openReceipt,
@@ -75,6 +76,11 @@ const AdminTransferDetail = () => {
       : null;
   const transferredEur = absolute(transfer?.amount);
   const assignedEur = rate.data ? assignedUgx / rate.data : null;
+  const offen = offenVonTransfer(
+    { amount: transfer?.amount ?? 0, original_amount: transfer?.original_amount ?? null, erhalten_bestaetigt_am: transfer?.erhalten_bestaetigt_am ?? null },
+    assignedUgx,
+    rate.data,
+  );
 
   // Was noch nicht zugeordnet ist: in UGX, sobald die Ankunft bestaetigt ist, sonst in Euro.
   const rest =
@@ -143,7 +149,7 @@ const AdminTransferDetail = () => {
         <Erledigt transfer={transfer} transferId={transferId} rest={rest} />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatTile
           label="Transferred"
           value={formatEur(transferredEur)}
@@ -163,21 +169,18 @@ const AdminTransferDetail = () => {
           value={formatUgx(assignedUgx)}
           hint={assignedEur === null ? undefined : `${formatEur(assignedEur)} at the planning rate`}
         />
-        {receivedUgx === null ? (
-          <StatTile
-            label="Remainder in euros"
-            value={assignedEur === null ? "–" : formatEur(transferredEur - assignedEur)}
-            hint="transferred minus assigned"
-            tone="warning"
-          />
-        ) : (
-          <StatTile
-            label="Remainder in UGX"
-            value={formatUgx(receivedUgx - assignedUgx)}
-            hint="received minus assigned"
-            tone={Math.abs(receivedUgx - assignedUgx) < 1 ? "positive" : "warning"}
-          />
-        )}
+        <StatTile
+          label="Remainder in euros"
+          value={offen.eur === null ? "–" : formatEur(offen.eur)}
+          hint="transferred minus assigned"
+          tone={offen.eur !== null && Math.abs(offen.eur) < 0.5 ? "positive" : "warning"}
+        />
+        <StatTile
+          label="Remainder in UGX"
+          value={offen.ugx === null ? "–" : formatUgx(offen.ugx)}
+          hint={offen.ugx === null ? "follows the confirmation" : "received minus assigned"}
+          tone={offen.ugx === null ? "default" : Math.abs(offen.ugx) < 1 ? "positive" : "warning"}
+        />
       </div>
 
       {/* Buchungsangaben und Planuebernahme teilen sich eine Zeile; ohne offene Plaene nimmt die Buchung sie ganz. */}
