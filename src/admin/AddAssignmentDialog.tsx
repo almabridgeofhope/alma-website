@@ -17,7 +17,7 @@ import { belegNachSchemaBenennen, useBelegVorschlag } from "./useBelegVorschlag"
 import BelegVorschlagFelder from "./BelegVorschlagFelder";
 import { geplanterName } from "./belegName";
 import type { DriveFile } from "@/lib/googleDrive";
-import { formatDate, formatQty, formatUgx, parseAmount } from "./format";
+import { alsEingabe, formatDate, formatQty, formatUgx, parseAmount, pruefeBetrag } from "./format";
 import { unitCostUgx, unverknuepftFuer, useCreateAssignment } from "./queries";
 import type { ProjectItem } from "./types";
 
@@ -34,7 +34,7 @@ const AddAssignmentDialog = ({ transferId, transferDate, item, onClose }: AddAss
   // Ein alter Transfer traegt zuerst nach, was laut Belegen schon bezahlt ist.
   const nachzutragen = unverknuepftFuer(item, transferDate);
   const vorschlag = nachzutragen > 0 ? nachzutragen : item.qty_open;
-  const [qty, setQty] = useState(String(vorschlag));
+  const [qty, setQty] = useState(alsEingabe(vorschlag));
   const [unit, setUnit] = useState(String(Math.round(unitCostUgx(item))));
   const [amount, setAmount] = useState(String(Math.round(vorschlag * unitCostUgx(item))));
   const [receipt, setReceipt] = useState<DriveFile | null>(null);
@@ -74,7 +74,7 @@ const AddAssignmentDialog = ({ transferId, transferDate, item, onClose }: AddAss
   const changeAmount = (next: string) => {
     setAmount(next);
     const parsedQty = parseAmount(qty);
-    const parsedTotal = parseAmount(next);
+    const parsedTotal = parseAmount(next, "ugx");
     if (parsedQty === null || parsedQty <= 0 || parsedTotal === null) {
       setUnit("");
       return;
@@ -84,9 +84,19 @@ const AddAssignmentDialog = ({ transferId, transferDate, item, onClose }: AddAss
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    const parsedQty = parseAmount(qty);
+    const qtyResult = pruefeBetrag(qty);
+    if (!qtyResult.ok) {
+      toast.error(qtyResult.message);
+      return;
+    }
+    const parsedQty = qtyResult.value;
     if (parsedQty === null || parsedQty <= 0) {
       toast.error("The quantity must be greater than 0.");
+      return;
+    }
+    const amountResult = pruefeBetrag(amount, "ugx");
+    if (!amountResult.ok) {
+      toast.error(amountResult.message);
       return;
     }
 
@@ -95,7 +105,7 @@ const AddAssignmentDialog = ({ transferId, transferDate, item, onClose }: AddAss
         transferId,
         itemId: item.project_item_id,
         qtyPaid: parsedQty,
-        amountPaidUgx: parseAmount(amount),
+        amountPaidUgx: amountResult.value,
         receiptUrl: receipt?.url ?? null,
       });
       toast.success(`${item.item_name ?? item.project_item_id} assigned.`);
@@ -191,7 +201,7 @@ const AddAssignmentDialog = ({ transferId, transferDate, item, onClose }: AddAss
             </p>
           </div>
 
-          <BelegVorschlagFelder beleg={beleg} betragUgx={parseAmount(amount)} neuerName={neuerName} />
+          <BelegVorschlagFelder beleg={beleg} betragUgx={parseAmount(amount, "ugx")} neuerName={neuerName} />
 
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={onClose}>
