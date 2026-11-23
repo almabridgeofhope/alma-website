@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useNoIndex } from "@/admin/useNoIndex";
-import { useProjectItems, useTransferSummaries } from "@/admin/queries";
+import { useEurRate, useProjectItems, useTransferSummaries } from "@/admin/queries";
+import { offenVonTransfer } from "@/admin/transferOffen";
 import { absolute, formatDate, formatEur, formatUgx } from "@/admin/format";
 import NewTransferDialog from "@/admin/NewTransferDialog";
 import PlannedTransfersCard from "@/admin/PlannedTransfersCard";
@@ -20,6 +21,7 @@ const AdminTransfers = () => {
   const items = useProjectItems();
   const transfers = useTransferSummaries();
   const plans = usePlannedTransfers();
+  const rate = useEurRate();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const openNeed = useMemo(() => {
@@ -107,6 +109,8 @@ const AdminTransfers = () => {
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead className="text-right">Fee</TableHead>
                     <TableHead className="text-right">Assigned</TableHead>
+                    <TableHead className="text-right">Open (EUR)</TableHead>
+                    <TableHead className="text-right">Open (UGX)</TableHead>
                     <TableHead className="text-right">Items</TableHead>
                     <TableHead>Receipts</TableHead>
                     <TableHead className="w-10" />
@@ -139,6 +143,8 @@ const AdminTransfers = () => {
                       </TableCell>
                       <TableCell className="text-right text-muted-foreground">–</TableCell>
                       <TableCell className="text-right text-muted-foreground">–</TableCell>
+                      <TableCell className="text-right text-muted-foreground">–</TableCell>
+                      <TableCell className="text-right text-muted-foreground">–</TableCell>
                       <TableCell className="text-right tabular-nums">{plan.positionen}</TableCell>
                       <TableCell />
                       <TableCell>
@@ -154,6 +160,7 @@ const AdminTransfers = () => {
                   ))}
                   {transfers.data.map((transfer) => {
                     const id = transfer.external_transaction_id;
+                    const offen = offenVonTransfer(transfer, transfer.assignedUgx, rate.data);
                     return (
                       <TableRow key={transfer.transaction_id} className={id ? "cursor-pointer" : undefined}>
                         <TableCell className="text-right tabular-nums text-muted-foreground">
@@ -189,6 +196,15 @@ const AdminTransfers = () => {
                         </TableCell>
                         <TableCell className="whitespace-nowrap text-right tabular-nums text-muted-foreground">
                           {transfer.assignedUgx > 0 ? formatUgx(transfer.assignedUgx) : "–"}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-right tabular-nums text-muted-foreground">
+                          {offen.eur === null ? "–" : formatEur(offen.eur)}
+                        </TableCell>
+                        <TableCell
+                          className="whitespace-nowrap text-right tabular-nums text-muted-foreground"
+                          title={offen.ugx === null ? "Arrival in Uganda not confirmed yet" : undefined}
+                        >
+                          {formatUgx(offen.ugx)}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {transfer.assignmentCount > 0 ? (
