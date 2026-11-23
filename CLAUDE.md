@@ -5,8 +5,10 @@
 
 ## Was hier besonders ist
 
-- **Jeder Push auf `main` geht live** (GitHub Pages, `.github/workflows/deploy.yml`). Es gibt keine
-  Staging-Seite und keinen Smoke-Test nach dem Deploy.
+- **Jeder Push auf `main` geht live** (GitHub Pages, `.github/workflows/deploy.yml`), aber erst nach
+  grünen Checks: `deploy.yml` ruft `ci.yml` als Job `checks` auf, `build` hat `needs: checks`. Ein
+  eigener CI-Lauf bei Push auf `main` entfällt, `ci.yml` läuft bei Pull Requests und über den Deploy.
+  Es gibt keine Staging-Seite und keinen Smoke-Test nach dem Deploy.
 - **Keine eigene Datenbank.** Schema, Views, RPCs, RLS und die Edge Functions (`form-submit`,
   `stripe-checkout`, `paypal-subscription`, `receipt-read`) liegen in alma-data-platform. Braucht
   eine Änderung hier eine neue Spalte oder View, kommt sie dort als Migration.
