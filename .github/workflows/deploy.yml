@@ -47,6 +47,11 @@ name: Deploy React App to GitHub Pages
 on:
   push:
     branches: [ main ]
+  # Von Hand: Actions -> Deploy React App to GitHub Pages -> Run workflow, oder
+  # `gh workflow run deploy.yml --ref main`. Gedacht für den Fall, dass ein Push-Ereignis ausfiel
+  # (GitHub-Störung am 25.11.2026) oder ein Deploy wiederholt werden soll. Gebaut und deployt wird
+  # nur von main aus (siehe Job build).
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -64,6 +69,9 @@ jobs:
     uses: ./.github/workflows/ci.yml
 
   build:
+    # Ein manueller Start auf einem anderen Zweig prüft nur (Job checks), baut aber nicht und
+    # deployt nichts; deploy hängt an build.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     needs: checks
 
