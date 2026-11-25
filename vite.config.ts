@@ -3,12 +3,12 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { imagetools } from "vite-imagetools";
-import { fehlendeEmailjsVariablen } from "./src/lib/kontaktformular";
+import { fehlendeKontaktVariablen } from "./src/lib/kontaktformular";
 
-// Ohne die EmailJS-Werte wäre das Kontaktformular tot. Deshalb bricht der Build ab, statt
+// Ohne die EmailJS-Werte und den reCAPTCHA-Site-Key wäre das Kontaktformular tot. Deshalb bricht der Build ab, statt
 // eine Seite auszuliefern, deren Formular nicht sendet. Dev-Server und Vitest brauchen die
 // Werte nicht.
-function pruefeEmailjsVariablen(mode: string) {  const fehlend = fehlendeEmailjsVariablen(loadEnv(mode, process.cwd(), "VITE_"));
+function pruefeKontaktVariablen(mode: string) {  const fehlend = fehlendeKontaktVariablen(loadEnv(mode, process.cwd(), "VITE_"));
   if (fehlend.length === 0) return;
   throw new Error(
     `Kontaktformular: Umgebungsvariablen fehlen oder sind leer: ${fehlend.join(", ")}. ` +
@@ -18,7 +18,7 @@ function pruefeEmailjsVariablen(mode: string) {  const fehlend = fehlendeEmailjs
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode, command }) => {
-  if (command === "build") pruefeEmailjsVariablen(mode);
+  if (command === "build") pruefeKontaktVariablen(mode);
   return {
     base: "/",
     server: {

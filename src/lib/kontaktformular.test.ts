@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-  EMAILJS_VARIABLEN,
+  KONTAKT_VARIABLEN,
   baueTemplateParams,
-  fehlendeEmailjsVariablen,
+  fehlendeKontaktVariablen,
   istHoneypotBefuellt,
 } from "./kontaktformular";
+
+const TOKEN = "token-aus-dem-recaptcha";
 
 const EINGABE = {
   name: "Ada",
@@ -15,20 +17,24 @@ const EINGABE = {
 
 describe("baueTemplateParams", () => {
   it("schickt keinen Empfänger aus dem Browser mit", () => {
-    const params = baueTemplateParams(EINGABE);
+    const params = baueTemplateParams(EINGABE, TOKEN);
     expect(params).not.toHaveProperty("to_email");
     expect(Object.keys(params).sort()).toEqual(
-      ["from_email", "from_name", "message", "reply_to", "subject"],
+      ["from_email", "from_name", "g-recaptcha-response", "message", "reply_to", "subject"],
     );
   });
 
+  it("schickt den reCAPTCHA-Token unter dem Namen g-recaptcha-response mit", () => {
+    expect(baueTemplateParams(EINGABE, TOKEN)["g-recaptcha-response"]).toBe(TOKEN);
+  });
+
   it("setzt Reply-To auf die Adresse der Besucherin", () => {
-    expect(baueTemplateParams(EINGABE).reply_to).toBe("ada@example.org");
+    expect(baueTemplateParams(EINGABE, TOKEN).reply_to).toBe("ada@example.org");
   });
 
   it("nimmt einen Standardbetreff, wenn keiner eingegeben wurde", () => {
-    expect(baueTemplateParams(EINGABE).subject).toBe("Contact Form Message");
-    expect(baueTemplateParams({ ...EINGABE, subject: "Frage" }).subject).toBe("Frage");
+    expect(baueTemplateParams(EINGABE, TOKEN).subject).toBe("Contact Form Message");
+    expect(baueTemplateParams({ ...EINGABE, subject: "Frage" }, TOKEN).subject).toBe("Frage");
   });
 });
 
@@ -43,25 +49,31 @@ describe("istHoneypotBefuellt", () => {
   });
 });
 
-describe("fehlendeEmailjsVariablen", () => {
+describe("fehlendeKontaktVariablen", () => {
   const VOLL = {
     VITE_EMAILJS_SERVICE_ID: "s",
     VITE_EMAILJS_TEMPLATE_ID: "t",
     VITE_EMAILJS_PUBLIC_KEY: "k",
+    VITE_RECAPTCHA_SITE_KEY: "r",
   };
 
-  it("meldet nichts, wenn alle drei gesetzt sind", () => {
-    expect(fehlendeEmailjsVariablen(VOLL)).toEqual([]);
+  it("meldet nichts, wenn alle vier gesetzt sind", () => {
+    expect(fehlendeKontaktVariablen(VOLL)).toEqual([]);
   });
 
   it("meldet fehlende, leere und nur aus Leerzeichen bestehende Werte", () => {
     const env = { VITE_EMAILJS_SERVICE_ID: "", VITE_EMAILJS_TEMPLATE_ID: "  " };
-    expect(fehlendeEmailjsVariablen(env)).toEqual([...EMAILJS_VARIABLEN]);
+    expect(fehlendeKontaktVariablen(env)).toEqual([...KONTAKT_VARIABLEN]);
+  });
+
+  it("meldet einen fehlenden reCAPTCHA-Site-Key, damit der Build nicht ohne Spamschutz entsteht", () => {
+    const { VITE_RECAPTCHA_SITE_KEY: _weg, ...ohneKey } = VOLL;
+    expect(fehlendeKontaktVariablen(ohneKey)).toEqual(["VITE_RECAPTCHA_SITE_KEY"]);
   });
 
   it("meldet Werte mit Leerzeichen oder Zeilenumbruch am Rand", () => {
     const env = { ...VOLL, VITE_EMAILJS_SERVICE_ID: " s", VITE_EMAILJS_PUBLIC_KEY: "k\n" };
-    expect(fehlendeEmailjsVariablen(env)).toEqual([
+    expect(fehlendeKontaktVariablen(env)).toEqual([
       "VITE_EMAILJS_SERVICE_ID",
       "VITE_EMAILJS_PUBLIC_KEY",
     ]);

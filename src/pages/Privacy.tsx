@@ -156,6 +156,18 @@ const Privacy = () => {
               />
 
               <InfoSection
+                title={t("privacy.recaptcha.title")}
+                paragraphs={[
+                  t("privacy.recaptcha.description"),
+                  t("privacy.recaptcha.data"),
+                  t("privacy.recaptcha.consent"),
+                  t("privacy.recaptcha.transfer"),
+                ]}
+                legalBasis={{ label: t("privacy.website.legal_basis"), text: t("privacy.recaptcha.legal_basis_text") }}
+                link={{ lead: t("privacy.analytics.more_info"), href: "https://policies.google.com/privacy", text: t("privacy.analytics.link_text") }}
+              />
+
+              <InfoSection
                 title={t("privacy.newsletter.title")}
                 paragraphs={[
                   t("privacy.newsletter.description"),
