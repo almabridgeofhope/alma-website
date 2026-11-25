@@ -32,9 +32,10 @@
   Bundle; Secret Keys und Setup-Tokens gehören nur in die Sync-Schritte zu den Apps Scripts.
 - `VITE_STAGE` ist im Deploy fest `prod` und wird nicht als Secret angelegt; ohne den Wert läuft
   PayPal gegen die Sandbox.
-- **Kontaktformular:** `to_email` nie in den Payload, der Empfänger gehört ins EmailJS-Template. `VITE_EMAILJS_*`
-  (Vorlage `.env.example`) müssen gesetzt sein, sonst bricht `vite build` ab (der Dev-Server startet auch ohne); der CI-Build setzt
+- **Kontaktformular:** `to_email` nie in den Payload, der Empfänger gehört ins EmailJS-Template. `VITE_EMAILJS_*` und
+  `VITE_RECAPTCHA_SITE_KEY` (Vorlage `.env.example`) müssen gesetzt sein, sonst bricht `vite build` ab (der Dev-Server startet auch ohne); der CI-Build setzt
   Platzhalter. Das Honigtopf-Feld `kontakt-zusatzfeld` (kein Name wie `website`, den Autofill füllt) bleibt unsichtbar, nicht fokussierbar und `aria-hidden`.
+- **reCAPTCHA v2 im Kontaktformular:** das Skript von Google lädt nur nach Klick auf „Spamschutz laden“ (`src/components/RecaptchaFeld.tsx`, `src/lib/recaptcha.ts`), nie beim Seitenaufruf und nie über `index.html`. Der Token geht als `g-recaptcha-response` an EmailJS; ohne Token oder ohne Site-Key wird nicht gesendet. Der Secret Key steht nur im EmailJS-Template, nie im Repo, in `deploy.yml` oder im Bundle.
 - **Jeder neue Text in `translations.en` und `translations.de`** (`src/contexts/translations.ts`).
 - **Neuer Drittanbieter oder Datenfluss (Skript, Einbettung, Formular, Dienst) → Abschnitt in `src/pages/Privacy.tsx` samt `privacy.*` in `src/contexts/translations.ts` (en und de)** im selben PR, dazu der Name in der Liste in `src/contexts/datenschutz.test.ts`. Heute nennt die Erklärung u. a. GitHub, Google (Fonts, Maps, Analytics, Apps Script, Drive), EmailJS, PayPal, Stripe, Supabase, IONOS, Telegram, Wise.
 - **Verträge mit alma-data-platform nicht einseitig ändern:** Payload an `form-submit` (Typen dort in
@@ -51,7 +52,7 @@
 
 | Datei | Absender | Empfängerkreis | Auslöser |
 |---|---|---|---|
-| `src/pages/Contact.tsx` (Kontaktformular über EmailJS; Service, Template und Public Key aus `VITE_EMAILJS_*`) | das bei EmailJS hinterlegte Konto; Reply-To = Besucher | `info@almabridgeofhope.org`, fest im EmailJS-Template (To Email), der Browser schickt keinen Empfänger mit | Besucher schickt das Kontaktformular ab; ein befülltes Honigtopf-Feld sendet nichts |
+| `src/components/KontaktFormular.tsx` (Kontaktformular über EmailJS, eingebunden in `src/pages/Contact.tsx`; Service, Template und Public Key aus `VITE_EMAILJS_*`, dazu der reCAPTCHA-Token) | das bei EmailJS hinterlegte Konto; Reply-To = Besucher | `info@almabridgeofhope.org`, fest im EmailJS-Template (To Email), der Browser schickt keinen Empfänger mit | Besucher schickt das Kontaktformular ab, nach gelöstem reCAPTCHA; ein befülltes Honigtopf-Feld oder ein fehlender Token sendet nichts |
 
 Keine E-Mail sonst. Newsletter-Anmeldung (`src/components/NewsletterForm.tsx`, Spendenformular),
 Mitgliedsantrag und Spendenabsicht gehen als Daten an `form-submit` in alma-data-platform; Mails

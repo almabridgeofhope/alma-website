@@ -23,7 +23,7 @@ const ANBIETER: Record<string, string[]> = {
   "googletagmanager.com": ["Google Analytics"],
   "fonts.googleapis.com": ["Google Fonts"],
   "fonts.gstatic.com": ["Google Fonts"],
-  "google.com": ["Google Maps"],
+  "google.com": ["Google Maps", "reCAPTCHA"],
   "googleapis.com": ["Google Drive"],
   "accounts.google.com": ["Google Drive"],
   "paypal.com": ["PayPal"],
@@ -110,6 +110,14 @@ describe("Datenschutzerklärung", () => {
   it("nennt keinen Dienst ohne Beleg im Code (Notion wird nicht genutzt)", () => {
     const alles = JSON.stringify(Object.entries(translations).flatMap(([, t]) => Object.entries(t).filter(([k]) => k.startsWith("privacy."))));
     expect(alles).not.toContain("Notion");
+  });
+
+  it("hat für reCAPTCHA einen eigenen Abschnitt mit Einwilligung als Rechtsgrundlage", () => {
+    for (const lang of ["de", "en"] as const) {
+      expect(translations[lang]["privacy.recaptcha.title"]).toContain("reCAPTCHA");
+      expect(translations[lang]["privacy.recaptcha.legal_basis_text"]).toContain("6");
+      expect(keysUsedByPage()).toContain("privacy.recaptcha.title");
+    }
   });
 
   it("zeigt kein Stand-Datum vor 2026", () => {

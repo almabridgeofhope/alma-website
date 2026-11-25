@@ -7,18 +7,20 @@ import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import emailjs from "@emailjs/browser";
+import RecaptchaFeld from "@/components/RecaptchaFeld";
 import {
   baueTemplateParams,
-  fehlendeEmailjsVariablen,
+  fehlendeKontaktVariablen,
   istHoneypotBefuellt,
 } from "@/lib/kontaktformular";
 
-// Statisch gelesen (Vite ersetzt sie beim Build). Fehlt ein Wert, bricht schon der Build ab,
+// Statisch gelesen (Vite ersetzt sie beim Build). Fehlt ein Wert (EmailJS oder reCAPTCHA-Site-Key), bricht schon der Build ab,
 // siehe vite.config.ts; die Prüfung beim Absenden ist nur ein zweites Netz.
-const EMAILJS_ENV = {
+const KONTAKT_ENV = {
   VITE_EMAILJS_SERVICE_ID: import.meta.env.VITE_EMAILJS_SERVICE_ID,
   VITE_EMAILJS_TEMPLATE_ID: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
   VITE_EMAILJS_PUBLIC_KEY: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+  VITE_RECAPTCHA_SITE_KEY: import.meta.env.VITE_RECAPTCHA_SITE_KEY,
 };
 
 const KontaktFormular = () => {
@@ -33,6 +35,10 @@ const KontaktFormular = () => {
   });
   // Honigtopf: für Menschen unsichtbar und nicht erreichbar, Bots füllen ihn aus.
   const [honeypot, setHoneypot] = useState("");
+  // Token des gelösten reCAPTCHA; gilt nur einmal, nach jedem Versuch wird das Feld zurückgesetzt.
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [recaptchaReset, setRecaptchaReset] = useState(0);
+  const [spamschutzFehler, setSpamschutzFehler] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,8 +75,8 @@ const KontaktFormular = () => {
       return;
     }
 
-    if (fehlendeEmailjsVariablen(EMAILJS_ENV).length > 0) {
-      console.error("EmailJS-Konfiguration fehlt (VITE_EMAILJS_*)");
+    if (fehlendeKontaktVariablen(KONTAKT_ENV).length > 0) {
+      console.error("Kontaktformular-Konfiguration fehlt (VITE_EMAILJS_*, VITE_RECAPTCHA_SITE_KEY)");
       toast({
         title: t("contact.error.title"),
         description: t("contact.error.send"),
@@ -79,14 +85,28 @@ const KontaktFormular = () => {
       return;
     }
 
+    // Ohne gelöstes reCAPTCHA wird nichts gesendet. Die Prüfung des Tokens selbst macht EmailJS,
+    // wenn im Template reCAPTCHA aktiviert und der Secret Key hinterlegt ist; das ist von hier nicht prüfbar.
+    if (!recaptchaToken) {
+      const meldung = t("contact.recaptcha.required");
+      setSpamschutzFehler(meldung);
+      toast({
+        title: t("contact.error.title"),
+        description: meldung,
+        variant: "destructive",
+      });
+      return;
+    }
+    setSpamschutzFehler("");
+
     setIsLoading(true);
 
     try {
       await emailjs.send(
-        EMAILJS_ENV.VITE_EMAILJS_SERVICE_ID,
-        EMAILJS_ENV.VITE_EMAILJS_TEMPLATE_ID,
-        baueTemplateParams(formData),
-        EMAILJS_ENV.VITE_EMAILJS_PUBLIC_KEY,
+        KONTAKT_ENV.VITE_EMAILJS_SERVICE_ID,
+        KONTAKT_ENV.VITE_EMAILJS_TEMPLATE_ID,
+        baueTemplateParams(formData, recaptchaToken),
+        KONTAKT_ENV.VITE_EMAILJS_PUBLIC_KEY,
       );
 
       toast({
@@ -124,6 +144,9 @@ const KontaktFormular = () => {
       });
     } finally {
       setIsLoading(false);
+      // Ein Token gilt nur für einen Versand.
+      setRecaptchaToken(null);
+      setRecaptchaReset((n) => n + 1);
     }
   };
 
@@ -203,6 +226,16 @@ const KontaktFormular = () => {
           className="mt-2 min-h-[150px]"
         />
       </div>
+
+      <RecaptchaFeld
+        siteKey={KONTAKT_ENV.VITE_RECAPTCHA_SITE_KEY ?? ""}
+        onToken={(token) => {
+          setRecaptchaToken(token);
+          if (token) setSpamschutzFehler("");
+        }}
+        resetKey={recaptchaReset}
+        fehler={spamschutzFehler}
+      />
 
       <Button 
         type="submit"
