@@ -53,9 +53,9 @@ describe("RecaptchaFeld, Laden", () => {
     expect(skript?.src).toContain("hl=de");
   });
 
-  it("zeigt den Hinweis mit Link zur Datenschutzerklärung und keinen Einwilligungsknopf", () => {
+  it("zeigt keinen Hinweistext und keinen Einwilligungsknopf, nur den Ladestatus", () => {
     zeige();
-    expect(screen.getByRole("link", { name: DE["contact.recaptcha.privacyLink"] }).getAttribute("href")).toBe("/privacy");
+    expect(screen.queryByRole("link")).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
     expect(screen.getByRole("status").textContent).toBe(DE["contact.recaptcha.loading"]);
   });

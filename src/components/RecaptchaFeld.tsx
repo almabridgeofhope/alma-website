@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ladeRecaptcha, type Grecaptcha } from "@/lib/recaptcha";
@@ -24,9 +23,8 @@ function istSchmal(platz: HTMLElement): boolean {
 }
 
 /**
- * Lädt das Skript von Google, sobald das Feld erscheint (nur auf der Kontaktseite), und zeigt
- * einen Hinweis mit Link zur Datenschutzerklärung. Bei einem Ladefehler gibt es einen Knopf für
- * den nächsten Versuch.
+ * Lädt das Skript von Google, sobald das Feld erscheint (nur auf der Kontaktseite). Bei einem
+ * Ladefehler gibt es einen Knopf für den nächsten Versuch.
  */
 const RecaptchaFeld = ({ siteKey, onToken, resetKey, fehler }: RecaptchaFeldProps) => {
   const { t, language } = useLanguage();
@@ -89,14 +87,6 @@ const RecaptchaFeld = ({ siteKey, onToken, resetKey, fehler }: RecaptchaFeldProp
         {t("contact.recaptcha.title")}
       </p>
 
-      <p className="text-xs text-muted-foreground" id="spamschutz-hinweis">
-        {t("contact.recaptcha.notice")}{" "}
-        <Link to="/privacy" className="text-primary hover:underline" target="_blank">
-          {t("contact.recaptcha.privacyLink")}
-        </Link>
-        . {t("contact.recaptcha.alternative")}
-      </p>
-
       {zustand === "laedt" && siteKey !== "" && (
         <p className="text-sm text-muted-foreground" role="status">
           {t("contact.recaptcha.loading")}
@@ -119,7 +109,6 @@ const RecaptchaFeld = ({ siteKey, onToken, resetKey, fehler }: RecaptchaFeldProp
             variant="outline"
             size="sm"
             onClick={laden}
-            aria-describedby="spamschutz-hinweis"
             className="h-auto whitespace-normal py-2"
           >
             {t("contact.recaptcha.load")}
