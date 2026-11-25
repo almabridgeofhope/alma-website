@@ -4,6 +4,43 @@ import Footer from "@/components/Footer";
 import { showCookieBanner } from "@/components/CookieBanner";
 import { Button } from "@/components/ui/button";
 
+const sectionTitle = "text-2xl font-semibold text-foreground mb-4";
+
+const InfoSection = ({
+  title,
+  paragraphs,
+  legalBasis,
+  link,
+}: {
+  title: string;
+  paragraphs: string[];
+  legalBasis?: { label: string; text: string };
+  link?: { lead: string; href: string; text: string };
+}) => (
+  <section>
+    <h2 className={sectionTitle}>{title}</h2>
+    <div className="space-y-4 text-muted-foreground">
+      {paragraphs.map((text, index) => (
+        <p key={index}>{text}</p>
+      ))}
+      {legalBasis && (
+        <p>
+          <strong>{legalBasis.label}</strong> {legalBasis.text}
+        </p>
+      )}
+      {link && (
+        <p>
+          {link.lead}{" "}
+          <a href={link.href} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+            {link.text}
+          </a>
+          .
+        </p>
+      )}
+    </div>
+  </section>
+);
+
 const Privacy = () => {
   const { t } = useLanguage();
 
@@ -47,6 +84,7 @@ const Privacy = () => {
                 </h2>
                 <div className="space-y-4 text-muted-foreground">
                   <p>{t("privacy.website.description")}</p>
+                  <p>{t("privacy.website.hosting")}</p>
                   <p>{t("privacy.website.collected")}</p>
                   <ul className="list-disc list-inside space-y-1 ml-4">
                     <li>{t("privacy.website.ip")}</li>
@@ -87,6 +125,51 @@ const Privacy = () => {
                   </div>
                 </div>
               </section>
+
+              <InfoSection
+                title={t("privacy.fonts.title")}
+                paragraphs={[
+                  t("privacy.fonts.description"),
+                ]}
+                legalBasis={{ label: t("privacy.website.legal_basis"), text: t("privacy.fonts.legal_basis_text") }}
+                link={{ lead: t("privacy.analytics.more_info"), href: "https://policies.google.com/privacy", text: t("privacy.analytics.link_text") }}
+              />
+
+              <InfoSection
+                title={t("privacy.maps.title")}
+                paragraphs={[
+                  t("privacy.maps.description"),
+                ]}
+                legalBasis={{ label: t("privacy.website.legal_basis"), text: t("privacy.maps.legal_basis_text") }}
+                link={{ lead: t("privacy.analytics.more_info"), href: "https://policies.google.com/privacy", text: t("privacy.analytics.link_text") }}
+              />
+
+              <InfoSection
+                title={t("privacy.contactform.title")}
+                paragraphs={[
+                  t("privacy.contactform.description"),
+                  t("privacy.contactform.transfer"),
+                  t("privacy.contactform.storage"),
+                ]}
+                legalBasis={{ label: t("privacy.website.legal_basis"), text: t("privacy.contactform.legal_basis_text") }}
+                link={{ lead: t("privacy.contactform.more_info"), href: "https://www.emailjs.com/legal/privacy-policy/", text: t("privacy.contactform.link_text") }}
+              />
+
+              <InfoSection
+                title={t("privacy.newsletter.title")}
+                paragraphs={[
+                  t("privacy.newsletter.description"),
+                ]}
+                legalBasis={{ label: t("privacy.website.legal_basis"), text: t("privacy.newsletter.legal_basis_text") }}
+              />
+
+              <InfoSection
+                title={t("privacy.membership.title")}
+                paragraphs={[
+                  t("privacy.membership.description"),
+                ]}
+                legalBasis={{ label: t("privacy.website.legal_basis"), text: t("privacy.membership.legal_basis_text") }}
+              />
 
               {/* PayPal Donations */}
               <section>
@@ -140,6 +223,8 @@ const Privacy = () => {
                     <li>{t("privacy.donor_data.address")}</li>
                     <li>{t("privacy.donor_data.amount")}</li>
                     <li>{t("privacy.donor_data.payment")}</li>
+                    <li>{t("privacy.donor_data.gift")}</li>
+                    <li>{t("privacy.donor_data.comment")}</li>
                   </ul>
                   <p>{t("privacy.donor_data.usage")}</p>
                   <p><strong>{t("privacy.donor_data.legal_basis")}</strong></p>
@@ -160,16 +245,7 @@ const Privacy = () => {
                   
                   <div>
                     <h3 className="text-lg font-medium text-foreground mb-2">
-                      a) {t("privacy.storage.notion.title")}
-                    </h3>
-                    <p>{t("privacy.storage.notion.description")}</p>
-                    <p>{t("privacy.storage.notion.legal")}</p>
-                    <p>{t("privacy.storage.notion.more_info")} <a href="https://www.notion.so/Privacy-Policy" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">{t("privacy.storage.notion.link_text")}</a></p>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-medium text-foreground mb-2">
-                      b) {t("privacy.storage.google.title")}
+                      {t("privacy.storage.google.title")}
                     </h3>
                     <p>{t("privacy.storage.google.description")}</p>
                     <p>{t("privacy.storage.google.legal")}</p>
@@ -179,6 +255,26 @@ const Privacy = () => {
                   <p>{t("privacy.storage.access")}</p>
                 </div>
               </section>
+
+              <section>
+                <h2 className={sectionTitle}>{t("privacy.backend.title")}</h2>
+                <div className="space-y-4 text-muted-foreground">
+                  <p>{t("privacy.backend.description")}</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    <li>{t("privacy.backend.supabase")}</li>
+                    <li>{t("privacy.backend.mail")}</li>
+                    <li>{t("privacy.backend.telegram")}</li>
+                    <li>{t("privacy.backend.wise")}</li>
+                  </ul>
+                  <p>
+                    <strong>{t("privacy.website.legal_basis")}</strong> {t("privacy.backend.legal_basis_text")}
+                  </p>
+                </div>
+              </section>
+
+              <InfoSection title={t("privacy.storagelocal.title")} paragraphs={[t("privacy.storagelocal.description")]} />
+
+              <InfoSection title={t("privacy.recipients.title")} paragraphs={[t("privacy.recipients.description")]} />
 
               {/* Storage Duration */}
               <section>
@@ -209,6 +305,8 @@ const Privacy = () => {
                 </div>
               </section>
 
+              <InfoSection title={t("privacy.automated.title")} paragraphs={[t("privacy.automated.description")]} />
+
               {/* Complaint Right */}
               <section>
                 <h2 className="text-2xl font-semibold text-foreground mb-4">
@@ -218,7 +316,7 @@ const Privacy = () => {
                   <p>{t("privacy.complaint.description")}</p>
                   <p>{t("privacy.complaint.authority")}</p>
                   <p>{t("privacy.complaint.address")}</p>
-                  <p><a href="https://www.baden-wuerttemberg.datenschutz.de" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">{t("privacy.complaint.website")}</a></p>
+                  <p><a href={t("privacy.complaint.website")} className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">{t("privacy.complaint.website")}</a></p>
                 </div>
               </section>
 
@@ -228,6 +326,7 @@ const Privacy = () => {
                   {t("privacy.contact.title")}
                 </h2>
                 <div className="space-y-2 text-muted-foreground">
+                  <p>{t("privacy.contact.no_dpo")}</p>
                   <p>{t("privacy.contact.name")}</p>
                   <p>{t("privacy.contact.organization")}</p>
                   <p><strong>{t("privacy.contact.email")}:</strong> {t("privacy.contact.email_value")}</p>

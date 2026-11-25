@@ -35,7 +35,8 @@
 - **Kontaktformular:** `to_email` nie in den Payload, der Empfänger gehört ins EmailJS-Template. `VITE_EMAILJS_*`
   (Vorlage `.env.example`) müssen gesetzt sein, sonst bricht `vite build` ab (der Dev-Server startet auch ohne); der CI-Build setzt
   Platzhalter. Das Honigtopf-Feld `kontakt-zusatzfeld` (kein Name wie `website`, den Autofill füllt) bleibt unsichtbar, nicht fokussierbar und `aria-hidden`.
-- **Jeder neue Text in `translations.en` und `translations.de`** (`src/contexts/LanguageContext.tsx`).
+- **Jeder neue Text in `translations.en` und `translations.de`** (`src/contexts/translations.ts`).
+- **Neuer Drittanbieter oder Datenfluss (Skript, Einbettung, Formular, Dienst) → Abschnitt in `src/pages/Privacy.tsx` samt `privacy.*` in `src/contexts/translations.ts` (en und de)** im selben PR, dazu der Name in der Liste in `src/contexts/datenschutz.test.ts`. Heute nennt die Erklärung u. a. GitHub, Google (Fonts, Maps, Analytics, Apps Script, Drive), EmailJS, PayPal, Stripe, Supabase, IONOS, Telegram, Wise.
 - **Verträge mit alma-data-platform nicht einseitig ändern:** Payload an `form-submit` (Typen dort in
   `supabase/functions/form-submit/index.ts`, z. B. Geschenknachricht höchstens 300 Zeichen),
   Verwendungszweck `ALMA-{intentId}` bei Überweisung, Antwortformen der Zahlungs-Backends, Felder der
