@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { istRecaptchaBereit, ladeRecaptcha, type Grecaptcha } from "@/lib/recaptcha";
+import { ladeRecaptcha, type Grecaptcha } from "@/lib/recaptcha";
 
 // Breite des Standard-Widgets; schmaler (kleines Handy) nimmt Google die kompakte Form.
 const STANDARD_BREITE = 304;
@@ -17,19 +17,20 @@ interface RecaptchaFeldProps {
   fehler?: string;
 }
 
-type Zustand = "einwilligung" | "laedt" | "bereit" | "fehler";
+type Zustand = "laedt" | "bereit" | "fehler";
 
 function istSchmal(platz: HTMLElement): boolean {
   return platz.clientWidth > 0 && platz.clientWidth < STANDARD_BREITE;
 }
 
 /**
- * Zeigt zuerst nur einen Hinweis mit Link zur Datenschutzerklärung und einen Knopf. Erst der
- * Klick lädt das Skript von Google; vorher fließt keine Anfrage an Google.
+ * Lädt das Skript von Google, sobald das Feld erscheint (nur auf der Kontaktseite), und zeigt
+ * einen Hinweis mit Link zur Datenschutzerklärung. Bei einem Ladefehler gibt es einen Knopf für
+ * den nächsten Versuch.
  */
 const RecaptchaFeld = ({ siteKey, onToken, resetKey, fehler }: RecaptchaFeldProps) => {
   const { t, language } = useLanguage();
-  const [zustand, setZustand] = useState<Zustand>("einwilligung");
+  const [zustand, setZustand] = useState<Zustand>("laedt");
   const [widgetFehler, setWidgetFehler] = useState(false);
   const behaelter = useRef<HTMLDivElement>(null);
   const grecaptcha = useRef<Grecaptcha | null>(null);
@@ -50,10 +51,9 @@ const RecaptchaFeld = ({ siteKey, onToken, resetKey, fehler }: RecaptchaFeldProp
       });
   };
 
-  // Kommt die Besucherin zurück auf die Seite, nachdem sie schon eingewilligt hat (das Skript
-  // bleibt im SPA geladen), entsteht das Widget ohne zweiten Klick.
+  // Ohne Site-Key gibt es nichts zu laden; das Feld sagt es unten sichtbar.
   useEffect(() => {
-    if (istRecaptchaBereit()) laden();
+    if (siteKey !== "") laden();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -89,27 +89,18 @@ const RecaptchaFeld = ({ siteKey, onToken, resetKey, fehler }: RecaptchaFeldProp
         {t("contact.recaptcha.title")}
       </p>
 
-      {zustand !== "bereit" && (
-        <div className="rounded-md border border-border bg-muted/40 p-4 space-y-3">
-          <p className="text-sm text-muted-foreground" id="spamschutz-hinweis">
-            {t("contact.recaptcha.notice")}{" "}
-            <Link to="/privacy" className="text-primary hover:underline" target="_blank">
-              {t("contact.recaptcha.privacyLink")}
-            </Link>
-            . {t("contact.recaptcha.alternative")}
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={laden}
-            disabled={zustand === "laedt" || siteKey === ""}
-            aria-describedby="spamschutz-hinweis"
-            className="w-full sm:w-auto h-auto whitespace-normal py-2"
-          >
-            {zustand === "laedt" ? t("contact.recaptcha.loading") : t("contact.recaptcha.load")}
-          </Button>
-        </div>
+      <p className="text-xs text-muted-foreground" id="spamschutz-hinweis">
+        {t("contact.recaptcha.notice")}{" "}
+        <Link to="/privacy" className="text-primary hover:underline" target="_blank">
+          {t("contact.recaptcha.privacyLink")}
+        </Link>
+        . {t("contact.recaptcha.alternative")}
+      </p>
+
+      {zustand === "laedt" && siteKey !== "" && (
+        <p className="text-sm text-muted-foreground" role="status">
+          {t("contact.recaptcha.loading")}
+        </p>
       )}
 
       {siteKey === "" && (
@@ -119,9 +110,21 @@ const RecaptchaFeld = ({ siteKey, onToken, resetKey, fehler }: RecaptchaFeldProp
       )}
 
       {zustand === "fehler" && (
-        <p role="alert" className="text-sm text-destructive">
-          {t("contact.recaptcha.loadError")}
-        </p>
+        <div className="space-y-2">
+          <p role="alert" className="text-sm text-destructive">
+            {t("contact.recaptcha.loadError")}
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={laden}
+            aria-describedby="spamschutz-hinweis"
+            className="h-auto whitespace-normal py-2"
+          >
+            {t("contact.recaptcha.load")}
+          </Button>
+        </div>
       )}
 
       {/* Das Widget ist 304 px breit; im Notfall scrollt nur dieser Streifen, nie die Seite. */}
