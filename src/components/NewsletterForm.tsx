@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface NewsletterFormProps {
   placeholder?: string;
@@ -22,6 +23,7 @@ export default function NewsletterForm({
   const [isLoading, setIsLoading] = useState(false);
   const lastSubmittedAtRef = useRef<number>(0);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const endpoint = import.meta.env.VITE_FORM_SUBMIT_URL as string | undefined;
 
@@ -117,6 +119,14 @@ export default function NewsletterForm({
           {isLoading ? "..." : buttonLabel}
         </Button>
       </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        {t("privacy.newsletter.consent_form")}{" "}
+        {/* Normaler Link statt Router-Link: auf /donation fängt das PayPal-SDK Klicks ab (Footer.tsx). */}
+        <a href="/privacy" className="underline hover:text-primary">
+          {t("cookieBanner.privacyLink")}
+        </a>
+        .
+      </p>
     </form>
   );
 }
