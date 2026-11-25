@@ -44,32 +44,24 @@ afterEach(() => {
   localStorage.clear();
 });
 
-describe("RecaptchaFeld, Einwilligung", () => {
-  it("lädt das Google-Skript nicht beim Anzeigen", () => {
+describe("RecaptchaFeld, Laden", () => {
+  it("lädt das Google-Skript beim Anzeigen, mit explizitem Rendern und Sprache", () => {
     zeige();
-    expect(document.querySelector(SKRIPT)).toBeNull();
-    expect(istRecaptchaSkriptGeladen()).toBe(false);
-  });
-
-  it("zeigt Hinweis, Link zur Datenschutzerklärung und den Knopf, aber noch kein Widget", () => {
-    zeige();
-    expect(screen.getByRole("link", { name: DE["contact.recaptcha.privacyLink"] }).getAttribute("href")).toBe("/privacy");
-    expect(screen.getByRole("button", { name: DE["contact.recaptcha.load"] })).toBeTruthy();
-    expect(window.grecaptcha).toBeUndefined();
-  });
-
-  it("lädt das Skript erst nach dem Klick auf den Knopf, mit explizitem Rendern und Sprache", () => {
-    zeige();
-    fireEvent.click(screen.getByRole("button", { name: DE["contact.recaptcha.load"] }));
     const skript = document.querySelector<HTMLScriptElement>(SKRIPT);
     expect(skript).not.toBeNull();
     expect(skript?.src).toContain("render=explicit");
     expect(skript?.src).toContain("hl=de");
   });
 
+  it("zeigt den Hinweis mit Link zur Datenschutzerklärung und keinen Einwilligungsknopf", () => {
+    zeige();
+    expect(screen.getByRole("link", { name: DE["contact.recaptcha.privacyLink"] }).getAttribute("href")).toBe("/privacy");
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.getByRole("status").textContent).toBe(DE["contact.recaptcha.loading"]);
+  });
+
   it("zeichnet nach dem Laden das Widget mit dem Site-Key und gibt den Token weiter", () => {
     const { onToken } = zeige();
-    fireEvent.click(screen.getByRole("button", { name: DE["contact.recaptcha.load"] }));
     const { g, renderAufruf } = fakeGrecaptcha();
     window.grecaptcha = g;
     fireEvent.load(document.querySelector(SKRIPT) as HTMLScriptElement);
@@ -92,7 +84,6 @@ describe("RecaptchaFeld, Einwilligung", () => {
   it("meldet einen Ladefehler sichtbar und erlaubt einen neuen Versuch", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     zeige();
-    fireEvent.click(screen.getByRole("button", { name: DE["contact.recaptcha.load"] }));
     fireEvent.error(document.querySelector(SKRIPT) as HTMLScriptElement);
     const alarm = await screen.findByRole("alert");
     expect(alarm.textContent).toContain("info@almabridgeofhope.org");
@@ -103,7 +94,6 @@ describe("RecaptchaFeld, Einwilligung", () => {
 
   it("setzt das Widget zurück, wenn sich resetKey ändert", async () => {
     const { onToken, rerender } = zeige();
-    fireEvent.click(screen.getByRole("button", { name: DE["contact.recaptcha.load"] }));
     const { g, renderAufruf } = fakeGrecaptcha();
     window.grecaptcha = g;
     fireEvent.load(document.querySelector(SKRIPT) as HTMLScriptElement);
@@ -122,7 +112,6 @@ describe("RecaptchaFeld, Einwilligung", () => {
 
   it("meldet einen Fehler des Widgets sichtbar", async () => {
     const { onToken } = zeige();
-    fireEvent.click(screen.getByRole("button", { name: DE["contact.recaptcha.load"] }));
     const { g, renderAufruf } = fakeGrecaptcha();
     window.grecaptcha = g;
     fireEvent.load(document.querySelector(SKRIPT) as HTMLScriptElement);
@@ -138,8 +127,7 @@ describe("RecaptchaFeld, Einwilligung", () => {
     vi.useFakeTimers();
     try {
       zeige();
-      fireEvent.click(screen.getByRole("button", { name: DE["contact.recaptcha.load"] }));
-      window.grecaptcha = { ready: () => {}, render: vi.fn(), reset: vi.fn() };
+        window.grecaptcha = { ready: () => {}, render: vi.fn(), reset: vi.fn() };
       fireEvent.load(document.querySelector(SKRIPT) as HTMLScriptElement);
       await act(async () => {
         await vi.advanceTimersByTimeAsync(10_500);
@@ -150,9 +138,8 @@ describe("RecaptchaFeld, Einwilligung", () => {
     }
   });
 
-  it("zeichnet das Widget nach erneutem Einblenden ohne zweiten Klick, wenn das Skript schon läuft", async () => {
+  it("zeichnet das Widget nach erneutem Einblenden, ohne das Skript zweimal zu laden", async () => {
     zeige();
-    fireEvent.click(screen.getByRole("button", { name: DE["contact.recaptcha.load"] }));
     const { g, renderAufruf } = fakeGrecaptcha();
     window.grecaptcha = g;
     fireEvent.load(document.querySelector(SKRIPT) as HTMLScriptElement);
@@ -160,12 +147,11 @@ describe("RecaptchaFeld, Einwilligung", () => {
     cleanup();
     zeige();
     await vi.waitFor(() => expect(renderAufruf).toHaveBeenCalledTimes(2));
-    expect(screen.queryByRole("button", { name: DE["contact.recaptcha.load"] })).toBeNull();
+    expect(document.querySelectorAll(SKRIPT).length).toBe(1);
   });
 
-  it("ist ohne Site-Key nicht bedienbar und sagt es sichtbar", () => {
+  it("lädt ohne Site-Key nichts und sagt es sichtbar", () => {
     zeige({ siteKey: "" });
-    expect((screen.getByRole("button", { name: DE["contact.recaptcha.load"] }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByRole("alert").textContent).toBe(DE["contact.recaptcha.notConfigured"]);
     expect(document.querySelector(SKRIPT)).toBeNull();
   });

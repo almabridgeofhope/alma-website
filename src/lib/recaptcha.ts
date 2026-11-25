@@ -1,6 +1,6 @@
-// Google reCAPTCHA v2 (Checkbox) für das Kontaktformular. Das Skript von Google wird nie beim
-// Seitenaufruf geladen, sondern erst, wenn die Besucherin es ausdrücklich verlangt
-// (src/components/RecaptchaFeld.tsx). EmailJS prüft den Token serverseitig mit dem Secret Key,
+// Google reCAPTCHA v2 (Checkbox) für das Kontaktformular. Das Skript von Google wird nur geladen,
+// wenn das Formular erscheint (src/components/RecaptchaFeld.tsx), nie über index.html und nie auf
+// anderen Seiten. EmailJS prüft den Token serverseitig mit dem Secret Key,
 // der im EmailJS-Template hinterlegt ist; im Browser gibt es nur den öffentlichen Site-Key.
 
 const SKRIPT_BASIS = "https://www.google.com/recaptcha/api.js";
@@ -33,7 +33,7 @@ export function recaptchaSkriptUrl(sprache: string): string {
   return `${SKRIPT_BASIS}?render=explicit&hl=${encodeURIComponent(sprache)}`;
 }
 
-/** Gibt es schon ein Skript-Element von uns, also hat die Besucherin eingewilligt? */
+/** Gibt es schon ein Skript-Element von uns? */
 export function istRecaptchaSkriptGeladen(doc: Document = document): boolean {
   return doc.getElementById(SKRIPT_ID) !== null;
 }
@@ -42,7 +42,7 @@ let laufendesLaden: Promise<Grecaptcha> | null = null;
 
 /**
  * Lädt das Skript (einmal) und liefert das Objekt `grecaptcha`, sobald es bereit ist.
- * Nur nach ausdrücklicher Einwilligung aufrufen. Ein Fehler (Netz, Blocker) wird abgelehnt
+ * Nur vom Kontaktformular aufrufen. Ein Fehler (Netz, Blocker) wird abgelehnt
  * und nicht verschluckt; ein neuer Versuch lädt das Skript neu.
  */
 export function ladeRecaptcha(sprache: string, doc: Document = document): Promise<Grecaptcha> {
@@ -79,11 +79,6 @@ export function ladeRecaptcha(sprache: string, doc: Document = document): Promis
     doc.getElementById(SKRIPT_ID)?.remove();
   });
   return laufendesLaden;
-}
-
-/** Ist das Skript schon geladen und einsatzbereit (Einwilligung früher im Besuch gegeben)? */
-export function istRecaptchaBereit(): boolean {
-  return istRecaptchaSkriptGeladen() && window.grecaptcha !== undefined;
 }
 
 /** Nur für Tests: vergisst den Ladezustand. */
